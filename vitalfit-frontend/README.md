@@ -1,74 +1,92 @@
-# Getting Started with Create React App
+# VitalFit Frontend
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+VitalFit 프로젝트의 프론트엔드 애플리케이션입니다.
 
-## Available Scripts
+## 프로젝트 가이드
 
-In the project directory, you can run:
+- **CONTRIBUTING.md**: 코드 컨벤션과 커밋 메시지 규칙
+- **API_SPEC.md**: 백엔드 API 명세서 예시
+- **.env.example**: 환경변수 설정 예시
 
-### `npm start`
+## 환경변수 설정
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+프로젝트를 처음 클론한 후, 환경변수 파일을 생성하세요:
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+```bash
+cp .env.example .env
+```
 
-### `npm test`
+.env 파일에 실제 API 서버 주소 등을 입력해야 정상 동작합니다.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## Git 명령어 실행 방법
 
-### `npm run build`
+### 1. 변경사항 확인 (선택)
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+```bash
+git status
+```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+어떤 파일이 변경되었는지 확인
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### 2. 파일 추가 (스테이징, 파일만 올릴경우 . 대신 파일명넣음)
 
-### `npm run eject`
+```bash
+git add .
+```
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+모든 변경사항을 스테이징 영역에 추가
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+### 3. 커밋
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+```bash
+git commit -m "[타입] 설명"
+```
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+변경사항을 커밋 (커밋 메시지 규칙은 CONTRIBUTING.md 참고)
 
-## Learn More
+### 4. 원격 저장소에 푸시
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+```bash
+git push origin main
+```
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+로컬 커밋을 원격 저장소에 업로드
 
-### Code Splitting
+### 한 번에 실행하는 방법
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+```bash
+git add .
+git commit -m "[Refactor] 프로젝트 구조 정리 및 팀 협업 가이드 추가"
+git push origin main
+```
 
-### Analyzing the Bundle Size
+## 코드 컨벤션 및 커밋 규칙
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+- **코드 컨벤션**: 파일명, 컴포넌트명, 함수명 등 코딩 스타일 규칙
+- **커밋 메시지 규칙**: [타입] 설명 형식의 커밋 메시지 작성법
 
-### Making a Progressive Web App
+자세한 내용은 **CONTRIBUTING.md** 파일을 참고하세요.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+## 실행 방법
 
-### Advanced Configuration
+### 개발 서버 실행
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+```bash
+npm start
+```
 
-### Deployment
+브라우저에서 [http://localhost:3000]으로 접속하세요.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+### 기타 명령어 (필요시)
 
-### `npm run build` fails to minify
+```bash
+npm run build  # 배포용 빌드
+npm test       # 테스트 실행
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+## 폴더 구조
 
+```
 vitalfit-frontend/
 │
 ├─ public/ # 정적 파일(HTML, 이미지, favicon 등)
@@ -89,4 +107,23 @@ vitalfit-frontend/
 │
 ├─ .gitignore
 ├─ package.json
-└─ README.md
+├─ README.md
+├─ CONTRIBUTING.md # 코드 컨벤션/커밋 규칙
+├─ API_SPEC.md # API 명세서
+└─ .env.example # 환경변수 예시
+```
+
+## 기술 스택
+
+- React
+- Create React App
+- JavaScript/JSX
+- CSS/SCSS
+
+## 팀 협업 규칙
+
+- .env 파일은 절대 공유 금지
+- PR은 리뷰 후 병합
+- 코드 컨벤션은 CONTRIBUTING.md 참고
+
+---
