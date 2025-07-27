@@ -3,7 +3,7 @@ module.exports = (sequelize, DataTypes) => {
     "Center",
     {
       id: {
-        type: DataTypes.INTEGER.UNSIGNED,
+        type: DataTypes.INTEGER,
         primaryKey: true,
         autoIncrement: true,
       },
@@ -19,6 +19,10 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING(20),
         allowNull: false,
       },
+      description: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
       weekday_hours: {
         type: DataTypes.STRING(50),
         allowNull: true,
@@ -31,37 +35,81 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING(50),
         allowNull: true,
       },
+      holiday_hours: {
+        type: DataTypes.STRING(50),
+        allowNull: true,
+      },
+      has_parking: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+      },
+      parking_fee: {
+        type: DataTypes.STRING(50),
+        allowNull: true,
+      },
       parking_info: {
-        type: DataTypes.STRING(100),
+        type: DataTypes.TEXT,
         allowNull: true,
       },
       directions: {
         type: DataTypes.STRING(200),
         allowNull: true,
       },
-      customer_count: {
-        type: DataTypes.INTEGER,
-        defaultValue: 0,
-      },
-      created_at: {
-        type: DataTypes.DATE,
-        defaultValue: DataTypes.NOW,
-      },
-      updated_at: {
-        type: DataTypes.DATE,
-        defaultValue: DataTypes.NOW,
+      status: {
+        type: DataTypes.ENUM("active", "inactive", "closed"),
+        allowNull: false,
+        defaultValue: "active",
       },
     },
     {
+      timestamps: true, // createdAt, updatedAt 자동 생성
       tableName: "centers",
-      timestamps: false,
-      underscored: true, // created_at → createdAt 자동 매핑 안함, 그대로 사용
     }
   );
 
   Center.associate = function (models) {
-    // 관계 설정 예시 (필요 시)
-    // Center.hasMany(models.Trainer, { foreignKey: 'center_id', as: 'trainers' });
+    // Center has many CenterImages (1:N)
+    Center.hasMany(models.CenterImage, {
+      foreignKey: "center_id",
+      as: "images",
+    });
+
+    // Center has many Users (1:N)
+    Center.hasMany(models.User, {
+      foreignKey: "center_id",
+      as: "users",
+    });
+
+    // Center has many Teams (1:N)
+    Center.hasMany(models.Team, {
+      foreignKey: "center_id",
+      as: "teams",
+    });
+
+    // Center has many Members (1:N)
+    Center.hasMany(models.Member, {
+      foreignKey: "center_id",
+      as: "members",
+    });
+
+    // Center has many Payments (1:N)
+    Center.hasMany(models.Payment, {
+      foreignKey: "center_id",
+      as: "payments",
+    });
+
+    // Center has many PTSessions (1:N)
+    Center.hasMany(models.PTSession, {
+      foreignKey: "center_id",
+      as: "ptSessions",
+    });
+
+    // Center has many MonthlySettlements (1:N)
+    Center.hasMany(models.MonthlySettlement, {
+      foreignKey: "center_id",
+      as: "settlements",
+    });
   };
 
   return Center;
