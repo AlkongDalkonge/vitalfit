@@ -1,12 +1,12 @@
 const path = require("path");
 const express = require("express");
 const models = require("./models"); //Sequelize 모델 및 DB연결
-//const cors = require("cors");   //다른 도메인에서 서버에 안전하게 요청할 수 있도록 허용
+const cors = require("cors");   //다른 도메인에서 서버에 안전하게 요청할 수 있도록 허용
 
 const app = express();
 app.use(express.json()); //라우터전에 있어야합니다.
-// app.use(cors({ origin: "http://localhost:3001", credentials: true }));
-//app.use(cors());
+app.use(cors({ origin: "*", credentials: true }));
+app.use(cors());
 app.use(express.urlencoded({ extended: true })); // 폼 데이터(HTML form 등)나 x-www-form-urlencoded 형식의 요청 바디를 파싱해주는 Express 미들웨어
 
 //파일다운로드
@@ -16,6 +16,7 @@ app.use(express.urlencoded({ extended: true })); // 폼 데이터(HTML form 등)
 //라우터 등록
 //app.use("/api/notice", require("./routes/noticeRoute"));
 app.use("/api/members", require("./routes/memberRoute"));
+app.use("/api/pt-sessions", require("./routes/ptSessionRoute"));
 
 // 404 처리 용도
 app.use((req, res) => {

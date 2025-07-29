@@ -1,6 +1,6 @@
 {
   "development": {
-    "username": "2yuna",
+    "username": "swhr-mac",
     "password": null,
     "database": "vitalfit_dev",
     "host": "127.0.0.1",
@@ -8,7 +8,7 @@
     "port": 5432
   },
   "test": {
-    "username": "2yuna",
+    "username": "swhr-mac",
     "password": null,
     "database": "vitalfit_test",
     "host": "127.0.0.1",
@@ -16,7 +16,7 @@
     "port": 5432
   },
   "production": {
-    "username": "2yuna",
+    "username": "swhr-mac",
     "password": null,
     "database": "vitalfit_prod",
     "host": "127.0.0.1",

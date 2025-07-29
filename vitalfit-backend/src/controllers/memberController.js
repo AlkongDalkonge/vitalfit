@@ -206,10 +206,10 @@ const getAllMembers = async (req, res) => {
       data: {
         members,
         pagination: {
-          currentPage: parseInt(page),
-          totalPages: Math.ceil(count / limit),
-          totalItems: count,
-          itemsPerPage: parseInt(limit),
+          current_page: parseInt(page),
+          total_pages: Math.ceil(count / limit),
+          total_items: count,
+          items_per_page: parseInt(limit),
         },
       },
     });
@@ -274,10 +274,10 @@ const getMembersByCenter = async (req, res) => {
         },
         members,
         pagination: {
-          currentPage: parseInt(page),
-          totalPages: Math.ceil(count / limit),
-          totalItems: count,
-          itemsPerPage: parseInt(limit),
+          current_page: parseInt(page),
+          total_pages: Math.ceil(count / limit),
+          total_items: count,
+          items_per_page: parseInt(limit),
         },
       },
     });
@@ -342,10 +342,10 @@ const getMembersByTrainer = async (req, res) => {
         },
         members,
         pagination: {
-          currentPage: parseInt(page),
-          totalPages: Math.ceil(count / limit),
-          totalItems: count,
-          itemsPerPage: parseInt(limit),
+          current_page: parseInt(page),
+          total_pages: Math.ceil(count / limit),
+          total_items: count,
+          items_per_page: parseInt(limit),
         },
       },
     });
@@ -399,13 +399,13 @@ const getMembersByName = async (req, res) => {
       success: true,
       message: "이름으로 멤버 목록을 성공적으로 조회했습니다.",
       data: {
-        searchName: name,
+        search_name: name,
         members,
         pagination: {
-          currentPage: parseInt(page),
-          totalPages: Math.ceil(count / limit),
-          totalItems: count,
-          itemsPerPage: parseInt(limit),
+          current_page: parseInt(page),
+          total_pages: Math.ceil(count / limit),
+          total_items: count,
+          items_per_page: parseInt(limit),
         },
       },
     });

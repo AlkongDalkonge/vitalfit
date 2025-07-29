@@ -57,8 +57,9 @@ module.exports = (sequelize, DataTypes) => {
       },
     },
     {
-      timestamps: true, // createdAt, updatedAt 자동 생성
+      timestamps: true, // created_at, updated_at 자동 생성
       tableName: "members",
+      underscored: true, // snake_case 사용
       indexes: [
         {
           fields: ["trainer_id"],
@@ -98,7 +99,7 @@ module.exports = (sequelize, DataTypes) => {
     // Member has many PTSessions (1:N)
     Member.hasMany(models.PTSession, {
       foreignKey: "member_id",
-      as: "ptSessions",
+      as: "pt_sessions",
     });
   };
 
