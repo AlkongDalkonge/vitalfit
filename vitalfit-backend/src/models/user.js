@@ -115,6 +115,7 @@ module.exports = (sequelize, DataTypes) => {
     },
     {
       timestamps: true, // createdAt, updatedAt 자동 생성
+      underscored: true,
       tableName: "users",
       indexes: [
         {

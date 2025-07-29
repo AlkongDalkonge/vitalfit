@@ -1,50 +1,51 @@
 "use strict";
 
-const fs = require("fs");
-const path = require("path");
-const Sequelize = require("sequelize");
-const process = require("process");
-const basename = path.basename(__filename);
+// Node.js 기본 모듈 불러오기
+const fs = require("fs"); // 파일 시스템 접근
+const path = require("path"); // 경로 관련 유틸
+const Sequelize = require("sequelize"); // Sequelize ORM
 const env = process.env.NODE_ENV || "development";
-const config = require(__dirname + "/../config/config.js")[env];
-const db = {};
+const config = require("../config/config.js")[env];
+//const config = require(__dirname + "/../config/config.js")[env];
 
-let sequelize;
-if (config.use_env_variable) {
-  sequelize = new Sequelize(process.env[config.use_env_variable], config);
-} else {
-  sequelize = new Sequelize(
-    config.database,
-    config.username,
-    config.password,
-    config
-  );
-}
+const db = {}; // 모델들을 담을 객체
 
+// Sequelize 인스턴스 생성 (DB 연결)
+const { username, password, database, ...options } = config;
+console.log("TESTLOG:::" + username, password, database);
+const sequelize = new Sequelize(database, username, password, options);
+
+// 현재 디렉토리 내 모델 파일(.js)들을 읽어옴
 fs.readdirSync(__dirname)
   .filter((file) => {
-    return (
-      file.indexOf(".") !== 0 &&
-      file !== basename &&
-      file.slice(-3) === ".js" &&
-      file.indexOf(".test.js") === -1
-    );
+    // index.js 자신은 제외하고, .js 확장자 파일만 대상
+    return file !== "index.js" && file.slice(-3) === ".js";
   })
   .forEach((file) => {
-    const model = require(path.join(__dirname, file))(
-      sequelize,
-      Sequelize.DataTypes
-    );
-    db[model.name] = model;
+    // 각 모델 파일 불러오기
+    const modelDefiner = require(path.join(__dirname, file));
+
+    // 불러온 것이 함수(모델 정의 함수)일 경우만 실행
+    if (typeof modelDefiner === "function") {
+      const model = modelDefiner(sequelize, Sequelize.DataTypes); // 모델 정의 실행
+      db[model.name] = model; // db 객체에 등록
+    } else {
+      // 함수가 아니면 경고 로그 출력 (모델 등록 안 됨)
+      console.warn(
+        `❗️ ${file}은 함수가 아닙니다. 모델로 등록되지 않았습니다.`
+      );
+    }
   });
 
+// 모델 간의 관계 설정 (associate 메서드가 있다면 실행)
 Object.keys(db).forEach((modelName) => {
-  if (db[modelName].associate) {
-    db[modelName].associate(db);
+  if (typeof db[modelName].associate === "function") {
+    db[modelName].associate(db); // 관계 정의
   }
 });
 
+// Sequelize 인스턴스와 Sequelize 라이브러리 자체도 함께 export
 db.sequelize = sequelize;
 db.Sequelize = Sequelize;
 
-module.exports = db;
+module.exports = db; // db 객체 전체를 외부로 내보냄
