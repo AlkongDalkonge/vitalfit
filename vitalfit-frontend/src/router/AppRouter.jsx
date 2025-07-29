@@ -1,13 +1,12 @@
-import React from 'react';
+import React from "react";
 import { Routes, Route } from "react-router-dom";
 
-// 페이지 컴포넌트들 import
 import DashboardPage from "../pages/DashboardPage";
-import BranchPage from "../pages/BranchPage";
-import StaffPage from "../pages/StaffPage";
-import CustomerPage from "../pages/CustomerPage";
-import SettlementPage from "../pages/SettlementPage";
-import NotificationPage from "../pages/NotificationPage";
+import CenterPage from "../pages/CenterPage";
+import UserPage from "../pages/UserPage";
+import MemberPage from "../pages/MemberPage";
+import PaymentPage from "../pages/PaymentPage";
+import NoticePage from "../pages/NoticePage";
 import ReportPage from "../pages/ReportPage";
 import AccountPage from "../pages/AccountPage";
 
@@ -15,15 +14,15 @@ const AppRouter = () => {
   return (
     <Routes>
       <Route path="/" element={<DashboardPage />} />
-      <Route path="/branch" element={<BranchPage />} />
-      <Route path="/staff" element={<StaffPage />} />
-      <Route path="/customer" element={<CustomerPage />} />
-      <Route path="/settlement" element={<SettlementPage />} />
-      <Route path="/notification" element={<NotificationPage />} />
+      <Route path="/center" element={<CenterPage />} />
+      <Route path="/user" element={<UserPage />} />
+      <Route path="/member" element={<MemberPage />} />
+      <Route path="/payment" element={<PaymentPage />} />
+      <Route path="/notice" element={<NoticePage />} />
       <Route path="/report" element={<ReportPage />} />
       <Route path="/account" element={<AccountPage />} />
     </Routes>
   );
 };
 
-export default AppRouter; 
+export default AppRouter;

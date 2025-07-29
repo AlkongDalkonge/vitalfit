@@ -1,6 +1,6 @@
 const path = require("path");
 const express = require("express");
-const models = require("./src/models"); //Sequelize 모델 및 DB연결
+const models = require("./models"); //Sequelize 모델 및 DB연결
 //const cors = require("cors");   //다른 도메인에서 서버에 안전하게 요청할 수 있도록 허용
 
 const app = express();
@@ -13,11 +13,9 @@ app.use(express.urlencoded({ extended: true })); // 폼 데이터(HTML form 등)
 // const uploadDir = `public/uploads`;
 // app.use(`/downloads`, express.static(path.join(__dirname, uploadDir)));
 
-//라우터 파일불러오기
-const noticeRouter = require("../src/routes/noticeRouter");
-
 //라우터 등록
-app.use("/notice", noticeRouter);
+//app.use("/api/notice", require("./routes/noticeRoute"));
+app.use("/api/members", require("./routes/memberRoute"));
 
 // 404 처리 용도
 app.use((req, res) => {
