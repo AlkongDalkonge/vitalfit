@@ -93,10 +93,6 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING(100),
         allowNull: true,
       },
-      shift: {
-        type: DataTypes.STRING(100),
-        allowNull: true,
-      },
       last_login_at: {
         type: DataTypes.DATE,
         allowNull: true,
