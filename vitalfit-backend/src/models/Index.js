@@ -1,11 +1,12 @@
 "use strict";
 
-// Node.js 기본 모듈 불러오기
-const fs = require("fs"); // 파일 시스템 접근
-const path = require("path"); // 경로 관련 유틸
-const Sequelize = require("sequelize"); // Sequelize ORM
+const fs = require("fs");
+const path = require("path");
+const Sequelize = require("sequelize");
+const process = require("process");
+const basename = path.basename(__filename);
 const env = process.env.NODE_ENV || "development";
-const config = require(__dirname + "/../config/config.js")[env];
+const config = require(__dirname + "/../../config/config.json")[env];
 const db = {};
 
 let sequelize;
@@ -30,30 +31,20 @@ fs.readdirSync(__dirname)
     );
   })
   .forEach((file) => {
-    // 각 모델 파일 불러오기
-    const modelDefiner = require(path.join(__dirname, file));
-
-    // 불러온 것이 함수(모델 정의 함수)일 경우만 실행
-    if (typeof modelDefiner === "function") {
-      const model = modelDefiner(sequelize, Sequelize.DataTypes); // 모델 정의 실행
-      db[model.name] = model; // db 객체에 등록
-    } else {
-      // 함수가 아니면 경고 로그 출력 (모델 등록 안 됨)
-      console.warn(
-        `❗️ ${file}은 함수가 아닙니다. 모델로 등록되지 않았습니다.`
-      );
-    }
+    const model = require(path.join(__dirname, file))(
+      sequelize,
+      Sequelize.DataTypes
+    );
+    db[model.name] = model;
   });
 
-// 모델 간의 관계 설정 (associate 메서드가 있다면 실행)
 Object.keys(db).forEach((modelName) => {
-  if (typeof db[modelName].associate === "function") {
-    db[modelName].associate(db); // 관계 정의
+  if (db[modelName].associate) {
+    db[modelName].associate(db);
   }
 });
 
-// Sequelize 인스턴스와 Sequelize 라이브러리 자체도 함께 export
 db.sequelize = sequelize;
 db.Sequelize = Sequelize;
 
-module.exports = db; // db 객체 전체를 외부로 내보냄
+module.exports = db;

@@ -43,7 +43,7 @@ app.use(errorHandler);
 const PORT = process.env.SERVER_PORT || 3000;
 
 sequelize
-  .sync({ force: false })
+  .sync({ force: true })
   .then(() => {
     console.log("DB 테이블 생성 완료!");
     app.listen(PORT, () => {
