@@ -19,6 +19,23 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.TEXT,
         allowNull: false,
       },
+      parent_id: {
+        type: DataTypes.INTEGER,
+        allowNull: true, // null이면 최상위 댓글
+        references: {
+          model: "notice_comments",
+          key: "id",
+        },
+      },
+      depth: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0, // 0: 댓글, 1: 대댓글, 2: 대대댓글, 3: 최대 깊이
+        validate: {
+          min: 0,
+          max: 3,
+        },
+      },
     },
     {
       timestamps: true, // createdAt, updatedAt 자동 생성
@@ -52,6 +69,19 @@ module.exports = (sequelize, DataTypes) => {
     NoticeComment.belongsTo(models.User, {
       foreignKey: "user_id",
       as: "author",
+    });
+
+    // 대댓글 자기 참조 관계
+    // NoticeComment belongs to NoticeComment (N:1) - 부모 댓글
+    NoticeComment.belongsTo(models.NoticeComment, {
+      foreignKey: "parent_id",
+      as: "parent",
+    });
+
+    // NoticeComment has many NoticeComments (1:N) - 자식 댓글들
+    NoticeComment.hasMany(models.NoticeComment, {
+      foreignKey: "parent_id",
+      as: "replies",
     });
   };
 
