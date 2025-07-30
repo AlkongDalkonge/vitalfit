@@ -16,6 +16,9 @@ const app = express();
 // 미들웨어 등록
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// 정적 파일 서빙 (파일 다운로드용)
+app.use("/uploads", express.static("public/uploads"));
 // origin: "*" + credentials: true 는 사실 브라우저에서 보안 정책 때문에 같이 쓰면 안 되는 조합임.
 // 만약 인증 쿠키(credential)를 쓸 거면, origin을 특정 도메인으로 제한하는 게 좋아.
 // 당장은 문제 없지만 배포할 땐 이 점 고려해줘!

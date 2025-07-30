@@ -2,18 +2,36 @@ const express = require("express");
 const router = express.Router();
 const noticeController = require("../controllers/noticeController");
 const { validateIdParam } = require("../middlewares/validateIdParam");
+const {
+  uploadSingle,
+  handleUploadError,
+  processUploadedFile,
+} = require("../middlewares/fileUpload");
 
 // 공지사항 목록 조회
 router.get("/", noticeController.getNotices);
 
-// 공지사항 작성
-router.post("/", noticeController.createNotice);
+// 공지사항 작성 (파일 업로드 지원)
+router.post(
+  "/",
+  uploadSingle,
+  handleUploadError,
+  processUploadedFile,
+  noticeController.createNotice
+);
 
 // 공지사항 상세 조회
 router.get("/:id", validateIdParam, noticeController.getNoticeById);
 
-// 공지사항 수정
-router.put("/:id", validateIdParam, noticeController.updateNotice);
+// 공지사항 수정 (파일 업로드 지원)
+router.put(
+  "/:id",
+  validateIdParam,
+  uploadSingle,
+  handleUploadError,
+  processUploadedFile,
+  noticeController.updateNotice
+);
 
 // 공지사항 삭제
 router.delete("/:id", validateIdParam, noticeController.deleteNotice);
@@ -39,5 +57,10 @@ router.delete(
   validateIdParam,
   noticeController.deleteComment
 );
+
+// ========== 파일 관련 라우트 ==========
+
+// 파일 다운로드
+router.get("/:id/download", validateIdParam, noticeController.downloadFile);
 
 module.exports = router;

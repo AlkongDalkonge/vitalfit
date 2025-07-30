@@ -1,6 +1,20 @@
 const { Notice, NoticeComment, User } = require("../models");
 const { Op } = require("sequelize");
 const Joi = require("joi");
+const path = require("path");
+const fs = require("fs");
+
+// 파일 삭제 유틸리티 함수
+const deleteFile = (filePath) => {
+  try {
+    if (filePath && fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+      console.log(`파일 삭제 완료: ${filePath}`);
+    }
+  } catch (err) {
+    console.error(`파일 삭제 실패: ${filePath}`, err);
+  }
+};
 
 // Joi 스키마: GET /api/notices 목록조회
 const getNoticesSchema = Joi.object({
@@ -19,6 +33,8 @@ const createNoticeSchema = Joi.object({
   receiver_role: Joi.string().optional(),
   is_important: Joi.boolean().optional(),
   pin_until: Joi.date().iso().optional(),
+  attachment_name: Joi.string().optional(),
+  attachment_url: Joi.string().optional(),
 });
 
 // Joi 스키마: GET /api/notices 상세보기
@@ -35,6 +51,8 @@ const updateNoticeSchema = Joi.object({
   receiver_role: Joi.string().optional().allow(null, ""),
   is_important: Joi.boolean().optional(),
   pin_until: Joi.date().iso().optional().allow(null),
+  attachment_name: Joi.string().optional().allow(null, ""),
+  attachment_url: Joi.string().optional().allow(null, ""),
 }).min(1); // 최소 1개 필드는 있어야 함
 
 // Joi 스키마 : 삭제
@@ -197,7 +215,21 @@ exports.updateNotice = async (req, res) => {
       });
     }
 
-    // 4) 업데이트 (검증된 데이터만)
+    // 4) 새 파일이 업로드된 경우 기존 파일 삭제
+    if (
+      validatedBody.attachment_url &&
+      notice.attachment_url &&
+      notice.attachment_url !== validatedBody.attachment_url
+    ) {
+      const oldFilePath = path.join(
+        __dirname,
+        "../../public",
+        notice.attachment_url
+      );
+      deleteFile(oldFilePath);
+    }
+
+    // 5) 업데이트 (검증된 데이터만)
     await notice.update(validatedBody);
 
     // 5) 수정된 데이터 응답 (updatedAt 제외)
@@ -234,6 +266,17 @@ exports.deleteNotice = async (req, res) => {
         message: "공지사항을 찾을 수 없습니다.",
       });
     }
+
+    // 첨부파일이 있으면 파일도 함께 삭제
+    if (notice.attachment_url) {
+      const filePath = path.join(
+        __dirname,
+        "../../public",
+        notice.attachment_url
+      );
+      deleteFile(filePath);
+    }
+
     await notice.destroy();
     res.json({
       success: true,
@@ -603,6 +646,81 @@ exports.deleteComment = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "댓글 삭제 실패",
+      details: err.message,
+    });
+  }
+};
+
+// ========== 파일 관련 API ==========
+
+/**
+ * 공지사항 첨부파일 다운로드
+ * GET /api/notices/:id/download
+ */
+exports.downloadFile = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // 공지사항 조회
+    const notice = await Notice.findByPk(id);
+    if (!notice) {
+      return res.status(404).json({
+        success: false,
+        message: "해당 공지사항을 찾을 수 없습니다.",
+      });
+    }
+
+    // 첨부파일이 없는 경우
+    if (!notice.attachment_name || !notice.attachment_url) {
+      return res.status(404).json({
+        success: false,
+        message: "첨부파일이 없습니다.",
+      });
+    }
+
+    const path = require("path");
+    const fs = require("fs");
+
+    // 파일 경로 생성
+    const filePath = path.join(
+      __dirname,
+      "../../public",
+      notice.attachment_url
+    );
+
+    // 파일 존재 여부 확인
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({
+        success: false,
+        message: "파일을 찾을 수 없습니다.",
+      });
+    }
+
+    // 파일 다운로드 응답 설정
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${encodeURIComponent(notice.attachment_name)}"`
+    );
+    res.setHeader("Content-Type", "application/octet-stream");
+
+    // 파일 스트림으로 전송
+    const fileStream = fs.createReadStream(filePath);
+    fileStream.pipe(res);
+
+    fileStream.on("error", (err) => {
+      console.error("파일 다운로드 중 오류:", err);
+      if (!res.headersSent) {
+        res.status(500).json({
+          success: false,
+          message: "파일 다운로드 중 오류가 발생했습니다.",
+        });
+      }
+    });
+  } catch (err) {
+    console.error("파일 다운로드 실패:", err);
+    res.status(500).json({
+      success: false,
+      message: "파일 다운로드 실패",
       details: err.message,
     });
   }
