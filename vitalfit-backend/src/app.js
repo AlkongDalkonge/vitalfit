@@ -1,28 +1,33 @@
 require("dotenv").config();
 
 const express = require("express");
-const cors = require("cors"); //다른 도메인에서 서버에 안전하게 요청할 수 있도록 허용
+const cors = require("cors");
 const morgan = require("morgan");
 
-const noticeRouter = require("./routes/noticeRouter"); // 경로 확인 필요
-const { sequelize } = require("./models"); // DB 연결 확인용
-const errorHandler = require("./middlewares/errorHandler"); // 에러 처리 미들웨어
-const models = require("./models"); //Sequelize 모델 및 DB연결
+const noticeRouter = require("./routes/noticeRouter");
+const memberRouter = require("./routes/memberRoute");
+const ptSessionRouter = require("./routes/ptSessionRoute");
+
+const { sequelize } = require("./models");
+const errorHandler = require("./middlewares/errorHandler");
+
 const app = express();
 
 // 미들웨어 등록
-app.use(express.json()); //라우터전에 있어야합니다.
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+// origin: "*" + credentials: true 는 사실 브라우저에서 보안 정책 때문에 같이 쓰면 안 되는 조합임.
+// 만약 인증 쿠키(credential)를 쓸 거면, origin을 특정 도메인으로 제한하는 게 좋아.
+// 당장은 문제 없지만 배포할 땐 이 점 고려해줘!
 app.use(cors({ origin: "*", credentials: true }));
-app.use(cors());
 app.use(morgan("dev"));
-app.use(express.urlencoded({ extended: true })); // 폼 데이터(HTML form 등)나 x-www-form-urlencoded 형식의 요청 바디를 파싱해주는 Express 미들웨어
 
 // 라우터 등록
 app.use("/api/notices", noticeRouter);
-app.use("/api/members", require("./routes/memberRoute"));
-app.use("/api/pt-sessions", require("./routes/ptSessionRoute"));
+app.use("/api/members", memberRouter);
+app.use("/api/pt-sessions", ptSessionRouter);
 
-// 404 처리 - 미들웨어 마지막에 위치
+// 404 처리
 app.use((req, res) => {
   res.status(404).json({
     success: false,
@@ -34,11 +39,11 @@ app.use((req, res) => {
 // 에러 핸들링 미들웨어
 app.use(errorHandler);
 
-// DB 연결 확인 후 서버 실행
+// DB 연결 및 서버 실행
 const PORT = process.env.SERVER_PORT || 3000;
 
 sequelize
-  .sync({ force: false }) //DB 생성
+  .sync({ force: false })
   .then(() => {
     console.log("DB 테이블 생성 완료!");
     app.listen(PORT, () => {
