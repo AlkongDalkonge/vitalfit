@@ -170,15 +170,21 @@ const updateMember = async (req, res) => {
   }
 };
 
-// 전체 멤버 조회
+// 멤버 전체 조회 (센터별, 트레이너별 필터링 포함)
 const getAllMembers = async (req, res) => {
   try {
-    const { page = 1, limit = 10, status } = req.query;
+    const { page = 1, limit = 10, status, centerId, trainerId } = req.query;
     const offset = (page - 1) * limit;
 
     const whereClause = {};
     if (status) {
       whereClause.status = status;
+    }
+    if (centerId) {
+      whereClause.center_id = centerId;
+    }
+    if (trainerId) {
+      whereClause.trainer_id = trainerId;
     }
 
     const { count, rows: members } = await Member.findAndCountAll({
@@ -197,7 +203,7 @@ const getAllMembers = async (req, res) => {
       ],
       limit: parseInt(limit),
       offset: parseInt(offset),
-      order: [["createdAt", "DESC"]],
+      order: [["createdAt", "DESC"]], // 최근 등록순
     });
 
     res.json({
@@ -427,7 +433,7 @@ const createDummyCenterAndUser = async (req, res) => {
       where: { id: 1 },
       defaults: {
         name: "테스트센터",
-        location: "강남",
+
         address: "서울시 강남구",
         phone: "02-1234-5678",
       },
@@ -469,8 +475,5 @@ module.exports = {
   createMember,
   updateMember,
   getAllMembers,
-  getMembersByCenter,
-  getMembersByTrainer,
-  getMembersByName,
   createDummyCenterAndUser,
 };

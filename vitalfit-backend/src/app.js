@@ -27,7 +27,7 @@ app.use(morgan("dev"));
 
 // 라우터 등록
 app.use("/api/notices", noticeRouter);
-app.use("/api/members", memberRouter);
+app.use("/api/member", memberRouter);
 app.use("/api/pt-sessions", ptSessionRouter);
 
 // 404 처리
