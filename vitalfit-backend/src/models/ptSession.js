@@ -48,11 +48,16 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.TEXT,
         allowNull: true,
       },
+      idempotency_key: {
+        type: DataTypes.STRING(255),
+        allowNull: true,
+        unique: true,
+      },
     },
     {
       timestamps: true, // createdAt, updatedAt 자동 생성
-      underscored: true,
       tableName: "pt_sessions",
+      underscored: true, // snake_case 사용
       indexes: [
         {
           fields: ["session_date"],
@@ -71,6 +76,9 @@ module.exports = (sequelize, DataTypes) => {
         },
         {
           fields: ["member_id", "session_date"],
+        },
+        {
+          fields: ["idempotency_key"],
         },
       ],
     }

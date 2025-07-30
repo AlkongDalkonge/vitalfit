@@ -5,21 +5,29 @@ const fs = require("fs"); // 파일 시스템 접근
 const path = require("path"); // 경로 관련 유틸
 const Sequelize = require("sequelize"); // Sequelize ORM
 const env = process.env.NODE_ENV || "development";
-const config = require("../config/config.js")[env];
-//const config = require(__dirname + "/../config/config.js")[env];
+const config = require(__dirname + "/../config/config.js")[env];
+const db = {};
 
-const db = {}; // 모델들을 담을 객체
+let sequelize;
+if (config.use_env_variable) {
+  sequelize = new Sequelize(process.env[config.use_env_variable], config);
+} else {
+  sequelize = new Sequelize(
+    config.database,
+    config.username,
+    config.password,
+    config
+  );
+}
 
-// Sequelize 인스턴스 생성 (DB 연결)
-const { username, password, database, ...options } = config;
-console.log("TESTLOG:::" + username, password, database);
-const sequelize = new Sequelize(database, username, password, options);
-
-// 현재 디렉토리 내 모델 파일(.js)들을 읽어옴
 fs.readdirSync(__dirname)
   .filter((file) => {
-    // index.js 자신은 제외하고, .js 확장자 파일만 대상
-    return file !== "index.js" && file.slice(-3) === ".js";
+    return (
+      file.indexOf(".") !== 0 &&
+      file !== basename &&
+      file.slice(-3) === ".js" &&
+      file.indexOf(".test.js") === -1
+    );
   })
   .forEach((file) => {
     // 각 모델 파일 불러오기

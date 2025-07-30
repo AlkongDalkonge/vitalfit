@@ -7,7 +7,7 @@ module.exports = (sequelize, DataTypes) => {
         primaryKey: true,
         autoIncrement: true,
       },
-      role: {
+      position: {
         type: DataTypes.ENUM("center_manager", "team_leader", "team_member"),
         allowNull: false,
       },
