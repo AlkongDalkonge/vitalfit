@@ -36,13 +36,13 @@ module.exports = (sequelize, DataTypes) => {
         defaultValue: false,
       },
       role: {
-        type: DataTypes.ENUM("trainer", "manager", "admin"),
+        type: DataTypes.ENUM(
+          "admin",
+          "center_manager",
+          "trainer_leader",
+          "trainer"
+        ),
         allowNull: false,
-      },
-      position: {
-        type: DataTypes.ENUM("center_manager", "team_leader", "team_member"),
-        allowNull: false,
-        defaultValue: "team_member",
       },
       team_id: {
         type: DataTypes.INTEGER,
@@ -128,16 +128,10 @@ module.exports = (sequelize, DataTypes) => {
           fields: ["team_id"],
         },
         {
-          fields: ["position"],
-        },
-        {
           fields: ["role"],
         },
         {
           fields: ["status"],
-        },
-        {
-          fields: ["center_id", "position"],
         },
       ],
     }
