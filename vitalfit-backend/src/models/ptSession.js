@@ -1,6 +1,6 @@
 module.exports = (sequelize, DataTypes) => {
   const PTSession = sequelize.define(
-    "PTSession",
+    'PTSession',
     {
       id: {
         type: DataTypes.INTEGER,
@@ -32,9 +32,9 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: true,
       },
       session_type: {
-        type: DataTypes.ENUM("regular", "free"),
+        type: DataTypes.ENUM('regular', 'free'),
         allowNull: false,
-        defaultValue: "regular",
+        defaultValue: 'regular',
       },
       signature_data: {
         type: DataTypes.TEXT,
@@ -56,29 +56,29 @@ module.exports = (sequelize, DataTypes) => {
     },
     {
       timestamps: true, // createdAt, updatedAt 자동 생성
-      tableName: "pt_sessions",
+      tableName: 'pt_sessions',
       underscored: true, // snake_case 사용
       indexes: [
         {
-          fields: ["session_date"],
+          fields: ['session_date'],
         },
         {
-          fields: ["trainer_id"],
+          fields: ['trainer_id'],
         },
         {
-          fields: ["member_id"],
+          fields: ['member_id'],
         },
         {
-          fields: ["center_id"],
+          fields: ['center_id'],
         },
         {
-          fields: ["trainer_id", "session_date"],
+          fields: ['trainer_id', 'session_date'],
         },
         {
-          fields: ["member_id", "session_date"],
+          fields: ['member_id', 'session_date'],
         },
         {
-          fields: ["idempotency_key"],
+          fields: ['idempotency_key'],
         },
       ],
     }
@@ -87,20 +87,20 @@ module.exports = (sequelize, DataTypes) => {
   PTSession.associate = function (models) {
     // PTSession belongs to Member (N:1)
     PTSession.belongsTo(models.Member, {
-      foreignKey: "member_id",
-      as: "member",
+      foreignKey: 'member_id',
+      as: 'member',
     });
 
     // PTSession belongs to User (N:1) - 담당 트레이너
     PTSession.belongsTo(models.User, {
-      foreignKey: "trainer_id",
-      as: "trainer",
+      foreignKey: 'trainer_id',
+      as: 'trainer',
     });
 
     // PTSession belongs to Center (N:1)
     PTSession.belongsTo(models.Center, {
-      foreignKey: "center_id",
-      as: "center",
+      foreignKey: 'center_id',
+      as: 'center',
     });
   };
 

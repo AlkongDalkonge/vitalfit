@@ -14,7 +14,7 @@ export const useDate = () => {
     const tomorrow = new Date(now);
     tomorrow.setDate(tomorrow.getDate() + 1);
     tomorrow.setHours(0, 0, 0, 0);
-    
+
     const timeUntilMidnight = tomorrow.getTime() - now.getTime();
 
     // 다음 자정에 타이머 설정
@@ -47,7 +47,7 @@ export const useDate = () => {
     return currentDate.toLocaleTimeString('ko-KR', {
       hour: '2-digit',
       minute: '2-digit',
-      second: '2-digit'
+      second: '2-digit',
     });
   };
 
@@ -56,6 +56,6 @@ export const useDate = () => {
     getFormattedDate,
     getISODate,
     getDayOfWeek,
-    getCurrentTime
+    getCurrentTime,
   };
-}; 
+};

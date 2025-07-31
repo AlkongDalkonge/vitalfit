@@ -4,8 +4,8 @@ module.exports = (err, req, res, next) => {
 
   res.status(err.status || 500).json({
     success: false,
-    message: err.message || "서버 내부 오류가 발생했습니다.",
+    message: err.message || '서버 내부 오류가 발생했습니다.',
     // 필요하면 개발 중에만 에러 상세정보도 함께 볼수있음
-    details: process.env.NODE_ENV === "production" ? undefined : err.stack,
+    details: process.env.NODE_ENV === 'production' ? undefined : err.stack,
   });
 };

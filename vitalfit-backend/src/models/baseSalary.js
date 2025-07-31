@@ -1,6 +1,6 @@
 module.exports = (sequelize, DataTypes) => {
   const BaseSalary = sequelize.define(
-    "BaseSalary",
+    'BaseSalary',
     {
       id: {
         type: DataTypes.INTEGER,
@@ -8,7 +8,7 @@ module.exports = (sequelize, DataTypes) => {
         autoIncrement: true,
       },
       position: {
-        type: DataTypes.ENUM("center_manager", "team_leader", "team_member"),
+        type: DataTypes.ENUM('center_manager', 'team_leader', 'team_member'),
         allowNull: false,
       },
       base_amount: {
@@ -23,7 +23,7 @@ module.exports = (sequelize, DataTypes) => {
     {
       timestamps: true, // createdAt, updatedAt 자동 생성
       underscored: true,
-      tableName: "base_salaries",
+      tableName: 'base_salaries',
     }
   );
 

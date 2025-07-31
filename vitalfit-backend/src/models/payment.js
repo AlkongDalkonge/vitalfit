@@ -1,6 +1,6 @@
 module.exports = (sequelize, DataTypes) => {
   const Payment = sequelize.define(
-    "Payment",
+    'Payment',
     {
       id: {
         type: DataTypes.INTEGER,
@@ -47,22 +47,22 @@ module.exports = (sequelize, DataTypes) => {
     {
       timestamps: true, // createdAt, updatedAt 자동 생성
       underscored: true,
-      tableName: "payments",
+      tableName: 'payments',
       indexes: [
         {
-          fields: ["trainer_id"],
+          fields: ['trainer_id'],
         },
         {
-          fields: ["member_id"],
+          fields: ['member_id'],
         },
         {
-          fields: ["center_id"],
+          fields: ['center_id'],
         },
         {
-          fields: ["payment_date"],
+          fields: ['payment_date'],
         },
         {
-          fields: ["trainer_id", "payment_date"],
+          fields: ['trainer_id', 'payment_date'],
         },
       ],
     }
@@ -71,20 +71,20 @@ module.exports = (sequelize, DataTypes) => {
   Payment.associate = function (models) {
     // Payment belongs to Member (N:1)
     Payment.belongsTo(models.Member, {
-      foreignKey: "member_id",
-      as: "member",
+      foreignKey: 'member_id',
+      as: 'member',
     });
 
     // Payment belongs to User (N:1) - 담당 트레이너
     Payment.belongsTo(models.User, {
-      foreignKey: "trainer_id",
-      as: "trainer",
+      foreignKey: 'trainer_id',
+      as: 'trainer',
     });
 
     // Payment belongs to Center (N:1)
     Payment.belongsTo(models.Center, {
-      foreignKey: "center_id",
-      as: "center",
+      foreignKey: 'center_id',
+      as: 'center',
     });
   };
 

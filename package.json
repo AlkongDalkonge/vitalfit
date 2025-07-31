@@ -1,9 +1,31 @@
 {
+  "scripts": {
+    "lint": "eslint vitalfit-frontend/src/ vitalfit-backend/src/",
+    "lint:fix": "eslint --fix vitalfit-frontend/src/ vitalfit-backend/src/",
+    "format": "prettier --write \"vitalfit-frontend/src/**/*.{js,jsx}\" \"vitalfit-backend/src/**/*.js\"",
+    "format:check": "prettier --check \"vitalfit-frontend/src/**/*.{js,jsx}\" \"vitalfit-backend/src/**/*.js\"",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "vitalfit-frontend/src/**/*.{js,jsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "vitalfit-backend/src/**/*.js": [
+      "eslint --fix",
+      "prettier --write"
+    ]
+  },
   "devDependencies": {
     "@eslint/js": "^9.32.0",
     "@tailwindcss/postcss": "^4.1.11",
-    "eslint": "^9.32.0",
+    "eslint": "^8.57.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.3",
     "eslint-plugin-react": "^7.37.5",
-    "globals": "^16.3.0"
+    "globals": "^16.3.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.4.1",
+    "prettier": "^3.6.2"
   }
 }

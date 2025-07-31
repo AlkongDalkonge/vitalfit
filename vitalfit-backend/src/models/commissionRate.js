@@ -1,6 +1,6 @@
 module.exports = (sequelize, DataTypes) => {
   const CommissionRate = sequelize.define(
-    "CommissionRate",
+    'CommissionRate',
     {
       id: {
         type: DataTypes.INTEGER,
@@ -32,7 +32,7 @@ module.exports = (sequelize, DataTypes) => {
     {
       timestamps: true, // createdAt, updatedAt 자동 생성
       underscored: true,
-      tableName: "commission_rates",
+      tableName: 'commission_rates',
     }
   );
 

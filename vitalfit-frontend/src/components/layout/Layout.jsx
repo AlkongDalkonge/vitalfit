@@ -1,12 +1,11 @@
-import Header from "./Header";
-import Sidebar from "./Sidebar";
-import Footer from "./Footer";
-import AppRouter from "../../router/AppRouter";
-import { useNavigation } from "../../utils/hooks";
+import Header from './Header';
+import Sidebar from './Sidebar';
+import Footer from './Footer';
+import AppRouter from '../../router/AppRouter';
+import { useNavigation } from '../../utils/hooks';
 
 export default function Layout() {
-  const { activeMenu, handleMenuClick, handleLogoClick, userInfo } =
-    useNavigation();
+  const { activeMenu, handleMenuClick, handleLogoClick, userInfo } = useNavigation();
 
   return (
     <div className="flex h-screen bg-white overflow-hidden">

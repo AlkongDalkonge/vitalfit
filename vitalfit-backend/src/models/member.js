@@ -1,6 +1,6 @@
 module.exports = (sequelize, DataTypes) => {
   const Member = sequelize.define(
-    "Member",
+    'Member',
     {
       id: {
         type: DataTypes.INTEGER,
@@ -51,27 +51,27 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: true,
       },
       status: {
-        type: DataTypes.ENUM("active", "inactive", "expired", "withdrawn"),
+        type: DataTypes.ENUM('active', 'inactive', 'expired', 'withdrawn'),
         allowNull: false,
-        defaultValue: "active",
+        defaultValue: 'active',
       },
     },
     {
       timestamps: true, // createdAt, updatedAt 자동 생성
-      tableName: "members",
+      tableName: 'members',
       underscored: true, // snake_case 사용
       indexes: [
         {
-          fields: ["trainer_id"],
+          fields: ['trainer_id'],
         },
         {
-          fields: ["center_id"],
+          fields: ['center_id'],
         },
         {
-          fields: ["status"],
+          fields: ['status'],
         },
         {
-          fields: ["trainer_id", "status"],
+          fields: ['trainer_id', 'status'],
         },
       ],
     }
@@ -80,26 +80,26 @@ module.exports = (sequelize, DataTypes) => {
   Member.associate = function (models) {
     // Member belongs to Center (N:1)
     Member.belongsTo(models.Center, {
-      foreignKey: "center_id",
-      as: "center",
+      foreignKey: 'center_id',
+      as: 'center',
     });
 
     // Member belongs to User (N:1) - 담당 트레이너
     Member.belongsTo(models.User, {
-      foreignKey: "trainer_id",
-      as: "trainer",
+      foreignKey: 'trainer_id',
+      as: 'trainer',
     });
 
     // Member has many Payments (1:N)
     Member.hasMany(models.Payment, {
-      foreignKey: "member_id",
-      as: "payments",
+      foreignKey: 'member_id',
+      as: 'payments',
     });
 
     // Member has many PTSessions (1:N)
     Member.hasMany(models.PTSession, {
-      foreignKey: "member_id",
-      as: "pt_sessions",
+      foreignKey: 'member_id',
+      as: 'pt_sessions',
     });
   };
 

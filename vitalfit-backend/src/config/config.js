@@ -1,4 +1,4 @@
-require("dotenv").config();
+require('dotenv').config();
 console.log(process.env.DB_USERNAME);
 module.exports = {
   // 환경변수 사용 (보안상 권장)
@@ -7,7 +7,7 @@ module.exports = {
     password: process.env.DB_PASSWORD,
     database: process.env.DB_DATABASE,
     host: process.env.DB_HOST,
-    dialect: "postgres",
+    dialect: 'postgres',
     port: process.env.DB_PORT,
   },
   // development: {
@@ -19,17 +19,17 @@ module.exports = {
   //   port: 5432,
   // },
   test: {
-    username: "root",
+    username: 'root',
     password: null,
-    database: "database_test",
-    host: "127.0.0.1",
-    dialect: "mysql",
+    database: 'database_test',
+    host: '127.0.0.1',
+    dialect: 'mysql',
   },
   production: {
-    username: "root",
+    username: 'root',
     password: null,
-    database: "database_production",
-    host: "127.0.0.1",
-    dialect: "mysql",
+    database: 'database_production',
+    host: '127.0.0.1',
+    dialect: 'mysql',
   },
 };

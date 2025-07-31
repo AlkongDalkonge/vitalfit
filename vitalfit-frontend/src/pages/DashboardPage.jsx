@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react';
 import {
   FaUsers,
   FaBuilding,
@@ -6,74 +6,74 @@ import {
   FaChartLine,
   FaBell,
   FaCalendarAlt,
-} from "react-icons/fa";
+} from 'react-icons/fa';
 
 const DashboardPage = () => {
   const stats = [
     {
-      title: "총 직원 수",
-      value: "24명",
+      title: '총 직원 수',
+      value: '24명',
       icon: FaUsers,
-      color: "#3b82f6",
-      change: "+2명",
-      changeType: "increase",
+      color: '#3b82f6',
+      change: '+2명',
+      changeType: 'increase',
     },
     {
-      title: "총 지점 수",
-      value: "8개",
+      title: '총 지점 수',
+      value: '8개',
       icon: FaBuilding,
-      color: "#10b981",
-      change: "+1개",
-      changeType: "increase",
+      color: '#10b981',
+      change: '+1개',
+      changeType: 'increase',
     },
     {
-      title: "총 고객 수",
-      value: "1,234명",
+      title: '총 고객 수',
+      value: '1,234명',
       icon: FaUserFriends,
-      color: "#f59e0b",
-      change: "+45명",
-      changeType: "increase",
+      color: '#f59e0b',
+      change: '+45명',
+      changeType: 'increase',
     },
     {
-      title: "이번 달 매출",
-      value: "₩45,678,000",
+      title: '이번 달 매출',
+      value: '₩45,678,000',
       icon: FaChartLine,
-      color: "#ef4444",
-      change: "+12%",
-      changeType: "increase",
+      color: '#ef4444',
+      change: '+12%',
+      changeType: 'increase',
     },
   ];
 
   const recentActivities = [
     {
       id: 1,
-      message: "김철수 직원이 강남센터에 배정되었습니다.",
-      time: "10분 전",
-      type: "staff",
+      message: '김철수 직원이 강남센터에 배정되었습니다.',
+      time: '10분 전',
+      type: 'staff',
     },
     {
       id: 2,
-      message: "새로운 고객 5명이 등록되었습니다.",
-      time: "30분 전",
-      type: "customer",
+      message: '새로운 고객 5명이 등록되었습니다.',
+      time: '30분 전',
+      type: 'customer',
     },
     {
       id: 3,
-      message: "서초센터 매출이 목표를 달성했습니다.",
-      time: "1시간 전",
-      type: "sales",
+      message: '서초센터 매출이 목표를 달성했습니다.',
+      time: '1시간 전',
+      type: 'sales',
     },
     {
       id: 4,
-      message: "홍대센터에서 새로운 공지사항이 등록되었습니다.",
-      time: "2시간 전",
-      type: "notice",
+      message: '홍대센터에서 새로운 공지사항이 등록되었습니다.',
+      time: '2시간 전',
+      type: 'notice',
     },
     {
       id: 5,
-      message: "월간 리포트가 생성되었습니다.",
-      time: "3시간 전",
-      type: "report",
+      message: '월간 리포트가 생성되었습니다.',
+      time: '3시간 전',
+      type: 'report',
     },
   ];
 
@@ -100,9 +100,9 @@ const DashboardPage = () => {
                 <div className="flex items-center">
                   <span
                     className={`text-sm font-semibold px-2 py-1 rounded-md ${
-                      stat.changeType === "increase"
-                        ? "text-green-600 bg-green-100"
-                        : "text-red-600 bg-red-100"
+                      stat.changeType === 'increase'
+                        ? 'text-green-600 bg-green-100'
+                        : 'text-red-600 bg-red-100'
                     }`}
                   >
                     {stat.change}
@@ -110,12 +110,8 @@ const DashboardPage = () => {
                 </div>
               </div>
               <div className="text-left">
-                <h3 className="text-sm text-gray-500 mb-2 font-medium">
-                  {stat.title}
-                </h3>
-                <p className="text-2xl font-bold text-gray-800 m-0">
-                  {stat.value}
-                </p>
+                <h3 className="text-sm text-gray-500 mb-2 font-medium">{stat.title}</h3>
+                <p className="text-2xl font-bold text-gray-800 m-0">{stat.value}</p>
               </div>
             </div>
           );
@@ -129,18 +125,14 @@ const DashboardPage = () => {
           <FaBell size={16} color="#6b7280" />
         </div>
         <div className="flex flex-col gap-3">
-          {recentActivities.map((activity) => (
+          {recentActivities.map(activity => (
             <div
               key={activity.id}
               className="p-4 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors duration-200"
             >
               <div className="flex justify-between items-center">
-                <p className="text-sm text-gray-700 m-0 flex-1">
-                  {activity.message}
-                </p>
-                <span className="text-xs text-gray-400 ml-4">
-                  {activity.time}
-                </span>
+                <p className="text-sm text-gray-700 m-0 flex-1">{activity.message}</p>
+                <span className="text-xs text-gray-400 ml-4">{activity.time}</span>
               </div>
             </div>
           ))}

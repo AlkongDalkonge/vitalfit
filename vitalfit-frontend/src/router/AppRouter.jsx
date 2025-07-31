@@ -1,14 +1,14 @@
-import React from "react";
-import { Routes, Route } from "react-router-dom";
+import React from 'react';
+import { Routes, Route } from 'react-router-dom';
 
-import DashboardPage from "../pages/DashboardPage";
-import CenterPage from "../pages/CenterPage";
-import UserPage from "../pages/UserPage";
-import MemberPage from "../pages/MemberPage";
-import PaymentPage from "../pages/PaymentPage";
-import NoticePage from "../pages/NoticePage";
-import ReportPage from "../pages/ReportPage";
-import AccountPage from "../pages/AccountPage";
+import DashboardPage from '../pages/DashboardPage';
+import CenterPage from '../pages/CenterPage';
+import UserPage from '../pages/UserPage';
+import MemberPage from '../pages/MemberPage';
+import PaymentPage from '../pages/PaymentPage';
+import NoticePage from '../pages/NoticePage';
+import ReportPage from '../pages/ReportPage';
+import AccountPage from '../pages/AccountPage';
 
 const AppRouter = () => {
   return (

@@ -1,6 +1,6 @@
 module.exports = (sequelize, DataTypes) => {
   const MonthlySettlement = sequelize.define(
-    "MonthlySettlement",
+    'MonthlySettlement',
     {
       id: {
         type: DataTypes.INTEGER,
@@ -89,9 +89,9 @@ module.exports = (sequelize, DataTypes) => {
         defaultValue: 0,
       },
       status: {
-        type: DataTypes.ENUM("draft", "confirmed", "paid"),
+        type: DataTypes.ENUM('draft', 'confirmed', 'paid'),
         allowNull: false,
-        defaultValue: "draft",
+        defaultValue: 'draft',
       },
       notes: {
         type: DataTypes.TEXT,
@@ -101,22 +101,22 @@ module.exports = (sequelize, DataTypes) => {
     {
       timestamps: true, // createdAt, updatedAt 자동 생성
       underscored: true,
-      tableName: "monthly_settlements",
+      tableName: 'monthly_settlements',
       indexes: [
         {
-          fields: ["user_id"],
+          fields: ['user_id'],
         },
         {
-          fields: ["center_id"],
+          fields: ['center_id'],
         },
         {
-          fields: ["settlement_year", "settlement_month"],
+          fields: ['settlement_year', 'settlement_month'],
         },
         {
-          fields: ["user_id", "settlement_year", "settlement_month"],
+          fields: ['user_id', 'settlement_year', 'settlement_month'],
         },
         {
-          fields: ["status"],
+          fields: ['status'],
         },
       ],
     }
@@ -125,14 +125,14 @@ module.exports = (sequelize, DataTypes) => {
   MonthlySettlement.associate = function (models) {
     // MonthlySettlement belongs to User (N:1) - 트레이너
     MonthlySettlement.belongsTo(models.User, {
-      foreignKey: "user_id",
-      as: "trainer",
+      foreignKey: 'user_id',
+      as: 'trainer',
     });
 
     // MonthlySettlement belongs to Center (N:1)
     MonthlySettlement.belongsTo(models.Center, {
-      foreignKey: "center_id",
-      as: "center",
+      foreignKey: 'center_id',
+      as: 'center',
     });
   };
 

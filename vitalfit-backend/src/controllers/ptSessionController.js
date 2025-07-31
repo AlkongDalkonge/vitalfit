@@ -1,5 +1,5 @@
-const { PTSession, Member, User, Center } = require("../models");
-const Joi = require("joi");
+const { PTSession, Member, User, Center } = require('../models');
+const Joi = require('joi');
 
 // PT 세션 생성 스키마
 const createPTSessionSchema = Joi.object({
@@ -7,9 +7,13 @@ const createPTSessionSchema = Joi.object({
   trainer_id: Joi.number().integer().positive().required(),
   center_id: Joi.number().integer().positive().required(),
   session_date: Joi.date().required(),
-  start_time: Joi.string().pattern(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/).required(),
-  end_time: Joi.string().pattern(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/).optional(),
-  session_type: Joi.string().valid("regular", "free").default("regular"),
+  start_time: Joi.string()
+    .pattern(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/)
+    .required(),
+  end_time: Joi.string()
+    .pattern(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/)
+    .optional(),
+  session_type: Joi.string().valid('regular', 'free').default('regular'),
   signature_data: Joi.string().required(),
   signature_time: Joi.date().default(() => new Date()),
   notes: Joi.string().optional(),
@@ -19,9 +23,13 @@ const createPTSessionSchema = Joi.object({
 // PT 세션 수정 스키마
 const updatePTSessionSchema = Joi.object({
   session_date: Joi.date().optional(),
-  start_time: Joi.string().pattern(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/).optional(),
-  end_time: Joi.string().pattern(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/).optional(),
-  session_type: Joi.string().valid("regular", "free").optional(),
+  start_time: Joi.string()
+    .pattern(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/)
+    .optional(),
+  end_time: Joi.string()
+    .pattern(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/)
+    .optional(),
+  session_type: Joi.string().valid('regular', 'free').optional(),
   signature_data: Joi.string().optional(),
   signature_time: Joi.date().optional(),
   notes: Joi.string().optional(),
@@ -34,7 +42,7 @@ const createPTSession = async (req, res) => {
   if (error) {
     return res.status(400).json({
       success: false,
-      message: "입력값이 올바르지 않습니다.",
+      message: '입력값이 올바르지 않습니다.',
       details: error.details[0].message,
     });
   }
@@ -62,7 +70,7 @@ const createPTSession = async (req, res) => {
       if (existingSession) {
         return res.status(409).json({
           success: false,
-          message: "이미 등록된 PT 세션입니다.",
+          message: '이미 등록된 PT 세션입니다.',
           data: existingSession,
         });
       }
@@ -73,7 +81,7 @@ const createPTSession = async (req, res) => {
     if (!member) {
       return res.status(404).json({
         success: false,
-        message: "존재하지 않는 멤버입니다.",
+        message: '존재하지 않는 멤버입니다.',
       });
     }
 
@@ -82,7 +90,7 @@ const createPTSession = async (req, res) => {
     if (!trainer) {
       return res.status(404).json({
         success: false,
-        message: "존재하지 않는 트레이너입니다.",
+        message: '존재하지 않는 트레이너입니다.',
       });
     }
 
@@ -91,7 +99,7 @@ const createPTSession = async (req, res) => {
     if (!center) {
       return res.status(404).json({
         success: false,
-        message: "존재하지 않는 센터입니다.",
+        message: '존재하지 않는 센터입니다.',
       });
     }
 
@@ -107,7 +115,7 @@ const createPTSession = async (req, res) => {
     if (existingSession) {
       return res.status(409).json({
         success: false,
-        message: "해당 날짜와 시간에 이미 등록된 PT 세션이 있습니다.",
+        message: '해당 날짜와 시간에 이미 등록된 PT 세션이 있습니다.',
       });
     }
 
@@ -127,14 +135,14 @@ const createPTSession = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: "PT 세션이 성공적으로 등록되었습니다.",
+      message: 'PT 세션이 성공적으로 등록되었습니다.',
       data: ptSession,
     });
   } catch (error) {
-    console.error("PT 세션 등록 오류:", error);
+    console.error('PT 세션 등록 오류:', error);
     res.status(500).json({
       success: false,
-      message: "PT 세션 등록 중 오류가 발생했습니다.",
+      message: 'PT 세션 등록 중 오류가 발생했습니다.',
       error: error.message,
     });
   }
@@ -147,7 +155,7 @@ const updatePTSession = async (req, res) => {
   if (error) {
     return res.status(400).json({
       success: false,
-      message: "입력값이 올바르지 않습니다.",
+      message: '입력값이 올바르지 않습니다.',
       details: error.details[0].message,
     });
   }
@@ -160,7 +168,7 @@ const updatePTSession = async (req, res) => {
     if (!ptSession) {
       return res.status(404).json({
         success: false,
-        message: "존재하지 않는 PT 세션입니다.",
+        message: '존재하지 않는 PT 세션입니다.',
       });
     }
 
@@ -177,14 +185,14 @@ const updatePTSession = async (req, res) => {
 
     res.json({
       success: true,
-      message: "PT 세션이 성공적으로 수정되었습니다.",
+      message: 'PT 세션이 성공적으로 수정되었습니다.',
       data: ptSession,
     });
   } catch (error) {
-    console.error("PT 세션 수정 오류:", error);
+    console.error('PT 세션 수정 오류:', error);
     res.status(500).json({
       success: false,
-      message: "PT 세션 수정 중 오류가 발생했습니다.",
+      message: 'PT 세션 수정 중 오류가 발생했습니다.',
       error: error.message,
     });
   }
@@ -202,7 +210,7 @@ const getPTSessionsByMember = async (req, res) => {
     if (isNaN(memberIdInt)) {
       return res.status(400).json({
         success: false,
-        message: "유효하지 않은 멤버 ID입니다.",
+        message: '유효하지 않은 멤버 ID입니다.',
       });
     }
 
@@ -211,7 +219,7 @@ const getPTSessionsByMember = async (req, res) => {
     if (!member) {
       return res.status(404).json({
         success: false,
-        message: "존재하지 않는 멤버입니다.",
+        message: '존재하지 않는 멤버입니다.',
       });
     }
 
@@ -220,15 +228,15 @@ const getPTSessionsByMember = async (req, res) => {
     // 날짜 범위 필터
     if (start_date && end_date) {
       whereClause.session_date = {
-        [require("sequelize").Op.between]: [start_date, end_date],
+        [require('sequelize').Op.between]: [start_date, end_date],
       };
     } else if (start_date) {
       whereClause.session_date = {
-        [require("sequelize").Op.gte]: start_date,
+        [require('sequelize').Op.gte]: start_date,
       };
     } else if (end_date) {
       whereClause.session_date = {
-        [require("sequelize").Op.lte]: end_date,
+        [require('sequelize').Op.lte]: end_date,
       };
     }
 
@@ -237,55 +245,58 @@ const getPTSessionsByMember = async (req, res) => {
       include: [
         {
           model: Member,
-          as: "member",
-          attributes: ["id", "name", "phone"],
+          as: 'member',
+          attributes: ['id', 'name', 'phone'],
         },
         {
           model: User,
-          as: "trainer",
-          attributes: ["id", "name", "email"],
+          as: 'trainer',
+          attributes: ['id', 'name', 'email'],
         },
         {
           model: Center,
-          as: "center",
-          attributes: ["id", "name", "address"],
+          as: 'center',
+          attributes: ['id', 'name', 'address'],
         },
       ],
       limit: parseInt(limit),
       offset: parseInt(offset),
-      order: [["session_date", "DESC"], ["start_time", "ASC"]],
+      order: [
+        ['session_date', 'DESC'],
+        ['start_time', 'ASC'],
+      ],
     });
 
     if (count === 0) {
       return res.status(404).json({
         success: false,
-        message: "해당 멤버의 PT 세션이 없습니다.",
+        message: '해당 멤버의 PT 세션이 없습니다.',
       });
     }
 
-                res.json({
-              success: true,
-              message: "멤버별 PT 세션 목록을 성공적으로 조회했습니다.",
-              data: {
-                member: {
-                  id: member.id,
-                  name: member.name,
-                  phone: member.phone,
-                },
-                pt_sessions: ptSessions,
-                pagination: {
-                  current_page: parseInt(page),
-                  total_pages: Math.ceil(count / limit),
-                  total_items: count,
-                  items_per_page: parseInt(limit),
-                },
-              },
-            });
+    res.json({
+      success: true,
+      message: '멤버별 PT 세션 목록을 성공적으로 조회했습니다.',
+      data: {
+        member: {
+          id: member.id,
+          name: member.name,
+          phone: member.phone,
+        },
+        pt_sessions: ptSessions,
+        pagination: {
+          current_page: parseInt(page),
+          total_pages: Math.ceil(count / limit),
+          total_items: count,
+          items_per_page: parseInt(limit),
+        },
+      },
+    });
   } catch (error) {
-    console.error("멤버별 PT 세션 조회 오류:", error);
+    console.error('멤버별 PT 세션 조회 오류:', error);
     res.status(500).json({
       success: false,
-      message: "멤버별 PT 세션 조회 중 오류가 발생했습니다.",
+      message: '멤버별 PT 세션 조회 중 오류가 발생했습니다.',
       error: error.message,
     });
   }
@@ -301,11 +312,11 @@ const getPTSessionsByMonth = async (req, res) => {
     // 년월 형식 검증
     const yearInt = parseInt(year);
     const monthInt = parseInt(month);
-    
+
     if (isNaN(yearInt) || isNaN(monthInt) || monthInt < 1 || monthInt > 12) {
       return res.status(400).json({
         success: false,
-        message: "유효하지 않은 년월 형식입니다. (YYYY/MM)",
+        message: '유효하지 않은 년월 형식입니다. (YYYY/MM)',
       });
     }
 
@@ -315,11 +326,11 @@ const getPTSessionsByMonth = async (req, res) => {
 
     const whereClause = {
       session_date: {
-        [require("sequelize").Op.between]: [
+        [require('sequelize').Op.between]: [
           startDate.toISOString().split('T')[0],
-          endDate.toISOString().split('T')[0]
-        ]
-      }
+          endDate.toISOString().split('T')[0],
+        ],
+      },
     };
 
     // 센터별 필터
@@ -343,29 +354,32 @@ const getPTSessionsByMonth = async (req, res) => {
       include: [
         {
           model: Member,
-          as: "member",
-          attributes: ["id", "name", "phone"],
+          as: 'member',
+          attributes: ['id', 'name', 'phone'],
         },
         {
           model: User,
-          as: "trainer",
-          attributes: ["id", "name", "email"],
+          as: 'trainer',
+          attributes: ['id', 'name', 'email'],
         },
         {
           model: Center,
-          as: "center",
-          attributes: ["id", "name", "address"],
+          as: 'center',
+          attributes: ['id', 'name', 'address'],
         },
       ],
       limit: parseInt(limit),
       offset: parseInt(offset),
-      order: [["session_date", "ASC"], ["start_time", "ASC"]],
+      order: [
+        ['session_date', 'ASC'],
+        ['start_time', 'ASC'],
+      ],
     });
 
     if (count === 0) {
       return res.status(404).json({
         success: false,
-        message: "해당 월의 PT 세션이 없습니다.",
+        message: '해당 월의 PT 세션이 없습니다.',
       });
     }
 
@@ -380,13 +394,13 @@ const getPTSessionsByMonth = async (req, res) => {
 
     res.json({
       success: true,
-      message: "월별 PT 세션 목록을 성공적으로 조회했습니다.",
+      message: '월별 PT 세션 목록을 성공적으로 조회했습니다.',
       data: {
         year: yearInt,
         month: monthInt,
         period: {
           start_date: startDate.toISOString().split('T')[0],
-          end_date: endDate.toISOString().split('T')[0]
+          end_date: endDate.toISOString().split('T')[0],
         },
         stats,
         pt_sessions: ptSessions,
@@ -399,10 +413,10 @@ const getPTSessionsByMonth = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("월별 PT 세션 조회 오류:", error);
+    console.error('월별 PT 세션 조회 오류:', error);
     res.status(500).json({
       success: false,
-      message: "월별 PT 세션 조회 중 오류가 발생했습니다.",
+      message: '월별 PT 세션 조회 중 오류가 발생했습니다.',
       error: error.message,
     });
   }
@@ -418,7 +432,7 @@ const deletePTSession = async (req, res) => {
     if (isNaN(idInt)) {
       return res.status(400).json({
         success: false,
-        message: "유효하지 않은 PT 세션 ID입니다.",
+        message: '유효하지 않은 PT 세션 ID입니다.',
       });
     }
 
@@ -426,7 +440,7 @@ const deletePTSession = async (req, res) => {
     if (!ptSession) {
       return res.status(404).json({
         success: false,
-        message: "존재하지 않는 PT 세션입니다.",
+        message: '존재하지 않는 PT 세션입니다.',
       });
     }
 
@@ -443,13 +457,13 @@ const deletePTSession = async (req, res) => {
 
     res.json({
       success: true,
-      message: "PT 세션이 성공적으로 삭제되었습니다.",
+      message: 'PT 세션이 성공적으로 삭제되었습니다.',
     });
   } catch (error) {
-    console.error("PT 세션 삭제 오류:", error);
+    console.error('PT 세션 삭제 오류:', error);
     res.status(500).json({
       success: false,
-      message: "PT 세션 삭제 중 오류가 발생했습니다.",
+      message: 'PT 세션 삭제 중 오류가 발생했습니다.',
       error: error.message,
     });
   }
@@ -461,4 +475,4 @@ module.exports = {
   getPTSessionsByMember,
   getPTSessionsByMonth,
   deletePTSession,
-}; 
+};
