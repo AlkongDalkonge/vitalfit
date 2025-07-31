@@ -100,4 +100,5 @@ Desktop.ini
 
 # Temporary files
 *.tmp
-*.temp 
+*.temp .DS_Store
+**/.DS_Store
