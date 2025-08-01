@@ -1,0 +1,12 @@
+node_modules/
+dist/
+coverage/
+public/uploads/
+*.min.js
+*.log
+package-lock.json
+.env*
+CHANGELOG.md
+README.md
+DATABASE_SCHEMA.md
+CONTRIBUTING.md

@@ -1,6 +1,6 @@
 module.exports = (sequelize, DataTypes) => {
   const CenterImage = sequelize.define(
-    "CenterImage",
+    'CenterImage',
     {
       id: {
         type: DataTypes.INTEGER,
@@ -33,15 +33,15 @@ module.exports = (sequelize, DataTypes) => {
     {
       timestamps: true, // createdAt, updatedAt 자동 생성
       underscored: true,
-      tableName: "center_images",
+      tableName: 'center_images',
     }
   );
 
   CenterImage.associate = function (models) {
     // CenterImage belongs to Center (N:1)
     CenterImage.belongsTo(models.Center, {
-      foreignKey: "center_id",
-      as: "center",
+      foreignKey: 'center_id',
+      as: 'center',
     });
   };
 

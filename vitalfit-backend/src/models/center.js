@@ -1,6 +1,6 @@
 module.exports = (sequelize, DataTypes) => {
   const Center = sequelize.define(
-    "Center",
+    'Center',
     {
       id: {
         type: DataTypes.INTEGER,
@@ -57,59 +57,59 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: true,
       },
       status: {
-        type: DataTypes.ENUM("active", "inactive", "closed"),
+        type: DataTypes.ENUM('active', 'inactive', 'closed'),
         allowNull: false,
-        defaultValue: "active",
+        defaultValue: 'active',
       },
     },
     {
       timestamps: true, // createdAt, updatedAt 자동 생성
       underscored: true,
-      tableName: "centers",
+      tableName: 'centers',
     }
   );
 
   Center.associate = function (models) {
     // Center has many CenterImages (1:N)
     Center.hasMany(models.CenterImage, {
-      foreignKey: "center_id",
-      as: "images",
+      foreignKey: 'center_id',
+      as: 'images',
     });
 
     // Center has many Users (1:N)
     Center.hasMany(models.User, {
-      foreignKey: "center_id",
-      as: "users",
+      foreignKey: 'center_id',
+      as: 'users',
     });
 
     // Center has many Teams (1:N)
     Center.hasMany(models.Team, {
-      foreignKey: "center_id",
-      as: "teams",
+      foreignKey: 'center_id',
+      as: 'teams',
     });
 
     // Center has many Members (1:N)
     Center.hasMany(models.Member, {
-      foreignKey: "center_id",
-      as: "members",
+      foreignKey: 'center_id',
+      as: 'members',
     });
 
     // Center has many Payments (1:N)
     Center.hasMany(models.Payment, {
-      foreignKey: "center_id",
-      as: "payments",
+      foreignKey: 'center_id',
+      as: 'payments',
     });
 
     // Center has many PTSessions (1:N)
     Center.hasMany(models.PTSession, {
-      foreignKey: "center_id",
-      as: "ptSessions",
+      foreignKey: 'center_id',
+      as: 'ptSessions',
     });
 
     // Center has many MonthlySettlements (1:N)
     Center.hasMany(models.MonthlySettlement, {
-      foreignKey: "center_id",
-      as: "settlements",
+      foreignKey: 'center_id',
+      as: 'settlements',
     });
   };
 

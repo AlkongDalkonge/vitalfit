@@ -1,4 +1,4 @@
-const express = require("express");
+const express = require('express');
 const router = express.Router();
 
 const {
@@ -7,21 +7,21 @@ const {
   getPTSessionsByMember,
   getPTSessionsByMonth,
   deletePTSession,
-} = require("../controllers/ptSessionController");
+} = require('../controllers/ptSessionController');
 
 // PT 세션 등록
-router.post("/", createPTSession);
+router.post('/', createPTSession);
 
 // PT 세션 수정
-router.put("/:id", updatePTSession);
+router.put('/:id', updatePTSession);
 
 // PT 세션 삭제
-router.delete("/:id", deletePTSession);
+router.delete('/:id', deletePTSession);
 
 // 멤버별 PT 세션 조회
-router.get("/member/:memberId", getPTSessionsByMember);
+router.get('/member/:memberId', getPTSessionsByMember);
 
 // 월별 PT 세션 조회
-router.get("/month/:year/:month", getPTSessionsByMonth);
+router.get('/month/:year/:month', getPTSessionsByMonth);
 
-module.exports = router; 
+module.exports = router;

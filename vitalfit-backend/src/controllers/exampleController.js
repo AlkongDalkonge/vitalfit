@@ -1,3 +1,3 @@
 exports.sayHello = (req, res) => {
-  res.json({ message: "Hello from VitalFit backend!" });
+  res.json({ message: 'Hello from VitalFit backend!' });
 };

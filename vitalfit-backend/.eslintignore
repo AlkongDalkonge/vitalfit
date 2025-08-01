@@ -1,0 +1,9 @@
+node_modules/
+dist/
+coverage/
+public/uploads/
+*.min.js
+*.log
+package-lock.json
+.env*
+test/

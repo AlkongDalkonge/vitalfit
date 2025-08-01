@@ -1,11 +1,11 @@
-const { Notice, NoticeComment, User } = require("../models");
-const { Op } = require("sequelize");
-const Joi = require("joi");
-const path = require("path");
-const fs = require("fs");
+const { Notice, NoticeComment, User } = require('../models');
+const { Op } = require('sequelize');
+const Joi = require('joi');
+const path = require('path');
+const fs = require('fs');
 
 // 파일 삭제 유틸리티 함수
-const deleteFile = (filePath) => {
+const deleteFile = filePath => {
   try {
     if (filePath && fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
@@ -20,7 +20,7 @@ const deleteFile = (filePath) => {
 const getNoticesSchema = Joi.object({
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(100).default(10),
-  search: Joi.string().allow("").trim().default(""),
+  search: Joi.string().allow('').trim().default(''),
 });
 
 // Joi 스키마: POST /api/notices 등록
@@ -48,11 +48,11 @@ const updateNoticeSchema = Joi.object({
   content: Joi.string().trim().optional(),
   receiver_type: Joi.string().trim().optional(),
   receiver_id: Joi.number().optional().allow(null),
-  receiver_role: Joi.string().optional().allow(null, ""),
+  receiver_role: Joi.string().optional().allow(null, ''),
   is_important: Joi.boolean().optional(),
   pin_until: Joi.date().iso().optional().allow(null),
-  attachment_name: Joi.string().optional().allow(null, ""),
-  attachment_url: Joi.string().optional().allow(null, ""),
+  attachment_name: Joi.string().optional().allow(null, ''),
+  attachment_url: Joi.string().optional().allow(null, ''),
 }).min(1); // 최소 1개 필드는 있어야 함
 
 // Joi 스키마 : 삭제
@@ -71,7 +71,7 @@ exports.getNotices = async (req, res) => {
     if (error) {
       return res.status(400).json({
         success: false,
-        message: "쿼리 파라미터가 유효하지 않습니다.",
+        message: '쿼리 파라미터가 유효하지 않습니다.',
         details: error.details[0].message,
       });
     }
@@ -92,7 +92,7 @@ exports.getNotices = async (req, res) => {
       where,
       limit,
       offset,
-      order: [["createdAt", "DESC"]],
+      order: [['createdAt', 'DESC']],
     });
 
     const pagination = {
@@ -112,7 +112,7 @@ exports.getNotices = async (req, res) => {
   } catch (err) {
     res.status(500).json({
       success: false,
-      message: "공지사항 목록 조회 실패",
+      message: '공지사항 목록 조회 실패',
       details: err.message,
     });
   }
@@ -128,7 +128,7 @@ exports.createNotice = async (req, res) => {
     if (error) {
       return res.status(400).json({
         success: false,
-        message: "입력값이 유효하지 않습니다.",
+        message: '입력값이 유효하지 않습니다.',
         details: error.details[0].message,
       });
     }
@@ -137,13 +137,13 @@ exports.createNotice = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: "공지사항이 등록되었습니다.",
+      message: '공지사항이 등록되었습니다.',
       data: notice,
     });
   } catch (err) {
     res.status(500).json({
       success: false,
-      message: "공지사항 작성 실패",
+      message: '공지사항 작성 실패',
       details: err.message,
     });
   }
@@ -156,22 +156,22 @@ exports.createNotice = async (req, res) => {
 exports.getNoticeById = async (req, res) => {
   try {
     const notice = await Notice.findByPk(req.params.id, {
-      attributes: { exclude: ["updatedAt"] }, //해당컬럼은 제외
+      attributes: { exclude: ['updatedAt'] }, //해당컬럼은 제외
     });
 
     if (!notice) {
       return res.status(404).json({
         success: false,
-        message: "공지사항을 찾을 수 없습니다.",
+        message: '공지사항을 찾을 수 없습니다.',
       });
     }
 
     res.json({ success: true, data: notice });
   } catch (err) {
-    console.error("공지사항 상세 조회 실패:", err);
+    console.error('공지사항 상세 조회 실패:', err);
     res.status(500).json({
       success: false,
-      message: "공지사항 상세 조회 실패",
+      message: '공지사항 상세 조회 실패',
       details: err.message,
     });
   }
@@ -193,13 +193,11 @@ exports.updateNotice = async (req, res) => {
     //   });
     // }
     // 2) 입력 데이터 검증
-    const { value: validatedBody, error } = updateNoticeSchema.validate(
-      req.body
-    );
+    const { value: validatedBody, error } = updateNoticeSchema.validate(req.body);
     if (error) {
       return res.status(400).json({
         success: false,
-        message: "수정 데이터가 유효하지 않습니다.",
+        message: '수정 데이터가 유효하지 않습니다.',
         details: error.details[0].message,
       });
     }
@@ -211,7 +209,7 @@ exports.updateNotice = async (req, res) => {
     if (!notice) {
       return res.status(404).json({
         success: false,
-        message: "공지사항을 찾을 수 없습니다.",
+        message: '공지사항을 찾을 수 없습니다.',
       });
     }
 
@@ -221,11 +219,7 @@ exports.updateNotice = async (req, res) => {
       notice.attachment_url &&
       notice.attachment_url !== validatedBody.attachment_url
     ) {
-      const oldFilePath = path.join(
-        __dirname,
-        "../../public",
-        notice.attachment_url
-      );
+      const oldFilePath = path.join(__dirname, '../../public', notice.attachment_url);
       deleteFile(oldFilePath);
     }
 
@@ -235,19 +229,19 @@ exports.updateNotice = async (req, res) => {
     // 5) 수정된 데이터 응답 (updatedAt 제외)
     //const updatedNotice = await Notice.findByPk(id, {
     const updatedNotice = await Notice.findByPk(req.params.id, {
-      attributes: { exclude: ["updatedAt"] },
+      attributes: { exclude: ['updatedAt'] },
     });
 
     res.json({
       success: true,
-      message: "공지사항이 수정되었습니다.",
+      message: '공지사항이 수정되었습니다.',
       data: updatedNotice,
     });
   } catch (err) {
-    console.error("공지사항 수정 실패:", err);
+    console.error('공지사항 수정 실패:', err);
     res.status(500).json({
       success: false,
-      message: "공지사항 수정 실패",
+      message: '공지사항 수정 실패',
       details: err.message,
     });
   }
@@ -263,29 +257,25 @@ exports.deleteNotice = async (req, res) => {
     if (!notice) {
       return res.status(404).json({
         success: false,
-        message: "공지사항을 찾을 수 없습니다.",
+        message: '공지사항을 찾을 수 없습니다.',
       });
     }
 
     // 첨부파일이 있으면 파일도 함께 삭제
     if (notice.attachment_url) {
-      const filePath = path.join(
-        __dirname,
-        "../../public",
-        notice.attachment_url
-      );
+      const filePath = path.join(__dirname, '../../public', notice.attachment_url);
       deleteFile(filePath);
     }
 
     await notice.destroy();
     res.json({
       success: true,
-      message: "공지사항이 삭제되었습니다.",
+      message: '공지사항이 삭제되었습니다.',
     });
   } catch (err) {
     res.status(500).json({
       success: false,
-      message: "공지사항 삭제 실패",
+      message: '공지사항 삭제 실패',
       details: err.message,
     });
   }
@@ -336,8 +326,8 @@ exports.getComments = async (req, res) => {
     if (error) {
       return res.status(400).json({
         success: false,
-        message: "입력값 오류",
-        details: error.details.map((detail) => detail.message),
+        message: '입력값 오류',
+        details: error.details.map(detail => detail.message),
       });
     }
 
@@ -349,64 +339,63 @@ exports.getComments = async (req, res) => {
     if (!notice) {
       return res.status(404).json({
         success: false,
-        message: "해당 공지사항을 찾을 수 없습니다.",
+        message: '해당 공지사항을 찾을 수 없습니다.',
       });
     }
 
     // 최상위 댓글만 조회 (parent_id가 null인 댓글들)
-    const { count, rows: topLevelComments } =
-      await NoticeComment.findAndCountAll({
-        where: {
-          notice_id,
-          parent_id: null, // 최상위 댓글만
+    const { count, rows: topLevelComments } = await NoticeComment.findAndCountAll({
+      where: {
+        notice_id,
+        parent_id: null, // 최상위 댓글만
+      },
+      include: [
+        {
+          model: User,
+          as: 'author',
+          attributes: ['id', 'name', 'role'],
         },
-        include: [
-          {
-            model: User,
-            as: "author",
-            attributes: ["id", "name", "role"],
-          },
-          {
-            model: NoticeComment,
-            as: "replies",
-            include: [
-              {
-                model: User,
-                as: "author",
-                attributes: ["id", "name", "role"],
-              },
-              {
-                model: NoticeComment,
-                as: "replies",
-                include: [
-                  {
-                    model: User,
-                    as: "author",
-                    attributes: ["id", "name", "role"],
-                  },
-                  {
-                    model: NoticeComment,
-                    as: "replies",
-                    include: [
-                      {
-                        model: User,
-                        as: "author",
-                        attributes: ["id", "name", "role"],
-                      },
-                    ],
-                    order: [["created_at", "ASC"]],
-                  },
-                ],
-                order: [["created_at", "ASC"]],
-              },
-            ],
-            order: [["created_at", "ASC"]],
-          },
-        ],
-        order: [["created_at", "ASC"]],
-        limit,
-        offset,
-      });
+        {
+          model: NoticeComment,
+          as: 'replies',
+          include: [
+            {
+              model: User,
+              as: 'author',
+              attributes: ['id', 'name', 'role'],
+            },
+            {
+              model: NoticeComment,
+              as: 'replies',
+              include: [
+                {
+                  model: User,
+                  as: 'author',
+                  attributes: ['id', 'name', 'role'],
+                },
+                {
+                  model: NoticeComment,
+                  as: 'replies',
+                  include: [
+                    {
+                      model: User,
+                      as: 'author',
+                      attributes: ['id', 'name', 'role'],
+                    },
+                  ],
+                  order: [['created_at', 'ASC']],
+                },
+              ],
+              order: [['created_at', 'ASC']],
+            },
+          ],
+          order: [['created_at', 'ASC']],
+        },
+      ],
+      order: [['created_at', 'ASC']],
+      limit,
+      offset,
+    });
 
     // 전체 댓글 수 계산 (모든 depth 포함)
     const totalCommentsCount = await NoticeComment.count({
@@ -429,10 +418,10 @@ exports.getComments = async (req, res) => {
       },
     });
   } catch (err) {
-    console.error("댓글 조회 실패:", err);
+    console.error('댓글 조회 실패:', err);
     res.status(500).json({
       success: false,
-      message: "댓글 조회 실패",
+      message: '댓글 조회 실패',
       details: err.message,
     });
   }
@@ -453,8 +442,8 @@ exports.createComment = async (req, res) => {
     if (error) {
       return res.status(400).json({
         success: false,
-        message: "입력값 오류",
-        details: error.details.map((detail) => detail.message),
+        message: '입력값 오류',
+        details: error.details.map(detail => detail.message),
       });
     }
 
@@ -465,7 +454,7 @@ exports.createComment = async (req, res) => {
     if (!notice) {
       return res.status(404).json({
         success: false,
-        message: "해당 공지사항을 찾을 수 없습니다.",
+        message: '해당 공지사항을 찾을 수 없습니다.',
       });
     }
 
@@ -484,7 +473,7 @@ exports.createComment = async (req, res) => {
       if (!parentComment) {
         return res.status(404).json({
           success: false,
-          message: "부모 댓글을 찾을 수 없습니다.",
+          message: '부모 댓글을 찾을 수 없습니다.',
         });
       }
 
@@ -494,7 +483,7 @@ exports.createComment = async (req, res) => {
       if (depth > 3) {
         return res.status(400).json({
           success: false,
-          message: "댓글 깊이는 최대 3단계까지만 허용됩니다.",
+          message: '댓글 깊이는 최대 3단계까지만 허용됩니다.',
         });
       }
     }
@@ -513,22 +502,22 @@ exports.createComment = async (req, res) => {
       include: [
         {
           model: User,
-          as: "author",
-          attributes: ["id", "name", "role"],
+          as: 'author',
+          attributes: ['id', 'name', 'role'],
         },
       ],
     });
 
     res.status(201).json({
       success: true,
-      message: "댓글이 성공적으로 생성되었습니다.",
+      message: '댓글이 성공적으로 생성되었습니다.',
       data: createdComment,
     });
   } catch (err) {
-    console.error("댓글 생성 실패:", err);
+    console.error('댓글 생성 실패:', err);
     res.status(500).json({
       success: false,
-      message: "댓글 생성 실패",
+      message: '댓글 생성 실패',
       details: err.message,
     });
   }
@@ -549,8 +538,8 @@ exports.updateComment = async (req, res) => {
     if (error) {
       return res.status(400).json({
         success: false,
-        message: "입력값 오류",
-        details: error.details.map((detail) => detail.message),
+        message: '입력값 오류',
+        details: error.details.map(detail => detail.message),
       });
     }
 
@@ -567,7 +556,7 @@ exports.updateComment = async (req, res) => {
     if (!comment) {
       return res.status(404).json({
         success: false,
-        message: "해당 댓글을 찾을 수 없습니다.",
+        message: '해당 댓글을 찾을 수 없습니다.',
       });
     }
 
@@ -579,22 +568,22 @@ exports.updateComment = async (req, res) => {
       include: [
         {
           model: User,
-          as: "author",
-          attributes: ["id", "name", "role"],
+          as: 'author',
+          attributes: ['id', 'name', 'role'],
         },
       ],
     });
 
     res.status(200).json({
       success: true,
-      message: "댓글이 성공적으로 수정되었습니다.",
+      message: '댓글이 성공적으로 수정되었습니다.',
       data: updatedComment,
     });
   } catch (err) {
-    console.error("댓글 수정 실패:", err);
+    console.error('댓글 수정 실패:', err);
     res.status(500).json({
       success: false,
-      message: "댓글 수정 실패",
+      message: '댓글 수정 실패',
       details: err.message,
     });
   }
@@ -612,8 +601,8 @@ exports.deleteComment = async (req, res) => {
     if (error) {
       return res.status(400).json({
         success: false,
-        message: "입력값 오류",
-        details: error.details.map((detail) => detail.message),
+        message: '입력값 오류',
+        details: error.details.map(detail => detail.message),
       });
     }
 
@@ -630,7 +619,7 @@ exports.deleteComment = async (req, res) => {
     if (!comment) {
       return res.status(404).json({
         success: false,
-        message: "해당 댓글을 찾을 수 없습니다.",
+        message: '해당 댓글을 찾을 수 없습니다.',
       });
     }
 
@@ -639,13 +628,13 @@ exports.deleteComment = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: "댓글이 성공적으로 삭제되었습니다.",
+      message: '댓글이 성공적으로 삭제되었습니다.',
     });
   } catch (err) {
-    console.error("댓글 삭제 실패:", err);
+    console.error('댓글 삭제 실패:', err);
     res.status(500).json({
       success: false,
-      message: "댓글 삭제 실패",
+      message: '댓글 삭제 실패',
       details: err.message,
     });
   }
@@ -666,7 +655,7 @@ exports.downloadFile = async (req, res) => {
     if (!notice) {
       return res.status(404).json({
         success: false,
-        message: "해당 공지사항을 찾을 수 없습니다.",
+        message: '해당 공지사항을 찾을 수 없습니다.',
       });
     }
 
@@ -674,53 +663,49 @@ exports.downloadFile = async (req, res) => {
     if (!notice.attachment_name || !notice.attachment_url) {
       return res.status(404).json({
         success: false,
-        message: "첨부파일이 없습니다.",
+        message: '첨부파일이 없습니다.',
       });
     }
 
-    const path = require("path");
-    const fs = require("fs");
+    const path = require('path');
+    const fs = require('fs');
 
     // 파일 경로 생성
-    const filePath = path.join(
-      __dirname,
-      "../../public",
-      notice.attachment_url
-    );
+    const filePath = path.join(__dirname, '../../public', notice.attachment_url);
 
     // 파일 존재 여부 확인
     if (!fs.existsSync(filePath)) {
       return res.status(404).json({
         success: false,
-        message: "파일을 찾을 수 없습니다.",
+        message: '파일을 찾을 수 없습니다.',
       });
     }
 
     // 파일 다운로드 응답 설정
     res.setHeader(
-      "Content-Disposition",
+      'Content-Disposition',
       `attachment; filename="${encodeURIComponent(notice.attachment_name)}"`
     );
-    res.setHeader("Content-Type", "application/octet-stream");
+    res.setHeader('Content-Type', 'application/octet-stream');
 
     // 파일 스트림으로 전송
     const fileStream = fs.createReadStream(filePath);
     fileStream.pipe(res);
 
-    fileStream.on("error", (err) => {
-      console.error("파일 다운로드 중 오류:", err);
+    fileStream.on('error', err => {
+      console.error('파일 다운로드 중 오류:', err);
       if (!res.headersSent) {
         res.status(500).json({
           success: false,
-          message: "파일 다운로드 중 오류가 발생했습니다.",
+          message: '파일 다운로드 중 오류가 발생했습니다.',
         });
       }
     });
   } catch (err) {
-    console.error("파일 다운로드 실패:", err);
+    console.error('파일 다운로드 실패:', err);
     res.status(500).json({
       success: false,
-      message: "파일 다운로드 실패",
+      message: '파일 다운로드 실패',
       details: err.message,
     });
   }

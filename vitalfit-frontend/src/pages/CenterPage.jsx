@@ -1,10 +1,10 @@
-import React from "react";
+import React from 'react';
 
 const CenterPage = () => {
   const centers = [
-    { name: "강남센터", location: "서울시 강남구" },
-    { name: "서초센터", location: "서울시 서초구" },
-    { name: "홍대센터", location: "서울시 마포구" },
+    { name: '강남센터', location: '서울시 강남구' },
+    { name: '서초센터', location: '서울시 서초구' },
+    { name: '홍대센터', location: '서울시 마포구' },
   ];
 
   return (
