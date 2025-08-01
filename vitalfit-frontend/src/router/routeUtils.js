@@ -20,27 +20,36 @@ export const getPathFromMenu = menuName => {
   }
 };
 
-export const getMenuFromPath = pathname => {
-  switch (pathname) {
-    case '/':
-      return null; // 대시보드 경로는 null 반환 (메뉴 활성화 없음)
-    case '/center':
-      return '지점';
-    case '/user':
-      return '직원';
-    case '/member':
-      return '고객';
-    case '/payment':
-      return '정산시스템';
-    case '/notice':
-      return '알림/공지';
-    case '/report':
-      return '분석리포트';
-    case '/account':
-      return '내계정';
-    default:
-      return null;
+export const getMenuFromPath = (pathname) => {
+  // 대시보드 경로는 null 반환 (메뉴 활성화 없음)
+  if (pathname === "/") {
+    return null;
   }
+
+  // 경로별 메뉴 매칭 (하위 경로 포함)
+  if (pathname.startsWith("/center")) {
+    return "지점";
+  }
+  if (pathname.startsWith("/user")) {
+    return "직원";
+  }
+  if (pathname.startsWith("/member")) {
+    return "고객";
+  }
+  if (pathname.startsWith("/payment")) {
+    return "정산시스템";
+  }
+  if (pathname.startsWith("/notice")) {
+    return "알림/공지";
+  }
+  if (pathname.startsWith("/report")) {
+    return "분석리포트";
+  }
+  if (pathname.startsWith("/account")) {
+    return "내계정";
+  }
+
+  return null;
 };
 
 export const ROUTES = {

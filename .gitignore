@@ -98,6 +98,11 @@ Desktop.ini
 *.swo
 *~
 
+# PowerShell 프로필 (개인 설정이므로 제외)
+**/Microsoft.PowerShell_profile.ps1
+**/profile.ps1
+**/*profile*.ps1
+
 # Temporary files
 *.tmp
 *.temp .DS_Store

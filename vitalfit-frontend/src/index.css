@@ -20,3 +20,43 @@ code {
   border-left: 4px solid;
   border-image: linear-gradient(to bottom, #3b82f6, #60aeea) 1;
 }
+
+/* 날짜 입력 필드의 placeholder 텍스트 연하게 */
+input[type="date"]::-webkit-datetime-edit-text,
+input[type="date"]::-webkit-datetime-edit-month-field,
+input[type="date"]::-webkit-datetime-edit-day-field,
+input[type="date"]::-webkit-datetime-edit-year-field {
+  color: #a3a3a3; /* neutral-400 색상 */
+}
+
+/* 값이 입력되었을 때는 진한 색상으로 변경 */
+input[type="date"]:not([value=""])::-webkit-datetime-edit-text,
+input[type="date"]:not([value=""])::-webkit-datetime-edit-month-field,
+input[type="date"]:not([value=""])::-webkit-datetime-edit-day-field,
+input[type="date"]:not([value=""])::-webkit-datetime-edit-year-field {
+  color: #171717; /* neutral-900 색상 */
+}
+
+/* Select 요소의 placeholder 스타일 개선 */
+select:invalid {
+  color: #a3a3a3; /* neutral-400 색상 */
+}
+
+select:invalid option[value=""] {
+  color: #a3a3a3; /* neutral-400 색상 */
+}
+
+select option {
+  color: #171717; /* neutral-900 색상 - 일반 옵션들 */
+}
+
+select option[value=""] {
+  color: #a3a3a3; /* neutral-400 색상 - placeholder 옵션 */
+}
+
+/* 브라우저 time picker - 드롭다운만 제어 시도 */
+.time-input-small::-webkit-calendar-picker-indicator {
+  transform: scale(0.8);
+}
+
+/* 브라우저 time picker 드롭다운 자체는 CSS로 직접 제어 불가 */

@@ -5,6 +5,7 @@ const {
   createPTSession,
   updatePTSession,
   getPTSessionsByMember,
+  getPTSessionsByMemberMonth,
   getPTSessionsByMonth,
   deletePTSession,
 } = require('../controllers/ptSessionController');
@@ -21,7 +22,10 @@ router.delete('/:id', deletePTSession);
 // 멤버별 PT 세션 조회
 router.get('/member/:memberId', getPTSessionsByMember);
 
-// 월별 PT 세션 조회
-router.get('/month/:year/:month', getPTSessionsByMonth);
+// 특정 멤버의 월별 PT 세션 조회
+router.get("/member/:memberId/month/:year/:month", getPTSessionsByMemberMonth);
+
+// 월별 PT 세션 조회 (모든 멤버)
+router.get("/month/:year/:month", getPTSessionsByMonth);
 
 module.exports = router;
