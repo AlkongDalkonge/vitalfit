@@ -11,18 +11,7 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.INTEGER,
         allowNull: false,
       },
-      receiver_type: {
-        type: DataTypes.ENUM('all', 'role', 'center'),
-        allowNull: false,
-      },
-      receiver_id: {
-        type: DataTypes.INTEGER,
-        allowNull: true,
-      },
-      receiver_role: {
-        type: DataTypes.ENUM('team_member', 'team_leader', 'center_manager'),
-        allowNull: true,
-      },
+
       title: {
         type: DataTypes.STRING,
         allowNull: false,
@@ -61,19 +50,7 @@ module.exports = (sequelize, DataTypes) => {
           fields: ['sender_id'],
         },
         {
-          fields: ['receiver_type'],
-        },
-        {
-          fields: ['receiver_id'],
-        },
-        {
-          fields: ['receiver_role'],
-        },
-        {
           fields: ['created_at'],
-        },
-        {
-          fields: ['receiver_type', 'receiver_id'],
         },
         {
           fields: ['is_important'],
@@ -92,10 +69,16 @@ module.exports = (sequelize, DataTypes) => {
       as: 'sender',
     });
 
-    // Notice belongs to Center (N:1) - receiver_type이 'center'일 때
-    Notice.belongsTo(models.Center, {
-      foreignKey: 'receiver_id',
-      as: 'targetCenter',
+    // Notice has many NoticeTargetCenters (1:N)
+    Notice.hasMany(models.NoticeTargetCenter, {
+      foreignKey: 'notice_id',
+      as: 'targetCenters',
+    });
+
+    // Notice has many NoticeTargetRoles (1:N)
+    Notice.hasMany(models.NoticeTargetRole, {
+      foreignKey: 'notice_id',
+      as: 'targetRoles',
     });
 
     // Notice has many NoticeComments (1:N)

@@ -35,9 +35,10 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
         defaultValue: false,
       },
-      role: {
-        type: DataTypes.ENUM('admin', 'center_manager', 'trainer_leader', 'trainer'),
+      position_id: {
+        type: DataTypes.INTEGER,
         allowNull: false,
+        comment: '직급 ID (positions 테이블 참조)',
       },
       team_id: {
         type: DataTypes.INTEGER,
@@ -119,7 +120,7 @@ module.exports = (sequelize, DataTypes) => {
           fields: ['team_id'],
         },
         {
-          fields: ['role'],
+          fields: ['position_id'],
         },
         {
           fields: ['status'],
@@ -129,6 +130,12 @@ module.exports = (sequelize, DataTypes) => {
   );
 
   User.associate = function (models) {
+    // User belongs to Position (N:1)
+    User.belongsTo(models.Position, {
+      foreignKey: 'position_id',
+      as: 'position',
+    });
+
     // User belongs to Center (N:1)
     User.belongsTo(models.Center, {
       foreignKey: 'center_id',

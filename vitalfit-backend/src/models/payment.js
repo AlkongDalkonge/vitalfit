@@ -26,11 +26,15 @@ module.exports = (sequelize, DataTypes) => {
       session_count: {
         type: DataTypes.INTEGER,
         allowNull: false,
+        comment: '유료 세션 수',
       },
-      session_price: {
+      free_session_count: {
         type: DataTypes.INTEGER,
         allowNull: false,
+        defaultValue: 0,
+        comment: '무료 세션 수 (프로모션, 서비스 등)',
       },
+
       payment_date: {
         type: DataTypes.DATEONLY,
         allowNull: false,
@@ -63,6 +67,17 @@ module.exports = (sequelize, DataTypes) => {
         },
         {
           fields: ['trainer_id', 'payment_date'],
+        },
+        // 복합 인덱스: member_id, trainer_id, center_id, payment_date
+        {
+          fields: ['member_id', 'trainer_id', 'center_id', 'payment_date'],
+          name: 'idx_payment_member_trainer_center_date',
+        },
+        // Unique 제약: 같은 회원이 같은 날짜에 같은 결제 방법으로 중복 결제 방지
+        {
+          fields: ['member_id', 'payment_date', 'payment_method'],
+          unique: true,
+          name: 'unique_member_payment_per_day_method',
         },
       ],
     }

@@ -10,6 +10,7 @@ const ptSessionRouter = require('./routes/ptSessionRoute');
 
 const { sequelize } = require('./models');
 const errorHandler = require('./middlewares/errorHandler');
+const { seedAllData } = require('./models/seedData');
 
 const app = express();
 
@@ -46,15 +47,34 @@ app.use(errorHandler);
 const PORT = process.env.SERVER_PORT || 3000;
 
 sequelize
-  .sync({ force: false })
-  .then(() => {
+  // .sync({ force: false })
+  .sync({ force: true })
+  .then(async () => {
     console.log('DB 테이블 생성 완료!');
+
+    // 시드 데이터 실행 조건 확인
+    const shouldSeedData =
+      process.env.SEED_DATA === 'true' ||
+      (process.env.NODE_ENV !== 'production' && process.env.SEED_DATA !== 'false');
+
+    if (shouldSeedData) {
+      try {
+        console.log('시드 데이터를 추가합니다...');
+        await seedAllData();
+      } catch (error) {
+        console.error('시드 데이터 추가 실패:', error);
+        // 시드 데이터 실패해도 서버는 계속 실행
+      }
+    } else {
+      console.log('시드 데이터를 건너뜁니다. (SEED_DATA=false 또는 production 환경)');
+    }
+
     app.listen(PORT, () => {
       console.log(`서버가 포트 ${PORT}번에서 실행 중입니다.`);
     });
   })
   .catch(err => {
-    console.error('테이블 생성 실패:', err);
+    console.error('DB 초기화 실패:', err);
   });
 
 module.exports = app;
