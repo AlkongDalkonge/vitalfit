@@ -7,6 +7,7 @@ const morgan = require('morgan');
 const noticeRouter = require('./routes/noticeRouter');
 const memberRouter = require('./routes/memberRoute');
 const ptSessionRouter = require('./routes/ptSessionRoute');
+const userRouter = require('./routes/userRoute');
 
 const { sequelize } = require('./models');
 const errorHandler = require('./middlewares/errorHandler');
@@ -30,6 +31,7 @@ app.use(morgan('dev'));
 app.use('/api/notices', noticeRouter);
 app.use('/api/members', memberRouter);
 app.use('/api/pt-sessions', ptSessionRouter);
+app.use('/api/users', userRouter);
 
 // 404 처리
 app.use((req, res) => {
@@ -46,35 +48,20 @@ app.use(errorHandler);
 // DB 연결 및 서버 실행
 const PORT = process.env.SERVER_PORT || 3000;
 
-sequelize
-  // .sync({ force: false })
-  .sync({ force: true })
-  .then(async () => {
-    console.log('DB 테이블 생성 완료!');
+// 임시로 데이터베이스 동기화 건너뛰기 (테스트용)
+// sequelize
+//   .sync({ force: false })
+//   .then(async () => {
+//     console.log('DB 테이블 생성 완료!');
+//     // ... 기존 코드
+//   })
+//   .catch(err => {
+//     console.error('DB 초기화 실패:', err);
+//   });
 
-    // 시드 데이터 실행 조건 확인
-    const shouldSeedData =
-      process.env.SEED_DATA === 'true' ||
-      (process.env.NODE_ENV !== 'production' && process.env.SEED_DATA !== 'false');
-
-    if (shouldSeedData) {
-      try {
-        console.log('시드 데이터를 추가합니다...');
-        await seedAllData();
-      } catch (error) {
-        console.error('시드 데이터 추가 실패:', error);
-        // 시드 데이터 실패해도 서버는 계속 실행
-      }
-    } else {
-      console.log('시드 데이터를 건너뜁니다. (SEED_DATA=false 또는 production 환경)');
-    }
-
-    app.listen(PORT, () => {
-      console.log(`서버가 포트 ${PORT}번에서 실행 중입니다.`);
-    });
-  })
-  .catch(err => {
-    console.error('DB 초기화 실패:', err);
-  });
+// 임시 해결책: 데이터베이스 동기화 없이 서버만 실행
+app.listen(PORT, () => {
+  console.log(`서버가 포트 ${PORT}번에서 실행 중입니다. (데이터베이스 동기화 건너뜀)`);
+});
 
 module.exports = app;

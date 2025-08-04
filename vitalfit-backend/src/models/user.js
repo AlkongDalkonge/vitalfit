@@ -19,6 +19,11 @@ module.exports = (sequelize, DataTypes) => {
           isEmail: true,
         },
       },
+      email_verified: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+      },
       password: {
         type: DataTypes.STRING(255),
         allowNull: false,
@@ -30,15 +35,20 @@ module.exports = (sequelize, DataTypes) => {
           len: [10, 20],
         },
       },
-      phone_verified: {
+      terms_accepted: {
         type: DataTypes.BOOLEAN,
         allowNull: false,
         defaultValue: false,
+        comment: '약관 동의 여부',
+      },
+      terms_accepted_at: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        comment: '약관 동의 시간',
       },
       position_id: {
         type: DataTypes.INTEGER,
         allowNull: false,
-        comment: '직급 ID (positions 테이블 참조)',
       },
       team_id: {
         type: DataTypes.INTEGER,
@@ -89,6 +99,10 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING(100),
         allowNull: true,
       },
+      shift: {
+        type: DataTypes.STRING(50),
+        allowNull: true,
+      },
       last_login_at: {
         type: DataTypes.DATE,
         allowNull: true,
@@ -105,37 +119,19 @@ module.exports = (sequelize, DataTypes) => {
       },
     },
     {
-      timestamps: true, // createdAt, updatedAt 자동 생성
+      timestamps: true,
       underscored: true,
       tableName: 'users',
       indexes: [
-        {
-          unique: true,
-          fields: ['email'],
-        },
-        {
-          fields: ['center_id'],
-        },
-        {
-          fields: ['team_id'],
-        },
-        {
-          fields: ['position_id'],
-        },
-        {
-          fields: ['status'],
-        },
+        { unique: true, fields: ['email'] },
+        { fields: ['center_id'] },
+        { fields: ['team_id'] },
+        { fields: ['position_id'] },
+        { fields: ['status'] },
       ],
     }
   );
-
   User.associate = function (models) {
-    // User belongs to Position (N:1)
-    User.belongsTo(models.Position, {
-      foreignKey: 'position_id',
-      as: 'position',
-    });
-
     // User belongs to Center (N:1)
     User.belongsTo(models.Center, {
       foreignKey: 'center_id',
@@ -146,6 +142,12 @@ module.exports = (sequelize, DataTypes) => {
     User.belongsTo(models.Team, {
       foreignKey: 'team_id',
       as: 'team',
+    });
+
+    // User belongs to Position (N:1)
+    User.belongsTo(models.Position, {
+      foreignKey: 'position_id',
+      as: 'position',
     });
 
     // User has many Notices (1:N) - 작성한 공지사항
