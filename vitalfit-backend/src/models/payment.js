@@ -26,13 +26,11 @@ module.exports = (sequelize, DataTypes) => {
       session_count: {
         type: DataTypes.INTEGER,
         allowNull: false,
-        comment: '유료 세션 수',
       },
       free_session_count: {
         type: DataTypes.INTEGER,
         allowNull: false,
         defaultValue: 0,
-        comment: '무료 세션 수 (프로모션, 서비스 등)',
       },
 
       payment_date: {

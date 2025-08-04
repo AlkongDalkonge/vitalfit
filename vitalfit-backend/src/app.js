@@ -10,7 +10,7 @@ const ptSessionRouter = require('./routes/ptSessionRoute');
 
 const { sequelize } = require('./models');
 const errorHandler = require('./middlewares/errorHandler');
-const { seedAllData } = require('./models/seedData');
+const { seedAllData } = require('./utils/seedData');
 
 const app = express();
 

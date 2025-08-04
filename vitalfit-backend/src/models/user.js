@@ -38,7 +38,6 @@ module.exports = (sequelize, DataTypes) => {
       position_id: {
         type: DataTypes.INTEGER,
         allowNull: false,
-        comment: '직급 ID (positions 테이블 참조)',
       },
       team_id: {
         type: DataTypes.INTEGER,

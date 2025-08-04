@@ -65,20 +65,20 @@ module.exports = (sequelize, DataTypes) => {
       as: 'notice',
     });
 
-    // NoticeComment belongs to User (N:1) - 댓글 작성자
+    // NoticeComment belongs to User (N:1) - comment author
     NoticeComment.belongsTo(models.User, {
       foreignKey: 'user_id',
       as: 'author',
     });
 
     // 대댓글 자기 참조 관계
-    // NoticeComment belongs to NoticeComment (N:1) - 부모 댓글
+    // NoticeComment belongs to NoticeComment (N:1) - parent comment
     NoticeComment.belongsTo(models.NoticeComment, {
       foreignKey: 'parent_id',
       as: 'parent',
     });
 
-    // NoticeComment has many NoticeComments (1:N) - 자식 댓글들
+    // NoticeComment has many NoticeComments (1:N) - child comments
     NoticeComment.hasMany(models.NoticeComment, {
       foreignKey: 'parent_id',
       as: 'replies',

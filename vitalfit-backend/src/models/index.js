@@ -18,16 +18,24 @@ if (config.use_env_variable) {
 
 fs.readdirSync(__dirname)
   .filter(file => {
+    const fullPath = path.join(__dirname, file);
     return (
-      file.indexOf('.') !== 0 &&
       file !== basename &&
-      file.slice(-3) === '.js' &&
-      file.indexOf('.test.js') === -1
+      file.endsWith('.js') &&
+      fs.statSync(fullPath).isFile() &&
+      !file.endsWith('.test.js')
     );
   })
   .forEach(file => {
-    const model = require(path.join(__dirname, file))(sequelize, Sequelize.DataTypes);
-    db[model.name] = model;
+    const fullPath = path.join(__dirname, file);
+    const modelFactory = require(fullPath);
+
+    if (typeof modelFactory === 'function') {
+      const model = modelFactory(sequelize, Sequelize.DataTypes);
+      db[model.name] = model;
+    } else {
+      console.warn(`❗ ${file} is not a function. Skipping.`);
+    }
   });
 
 Object.keys(db).forEach(modelName => {
