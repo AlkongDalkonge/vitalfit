@@ -89,9 +89,18 @@ module.exports = (sequelize, DataTypes) => {
         defaultValue: 0,
       },
       status: {
-        type: DataTypes.ENUM('draft', 'confirmed', 'paid'),
+        type: DataTypes.ENUM(
+          'draft',
+          'team_leader_approved',
+          'center_manager_approved',
+          'ceo_approved',
+          'paid',
+          'rejected',
+          'cancelled'
+        ),
         allowNull: false,
         defaultValue: 'draft',
+        comment: '정산 승인 상태 (초안 → 팀장승인 → 지점장승인 → 대표승인 → 지급완료)',
       },
       notes: {
         type: DataTypes.TEXT,
@@ -117,6 +126,12 @@ module.exports = (sequelize, DataTypes) => {
         },
         {
           fields: ['status'],
+        },
+        // Unique 제약: 같은 트레이너의 같은 연월 중복 정산 방지
+        {
+          fields: ['user_id', 'settlement_year', 'settlement_month'],
+          unique: true,
+          name: 'unique_trainer_monthly_settlement',
         },
       ],
     }
