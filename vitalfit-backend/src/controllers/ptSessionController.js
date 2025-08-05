@@ -302,6 +302,145 @@ const getPTSessionsByMember = async (req, res) => {
   }
 };
 
+// 특정 멤버의 월별 PT 세션 조회
+const getPTSessionsByMemberMonth = async (req, res) => {
+  try {
+    const { memberId, year, month } = req.params;
+    const { page = 1, limit = 10 } = req.query;
+    const offset = (page - 1) * limit;
+
+    // memberId를 정수로 변환
+    const memberIdInt = parseInt(memberId);
+    if (isNaN(memberIdInt)) {
+      return res.status(400).json({
+        success: false,
+        message: '유효하지 않은 멤버 ID입니다.',
+      });
+    }
+
+    // 년월 형식 검증
+    const yearInt = parseInt(year);
+    const monthInt = parseInt(month);
+
+    if (isNaN(yearInt) || isNaN(monthInt) || monthInt < 1 || monthInt > 12) {
+      return res.status(400).json({
+        success: false,
+        message: '유효하지 않은 년월 형식입니다. (YYYY/MM)',
+      });
+    }
+
+    // member_id 유효성 검증
+    const member = await Member.findByPk(memberIdInt);
+    if (!member) {
+      return res.status(404).json({
+        success: false,
+        message: '존재하지 않는 멤버입니다.',
+      });
+    }
+
+    // 해당 월의 시작일과 종료일 계산 (타임존 문제 해결)
+    const startDate = new Date(yearInt, monthInt - 1, 1);
+    const endDate = new Date(yearInt, monthInt, 0); // 해당 월의 마지막 날
+
+    // YYYY-MM-DD 형식으로 직접 변환 (타임존 문제 방지)
+    const startDateStr = `${yearInt}-${String(monthInt).padStart(2, '0')}-01`;
+    const endDateStr = `${yearInt}-${String(monthInt).padStart(
+      2,
+      '0'
+    )}-${String(endDate.getDate()).padStart(2, '0')}`;
+
+    const whereClause = {
+      member_id: memberIdInt,
+      session_date: {
+        [require('sequelize').Op.between]: [startDateStr, endDateStr],
+      },
+    };
+
+    const { count, rows: ptSessions } = await PTSession.findAndCountAll({
+      where: whereClause,
+      include: [
+        {
+          model: Member,
+          as: 'member',
+          attributes: [
+            'id',
+            'name',
+            'phone',
+            'join_date',
+            'expire_date',
+            'total_sessions',
+            'used_sessions',
+            'free_sessions',
+          ],
+        },
+        {
+          model: User,
+          as: 'trainer',
+          attributes: ['id', 'name', 'email'],
+        },
+        {
+          model: Center,
+          as: 'center',
+          attributes: ['id', 'name', 'address'],
+        },
+      ],
+      limit: parseInt(limit),
+      offset: parseInt(offset),
+      order: [
+        ['session_date', 'ASC'],
+        ['start_time', 'ASC'],
+      ],
+    });
+
+    if (count === 0) {
+      return res.status(404).json({
+        success: false,
+        message: '해당 멤버의 해당 월 PT 세션이 없습니다.',
+      });
+    }
+
+    // 통계 정보 계산
+    const stats = {
+      total_sessions: count,
+      regular_sessions: ptSessions.filter(session => session.session_type === 'regular').length,
+      free_sessions: ptSessions.filter(session => session.session_type === 'free').length,
+    };
+
+    res.json({
+      success: true,
+      message: '특정 멤버의 월별 PT 세션 목록을 성공적으로 조회했습니다.',
+      data: {
+        member: {
+          id: member.id,
+          name: member.name,
+          phone: member.phone,
+        },
+        year: yearInt,
+        month: monthInt,
+        period: {
+          start_date: startDate.toISOString().split('T')[0],
+          end_date: endDate.toISOString().split('T')[0],
+        },
+        stats,
+        pt_sessions: ptSessions,
+        pagination: {
+          current_page: parseInt(page),
+          total_pages: Math.ceil(count / limit),
+          total_items: count,
+          items_per_page: parseInt(limit),
+        },
+      },
+    });
+  } catch (error) {
+    console.error('특정 멤버의 월별 PT 세션 조회 오류:', error);
+    res.status(500).json({
+      success: false,
+      message: '특정 멤버의 월별 PT 세션 조회 중 오류가 발생했습니다.',
+      error: error.message,
+    });
+  }
+};
+
 // 월별 PT 세션 조회
 const getPTSessionsByMonth = async (req, res) => {
   try {
@@ -473,6 +612,7 @@ module.exports = {
   createPTSession,
   updatePTSession,
   getPTSessionsByMember,
+  getPTSessionsByMemberMonth,
   getPTSessionsByMonth,
   deletePTSession,
 };

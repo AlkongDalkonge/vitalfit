@@ -10,12 +10,10 @@ module.exports = (sequelize, DataTypes) => {
       notice_id: {
         type: DataTypes.INTEGER,
         allowNull: false,
-        comment: '공지 ID (notices 테이블 참조)',
       },
       role_code: {
         type: DataTypes.ENUM('team_member', 'team_leader', 'center_manager'),
         allowNull: false,
-        comment: '직책 코드 (수신 대상 직책 구분)',
       },
     },
     {

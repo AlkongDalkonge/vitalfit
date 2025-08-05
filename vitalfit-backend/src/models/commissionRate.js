@@ -31,23 +31,19 @@ module.exports = (sequelize, DataTypes) => {
       center_id: {
         type: DataTypes.INTEGER,
         allowNull: true,
-        comment: '지점 ID (centers 테이블 참조) - NULL이면 전체 지점 적용',
       },
       position_id: {
         type: DataTypes.INTEGER,
         allowNull: true,
-        comment: '직급 ID (positions 테이블 참조) - NULL이면 전체 직급 적용',
       },
       is_active: {
         type: DataTypes.BOOLEAN,
         allowNull: false,
         defaultValue: true,
-        comment: '정책 활성화 상태',
       },
       description: {
         type: DataTypes.TEXT,
         allowNull: true,
-        comment: '어드민을 위한 정책 설명',
       },
     },
     {
