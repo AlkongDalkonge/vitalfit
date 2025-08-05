@@ -3,12 +3,9 @@ console.log(process.env.DB_USERNAME);
 module.exports = {
   // 환경변수 사용 (보안상 권장)
   development: {
-    username: process.env.DB_USERNAME,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_DATABASE,
-    host: process.env.DB_HOST,
-    dialect: 'postgres',
-    port: process.env.DB_PORT,
+    dialect: 'sqlite',
+    storage: './database.sqlite',
+    logging: false,
   },
   // development: {
   //   username: "aldalkong",

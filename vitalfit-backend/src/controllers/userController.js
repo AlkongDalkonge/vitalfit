@@ -230,6 +230,211 @@ const deactivateAccount = async (req, res, next) => {
   }
 };
 
+// ✅ 모든 사용자 조회 (새로 추가)
+const getAllUsers = async (req, res, next) => {
+  try {
+    const { 
+      page = 1, 
+      limit = 1000, 
+      role, 
+      centerId, 
+      teamId, 
+      positionId,
+      status,
+      search 
+    } = req.query;
+    
+    const offset = (page - 1) * limit;
+    const whereClause = {};
+
+    // 역할별 필터링 (position 기반)
+    if (role) {
+      // role을 position으로 매핑
+      let positionIds = [];
+      if (role === 'admin') {
+        positionIds = [12]; // 관리자 position_id
+      } else if (role === 'trainer') {
+        positionIds = [3, 4, 5]; // 트레이너 관련 position_id들
+      } else if (role === 'staff') {
+        positionIds = [1, 2, 6, 7, 8, 9, 10, 11]; // 기타 직원 position_id들
+      }
+      if (positionIds.length > 0) {
+        whereClause.position_id = { [require('sequelize').Op.in]: positionIds };
+      }
+    }
+
+    // 센터별 필터링
+    if (centerId) {
+      whereClause.center_id = parseInt(centerId);
+    }
+
+    // 팀별 필터링
+    if (teamId) {
+      whereClause.team_id = parseInt(teamId);
+    }
+
+    // 직급별 필터링
+    if (positionId) {
+      whereClause.position_id = parseInt(positionId);
+    }
+
+    // 상태별 필터링
+    if (status) {
+      whereClause.status = status;
+    }
+
+    // 검색 필터링 (이름, 이메일, 닉네임)
+    if (search) {
+      whereClause[require('sequelize').Op.or] = [
+        { name: { [require('sequelize').Op.iLike]: `%${search}%` } },
+        { email: { [require('sequelize').Op.iLike]: `%${search}%` } },
+        { nickname: { [require('sequelize').Op.iLike]: `%${search}%` } },
+      ];
+    }
+
+    const { count, rows: users } = await User.findAndCountAll({
+      where: whereClause,
+      include: [
+        {
+          model: Center,
+          as: 'center',
+          attributes: ['id', 'name'],
+        },
+        {
+          model: Position,
+          as: 'position',
+          attributes: ['id', 'name'],
+        },
+        {
+          model: Team,
+          as: 'team',
+          attributes: ['id', 'name'],
+        },
+      ],
+      order: [['created_at', 'DESC']],
+      limit: parseInt(limit),
+      offset: parseInt(offset),
+    });
+
+    // 통계 정보 계산
+    const activeUsers = users.filter(user => user.status === 'active').length;
+    const inactiveUsers = users.filter(user => user.status === 'inactive').length;
+    const trainerUsers = users.filter(user => [3, 4, 5].includes(user.position_id)).length;
+    const adminUsers = users.filter(user => user.position_id === 12).length;
+
+    // 센터별 통계
+    const centerStats = {};
+    users.forEach(user => {
+      const centerName = user.center?.name || 'Unknown';
+      if (!centerStats[centerName]) {
+        centerStats[centerName] = { total: 0, active: 0, inactive: 0, trainers: 0, admins: 0 };
+      }
+      centerStats[centerName].total++;
+      centerStats[centerName][user.status]++;
+      if ([3, 4, 5].includes(user.position_id)) centerStats[centerName].trainers++;
+      if (user.position_id === 12) centerStats[centerName].admins++;
+    });
+
+    // 팀별 통계
+    const teamStats = {};
+    users.forEach(user => {
+      const teamName = user.team?.name || 'Unknown';
+      if (!teamStats[teamName]) {
+        teamStats[teamName] = { total: 0, active: 0, inactive: 0, trainers: 0, admins: 0 };
+      }
+      teamStats[teamName].total++;
+      teamStats[teamName][user.status]++;
+      if ([3, 4, 5].includes(user.position_id)) teamStats[teamName].trainers++;
+      if (user.position_id === 12) teamStats[teamName].admins++;
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: '사용자 목록 조회 성공',
+      data: {
+        users: users,
+        pagination: {
+          current_page: parseInt(page),
+          total_pages: Math.ceil(count / limit),
+          total_count: count,
+          limit: parseInt(limit),
+        },
+        statistics: {
+          total_users: count,
+          active_users: activeUsers,
+          inactive_users: inactiveUsers,
+          trainer_users: trainerUsers,
+          admin_users: adminUsers,
+          center_stats: centerStats,
+          team_stats: teamStats,
+        },
+        filters: {
+          role: role || null,
+          center_id: centerId || null,
+          team_id: teamId || null,
+          position_id: positionId || null,
+          status: status || null,
+          search: search || null,
+        },
+      },
+    });
+  } catch (error) {
+    console.error('사용자 목록 조회 오류:', error);
+    return res.status(500).json({
+      success: false,
+      message: '사용자 목록 조회 중 오류가 발생했습니다.',
+    });
+  }
+};
+
+// ✅ 특정 사용자 조회
+const getUserById = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    
+    const user = await User.findByPk(id, {
+      include: [
+        {
+          model: Center,
+          as: 'center',
+          attributes: ['id', 'name', 'address'],
+        },
+        {
+          model: Position,
+          as: 'position',
+          attributes: ['id', 'name'],
+        },
+        {
+          model: Team,
+          as: 'team',
+          attributes: ['id', 'name'],
+        },
+      ],
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: '존재하지 않는 사용자입니다.',
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: '사용자 조회 성공',
+      data: {
+        user: user,
+      },
+    });
+  } catch (error) {
+    console.error('사용자 조회 오류:', error);
+    return res.status(500).json({
+      success: false,
+      message: '사용자 조회 중 오류가 발생했습니다.',
+    });
+  }
+};
+
 module.exports = {
   signUp,
   signIn,
@@ -238,4 +443,6 @@ module.exports = {
   logout,
   resetPassword,
   deactivateAccount,
+  getAllUsers,
+  getUserById,
 };

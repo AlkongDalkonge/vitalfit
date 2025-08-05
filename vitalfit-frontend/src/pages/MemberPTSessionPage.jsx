@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import PTSessionCreateModal from './PTSessionCreateModal';
 import PTSessionEditModal from './PTSessionEditModal';
+import { ptSessionAPI } from '../utils/api';
 
 const MemberPTSessionPage = () => {
   const { memberId } = useParams();
@@ -34,22 +35,17 @@ const MemberPTSessionPage = () => {
       console.log(`🔍 API 호출: ${memberId}/month/${currentYear}/${currentMonth}`);
       console.log(`📅 UI 표시: ${currentYear}년 ${currentMonth}월`);
 
-      // 멤버의 이번달 PT 세션 조회
-      const response = await fetch(
-        `http://localhost:3000/api/pt-sessions/member/${memberId}/month/${currentYear}/${currentMonth}`
-      );
+      // 멤버의 이번달 PT 세션 조회 (새로운 API 사용)
+      const response = await ptSessionAPI.getSessionsByMember(memberId, {
+        year: currentYear,
+        month: currentMonth
+      });
 
-      if (!response.ok) {
-        throw new Error('PT 세션 데이터를 불러오는데 실패했습니다.');
-      }
-
-      const data = await response.json();
-
-      if (data.success) {
-        setMember(data.data.member);
-        setPtSessions(data.data.pt_sessions);
+      if (response.success) {
+        setMember(response.data.member);
+        setPtSessions(response.data.pt_sessions);
       } else {
-        setError(data.message);
+        setError(response.message);
       }
     } catch (err) {
       setError(err.message);

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MemberEditModal from './MemberEditModal';
 import MemberCreateModal from './MemberCreateModal';
+import { memberAPI, centerAPI, userAPI } from '../utils/api';
 
 const MemberPage = () => {
   const navigate = useNavigate();
@@ -21,13 +22,12 @@ const MemberPage = () => {
   const [statusDropdowns, setStatusDropdowns] = useState({});
 
   // API 호출 함수들
-  const fetchMembers = async () => {
+  const fetchMembers = async (filters = {}) => {
     try {
-      const response = await fetch('http://localhost:3000/api/member');
-      const data = await response.json();
-      if (data.success) {
-        setMembers(data.data.members);
-        setFilteredMembers(data.data.members);
+      const response = await memberAPI.getAllMembers({ limit: 1000, ...filters });
+      if (response.success) {
+        setMembers(response.data.members);
+        setFilteredMembers(response.data.members);
       }
     } catch (error) {
       console.error('멤버 조회 실패:', error);
@@ -36,10 +36,9 @@ const MemberPage = () => {
 
   const fetchCenters = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/centers');
-      const data = await response.json();
-      if (data.success) {
-        setCenters(data.data.centers);
+      const response = await centerAPI.getAllCenters();
+      if (response.success) {
+        setCenters(response.data.centers);
       }
     } catch (error) {
       console.error('지점 조회 실패:', error);
@@ -48,11 +47,10 @@ const MemberPage = () => {
 
   const fetchTrainers = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/users?role=trainer');
-      const data = await response.json();
-      if (data.success) {
-        setTrainers(data.data.users);
-        setFilteredTrainers(data.data.users);
+      const response = await userAPI.getAllUsers({ role: 'trainer' });
+      if (response.success) {
+        setTrainers(response.data.users);
+        setFilteredTrainers(response.data.users);
       }
     } catch (error) {
       console.error('트레이너 조회 실패:', error);
@@ -72,14 +70,13 @@ const MemberPage = () => {
   // 필터링 함수
   const filterMembers = async () => {
     try {
-      let url = 'http://localhost:3000/api/member';
-      const params = new URLSearchParams();
+      const filters = {};
 
       if (centerFilter !== 'Select option') {
         // 지점 이름으로 ID 찾기
         const center = centers.find(c => c.name === centerFilter);
         if (center) {
-          params.append('centerId', center.id);
+          filters.centerId = center.id;
         }
       }
 
@@ -87,25 +84,40 @@ const MemberPage = () => {
         // 트레이너 이름으로 ID 찾기
         const trainer = trainers.find(t => t.name === trainerFilter);
         if (trainer) {
-          params.append('trainerId', trainer.id);
+          filters.trainerId = trainer.id;
         }
       }
 
-      if (params.toString()) {
-        url += '?' + params.toString();
-      }
-
-      const response = await fetch(url);
-      const data = await response.json();
-      if (data.success) {
-        setFilteredMembers(data.data.members);
-      }
+      await fetchMembers(filters);
     } catch (error) {
       console.error('필터링 실패:', error);
     }
   };
 
-  // 지점 필터 변경 시 트레이너 필터 업데이트
+  // 즉시 필터링 적용 함수
+  const filterMembersImmediate = async (centerId, trainerName) => {
+    try {
+      const filters = {};
+
+      if (centerId) {
+        filters.centerId = centerId;
+      }
+
+      if (trainerName && trainerName !== 'Select option') {
+        // 트레이너 이름으로 ID 찾기
+        const trainer = trainers.find(t => t.name === trainerName);
+        if (trainer) {
+          filters.trainerId = trainer.id;
+        }
+      }
+
+      await fetchMembers(filters);
+    } catch (error) {
+      console.error('즉시 필터링 실패:', error);
+    }
+  };
+
+  // 지점 필터 변경 시 트레이너 필터 업데이트 (즉시 적용)
   const handleCenterFilterChange = async value => {
     setCenterFilter(value);
     setShowCenterDropdown(false);
@@ -113,33 +125,34 @@ const MemberPage = () => {
     if (value === 'Select option') {
       setFilteredTrainers(trainers);
       setTrainerFilter('Select option');
+      // 즉시 필터링 적용
+      await filterMembersImmediate(null, 'Select option');
     } else {
-      // 해당 지점의 트레이너만 필터링
-      const centerTrainers = trainers.filter(trainer =>
-        members.some(member => member.center?.name === value && member.trainer?.id === trainer.id)
-      );
-      setFilteredTrainers(centerTrainers);
+      // 해당 지점의 트레이너만 필터링 (개선된 로직)
+      const center = centers.find(c => c.name === value);
+      if (center) {
+        const centerTrainers = trainers.filter(trainer => trainer.center_id === center.id);
+        setFilteredTrainers(centerTrainers);
+      } else {
+        setFilteredTrainers([]);
+      }
       setTrainerFilter('Select option');
+      // 즉시 필터링 적용
+      await filterMembersImmediate(center.id, 'Select option');
     }
-
-    // API 호출로 필터링
-    await filterMembers();
   };
 
   const handleTrainerFilterChange = async value => {
     setTrainerFilter(value);
     setShowTrainerDropdown(false);
 
-    // API 호출로 필터링
-    await filterMembers();
+    // 즉시 필터링 적용
+    const center = centers.find(c => c.name === centerFilter);
+    const centerId = center ? center.id : null;
+    await filterMembersImmediate(centerId, value);
   };
 
-  useEffect(() => {
-    // 초기 로드 시에는 필터링하지 않음
-    if (members.length > 0) {
-      filterMembers();
-    }
-  }, [centerFilter, trainerFilter]);
+  // useEffect 제거 - 즉시 필터링으로 대체
 
   // 드롭다운 외부 클릭 시 닫기
   useEffect(() => {
@@ -213,15 +226,9 @@ const MemberPage = () => {
   // 상태 변경 처리
   const handleStatusChange = async (memberId, newStatus) => {
     try {
-      const response = await fetch(`http://localhost:3000/api/member/${memberId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ status: newStatus }),
-      });
-
-      if (response.ok) {
+      const response = await memberAPI.updateMember(memberId, { status: newStatus });
+      
+      if (response.success) {
         // 로컬 상태 업데이트
         setMembers(prevMembers =>
           prevMembers.map(member =>
@@ -283,8 +290,8 @@ const MemberPage = () => {
   }
 
   return (
-    <div className="w-full max-w-7xl mx-auto p-6">
-      <div className="flex flex-col gap-6">
+    <div className="w-full max-w-7xl mx-auto p-6 h-screen flex flex-col overflow-hidden">
+      <div className="flex flex-col gap-6 flex-1 overflow-hidden">
         {/* 최상단 제목 */}
         <div
           data-layer="모든 고객"
@@ -294,14 +301,14 @@ const MemberPage = () => {
         </div>
 
         {/* 지점 고객수와 필터 섹션 */}
-        <div className="flex justify-between items-start pr-8 pt-[20px] pl-[30px]">
+        <div className="flex justify-between items-start pr-8 pt-[20px] pl-[30px] flex-shrink-0">
           {/* 지점 고객수 */}
           <div data-layer="Frame 37" className="Frame37 w-32 h-14 relative">
             <div
               data-layer="250"
               className="left-0 top-0 absolute justify-start text-neutral-800 text-4xl font-extrabold font-['Nunito']"
             >
-              250
+              {filteredMembers.length}
             </div>
             <div
               data-layer="지점 고객 수"
@@ -317,7 +324,7 @@ const MemberPage = () => {
             <div
               data-layer="Input Field"
               data-property-1="Small"
-              className="w-[120px] h-[30px] flex flex-col justify-start items-start"
+              className="w-[120px] h-[30px] flex flex-col justify-start items-start dropdown-container"
             >
               <div
                 data-layer="Rectangle 3"
@@ -377,7 +384,7 @@ const MemberPage = () => {
             <div
               data-layer="Input Field"
               data-property-1="Small"
-              className="w-[120px] h-[30px] flex flex-col justify-start items-start"
+              className="w-[120px] h-[30px] flex flex-col justify-start items-start dropdown-container"
             >
               <div
                 data-layer="Rectangle 3"
@@ -436,7 +443,7 @@ const MemberPage = () => {
         </div>
 
         {/* 회원 목록 테이블 */}
-        <div className="bg-white rounded-[20px] shadow-sm">
+        <div className="bg-white">
           <div className="flex flex-col gap-6">
             {/* 페이지 표시 */}
             <div className="flex justify-end">
@@ -471,7 +478,7 @@ const MemberPage = () => {
             </div>
 
             {/* 테이블 */}
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto flex-1 overflow-y-auto">
               <div className="min-w-full">
                 {/* 헤더 행 */}
                 <div className="flex justify-start items-center gap-10 mb-6">
@@ -526,7 +533,7 @@ const MemberPage = () => {
                 </div>
 
                 {/* 데이터 행들 */}
-                <div className="space-y-4">
+                <div className="space-y-4 max-h-[450px] overflow-y-auto pr-2 custom-scrollbar">
                   {filteredMembers.map((member, index) => (
                     <div key={member.id} className="flex flex-col gap-2">
                       <div className="flex justify-start items-center gap-10">
@@ -666,3 +673,4 @@ const MemberPage = () => {
 };
 
 export default MemberPage;
+

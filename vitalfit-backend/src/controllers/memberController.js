@@ -166,15 +166,42 @@ const updateMember = async (req, res) => {
   }
 };
 
-// 전체 멤버 조회
+// 멤버 목록 조회 (필터링 기능 추가)
 const getAllMembers = async (req, res) => {
   try {
-    const { page = 1, limit = 10, status } = req.query;
+    const { 
+      page = 1, 
+      limit = 1000, 
+      centerId, 
+      trainerId, 
+      status,
+      search 
+    } = req.query;
+    
     const offset = (page - 1) * limit;
-
     const whereClause = {};
+
+    // 센터별 필터링
+    if (centerId) {
+      whereClause.center_id = parseInt(centerId);
+    }
+
+    // 트레이너별 필터링
+    if (trainerId) {
+      whereClause.trainer_id = parseInt(trainerId);
+    }
+
+    // 상태별 필터링
     if (status) {
       whereClause.status = status;
+    }
+
+    // 검색 필터링 (이름 또는 전화번호)
+    if (search) {
+      whereClause[require('sequelize').Op.or] = [
+        { name: { [require('sequelize').Op.iLike]: `%${search}%` } },
+        { phone: { [require('sequelize').Op.iLike]: `%${search}%` } },
+      ];
     }
 
     const { count, rows: members } = await Member.findAndCountAll({
@@ -188,33 +215,75 @@ const getAllMembers = async (req, res) => {
         {
           model: User,
           as: 'trainer',
-          attributes: ['id', 'name', 'email'],
+          attributes: ['id', 'name', 'nickname'],
         },
       ],
+      order: [['created_at', 'DESC']],
       limit: parseInt(limit),
       offset: parseInt(offset),
-      order: [['createdAt', 'DESC']],
     });
 
-    res.json({
+    // 통계 정보 계산
+    const activeMembers = members.filter(member => member.status === 'active').length;
+    const inactiveMembers = members.filter(member => member.status === 'inactive').length;
+    const expiredMembers = members.filter(member => member.status === 'expired').length;
+    const withdrawnMembers = members.filter(member => member.status === 'withdrawn').length;
+
+    // 센터별 통계
+    const centerStats = {};
+    members.forEach(member => {
+      const centerName = member.center?.name || 'Unknown';
+      if (!centerStats[centerName]) {
+        centerStats[centerName] = { total: 0, active: 0, inactive: 0, expired: 0, withdrawn: 0 };
+      }
+      centerStats[centerName].total++;
+      centerStats[centerName][member.status]++;
+    });
+
+    // 트레이너별 통계
+    const trainerStats = {};
+    members.forEach(member => {
+      const trainerName = member.trainer?.name || 'Unknown';
+      if (!trainerStats[trainerName]) {
+        trainerStats[trainerName] = { total: 0, active: 0, inactive: 0, expired: 0, withdrawn: 0 };
+      }
+      trainerStats[trainerName].total++;
+      trainerStats[trainerName][member.status]++;
+    });
+
+    return res.status(200).json({
       success: true,
-      message: '멤버 목록을 성공적으로 조회했습니다.',
+      message: '멤버 목록 조회 성공',
       data: {
-        members,
+        members: members,
         pagination: {
           current_page: parseInt(page),
           total_pages: Math.ceil(count / limit),
-          total_items: count,
-          items_per_page: parseInt(limit),
+          total_count: count,
+          limit: parseInt(limit),
+        },
+        statistics: {
+          total_members: count,
+          active_members: activeMembers,
+          inactive_members: inactiveMembers,
+          expired_members: expiredMembers,
+          withdrawn_members: withdrawnMembers,
+          center_stats: centerStats,
+          trainer_stats: trainerStats,
+        },
+        filters: {
+          center_id: centerId || null,
+          trainer_id: trainerId || null,
+          status: status || null,
+          search: search || null,
         },
       },
     });
   } catch (error) {
-    console.error('멤버 조회 오류:', error);
-    res.status(500).json({
+    console.error('멤버 목록 조회 오류:', error);
+    return res.status(500).json({
       success: false,
-      message: '멤버 조회 중 오류가 발생했습니다.',
-      error: error.message,
+      message: '멤버 목록 조회 중 오류가 발생했습니다.',
     });
   }
 };

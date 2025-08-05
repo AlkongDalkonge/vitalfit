@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { memberAPI, centerAPI, userAPI } from '../utils/api';
 
 const MemberEditModal = ({ isOpen, onClose, member, onUpdate }) => {
   const [formData, setFormData] = useState({
@@ -37,6 +38,19 @@ const MemberEditModal = ({ isOpen, onClose, member, onUpdate }) => {
         memo: member.memo || '',
         status: member.status || 'active',
       });
+      
+      // 트레이너와 센터 정보가 포함된 멤버 데이터인지 확인
+      console.log('멤버 데이터:', member);
+      console.log('트레이너 정보:', member.trainer);
+      console.log('센터 정보:', member.center);
+      
+      // 트레이너 정보가 포함되어 있다면 추가 정보 표시
+      if (member.trainer) {
+        console.log('현재 담당 트레이너:', member.trainer.name, member.trainer.nickname);
+      }
+      if (member.center) {
+        console.log('현재 소속 센터:', member.center.name);
+      }
     }
   }, [member, isOpen]);
 
@@ -47,15 +61,33 @@ const MemberEditModal = ({ isOpen, onClose, member, onUpdate }) => {
     }
   }, [isOpen]);
 
+  // 트레이너와 센터 데이터가 로드된 후 현재 멤버의 정보 확인
+  useEffect(() => {
+    if (member && trainers.length > 0 && centers.length > 0) {
+      // 현재 멤버의 트레이너가 트레이너 목록에 있는지 확인
+      const currentTrainer = trainers.find(t => t.id === member.trainer_id);
+      if (currentTrainer) {
+        console.log('현재 멤버의 트레이너:', currentTrainer);
+      } else {
+        console.warn('현재 멤버의 트레이너를 찾을 수 없습니다:', member.trainer_id);
+      }
+
+      // 현재 멤버의 센터가 센터 목록에 있는지 확인
+      const currentCenter = centers.find(c => c.id === member.center_id);
+      if (currentCenter) {
+        console.log('현재 멤버의 센터:', currentCenter);
+      } else {
+        console.warn('현재 멤버의 센터를 찾을 수 없습니다:', member.center_id);
+      }
+    }
+  }, [member, trainers, centers]);
+
   const fetchCentersAndTrainers = async () => {
     try {
-      const [centersResponse, trainersResponse] = await Promise.all([
-        fetch('http://localhost:3000/api/centers'),
-        fetch('http://localhost:3000/api/users?role=trainer'),
+      const [centersData, trainersData] = await Promise.all([
+        centerAPI.getAllCenters(),
+        userAPI.getAllUsers({ role: 'trainer' }),
       ]);
-
-      const centersData = await centersResponse.json();
-      const trainersData = await trainersResponse.json();
 
       if (centersData.success) setCenters(centersData.data.centers);
       if (trainersData.success) setTrainers(trainersData.data.users);
@@ -112,15 +144,7 @@ const MemberEditModal = ({ isOpen, onClose, member, onUpdate }) => {
     setLoading(true);
 
     try {
-      const response = await fetch(`http://localhost:3000/api/member/${member.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
-
-      const data = await response.json();
+      const data = await memberAPI.updateMember(member.id, formData);
 
       if (data.success) {
         // 성공 시 부모 컴포넌트에 업데이트 알림
@@ -259,6 +283,11 @@ const MemberEditModal = ({ isOpen, onClose, member, onUpdate }) => {
                 className="justify-start text-neutral-900 text-sm font-normal font-['Nunito'] leading-normal"
               >
                 담당 트레이너
+                {member?.trainer && (
+                  <span className="text-xs text-gray-500 ml-2">
+                    (현재: {member.trainer.name} {member.trainer.nickname ? `(${member.trainer.nickname})` : ''})
+                  </span>
+                )}
               </div>
               <div className="relative w-72 h-12">
                 <select
@@ -276,7 +305,7 @@ const MemberEditModal = ({ isOpen, onClose, member, onUpdate }) => {
                   </option>
                   {trainers.map(trainer => (
                     <option key={trainer.id} value={trainer.id}>
-                      {trainer.name}
+                      {trainer.name} {trainer.nickname ? `(${trainer.nickname})` : ''}
                     </option>
                   ))}
                 </select>
@@ -311,6 +340,11 @@ const MemberEditModal = ({ isOpen, onClose, member, onUpdate }) => {
                 className="justify-start text-neutral-900 text-sm font-normal font-['Nunito'] leading-normal"
               >
                 소속 센터
+                {member?.center && (
+                  <span className="text-xs text-gray-500 ml-2">
+                    (현재: {member.center.name})
+                  </span>
+                )}
               </div>
               <div className="relative w-72 h-12">
                 <select

@@ -1,80 +1,83 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { centerAPI } from '../utils/api';
 
 const CenterPage = () => {
   const [expandedCenter, setExpandedCenter] = useState(null);
+  const [centers, setCenters] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const centers = [
-    {
-      id: 1,
-      name: '강남센터',
-      location: '서울시 강남구',
-      details: {
-        fullName: '강남점',
-        address: '서울특별시 강남구 강남대로 396',
-        phone: '02-222-2222',
-        description: 'vital-fit의 1호점 강남점입니다.',
-        weekdayHours: '10:00~22:00',
-        saturdayHours: '10:00~18:00',
-        sundayHours: '10:00~18:00',
-        holidays: '공휴일 휴무',
-        isOpen: true,
-        priceInfo: '시간 당 천원',
-        parking: '장애인주차장, 여성전용주차장 운영 총 20대',
-        access: '강남역 11번 출구 도보 3분',
-        image: '/placeholder-center-image.jpg',
-      },
-    },
-    {
-      id: 2,
-      name: '서초센터',
-      location: '서울시 서초구',
-      details: {
-        fullName: '서초점',
-        address: '서울특별시 서초구 서초대로 200',
-        phone: '02-333-3333',
-        description: 'vital-fit의 2호점 서초점입니다.',
-        weekdayHours: '10:00~22:00',
-        saturdayHours: '10:00~18:00',
-        sundayHours: '10:00~18:00',
-        holidays: '공휴일 휴무',
-        isOpen: true,
-        priceInfo: '시간 당 천원',
-        parking: '일반주차장 운영 총 15대',
-        access: '서초역 2번 출구 도보 5분',
-        image: '/placeholder-center-image.jpg',
-      },
-    },
-    {
-      id: 3,
-      name: '홍대센터',
-      location: '서울시 마포구',
-      details: {
-        fullName: '홍대점',
-        address: '서울특별시 마포구 홍익로 100',
-        phone: '02-444-4444',
-        description: 'vital-fit의 3호점 홍대점입니다.',
-        weekdayHours: '10:00~22:00',
-        saturdayHours: '10:00~18:00',
-        sundayHours: '10:00~18:00',
-        holidays: '공휴일 휴무',
-        isOpen: true,
-        priceInfo: '시간 당 천원',
-        parking: '지하주차장 운영 총 25대',
-        access: '홍대입구역 9번 출구 도보 2분',
-        image: '/placeholder-center-image.jpg',
-      },
-    },
-  ];
+  // 센터 데이터 가져오기
+  useEffect(() => {
+    const fetchCenters = async () => {
+      try {
+        setLoading(true);
+        const response = await centerAPI.getAllCenters();
+        setCenters(response.data.centers || []);
+        setError(null);
+      } catch (err) {
+        console.error('센터 데이터 가져오기 실패:', err);
+        setError('센터 데이터를 불러오는데 실패했습니다.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCenters();
+  }, []);
 
   const toggleCenter = centerId => {
     setExpandedCenter(expandedCenter === centerId ? null : centerId);
   };
 
+  // 로딩 상태
+  if (loading) {
+    return (
+      <div className="max-w-6xl mx-auto">
+        <h1 className="text-3xl font-bold text-gray-800 mb-6">지점 관리</h1>
+        <div className="bg-white rounded-xl p-6 shadow-sm">
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <span className="ml-3 text-gray-600">센터 정보를 불러오는 중...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 에러 상태
+  if (error) {
+    return (
+      <div className="max-w-6xl mx-auto">
+        <h1 className="text-3xl font-bold text-gray-800 mb-6">지점 관리</h1>
+        <div className="bg-white rounded-xl p-6 shadow-sm">
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <div className="text-red-500 text-lg mb-2">⚠️</div>
+              <p className="text-gray-600">{error}</p>
+              <button 
+                onClick={() => window.location.reload()} 
+                className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                다시 시도
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-6xl mx-auto">
       <h1 className="text-3xl font-bold text-gray-800 mb-6">지점 관리</h1>
       <div className="bg-white rounded-xl p-6 shadow-sm">
-        <div className="space-y-3">
+        {centers.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-gray-600">등록된 센터가 없습니다.</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
           {centers.map(center => (
             <div key={center.id} className="border border-gray-200 rounded-md overflow-hidden">
               {/* 센터 헤더 (클릭 가능) */}
@@ -84,7 +87,7 @@ const CenterPage = () => {
               >
                 <span className="font-medium text-gray-800">{center.name}</span>
                 <div className="flex items-center gap-3">
-                  <span className="text-gray-600">{center.location}</span>
+                  <span className="text-gray-600">{center.address?.split(' ').slice(0, 2).join(' ')}</span>
                   <svg
                     className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${
                       expandedCenter === center.id ? 'rotate-180' : ''
@@ -109,18 +112,28 @@ const CenterPage = () => {
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     {/* 왼쪽: 센터 이미지 */}
                     <div className="space-y-4 px-4">
-                      <div className="aspect-video bg-gray-200 rounded-lg flex items-center justify-center mx-4">
-                        <span className="text-gray-500">센터 이미지</span>
-                      </div>
+                      {center.images && center.images.length > 0 ? (
+                        <div className="aspect-video bg-gray-200 rounded-lg overflow-hidden">
+                          <img 
+                            src={center.images[0].image_url} 
+                            alt={`${center.name} 이미지`}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ) : (
+                        <div className="aspect-video bg-gray-200 rounded-lg flex items-center justify-center mx-4">
+                          <span className="text-gray-500">센터 이미지 없음</span>
+                        </div>
+                      )}
                     </div>
 
                     {/* 오른쪽: 센터 정보 */}
                     <div className="space-y-4">
                       <div>
                         <h3 className="text-xl font-bold text-gray-800 mb-2">
-                          {center.details.fullName}
+                          {center.name}
                         </h3>
-                        <p className="text-gray-600">{center.details.description}</p>
+                        <p className="text-gray-600">{center.description || '설명이 없습니다.'}</p>
                       </div>
 
                       <div className="space-y-5">
@@ -146,7 +159,7 @@ const CenterPage = () => {
                           </svg>
                           <div>
                             <span className="font-medium text-gray-700">주소</span>
-                            <div className="text-gray-600 mt-1">{center.details.address}</div>
+                            <div className="text-gray-600 mt-1">{center.address}</div>
                           </div>
                         </div>
 
@@ -166,7 +179,7 @@ const CenterPage = () => {
                           </svg>
                           <div>
                             <span className="font-medium text-gray-700">전화</span>
-                            <div className="text-gray-600 mt-1">{center.details.phone}</div>
+                            <div className="text-gray-600 mt-1">{center.phone}</div>
                           </div>
                         </div>
 
@@ -187,10 +200,10 @@ const CenterPage = () => {
                           <div>
                             <span className="font-medium text-gray-700">운영시간</span>
                             <div className="text-gray-600 mt-1">
-                              <div>평일 {center.details.weekdayHours}</div>
-                              <div>토요일 {center.details.saturdayHours}</div>
-                              <div>일요일 {center.details.sundayHours}</div>
-                              <div>{center.details.holidays}</div>
+                              <div>평일 {center.weekday_hours || '정보 없음'}</div>
+                              <div>토요일 {center.saturday_hours || '정보 없음'}</div>
+                              <div>일요일 {center.sunday_hours || '정보 없음'}</div>
+                              <div>공휴일 {center.holiday_hours || '정보 없음'}</div>
                             </div>
                           </div>
                         </div>
@@ -214,12 +227,12 @@ const CenterPage = () => {
                             <div className="mt-1">
                               <span
                                 className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                  center.details.isOpen
+                                  center.status === 'active'
                                     ? 'bg-green-100 text-green-700'
                                     : 'bg-red-100 text-red-700'
                                 }`}
                               >
-                                {center.details.isOpen ? '운영중' : '휴무중'}
+                                {center.status === 'active' ? '운영중' : '휴무중'}
                               </span>
                             </div>
                           </div>
@@ -241,7 +254,7 @@ const CenterPage = () => {
                           </svg>
                           <div>
                             <span className="font-medium text-gray-700">요금</span>
-                            <div className="text-gray-600 mt-1">{center.details.priceInfo}</div>
+                            <div className="text-gray-600 mt-1">요금 정보는 문의해주세요</div>
                           </div>
                         </div>
 
@@ -261,7 +274,17 @@ const CenterPage = () => {
                           </svg>
                           <div>
                             <span className="font-medium text-gray-700">주차</span>
-                            <div className="text-gray-600 mt-1">{center.details.parking}</div>
+                            <div className="text-gray-600 mt-1">
+                              {center.has_parking ? (
+                                <>
+                                  <div>주차 가능</div>
+                                  {center.parking_fee && <div>주차요금: {center.parking_fee}</div>}
+                                  {center.parking_info && <div>{center.parking_info}</div>}
+                                </>
+                              ) : (
+                                '주차 불가'
+                              )}
+                            </div>
                           </div>
                         </div>
 
@@ -281,7 +304,7 @@ const CenterPage = () => {
                           </svg>
                           <div>
                             <span className="font-medium text-gray-700">교통</span>
-                            <div className="text-gray-600 mt-1">{center.details.access}</div>
+                            <div className="text-gray-600 mt-1">{center.directions || '오시는 길 정보가 없습니다.'}</div>
                           </div>
                         </div>
                       </div>
@@ -292,6 +315,7 @@ const CenterPage = () => {
             </div>
           ))}
         </div>
+        )}
       </div>
     </div>
   );

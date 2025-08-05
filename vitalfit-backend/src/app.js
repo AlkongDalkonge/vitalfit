@@ -7,6 +7,9 @@ const morgan = require('morgan');
 const noticeRouter = require('./routes/noticeRouter');
 const memberRouter = require('./routes/memberRoute');
 const ptSessionRouter = require('./routes/ptSessionRoute');
+const centerRouter = require('./routes/centerRoute');
+const userRouter = require('./routes/userRoute');
+const teamRouter = require('./routes/teamRoute');
 
 const { sequelize } = require('./models');
 const errorHandler = require('./middlewares/errorHandler');
@@ -30,6 +33,9 @@ app.use(morgan('dev'));
 app.use('/api/notices', noticeRouter);
 app.use('/api/members', memberRouter);
 app.use('/api/pt-sessions', ptSessionRouter);
+app.use('/api/centers', centerRouter);
+app.use('/api/users', userRouter);
+app.use('/api/teams', teamRouter);
 
 // 404 처리
 app.use((req, res) => {
@@ -44,7 +50,7 @@ app.use((req, res) => {
 app.use(errorHandler);
 
 // DB 연결 및 서버 실행
-const PORT = process.env.SERVER_PORT || 3000;
+const PORT = process.env.SERVER_PORT || 3001;
 
 sequelize
   // .sync({ force: false })

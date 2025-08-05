@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { memberAPI, centerAPI, userAPI } from '../utils/api';
 
 const MemberCreateModal = ({ isOpen, onClose, onCreate }) => {
   const [formData, setFormData] = useState({
@@ -46,15 +47,20 @@ const MemberCreateModal = ({ isOpen, onClose, onCreate }) => {
     }
   }, [isOpen]);
 
+  // 트레이너와 센터 데이터가 로드된 후 확인
+  useEffect(() => {
+    if (trainers.length > 0 && centers.length > 0) {
+      console.log('트레이너 목록:', trainers);
+      console.log('센터 목록:', centers);
+    }
+  }, [trainers, centers]);
+
   const fetchCentersAndTrainers = async () => {
     try {
-      const [centersResponse, trainersResponse] = await Promise.all([
-        fetch('http://localhost:3000/api/centers'),
-        fetch('http://localhost:3000/api/users?role=trainer'),
+      const [centersData, trainersData] = await Promise.all([
+        centerAPI.getAllCenters(),
+        userAPI.getAllUsers({ role: 'trainer' }),
       ]);
-
-      const centersData = await centersResponse.json();
-      const trainersData = await trainersResponse.json();
 
       if (centersData.success) setCenters(centersData.data.centers);
       if (trainersData.success) setTrainers(trainersData.data.users);
@@ -86,6 +92,12 @@ const MemberCreateModal = ({ isOpen, onClose, onCreate }) => {
     }
     if (!formData.phone.trim()) {
       newErrors.phone = '연락처는 필수입니다';
+    } else {
+      // 전화번호 형식 검증 (선택사항)
+      const phoneRegex = /^[0-9-+\s()]+$/;
+      if (!phoneRegex.test(formData.phone)) {
+        newErrors.phone = '올바른 전화번호 형식을 입력해주세요';
+      }
     }
     if (!formData.center_id) {
       newErrors.center_id = '센터를 선택해주세요';
@@ -95,6 +107,15 @@ const MemberCreateModal = ({ isOpen, onClose, onCreate }) => {
     }
     if (!formData.join_date) {
       newErrors.join_date = '가입일은 필수입니다';
+    }
+
+    // 만료일이 등록일보다 이전인지 확인
+    if (formData.expire_date && formData.join_date) {
+      const joinDate = new Date(formData.join_date);
+      const expireDate = new Date(formData.expire_date);
+      if (expireDate < joinDate) {
+        newErrors.expire_date = '만료일은 등록일보다 이후여야 합니다';
+      }
     }
 
     setErrors(newErrors);
@@ -111,15 +132,7 @@ const MemberCreateModal = ({ isOpen, onClose, onCreate }) => {
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:3000/api/member', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
-
-      const data = await response.json();
+      const data = await memberAPI.createMember(formData);
 
       if (data.success) {
         // 성공 시 부모 컴포넌트에 생성 알림
@@ -275,7 +288,7 @@ const MemberCreateModal = ({ isOpen, onClose, onCreate }) => {
                   </option>
                   {trainers.map(trainer => (
                     <option key={trainer.id} value={trainer.id}>
-                      {trainer.name}
+                      {trainer.name} {trainer.nickname ? `(${trainer.nickname})` : ''}
                     </option>
                   ))}
                 </select>
@@ -397,6 +410,7 @@ const MemberCreateModal = ({ isOpen, onClose, onCreate }) => {
                   disabled={loading}
                 />
               </div>
+              {errors.expire_date && <p className="text-red-500 text-xs mt-1">{errors.expire_date}</p>}
             </div>
           </div>
 
