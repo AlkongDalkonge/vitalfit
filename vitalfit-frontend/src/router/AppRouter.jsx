@@ -1,5 +1,4 @@
 import { Routes, Route } from 'react-router-dom';
-
 import DashboardPage from '../pages/DashboardPage';
 import CenterPage from '../pages/CenterPage';
 import UserPage from '../pages/UserPage';
