@@ -40,6 +40,11 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.INTEGER,
         defaultValue: 0,
       },
+      is_for_all: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+      },
     },
     {
       timestamps: true, // createdAt, updatedAt 자동 생성
@@ -57,6 +62,9 @@ module.exports = (sequelize, DataTypes) => {
         },
         {
           fields: ['pin_until'],
+        },
+        {
+          fields: ['is_for_all'],
         },
       ],
     }
