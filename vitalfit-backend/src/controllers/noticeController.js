@@ -1,4 +1,11 @@
-const { Notice, NoticeComment, User } = require('../models');
+const {
+  Notice,
+  NoticeComment,
+  User,
+  NoticeTargetCenter,
+  NoticeTargetRole,
+  sequelize,
+} = require('../models');
 const { Op } = require('sequelize');
 const Joi = require('joi');
 const path = require('path');
@@ -32,6 +39,7 @@ const createNoticeSchema = Joi.object({
   receiver_id: Joi.number().optional(),
   receiver_role: Joi.string().optional(),
   is_important: Joi.boolean().optional(),
+  is_for_all: Joi.boolean().optional(),
   pin_until: Joi.date().iso().optional(),
   attachment_name: Joi.string().optional(),
   attachment_url: Joi.string().optional(),
@@ -50,6 +58,7 @@ const updateNoticeSchema = Joi.object({
   receiver_id: Joi.number().optional().allow(null),
   receiver_role: Joi.string().optional().allow(null, ''),
   is_important: Joi.boolean().optional(),
+  is_for_all: Joi.boolean().optional(),
   pin_until: Joi.date().iso().optional().allow(null),
   attachment_name: Joi.string().optional().allow(null, ''),
   attachment_url: Joi.string().optional().allow(null, ''),
@@ -92,7 +101,10 @@ exports.getNotices = async (req, res) => {
       where,
       limit,
       offset,
-      order: [['createdAt', 'DESC']],
+      order: [
+        ['is_important', 'DESC'],
+        ['createdAt', 'DESC'],
+      ],
     });
 
     const pagination = {
@@ -123,6 +135,9 @@ exports.getNotices = async (req, res) => {
  * POST /api/notices
  */
 exports.createNotice = async (req, res) => {
+  //트렌젝션 시작
+  const t = await sequelize.transaction();
+
   try {
     const { value: body, error } = createNoticeSchema.validate(req.body);
     if (error) {
@@ -133,7 +148,42 @@ exports.createNotice = async (req, res) => {
       });
     }
 
-    const notice = await Notice.create(body);
+    // 전체발송여부
+    console.log('전체발송여부::::', body.receiver_type);
+
+    if (body.receiver_type === 'all') {
+      body.is_for_all = true;
+    } else {
+      body.is_for_all = false;
+    }
+
+    const notice = await Notice.create(body, { transaction: t });
+
+    //수신자 타겟 추가 (전체 발송이 아닌 경우에만)
+    if (!body.is_for_all) {
+      //센터 타겟 추가
+      if (body.target_centers?.length > 0) {
+        console.log('target_centers:::', body.target_centers);
+
+        const centerTargets = body.target_centers.map(center_id => ({
+          notice_id: notice.id,
+          center_id,
+        }));
+        //bulkCreate : 여러 개의 객체를 한 번에 insert
+        await NoticeTargetCenter.bulkCreate(centerTargets, { transaction: t });
+      }
+
+      //직책 타겟 추가
+      if (body.target_roles?.length > 0) {
+        const roleTargets = body.target_roles.map(role_code => ({
+          notice_id: notice.id,
+          role_code,
+        }));
+        await NoticeTargetRole.bulkCreate(roleTargets, { transaction: t });
+      }
+    }
+
+    await t.commit(); //커밋
 
     res.status(201).json({
       success: true,
@@ -141,6 +191,8 @@ exports.createNotice = async (req, res) => {
       data: notice,
     });
   } catch (err) {
+    await t.rollback(); //실패시 롤백
+    console.error('공지사항 작성 실패:', err);
     res.status(500).json({
       success: false,
       message: '공지사항 작성 실패',
@@ -154,10 +206,17 @@ exports.createNotice = async (req, res) => {
  * GET /api/notices/:id
  */
 exports.getNoticeById = async (req, res) => {
+  console.log(':::공지사항상세조회:::');
+
+  const id = req.params.id;
+  console.log('id::::', id);
+
   try {
     const notice = await Notice.findByPk(req.params.id, {
       attributes: { exclude: ['updatedAt'] }, //해당컬럼은 제외
     });
+
+    console.log('notice:::', notice);
 
     if (!notice) {
       return res.status(404).json({
@@ -166,7 +225,22 @@ exports.getNoticeById = async (req, res) => {
       });
     }
 
-    res.json({ success: true, data: notice });
+    //조회수 증가
+    console.log('조회수증가');
+
+    await Notice.update(
+      { view_count: notice.view_count + 1 },
+      {
+        where: { id },
+        silent: true, // updatedAt 변경 방지
+      }
+    );
+    // 3. 다시 조회해서 응답 (updatedAt 제외)
+    const updatedNotice = await Notice.findByPk(id, {
+      attributes: { exclude: ['updatedAt'] },
+    });
+
+    res.json({ success: true, data: updatedNotice });
   } catch (err) {
     console.error('공지사항 상세 조회 실패:', err);
     res.status(500).json({
@@ -353,7 +427,7 @@ exports.getComments = async (req, res) => {
         {
           model: User,
           as: 'author',
-          attributes: ['id', 'name', 'role'],
+          attributes: ['id', 'name', 'position_id'],
         },
         {
           model: NoticeComment,
@@ -362,7 +436,7 @@ exports.getComments = async (req, res) => {
             {
               model: User,
               as: 'author',
-              attributes: ['id', 'name', 'role'],
+              attributes: ['id', 'name', 'position_id'],
             },
             {
               model: NoticeComment,
@@ -371,7 +445,7 @@ exports.getComments = async (req, res) => {
                 {
                   model: User,
                   as: 'author',
-                  attributes: ['id', 'name', 'role'],
+                  attributes: ['id', 'name', 'position_id'],
                 },
                 {
                   model: NoticeComment,
@@ -380,7 +454,7 @@ exports.getComments = async (req, res) => {
                     {
                       model: User,
                       as: 'author',
-                      attributes: ['id', 'name', 'role'],
+                      attributes: ['id', 'name', 'position_id'],
                     },
                   ],
                   order: [['created_at', 'ASC']],
@@ -503,7 +577,7 @@ exports.createComment = async (req, res) => {
         {
           model: User,
           as: 'author',
-          attributes: ['id', 'name', 'role'],
+          attributes: ['id', 'name', 'position_id'],
         },
       ],
     });
@@ -514,11 +588,20 @@ exports.createComment = async (req, res) => {
       data: createdComment,
     });
   } catch (err) {
-    console.error('댓글 생성 실패:', err);
+    // console.error('댓글 생성 실패:', err);
+    // res.status(500).json({
+    //   success: false,
+    //   message: '댓글 생성 실패',
+    //   details: err.message,
+    // });
+    console.error('댓글 생성 실패');
+    console.error('에러 메시지:', err.message);
+    console.error('전체 에러:', err); // 가장 중요!
+
     res.status(500).json({
       success: false,
       message: '댓글 생성 실패',
-      details: err.message,
+      details: err.message || '알 수 없는 오류',
     });
   }
 };
@@ -569,7 +652,7 @@ exports.updateComment = async (req, res) => {
         {
           model: User,
           as: 'author',
-          attributes: ['id', 'name', 'role'],
+          attributes: ['id', 'name', 'position_id'],
         },
       ],
     });
