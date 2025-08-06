@@ -3,18 +3,14 @@ console.log(process.env.DB_USERNAME);
 module.exports = {
   // 환경변수 사용 (보안상 권장)
   development: {
-    dialect: 'sqlite',
-    storage: './database.sqlite',
+    username: process.env.DB_USERNAME || 'aldalkong',
+    password: process.env.DB_PASSWORD || 'postgres',
+    database: process.env.DB_NAME || 'vitalfit',
+    host: process.env.DB_HOST || 'localhost',
+    dialect: 'postgres',
+    port: process.env.DB_PORT || 5432,
     logging: false,
   },
-  // development: {
-  //   username: "aldalkong",
-  //   password: "postgres",
-  //   database: "vitalfit",
-  //   host: "localhost",
-  //   dialect: "postgres",
-  //   port: 5432,
-  // },
   test: {
     username: 'root',
     password: null,

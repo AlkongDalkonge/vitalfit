@@ -89,10 +89,26 @@ const createMember = async (req, res) => {
       status: status || 'active',
     });
 
+    // 생성된 멤버를 관계 데이터와 함께 조회
+    const createdMember = await Member.findByPk(member.id, {
+      include: [
+        {
+          model: Center,
+          as: 'center',
+          attributes: ['id', 'name', 'address'],
+        },
+        {
+          model: User,
+          as: 'trainer',
+          attributes: ['id', 'name', 'nickname'],
+        },
+      ],
+    });
+
     res.status(201).json({
       success: true,
       message: '멤버가 성공적으로 생성되었습니다.',
-      data: member,
+      data: createdMember,
     });
   } catch (error) {
     console.error('멤버 생성 오류:', error);
@@ -151,10 +167,26 @@ const updateMember = async (req, res) => {
 
     await member.update(updateData);
 
+    // 수정된 멤버를 관계 데이터와 함께 조회
+    const updatedMember = await Member.findByPk(id, {
+      include: [
+        {
+          model: Center,
+          as: 'center',
+          attributes: ['id', 'name', 'address'],
+        },
+        {
+          model: User,
+          as: 'trainer',
+          attributes: ['id', 'name', 'nickname'],
+        },
+      ],
+    });
+
     res.json({
       success: true,
       message: '멤버가 성공적으로 수정되었습니다.',
-      data: member,
+      data: updatedMember,
     });
   } catch (error) {
     console.error('멤버 수정 오류:', error);
@@ -169,15 +201,8 @@ const updateMember = async (req, res) => {
 // 멤버 목록 조회 (필터링 기능 추가)
 const getAllMembers = async (req, res) => {
   try {
-    const { 
-      page = 1, 
-      limit = 1000, 
-      centerId, 
-      trainerId, 
-      status,
-      search 
-    } = req.query;
-    
+    const { page = 1, limit = 1000, centerId, trainerId, status, search } = req.query;
+
     const offset = (page - 1) * limit;
     const whereClause = {};
 

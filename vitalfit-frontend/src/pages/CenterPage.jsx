@@ -1,33 +1,86 @@
 import React, { useState, useEffect } from 'react';
-import { centerAPI } from '../utils/api';
+import { centerAPI, memberAPI } from '../utils/api';
+import CenterImageModal from '../components/CenterImageModal';
 
 const CenterPage = () => {
   const [expandedCenter, setExpandedCenter] = useState(null);
   const [centers, setCenters] = useState([]);
+  const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // 센터 데이터 가져오기
+  // 이미지 모달 상태
+  const [imageModalOpen, setImageModalOpen] = useState(false);
+  const [selectedCenter, setSelectedCenter] = useState(null);
+
+  // 센터와 회원 데이터 가져오기
   useEffect(() => {
-    const fetchCenters = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
-        const response = await centerAPI.getAllCenters();
-        setCenters(response.data.centers || []);
+        const [centersResponse, membersResponse] = await Promise.all([
+          centerAPI.getAllCenters(),
+          memberAPI.getAllMembers(),
+        ]);
+        setCenters(centersResponse.data.centers || []);
+        setMembers(membersResponse.data.members || []);
         setError(null);
       } catch (err) {
-        console.error('센터 데이터 가져오기 실패:', err);
-        setError('센터 데이터를 불러오는데 실패했습니다.');
+        console.error('데이터 가져오기 실패:', err);
+        setError('데이터를 불러오는데 실패했습니다.');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchCenters();
+    fetchData();
   }, []);
 
   const toggleCenter = centerId => {
     setExpandedCenter(expandedCenter === centerId ? null : centerId);
+  };
+
+  // 이미지 관리 모달 열기
+  const handleImageManagement = center => {
+    setSelectedCenter(center);
+    setImageModalOpen(true);
+  };
+
+  // 이미지 관리 모달 닫기
+  const handleImageModalClose = () => {
+    setImageModalOpen(false);
+    setSelectedCenter(null);
+  };
+
+  // 이미지 업데이트 후 센터 데이터 새로고침
+  const handleImagesUpdated = () => {
+    // 센터 데이터 다시 가져오기
+    const fetchCenters = async () => {
+      try {
+        const response = await centerAPI.getAllCenters();
+        setCenters(response.data.centers || []);
+      } catch (err) {
+        console.error('센터 데이터 새로고침 실패:', err);
+      }
+    };
+    fetchCenters();
+  };
+
+  // 센터 상태 변경
+  const handleStatusChange = async (centerId, newStatus) => {
+    try {
+      await centerAPI.updateCenter(centerId, { status: newStatus });
+
+      // 로컬 상태 업데이트
+      setCenters(prevCenters =>
+        prevCenters.map(center =>
+          center.id === centerId ? { ...center, status: newStatus } : center
+        )
+      );
+    } catch (err) {
+      console.error('센터 상태 변경 실패:', err);
+      alert('상태 변경에 실패했습니다.');
+    }
   };
 
   // 로딩 상태
@@ -55,8 +108,8 @@ const CenterPage = () => {
             <div className="text-center">
               <div className="text-red-500 text-lg mb-2">⚠️</div>
               <p className="text-gray-600">{error}</p>
-              <button 
-                onClick={() => window.location.reload()} 
+              <button
+                onClick={() => window.location.reload()}
                 className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
               >
                 다시 시도
@@ -71,6 +124,25 @@ const CenterPage = () => {
   return (
     <div className="max-w-6xl mx-auto">
       <h1 className="text-3xl font-bold text-gray-800 mb-6">지점 관리</h1>
+
+      {/* 지점 고객수 */}
+      <div className="mb-6 pl-[30px]">
+        <div data-layer="Frame 37" className="Frame37 w-32 h-14 relative">
+          <div
+            data-layer="250"
+            className="left-0 top-0 absolute justify-start text-neutral-800 text-4xl font-extrabold font-['Nunito']"
+          >
+            {members.length}
+          </div>
+          <div
+            data-layer="지점 고객 수"
+            className="left-0 top-[33px] absolute justify-start text-neutral-600 text-sm font-normal font-['Nunito'] leading-normal"
+          >
+            지점 고객 수
+          </div>
+        </div>
+      </div>
+
       <div className="bg-white rounded-xl p-6 shadow-sm">
         {centers.length === 0 ? (
           <div className="text-center py-12">
@@ -78,245 +150,235 @@ const CenterPage = () => {
           </div>
         ) : (
           <div className="space-y-3">
-          {centers.map(center => (
-            <div key={center.id} className="border border-gray-200 rounded-md overflow-hidden">
-              {/* 센터 헤더 (클릭 가능) */}
-              <div
-                onClick={() => toggleCenter(center.id)}
-                className="flex justify-between items-center p-4 hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 cursor-pointer"
-              >
-                <span className="font-medium text-gray-800">{center.name}</span>
-                <div className="flex items-center gap-3">
-                  <span className="text-gray-600">{center.address?.split(' ').slice(0, 2).join(' ')}</span>
-                  <svg
-                    className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${
-                      expandedCenter === center.id ? 'rotate-180' : ''
-                    }`}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
+            {centers.map(center => (
+              <div key={center.id} className="border border-gray-200 rounded-md overflow-hidden">
+                {/* 센터 헤더 (클릭 가능) */}
+                <div
+                  onClick={() => toggleCenter(center.id)}
+                  className="flex justify-between items-center p-4 hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 cursor-pointer"
+                >
+                  <span className="font-medium text-gray-800">{center.name}</span>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={e => {
+                        e.stopPropagation();
+                        const nextStatus =
+                          center.status === 'active'
+                            ? 'inactive'
+                            : center.status === 'inactive'
+                              ? 'closed'
+                              : 'active';
+                        handleStatusChange(center.id, nextStatus);
+                      }}
+                      className={`px-2 py-1 rounded-full text-xs font-medium cursor-pointer hover:opacity-80 transition-opacity ${
+                        center.status === 'active'
+                          ? 'bg-green-100 text-green-800'
+                          : center.status === 'inactive'
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : 'bg-red-100 text-red-800'
+                      }`}
+                      title="클릭하여 상태 변경"
+                    >
+                      {center.status === 'active'
+                        ? '운영중'
+                        : center.status === 'inactive'
+                          ? '일시중단'
+                          : '폐점'}
+                    </button>
+                    <svg
+                      className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${
+                        expandedCenter === center.id ? 'rotate-180' : ''
+                      }`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
+                    </svg>
+                  </div>
                 </div>
-              </div>
 
-              {/* 센터 상세 정보 (확장 시 표시) */}
-              {expandedCenter === center.id && (
-                <div className="border-t border-gray-200 p-6 bg-gray-50">
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    {/* 왼쪽: 센터 이미지 */}
-                    <div className="space-y-4 px-4">
-                      {center.images && center.images.length > 0 ? (
-                        <div className="aspect-video bg-gray-200 rounded-lg overflow-hidden">
-                          <img 
-                            src={center.images[0].image_url} 
-                            alt={`${center.name} 이미지`}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      ) : (
-                        <div className="aspect-video bg-gray-200 rounded-lg flex items-center justify-center mx-4">
-                          <span className="text-gray-500">센터 이미지 없음</span>
+                {/* 센터 상세 정보 (확장 시 표시) */}
+                {expandedCenter === center.id && (
+                  <div className="px-6 py-6 border-t border-gray-200">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 px-6">
+                      {/* 좌측: 센터 이미지 */}
+                      {center.images && center.images.length > 0 && (
+                        <div>
+                          <h4 className="font-semibold text-gray-800 mb-3">센터 이미지</h4>
+
+                          {/* 메인 이미지 (큰 크기) */}
+                          {center.images.find(img => img.is_main) && (
+                            <div className="mb-4">
+                              <div className="relative">
+                                <img
+                                  src={`http://localhost:3000${center.images.find(img => img.is_main).image_url}`}
+                                  alt={`${center.name} 메인 이미지`}
+                                  className="w-full h-64 md:h-80 object-cover rounded-lg shadow-md"
+                                  onError={e => {
+                                    e.target.src = '/logo.png';
+                                  }}
+                                />
+                                <div className="absolute top-3 left-3 bg-blue-600 text-white text-sm px-3 py-1 rounded-full font-medium">
+                                  메인 이미지
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* 나머지 이미지들 (작은 크기, 클릭 시 확대) */}
+                          {center.images.filter(img => !img.is_main).length > 0 && (
+                            <div>
+                              <div className="grid grid-cols-3 md:grid-cols-4 gap-3">
+                                {center.images
+                                  .filter(img => !img.is_main)
+                                  .map((image, index) => (
+                                    <div
+                                      key={image.id || index}
+                                      className="aspect-square bg-gray-200 rounded-lg overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-200"
+                                      onClick={() => {
+                                        // 이미지 클릭 시 새 창에서 크게 보기
+                                        const imgUrl = `http://localhost:3000${image.image_url}`;
+                                        window.open(
+                                          imgUrl,
+                                          '_blank',
+                                          'width=800,height=600,scrollbars=yes,resizable=yes'
+                                        );
+                                      }}
+                                    >
+                                      <img
+                                        src={`http://localhost:3000${image.image_url}`}
+                                        alt={`${center.name} 이미지 ${index + 1}`}
+                                        className="w-full h-full object-cover hover:scale-110 transition-transform duration-200"
+                                        onError={e => {
+                                          e.target.src = '/logo.png';
+                                        }}
+                                      />
+                                    </div>
+                                  ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       )}
+
+                      {/* 우측: 센터 정보 */}
+                      <div className="space-y-6">
+                        {/* 기본 정보 */}
+                        <div className="space-y-2">
+                          <h4 className="font-semibold text-gray-800 mb-2">기본 정보</h4>
+                          {center.description && (
+                            <div className="mb-6">
+                              <p className="text-sm text-gray-800">{center.description}</p>
+                            </div>
+                          )}
+                          <div>
+                            <p className="text-sm text-gray-800">{center.address || '-'}</p>
+                          </div>
+                          {center.directions && (
+                            <div>
+                              <p className="text-sm text-gray-800">{center.directions}</p>
+                            </div>
+                          )}
+                          <div>
+                            <p className="text-sm text-gray-800">{center.phone || '-'}</p>
+                          </div>
+                        </div>
+
+                        {/* 운영 정보 */}
+                        <div className="space-y-2">
+                          <h4 className="font-semibold text-gray-800 mb-2">운영 정보</h4>
+                          <div>
+                            <p className="text-sm text-gray-800">
+                              {center.weekday_hours && center.holiday_hours
+                                ? `평일: ${center.weekday_hours} | 공휴일: ${center.holiday_hours}`
+                                : center.weekday_hours
+                                  ? `평일: ${center.weekday_hours}`
+                                  : center.holiday_hours
+                                    ? `공휴일: ${center.holiday_hours}`
+                                    : '-'}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-800">
+                              {center.saturday_hours && center.sunday_hours
+                                ? `토요일: ${center.saturday_hours} | 일요일: ${center.sunday_hours}`
+                                : center.saturday_hours
+                                  ? `토요일: ${center.saturday_hours}`
+                                  : center.sunday_hours
+                                    ? `일요일: ${center.sunday_hours}`
+                                    : '-'}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* 부대시설 및 기타 정보 */}
+                        <div className="space-y-2">
+                          <h4 className="font-semibold text-gray-800 mb-2">부대시설</h4>
+                          <div>
+                            <span className="text-xs text-gray-500">주차 가능</span>
+                            <p className="text-sm text-gray-800">
+                              {center.has_parking ? '가능' : '불가능'}
+                            </p>
+                          </div>
+                          {center.has_parking && center.parking_fee && (
+                            <div>
+                              <span className="text-xs text-gray-500">주차 요금</span>
+                              <p className="text-sm text-gray-800">{center.parking_fee}</p>
+                            </div>
+                          )}
+                          {center.has_parking && center.parking_info && (
+                            <div>
+                              <span className="text-xs text-gray-500">주차 안내</span>
+                              <p className="text-sm text-gray-800">{center.parking_info}</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
 
-                    {/* 오른쪽: 센터 정보 */}
-                    <div className="space-y-4">
-                      <div>
-                        <h3 className="text-xl font-bold text-gray-800 mb-2">
-                          {center.name}
-                        </h3>
-                        <p className="text-gray-600">{center.description || '설명이 없습니다.'}</p>
+                    {/* 액션 버튼들 */}
+                    <div className="flex justify-between items-center mt-6 pt-4 border-t border-gray-200">
+                      <div className="flex gap-3">
+                        <button
+                          onClick={() => handleImageManagement(center)}
+                          className="px-4 py-2 text-purple-600 border border-purple-300 rounded-lg hover:bg-purple-50 transition-colors duration-200"
+                        >
+                          이미지 관리
+                        </button>
                       </div>
-
-                      <div className="space-y-5">
-                        <div className="flex items-start gap-3">
-                          <svg
-                            className="w-5 h-5 text-gray-500 mt-0.5 flex-shrink-0"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                            />
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                            />
-                          </svg>
-                          <div>
-                            <span className="font-medium text-gray-700">주소</span>
-                            <div className="text-gray-600 mt-1">{center.address}</div>
-                          </div>
-                        </div>
-
-                        <div className="flex items-start gap-3">
-                          <svg
-                            className="w-5 h-5 text-gray-500 mt-0.5 flex-shrink-0"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
-                            />
-                          </svg>
-                          <div>
-                            <span className="font-medium text-gray-700">전화</span>
-                            <div className="text-gray-600 mt-1">{center.phone}</div>
-                          </div>
-                        </div>
-
-                        <div className="flex items-start gap-3">
-                          <svg
-                            className="w-5 h-5 text-gray-500 mt-0.5 flex-shrink-0"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                            />
-                          </svg>
-                          <div>
-                            <span className="font-medium text-gray-700">운영시간</span>
-                            <div className="text-gray-600 mt-1">
-                              <div>평일 {center.weekday_hours || '정보 없음'}</div>
-                              <div>토요일 {center.saturday_hours || '정보 없음'}</div>
-                              <div>일요일 {center.sunday_hours || '정보 없음'}</div>
-                              <div>공휴일 {center.holiday_hours || '정보 없음'}</div>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="flex items-start gap-3">
-                          <svg
-                            className="w-5 h-5 text-gray-500 mt-0.5 flex-shrink-0"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                            />
-                          </svg>
-                          <div>
-                            <span className="font-medium text-gray-700">운영상태</span>
-                            <div className="mt-1">
-                              <span
-                                className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                  center.status === 'active'
-                                    ? 'bg-green-100 text-green-700'
-                                    : 'bg-red-100 text-red-700'
-                                }`}
-                              >
-                                {center.status === 'active' ? '운영중' : '휴무중'}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="flex items-start gap-3">
-                          <svg
-                            className="w-5 h-5 text-gray-500 mt-0.5 flex-shrink-0"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"
-                            />
-                          </svg>
-                          <div>
-                            <span className="font-medium text-gray-700">요금</span>
-                            <div className="text-gray-600 mt-1">요금 정보는 문의해주세요</div>
-                          </div>
-                        </div>
-
-                        <div className="flex items-start gap-3">
-                          <svg
-                            className="w-5 h-5 text-gray-500 mt-0.5 flex-shrink-0"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                            />
-                          </svg>
-                          <div>
-                            <span className="font-medium text-gray-700">주차</span>
-                            <div className="text-gray-600 mt-1">
-                              {center.has_parking ? (
-                                <>
-                                  <div>주차 가능</div>
-                                  {center.parking_fee && <div>주차요금: {center.parking_fee}</div>}
-                                  {center.parking_info && <div>{center.parking_info}</div>}
-                                </>
-                              ) : (
-                                '주차 불가'
-                              )}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="flex items-start gap-3">
-                          <svg
-                            className="w-5 h-5 text-gray-500 mt-0.5 flex-shrink-0"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                            />
-                          </svg>
-                          <div>
-                            <span className="font-medium text-gray-700">교통</span>
-                            <div className="text-gray-600 mt-1">{center.directions || '오시는 길 정보가 없습니다.'}</div>
-                          </div>
-                        </div>
+                      <div className="flex gap-3">
+                        <button className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200">
+                          수정
+                        </button>
+                        <button className="px-4 py-2 text-red-600 border border-red-300 rounded-lg hover:bg-red-50 transition-colors duration-200">
+                          삭제
+                        </button>
+                        <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200">
+                          직원 관리
+                        </button>
                       </div>
                     </div>
                   </div>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
+                )}
+              </div>
+            ))}
+          </div>
         )}
       </div>
+
+      {/* 이미지 관리 모달 */}
+      <CenterImageModal
+        isOpen={imageModalOpen}
+        onClose={handleImageModalClose}
+        center={selectedCenter}
+        onImagesUpdated={handleImagesUpdated}
+      />
     </div>
   );
 };
