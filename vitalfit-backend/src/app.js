@@ -59,9 +59,7 @@ sequelize
     console.log('DB 테이블 생성 완료!');
 
     // 시드 데이터 실행 조건 확인
-    const shouldSeedData =
-      process.env.SEED_DATA === 'true' ||
-      (process.env.NODE_ENV !== 'production' && process.env.SEED_DATA !== 'false');
+    const shouldSeedData = process.env.SEED_DATA === 'true';
 
     if (shouldSeedData) {
       try {

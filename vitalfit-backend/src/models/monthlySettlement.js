@@ -100,7 +100,6 @@ module.exports = (sequelize, DataTypes) => {
         ),
         allowNull: false,
         defaultValue: 'draft',
-        comment: '정산 승인 상태 (초안 → 팀장승인 → 지점장승인 → 대표승인 → 지급완료)',
       },
       notes: {
         type: DataTypes.TEXT,
