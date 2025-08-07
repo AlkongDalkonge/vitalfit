@@ -1,10 +1,25 @@
 import { useIcons, useDate } from '../../utils/hooks';
+import { useAuth } from '../../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
 export default function Header({ activeMenu = null, userInfo }) {
   const { getMenuIcon } = useIcons();
   const { getFormattedDate } = useDate();
+  const { logout } = useAuth();
+  const navigate = useNavigate();
 
   const IconComponent = activeMenu ? getMenuIcon(activeMenu) : null;
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      toast.success('로그아웃되었습니다.');
+      navigate('/login');
+    } catch (error) {
+      toast.error('로그아웃 중 오류가 발생했습니다.');
+    }
+  };
 
   return (
     <header className="h-20 bg-white flex justify-between items-center px-8 border-b border-gray-100">
@@ -31,6 +46,12 @@ export default function Header({ activeMenu = null, userInfo }) {
           <span className="text-base font-semibold text-gray-800">
             {userInfo?.name || '관리자'}
           </span>
+          <button
+            onClick={handleLogout}
+            className="text-sm text-gray-500 hover:text-red-500 transition-colors"
+          >
+            로그아웃
+          </button>
         </div>
       </div>
     </header>

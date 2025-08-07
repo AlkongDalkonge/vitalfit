@@ -7,7 +7,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <Layout />
-      <ToastContainer position="top-center" autoClose={3000} />;
+      <ToastContainer position="top-center" autoClose={3000} />
     </BrowserRouter>
   );
 }

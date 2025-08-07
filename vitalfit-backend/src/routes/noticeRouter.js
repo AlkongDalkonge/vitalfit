@@ -2,23 +2,13 @@ const express = require('express');
 const router = express.Router();
 const noticeController = require('../controllers/noticeController');
 const { validateIdParam } = require('../middlewares/validateIdParam');
-const {
-  uploadSingle,
-  handleUploadError,
-  processUploadedFile,
-} = require('../middlewares/fileUpload');
+const { uploadSingle, handleError, processFile } = require('../middlewares/fileUpload');
 
 // 공지사항 목록 조회
 router.get('/', noticeController.getNotices);
 
 // 공지사항 작성 (파일 업로드 지원)
-router.post(
-  '/',
-  uploadSingle,
-  handleUploadError,
-  processUploadedFile,
-  noticeController.createNotice
-);
+router.post('/', uploadSingle, handleError, processFile, noticeController.createNotice);
 
 // 공지사항 상세 조회
 router.get('/:id', validateIdParam, noticeController.getNoticeById);
@@ -28,8 +18,8 @@ router.put(
   '/:id',
   validateIdParam,
   uploadSingle,
-  handleUploadError,
-  processUploadedFile,
+  handleError,
+  processFile,
   noticeController.updateNotice
 );
 
