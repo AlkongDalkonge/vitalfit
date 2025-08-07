@@ -14,4 +14,16 @@ router.get('/search', centerController.searchCenters);
 // GET /api/centers/:id
 router.get('/:id', centerController.getCenterById);
 
-module.exports = router; 
+// ✅ 센터 이미지 업로드
+// POST /api/centers/images
+router.post('/images', centerController.upload.single('image'), centerController.uploadCenterImage);
+
+// ✅ 센터 이미지 삭제
+// DELETE /api/centers/images/:imageId
+router.delete('/images/:imageId', centerController.deleteCenterImage);
+
+// ✅ 메인 이미지 설정
+// PUT /api/centers/images/:imageId/main
+router.put('/images/:imageId/main', centerController.setMainImage);
+
+module.exports = router;
