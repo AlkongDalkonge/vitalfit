@@ -299,6 +299,94 @@ const deleteCenterImage = async (req, res, next) => {
   }
 };
 
+// ✅ 센터 업데이트
+const updateCenter = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const updateData = req.body;
+
+    if (!id || isNaN(parseInt(id))) {
+      return res.status(400).json({
+        success: false,
+        message: '유효하지 않은 센터 ID입니다.',
+      });
+    }
+
+    const center = await Center.findByPk(id);
+    if (!center) {
+      return res.status(404).json({
+        success: false,
+        message: '해당 센터를 찾을 수 없습니다.',
+      });
+    }
+
+    // 센터 정보 업데이트
+    await center.update(updateData);
+
+    // 업데이트된 센터 정보 조회
+    const updatedCenter = await Center.findByPk(id, {
+      include: [
+        {
+          model: CenterImage,
+          as: 'images',
+          attributes: ['id', 'image_url', 'is_main'],
+          required: false,
+        },
+      ],
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: '센터 정보 업데이트 성공',
+      data: updatedCenter,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ✅ 센터 삭제
+const deleteCenter = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    if (!id || isNaN(parseInt(id))) {
+      return res.status(400).json({
+        success: false,
+        message: '유효하지 않은 센터 ID입니다.',
+      });
+    }
+
+    const center = await Center.findByPk(id);
+    if (!center) {
+      return res.status(404).json({
+        success: false,
+        message: '해당 센터를 찾을 수 없습니다.',
+      });
+    }
+
+    // 센터에 연결된 이미지들 삭제
+    const centerImages = await CenterImage.findAll({ where: { center_id: id } });
+    for (const image of centerImages) {
+      // 파일 시스템에서 이미지 파일 삭제
+      const filePath = path.join(__dirname, '../../public', image.image_url);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    }
+
+    // 센터 삭제 (이미지들은 CASCADE로 자동 삭제됨)
+    await center.destroy();
+
+    return res.status(200).json({
+      success: true,
+      message: '센터 삭제 성공',
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 // ✅ 메인 이미지 설정
 const setMainImage = async (req, res, next) => {
   try {
@@ -339,6 +427,8 @@ module.exports = {
   getAllCenters,
   getCenterById,
   searchCenters,
+  updateCenter,
+  deleteCenter,
   uploadCenterImage,
   deleteCenterImage,
   setMainImage,

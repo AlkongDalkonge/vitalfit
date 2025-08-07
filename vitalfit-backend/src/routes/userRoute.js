@@ -5,6 +5,9 @@ const userController = require('../controllers/userController');
 const { uploadSingle, handleError, processFile } = require('../middlewares/profileUpload');
 const auth = require('../middlewares/authMiddleware');
 
+// 사용자 목록 조회 (관리자용)
+router.get('/', auth, userController.getAllUsers);
+
 router.post('/signup', uploadSingle, handleError, processFile, userController.signUp);
 router.post('/signin', userController.signIn);
 router.get('/me', auth, userController.getMe);
@@ -25,5 +28,8 @@ router.get('/privacy', (req, res) => {
 
 // 프로필 사진 관련 라우트 (파라미터가 있는 라우트를 나중에 정의)
 router.delete('/profile-image', auth, userController.deleteProfileImage);
+
+// 특정 사용자 조회 (관리자용) - 파라미터가 있는 라우트를 마지막에 정의
+router.get('/:id', auth, userController.getUserById);
 
 module.exports = router;

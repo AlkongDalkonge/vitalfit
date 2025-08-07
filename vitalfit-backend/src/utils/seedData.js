@@ -16,6 +16,13 @@ const {
 // 센터 시드 데이터
 const seedCenters = async () => {
   try {
+    // 기존 센터 데이터 확인
+    const existingCenters = await Center.findAll();
+    if (existingCenters.length > 0) {
+      console.log(`✅ 센터 데이터가 이미 존재합니다 (${existingCenters.length}개 센터)`);
+      return existingCenters;
+    }
+
     const centers = await Center.bulkCreate([
       {
         name: '바이탈핏 강남센터',
@@ -79,6 +86,13 @@ const seedCenters = async () => {
 const seedPositions = async () => {
   try {
     console.log('📊 Position 시드 데이터 생성 중...');
+
+    // 기존 Position 데이터 확인
+    const existingPositions = await Position.findAll();
+    if (existingPositions.length > 0) {
+      console.log(`✅ Position 데이터가 이미 존재합니다 (${existingPositions.length}개 Position)`);
+      return existingPositions;
+    }
 
     const positions = await Position.bulkCreate([
       {

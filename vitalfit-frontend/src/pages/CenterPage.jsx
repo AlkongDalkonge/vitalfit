@@ -376,21 +376,13 @@ const CenterPage = () => {
                     </div>
 
                     {/* 액션 버튼들 */}
-                    <div className="flex justify-between items-center mt-6 pt-4 border-t border-gray-200">
+                    <div className="flex justify-end items-center mt-6 pt-4 border-t border-gray-200">
                       <div className="flex gap-3">
                         <button
                           onClick={() => handleImageManagement(center)}
                           className="px-4 py-2 text-purple-600 border border-purple-300 rounded-lg hover:bg-purple-50 transition-colors duration-200"
                         >
                           이미지
-                        </button>
-                      </div>
-                      <div className="flex gap-3">
-                        <button className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200">
-                          수정
-                        </button>
-                        <button className="px-4 py-2 text-red-600 border border-red-300 rounded-lg hover:bg-red-50 transition-colors duration-200">
-                          삭제
                         </button>
                       </div>
                     </div>
