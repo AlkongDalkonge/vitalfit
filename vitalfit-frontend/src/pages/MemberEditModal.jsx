@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { memberAPI } from '../utils/api';
 import { useMemberForm } from '../utils/hooks';
 
@@ -28,7 +28,17 @@ const MemberEditModal = ({ isOpen, onClose, member, onUpdate }) => {
     setLoading(true);
 
     try {
-      const response = await memberAPI.updateMember(member.id, formData);
+      // 빈 문자열을 null로 변환
+      const cleanedData = {
+        ...formData,
+        expire_date: formData.expire_date || null,
+        memo: formData.memo || null,
+        total_sessions: formData.total_sessions || null,
+        used_sessions: formData.used_sessions || null,
+        free_sessions: formData.free_sessions || null,
+      };
+
+      const response = await memberAPI.updateMember(member.id, cleanedData);
 
       if (response.success) {
         onUpdate(response.data);
@@ -54,11 +64,15 @@ const MemberEditModal = ({ isOpen, onClose, member, onUpdate }) => {
   // 필터링된 트레이너 목록 가져오기
   const filteredTrainers = getFilteredTrainers();
 
+  // 드롭다운 상태
+  const [showCenterDropdown, setShowCenterDropdown] = useState(false);
+  const [showTrainerDropdown, setShowTrainerDropdown] = useState(false);
+
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="w-[750px] h-[580px] bg-white rounded-[20px] relative overflow-hidden">
+      <div className="w-[750px] h-[680px] bg-white rounded-[20px] relative overflow-hidden">
         {/* 로딩 오버레이 */}
         {loading && (
           <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center z-10">
@@ -142,39 +156,74 @@ const MemberEditModal = ({ isOpen, onClose, member, onUpdate }) => {
               <div className="justify-start text-neutral-900 text-sm font-normal font-['Nunito'] leading-normal">
                 소속 센터 <span className="text-red-500">*</span>
               </div>
-              <div className="relative w-72 h-12">
+              <div className="relative w-72">
+                <button
+                  type="button"
+                  onClick={() => setShowCenterDropdown(!showCenterDropdown)}
+                  disabled={loading}
+                  className={`w-72 h-12 rounded-[10px] outline outline-1 outline-offset-[-0.50px] outline-stone-300 px-3 text-sm font-['Nunito'] focus:outline-cyan-500 bg-white flex items-center justify-between ${
+                    !formData.center_id ? 'text-neutral-400' : 'text-neutral-900'
+                  }`}
+                >
+                  <span>
+                    {formData.center_id
+                      ? centers.find(c => c.id === parseInt(formData.center_id))?.name
+                      : '센터를 선택하세요'}
+                  </span>
+                  <svg
+                    width="16"
+                    height="8"
+                    viewBox="0 0 16 8"
+                    fill="none"
+                    className={`transition-transform duration-200 ${showCenterDropdown ? 'rotate-180' : ''}`}
+                  >
+                    <path
+                      d="M1 1L8 7L15 1"
+                      stroke="#1F2937"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </button>
+
+                {/* 커스텀 드롭다운 */}
+                {showCenterDropdown && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-stone-300 rounded-[10px] shadow-lg z-10">
+                    <div className="py-1">
+                      {centers.map(center => (
+                        <button
+                          key={center.id}
+                          type="button"
+                          onClick={() => {
+                            handleInputChange({ target: { name: 'center_id', value: center.id } });
+                            setShowCenterDropdown(false);
+                          }}
+                          className="w-full px-3 py-2 text-left text-sm font-['Nunito'] hover:bg-gray-50 transition-colors duration-200"
+                        >
+                          {center.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 숨겨진 select (폼 제출용) */}
                 <select
                   name="center_id"
                   value={formData.center_id}
                   onChange={handleInputChange}
                   required
-                  className={`w-72 h-12 rounded-[10px] outline outline-1 outline-offset-[-0.50px] outline-stone-300 px-3 text-sm font-['Nunito'] focus:outline-cyan-500 appearance-none bg-white ${
-                    !formData.center_id ? 'text-neutral-400' : 'text-neutral-900'
-                  }`}
+                  className="hidden"
                   disabled={loading}
                 >
-                  <option value="" className="text-neutral-400">
-                    센터를 선택하세요
-                  </option>
+                  <option value="">센터를 선택하세요</option>
                   {centers.map(center => (
                     <option key={center.id} value={center.id}>
                       {center.name}
                     </option>
                   ))}
                 </select>
-                <div className="ArrowDown w-6 h-6 absolute right-3 top-3 pointer-events-none">
-                  <div className="Shape w-4 h-2 left-[4px] top-[9px] absolute">
-                    <svg width="16" height="8" viewBox="0 0 16 8" fill="none">
-                      <path
-                        d="M1 1L8 7L15 1"
-                        stroke="#1F2937"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </div>
-                </div>
               </div>
               {errors.center_id && <p className="text-red-500 text-xs mt-1">{errors.center_id}</p>}
             </div>
@@ -186,39 +235,83 @@ const MemberEditModal = ({ isOpen, onClose, member, onUpdate }) => {
               <div className="justify-start text-neutral-900 text-sm font-normal font-['Nunito'] leading-normal">
                 담당 트레이너 <span className="text-red-500">*</span>
               </div>
-              <div className="relative w-72 h-12">
+              <div className="relative w-72">
+                <button
+                  type="button"
+                  onClick={() => setShowTrainerDropdown(!showTrainerDropdown)}
+                  disabled={loading || !formData.center_id}
+                  className={`w-72 h-12 rounded-[10px] outline outline-1 outline-offset-[-0.50px] outline-stone-300 px-3 text-sm font-['Nunito'] focus:outline-cyan-500 bg-white flex items-center justify-between ${
+                    !formData.trainer_id ? 'text-neutral-400' : 'text-neutral-900'
+                  }`}
+                >
+                  <span>
+                    {formData.trainer_id
+                      ? filteredTrainers.find(t => t.id === parseInt(formData.trainer_id))?.name +
+                        (filteredTrainers.find(t => t.id === parseInt(formData.trainer_id))?.nickname
+                          ? ` (${filteredTrainers.find(t => t.id === parseInt(formData.trainer_id))?.nickname})`
+                          : '')
+                      : formData.center_id
+                        ? '트레이너를 선택하세요'
+                        : '먼저 센터를 선택하세요'}
+                  </span>
+                  <svg
+                    width="16"
+                    height="8"
+                    viewBox="0 0 16 8"
+                    fill="none"
+                    className={`transition-transform duration-200 ${showTrainerDropdown ? 'rotate-180' : ''}`}
+                  >
+                    <path
+                      d="M1 1L8 7L15 1"
+                      stroke="#1F2937"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </button>
+
+                {/* 커스텀 드롭다운 */}
+                {showTrainerDropdown && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-stone-300 rounded-[10px] shadow-lg z-10">
+                    <div className="py-1">
+                      {filteredTrainers.map(trainer => (
+                        <button
+                          key={trainer.id}
+                          type="button"
+                          onClick={() => {
+                            handleInputChange({
+                              target: { name: 'trainer_id', value: trainer.id },
+                            });
+                            setShowTrainerDropdown(false);
+                          }}
+                          className="w-full px-3 py-2 text-left text-sm font-['Nunito'] hover:bg-gray-50 transition-colors duration-200"
+                        >
+                          {trainer.name} {trainer.nickname ? `(${trainer.nickname})` : ''}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 숨겨진 select (폼 제출용) */}
                 <select
                   name="trainer_id"
                   value={formData.trainer_id}
                   onChange={handleInputChange}
                   required
-                  className={`w-72 h-12 rounded-[10px] outline outline-1 outline-offset-[-0.50px] outline-stone-300 px-3 text-sm font-['Nunito'] focus:outline-cyan-500 appearance-none bg-white ${
-                    !formData.trainer_id ? 'text-neutral-400' : 'text-neutral-900'
-                  }`}
-                  disabled={loading}
+                  className="hidden"
+                  disabled={loading || !formData.center_id}
                 >
-                  <option value="" className="text-neutral-400">
-                    트레이너를 선택하세요
+                  <option value="">
+                    {formData.center_id ? '트레이너를 선택하세요' : '먼저 센터를 선택하세요'}
                   </option>
                   {filteredTrainers.map(trainer => (
                     <option key={trainer.id} value={trainer.id}>
-                      {trainer.name}
+                      {trainer.name} {trainer.nickname ? `(${trainer.nickname})` : ''}
                     </option>
                   ))}
                 </select>
-                <div className="ArrowDown w-6 h-6 absolute right-3 top-3 pointer-events-none">
-                  <div className="Shape w-4 h-2 left-[4px] top-[9px] absolute">
-                    <svg width="16" height="8" viewBox="0 0 16 8" fill="none">
-                      <path
-                        d="M1 1L8 7L15 1"
-                        stroke="#1F2937"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </div>
-                </div>
               </div>
               {errors.trainer_id && (
                 <p className="text-red-500 text-xs mt-1">{errors.trainer_id}</p>
@@ -268,8 +361,52 @@ const MemberEditModal = ({ isOpen, onClose, member, onUpdate }) => {
             </div>
           </div>
 
+          {/* PT 세션 수 */}
+          <div className="w-72 left-[50px] top-[411px] absolute inline-flex flex-col justify-start items-start gap-[5px]">
+            <div className="w-72 flex flex-col justify-start items-start gap-2">
+              <div className="justify-start text-neutral-900 text-sm font-normal font-['Nunito'] leading-normal">
+                PT 세션 수
+              </div>
+              <div className="relative w-72 h-12">
+                <input
+                  type="number"
+                  name="total_sessions"
+                  value={formData.total_sessions}
+                  onChange={handleInputChange}
+                  className="w-72 h-12 rounded-[10px] outline outline-1 outline-offset-[-0.50px] outline-stone-300 px-3 text-sm font-['Nunito'] focus:outline-cyan-500 placeholder:text-neutral-400"
+                  placeholder="PT 세션 수를 입력하세요"
+                  disabled={loading}
+                  min="0"
+                />
+              </div>
+              {errors.total_sessions && <p className="text-red-500 text-xs mt-1">{errors.total_sessions}</p>}
+            </div>
+          </div>
+
+          {/* 무료 세션 수 */}
+          <div className="w-72 left-[370px] top-[411px] absolute inline-flex flex-col justify-start items-start gap-[5px]">
+            <div className="w-72 flex flex-col justify-start items-start gap-2">
+              <div className="justify-start text-neutral-900 text-sm font-normal font-['Nunito'] leading-normal">
+                무료 세션 수
+              </div>
+              <div className="relative w-72 h-12">
+                <input
+                  type="number"
+                  name="free_sessions"
+                  value={formData.free_sessions}
+                  onChange={handleInputChange}
+                  className="w-72 h-12 rounded-[10px] outline outline-1 outline-offset-[-0.50px] outline-stone-300 px-3 text-sm font-['Nunito'] focus:outline-cyan-500 placeholder:text-neutral-400"
+                  placeholder="무료 세션 수를 입력하세요"
+                  disabled={loading}
+                  min="0"
+                />
+              </div>
+              {errors.free_sessions && <p className="text-red-500 text-xs mt-1">{errors.free_sessions}</p>}
+            </div>
+          </div>
+
           {/* 메모 */}
-          <div className="w-[620px] left-[50px] top-[411px] absolute inline-flex flex-col justify-start items-start gap-[5px]">
+          <div className="w-[620px] left-[50px] top-[517px] absolute inline-flex flex-col justify-start items-start gap-[5px]">
             <div className="w-[620px] flex flex-col justify-start items-start gap-2 mb-16">
               <div className="justify-start text-neutral-900 text-sm font-normal font-['Nunito'] leading-normal">
                 메모
@@ -290,7 +427,7 @@ const MemberEditModal = ({ isOpen, onClose, member, onUpdate }) => {
 
           {/* 에러 메시지 */}
           {errors.submit && (
-            <div className="left-[50px] top-[500px] absolute text-red-500 text-sm">
+            <div className="left-[50px] top-[600px] absolute text-red-500 text-sm">
               {errors.submit}
             </div>
           )}

@@ -66,19 +66,8 @@ const UserPage = () => {
         {/* 최상단 제목 */}
         <div className="text-black text-3xl font-extrabold font-['Nunito'] pt-2">모든 직원</div>
 
-        {/* 직원수와 필터 섹션 */}
-        <div className="flex justify-between items-start pr-8 pt-[20px] pl-[30px] flex-shrink-0">
-          {/* 직원수 */}
-          <div className="Frame37 w-32 h-14 relative">
-            <div className="left-0 top-0 absolute justify-start text-neutral-800 text-4xl font-extrabold font-['Nunito']">
-              {users.length}
-            </div>
-            <div className="left-0 top-[33px] absolute justify-start text-neutral-600 text-sm font-normal font-['Nunito'] leading-normal">
-              총 직원 수
-            </div>
-          </div>
-
-          {/* 필터 및 검색 섹션 */}
+        {/* 필터 및 검색 섹션 */}
+        <div className="flex justify-end items-start pr-8 pt-[20px] pl-[30px] flex-shrink-0">
           <div className="flex gap-4 items-center -mt-2">
             {/* 검색창 */}
             <div className="w-[200px] h-[30px] relative">

@@ -25,11 +25,28 @@ export const usePTSessionForm = (initialData = null, isOpen = false, mode = 'cre
     if (isOpen) {
       if (initialData && mode === 'edit') {
         // 편집 모드 - 기존 데이터로 초기화
+        // 날짜 형식 변환 (YYYY-MM-DD 형식으로)
+        const formatDateForInput = (dateString) => {
+          if (!dateString) return '';
+          const date = new Date(dateString);
+          return date.toISOString().split('T')[0];
+        };
+
+        // 시간 형식 변환 (HH:MM 형식으로)
+        const formatTimeForInput = (timeString) => {
+          if (!timeString) return '';
+          // 이미 HH:MM 형식이면 그대로 반환
+          if (typeof timeString === 'string' && timeString.includes(':')) {
+            return timeString.substring(0, 5);
+          }
+          return timeString;
+        };
+
         setFormData({
-          session_date: initialData.session_date || '',
+          session_date: formatDateForInput(initialData.session_date) || '',
           session_type: initialData.session_type || 'regular',
-          start_time: initialData.start_time || '',
-          end_time: initialData.end_time || '',
+          start_time: formatTimeForInput(initialData.start_time) || '',
+          end_time: formatTimeForInput(initialData.end_time) || '',
           notes: initialData.notes || '',
         });
       } else {

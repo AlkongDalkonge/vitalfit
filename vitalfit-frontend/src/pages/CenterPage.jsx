@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { centerAPI, memberAPI } from '../utils/api';
 import CenterImageModal from '../components/CenterImageModal';
+import { useUser } from '../utils/hooks';
 
 const CenterPage = () => {
   const [expandedCenter, setExpandedCenter] = useState(null);
@@ -12,6 +13,9 @@ const CenterPage = () => {
   // 이미지 모달 상태
   const [imageModalOpen, setImageModalOpen] = useState(false);
   const [selectedCenter, setSelectedCenter] = useState(null);
+
+  // 유저 데이터 가져오기
+  const { users: allUsers } = useUser();
 
   // 센터와 회원 데이터 가져오기
   useEffect(() => {
@@ -122,23 +126,55 @@ const CenterPage = () => {
   }
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="max-w-7xl mx-auto">
       <h1 className="text-3xl font-bold text-gray-800 mb-6">지점 관리</h1>
 
-      {/* 지점 고객수 */}
-      <div className="mb-6 pl-[30px]">
-        <div data-layer="Frame 37" className="Frame37 w-32 h-14 relative">
-          <div
-            data-layer="250"
-            className="left-0 top-0 absolute justify-start text-neutral-800 text-4xl font-extrabold font-['Nunito']"
-          >
-            {members.length}
-          </div>
-          <div
-            data-layer="지점 고객 수"
-            className="left-0 top-[33px] absolute justify-start text-neutral-600 text-sm font-normal font-['Nunito'] leading-normal"
-          >
-            지점 고객 수
+      {/* 센터별 통계 */}
+      <div className="mb-6 pl-[30px] flex justify-center">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 w-full max-w-7xl">
+          <div className="flex justify-between">
+            {/* 직원 현황 */}
+            <div className="flex-1 pr-12">
+              <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                직원 현황
+              </h3>
+              <div className="space-y-2">
+                {centers.map(center => {
+                  const centerUsers = allUsers?.filter(user => user.center?.id === center.id) || [];
+                  return (
+                    <div key={`users-${center.id}`} className="flex items-center py-1">
+                      <span className="text-sm text-gray-600 flex-1 pl-2">{center.name}</span>
+                      <span className="text-sm font-bold text-gray-800 ml-2">{centerUsers.length}명</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            
+            {/* 세로 보더 */}
+            <div className="w-px bg-gray-300 mx-8 h-32"></div>
+            
+            {/* 고객 현황 */}
+            <div className="flex-1 pl-12 pr-8">
+              <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                고객 현황
+              </h3>
+              <div className="space-y-2">
+                {centers.map(center => {
+                  const centerMembers = members.filter(member => 
+                    member.center_id === center.id && member.status === 'active'
+                  );
+                  return (
+                    <div key={`members-${center.id}`} className="flex items-center py-1">
+                      <span className="text-sm text-gray-600 flex-1 pl-2">{center.name}</span>
+                      <span className="text-sm font-bold text-gray-800 ml-2">{centerMembers.length}명</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -224,9 +260,6 @@ const CenterPage = () => {
                                     e.target.src = '/logo.png';
                                   }}
                                 />
-                                <div className="absolute top-3 left-3 bg-blue-600 text-white text-sm px-3 py-1 rounded-full font-medium">
-                                  메인 이미지
-                                </div>
                               </div>
                             </div>
                           )}
@@ -349,7 +382,7 @@ const CenterPage = () => {
                           onClick={() => handleImageManagement(center)}
                           className="px-4 py-2 text-purple-600 border border-purple-300 rounded-lg hover:bg-purple-50 transition-colors duration-200"
                         >
-                          이미지 관리
+                          이미지
                         </button>
                       </div>
                       <div className="flex gap-3">
@@ -358,9 +391,6 @@ const CenterPage = () => {
                         </button>
                         <button className="px-4 py-2 text-red-600 border border-red-300 rounded-lg hover:bg-red-50 transition-colors duration-200">
                           삭제
-                        </button>
-                        <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200">
-                          직원 관리
                         </button>
                       </div>
                     </div>

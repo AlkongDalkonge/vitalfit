@@ -119,6 +119,17 @@ const createPTSession = async (req, res) => {
       idempotency_key,
     });
 
+    // 멤버의 사용된 세션 수 업데이트
+    if (session_type === 'regular') {
+      await member.increment('used_sessions');
+    } else if (session_type === 'free') {
+      // 무료 세션은 free_sessions에서 차감 (무료 세션의 총 개수에서 사용된 개수를 빼는 개념)
+      // free_sessions는 무료 세션의 총 개수이므로, 실제로는 별도 필드가 필요하지만
+      // 현재 모델 구조에서는 free_sessions를 총 개수로 사용하고 있으므로
+      // 무료 세션 사용 시 free_sessions를 감소시킴
+      await member.decrement('free_sessions');
+    }
+
     return res.status(201).json({
       success: true,
       message: 'PT 세션이 성공적으로 생성되었습니다.',
@@ -159,11 +170,37 @@ const updatePTSession = async (req, res) => {
 
     await ptSession.update(value);
 
+    // 수정된 데이터를 다시 조회하여 반환
+    const updatedPtSession = await PTSession.findByPk(id, {
+      attributes: [
+        'id', 'member_id', 'trainer_id', 'center_id', 'session_date', 
+        'start_time', 'end_time', 'session_type', 'signature_data', 
+        'signature_time', 'notes', 'created_at', 'updated_at'
+      ],
+      include: [
+        {
+          model: Member,
+          as: 'member',
+          attributes: ['id', 'name', 'phone'],
+        },
+        {
+          model: User,
+          as: 'trainer',
+          attributes: ['id', 'name', 'nickname'],
+        },
+        {
+          model: Center,
+          as: 'center',
+          attributes: ['id', 'name'],
+        },
+      ],
+    });
+
     return res.status(200).json({
       success: true,
       message: 'PT 세션이 성공적으로 수정되었습니다.',
       data: {
-        pt_session: ptSession,
+        pt_session: updatedPtSession,
       },
     });
   } catch (error) {
@@ -188,7 +225,28 @@ const deletePTSession = async (req, res) => {
       });
     }
 
+    // 삭제 전 세션 타입 확인
+    const sessionType = ptSession.session_type;
+    const memberId = ptSession.member_id;
+    
+    // 멤버 정보 조회
+    const member = await Member.findByPk(memberId);
+    if (!member) {
+      return res.status(404).json({
+        success: false,
+        message: '멤버 정보를 찾을 수 없습니다.',
+      });
+    }
+    
     await ptSession.destroy();
+
+    // 멤버의 사용된 세션 수 감소
+    if (sessionType === 'regular') {
+      await member.decrement('used_sessions');
+    } else if (sessionType === 'free') {
+      // 무료 세션 삭제 시 free_sessions를 다시 증가시킴
+      await member.increment('free_sessions');
+    }
 
     return res.status(200).json({
       success: true,
@@ -237,6 +295,11 @@ const getPTSessionsByMonth = async (req, res) => {
           [Op.between]: [startDate, endDate],
         },
       },
+      attributes: [
+        'id', 'member_id', 'trainer_id', 'center_id', 'session_date', 
+        'start_time', 'end_time', 'session_type', 'signature_data', 
+        'signature_time', 'notes', 'created_at', 'updated_at'
+      ],
       include: [
         {
           model: Member,
@@ -339,7 +402,7 @@ const getPTSessionsByMember = async (req, res) => {
 
     // 멤버 정보 조회
     const member = await Member.findByPk(memberId, {
-      attributes: ['id', 'name', 'phone', 'join_date', 'expire_date'],
+      attributes: ['id', 'name', 'phone', 'join_date', 'expire_date', 'total_sessions', 'used_sessions', 'free_sessions'],
     });
 
     if (!member) {
@@ -351,6 +414,11 @@ const getPTSessionsByMember = async (req, res) => {
 
     const { count, rows: ptSessions } = await PTSession.findAndCountAll({
       where: whereClause,
+      attributes: [
+        'id', 'member_id', 'trainer_id', 'center_id', 'session_date', 
+        'start_time', 'end_time', 'session_type', 'signature_data', 
+        'signature_time', 'notes', 'created_at', 'updated_at'
+      ],
       include: [
         {
           model: Member,
@@ -378,11 +446,31 @@ const getPTSessionsByMember = async (req, res) => {
     const completedSessions = ptSessions.filter(session => session.end_time).length;
     const completionRate = totalSessions > 0 ? Math.round((completedSessions / totalSessions) * 100) : 0;
 
+    // 전체 PT 세션 수 조회 (월별 필터 없이)
+    const allPtSessions = await PTSession.findAll({
+      where: { member_id: memberId },
+      attributes: ['session_type'],
+    });
+
+    // 실제 사용된 세션 수 계산
+    const actualUsedSessions = allPtSessions.filter(session => session.session_type === 'regular').length;
+    const actualUsedFreeSessions = allPtSessions.filter(session => session.session_type === 'free').length;
+
+    // 잔여 세션 계산
+    const remainingSessions = Math.max(0, (member.total_sessions || 0) - actualUsedSessions);
+    const remainingFreeSessions = Math.max(0, (member.free_sessions || 0) - actualUsedFreeSessions);
+
     return res.status(200).json({
       success: true,
       message: '멤버별 PT 세션 조회 성공',
       data: {
-        member: member,
+        member: {
+          ...member.toJSON(),
+          remaining_sessions: remainingSessions,
+          remaining_free_sessions: remainingFreeSessions,
+          actual_used_sessions: actualUsedSessions,
+          actual_used_free_sessions: actualUsedFreeSessions,
+        },
         pt_sessions: ptSessions,
         pagination: {
           current_page: parseInt(page),

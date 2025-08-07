@@ -321,10 +321,10 @@ const MemberPage = () => {
                       소속
                     </div>
                     <div
-                      data-layer="남은 세션"
+                      data-layer="잔여 PT"
                       className="flex-[1] min-w-[90px] justify-start text-neutral-800 text-sm font-semibold font-['Nunito'] leading-normal"
                     >
-                      남은 세션
+                      잔여 PT
                     </div>
                     <div
                       data-layer="상태"
@@ -377,10 +377,10 @@ const MemberPage = () => {
                         </div>
 
                         <div
-                          data-layer="남은 세션"
+                          data-layer="잔여 PT"
                           className="flex-[1] min-w-[90px] justify-start text-neutral-600 text-sm font-normal font-['Nunito'] leading-normal"
                         >
-                          {member.total_sessions - member.used_sessions}
+                          {member.remaining_sessions || 0}
                         </div>
                         <div
                           data-layer="상태"
@@ -388,12 +388,14 @@ const MemberPage = () => {
                         >
                           <button
                             onClick={e => {
+                              console.log('상태 버튼 클릭됨:', member.id);
                               const rect = e.currentTarget.getBoundingClientRect();
                               setDropdownPosition({
                                 top: rect.bottom + window.scrollY,
                                 left: rect.left + window.scrollX,
                               });
                               toggleStatusDropdown(member.id);
+                              console.log('드롭다운 토글 후 상태:', statusDropdowns);
                             }}
                             data-dropdown="status"
                             className="flex items-center gap-1 text-neutral-600 text-sm font-normal font-['Nunito'] leading-normal hover:text-neutral-800 transition-colors duration-200"
@@ -414,6 +416,7 @@ const MemberPage = () => {
                             </svg>
                           </button>
 
+                          {console.log('드롭다운 렌더링 체크:', member.id, statusDropdowns[member.id])}
                           {statusDropdowns[member.id] &&
                             createPortal(
                               <div
@@ -427,8 +430,13 @@ const MemberPage = () => {
                                   {statusOptions.map(option => (
                                     <button
                                       key={option.value}
-                                      onClick={() => handleStatusChange(member.id, option.value)}
-                                      className={`w-full px-3 py-1.5 text-left text-xs hover:bg-gray-100 transition-colors duration-200 ${
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        console.log('상태 옵션 클릭됨:', member.id, option.value);
+                                        handleStatusChange(member.id, option.value);
+                                      }}
+                                      className={`w-full px-3 py-1.5 text-left text-xs hover:bg-gray-100 transition-colors duration-200 status-dropdown-option ${
                                         member.status === option.value
                                           ? 'bg-cyan-50 text-cyan-600 font-medium'
                                           : 'text-neutral-600'

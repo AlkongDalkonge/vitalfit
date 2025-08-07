@@ -50,15 +50,15 @@ export const usePTSession = memberId => {
 
   // 세션 추가
   const handleCreateSession = newSession => {
-    setPtSessions(prev => [newSession, ...prev]);
+    // 데이터 새로고침
+    fetchMemberPTSessions();
     setIsCreateModalOpen(false);
   };
 
   // 세션 수정
   const handleUpdateSession = updatedSession => {
-    setPtSessions(prev =>
-      prev.map(session => (session.id === updatedSession.id ? updatedSession : session))
-    );
+    // 데이터 새로고침
+    fetchMemberPTSessions();
     setIsEditModalOpen(false);
     setEditingSession(null);
   };

@@ -74,7 +74,9 @@ export const useMember = () => {
   // 상태 변경 처리
   const handleStatusChange = async (memberId, newStatus) => {
     try {
+      console.log('상태 변경 시도:', memberId, newStatus);
       const response = await memberAPI.updateMember(memberId, { status: newStatus });
+      console.log('상태 변경 응답:', response);
 
       if (response.success) {
         // 로컬 상태 업데이트
@@ -88,6 +90,9 @@ export const useMember = () => {
             member.id === memberId ? { ...member, status: newStatus } : member
           )
         );
+        console.log('상태 변경 성공:', newStatus);
+      } else {
+        console.error('상태 변경 실패:', response.message);
       }
     } catch (error) {
       console.error('상태 변경 오류:', error);
@@ -99,10 +104,15 @@ export const useMember = () => {
 
   // 상태 드롭다운 토글
   const toggleStatusDropdown = memberId => {
-    setStatusDropdowns(prev => ({
-      ...prev,
-      [memberId]: !prev[memberId],
-    }));
+    console.log('toggleStatusDropdown 호출됨:', memberId);
+    setStatusDropdowns(prev => {
+      const newState = {
+        ...prev,
+        [memberId]: !prev[memberId],
+      };
+      console.log('새로운 드롭다운 상태:', newState);
+      return newState;
+    });
   };
 
   // 검색 핸들러
@@ -123,7 +133,9 @@ export const useMember = () => {
   // 드롭다운 외부 클릭 처리
   useEffect(() => {
     const handleClickOutside = event => {
-      if (!event.target.closest('[data-dropdown="status"]')) {
+      // 드롭다운 내부 클릭이 아닌 경우에만 닫기
+      if (!event.target.closest('[data-dropdown="status"]') && 
+          !event.target.closest('.status-dropdown-option')) {
         setStatusDropdowns({});
       }
     };

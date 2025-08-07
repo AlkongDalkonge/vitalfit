@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // API 기본 URL 설정
 // eslint-disable-next-line no-undef
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
 // 공지사항 API 서비스
 export const noticeService = {
@@ -108,9 +108,7 @@ export const noticeService = {
 
   getCenters: async () => {
     try {
-      const res = await axios.get(`${API_BASE_URL}/api/centers`);
-      console.log('센터조회:::', res.data.data.centers);
-
+      const res = await axios.get('/api/centers');
       return {
         success: true,
         data: res.data.data.centers,

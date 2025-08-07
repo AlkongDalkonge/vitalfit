@@ -1,4 +1,4 @@
-const { Member, Center, User } = require('../models');
+const { Member, Center, User, PTSession } = require('../models');
 const Joi = require('joi');
 
 // 멤버 생성 스키마
@@ -23,11 +23,11 @@ const updateMemberSchema = Joi.object({
   center_id: Joi.number().integer().positive().optional(),
   trainer_id: Joi.number().integer().positive().optional(),
   join_date: Joi.date().optional(),
-  expire_date: Joi.date().optional(),
-  total_sessions: Joi.number().integer().min(0).optional(),
-  used_sessions: Joi.number().integer().min(0).optional(),
-  free_sessions: Joi.number().integer().min(0).optional(),
-  memo: Joi.string().trim().optional(),
+  expire_date: Joi.date().allow(null, '').optional(),
+  total_sessions: Joi.number().integer().min(0).allow(null, '').optional(),
+  used_sessions: Joi.number().integer().min(0).allow(null, '').optional(),
+  free_sessions: Joi.number().integer().min(0).allow(null, '').optional(),
+  memo: Joi.string().trim().allow(null, '').optional(),
   status: Joi.string().valid('active', 'inactive', 'expired', 'withdrawn').optional(),
 });
 
@@ -134,7 +134,14 @@ const updateMember = async (req, res) => {
 
   try {
     const { id } = req.params;
-    const updateData = value;
+    const updateData = { ...value };
+    
+    // 빈 문자열을 null로 변환
+    if (updateData.expire_date === '') updateData.expire_date = null;
+    if (updateData.memo === '') updateData.memo = null;
+    if (updateData.total_sessions === '' || updateData.total_sessions === null) updateData.total_sessions = 0;
+    if (updateData.used_sessions === '' || updateData.used_sessions === null) updateData.used_sessions = 0;
+    if (updateData.free_sessions === '' || updateData.free_sessions === null) updateData.free_sessions = 0;
 
     const member = await Member.findByPk(id);
     if (!member) {
@@ -248,15 +255,47 @@ const getAllMembers = async (req, res) => {
       offset: parseInt(offset),
     });
 
+    // 각 멤버의 잔여 세션 계산
+    const membersWithRemainingSessions = await Promise.all(
+      members.map(async (member) => {
+        // 해당 멤버의 실제 사용된 세션 수 조회
+        const usedSessions = await PTSession.count({
+          where: { 
+            member_id: member.id,
+            session_type: 'regular'
+          }
+        });
+
+        const usedFreeSessions = await PTSession.count({
+          where: { 
+            member_id: member.id,
+            session_type: 'free'
+          }
+        });
+
+        // 잔여 세션 계산
+        const remainingSessions = Math.max(0, (member.total_sessions || 0) - usedSessions);
+        const remainingFreeSessions = Math.max(0, (member.free_sessions || 0) - usedFreeSessions);
+
+        return {
+          ...member.toJSON(),
+          remaining_sessions: remainingSessions,
+          remaining_free_sessions: remainingFreeSessions,
+          actual_used_sessions: usedSessions,
+          actual_used_free_sessions: usedFreeSessions,
+        };
+      })
+    );
+
     // 통계 정보 계산
-    const activeMembers = members.filter(member => member.status === 'active').length;
-    const inactiveMembers = members.filter(member => member.status === 'inactive').length;
-    const expiredMembers = members.filter(member => member.status === 'expired').length;
-    const withdrawnMembers = members.filter(member => member.status === 'withdrawn').length;
+    const activeMembers = membersWithRemainingSessions.filter(member => member.status === 'active').length;
+    const inactiveMembers = membersWithRemainingSessions.filter(member => member.status === 'inactive').length;
+    const expiredMembers = membersWithRemainingSessions.filter(member => member.status === 'expired').length;
+    const withdrawnMembers = membersWithRemainingSessions.filter(member => member.status === 'withdrawn').length;
 
     // 센터별 통계
     const centerStats = {};
-    members.forEach(member => {
+    membersWithRemainingSessions.forEach(member => {
       const centerName = member.center?.name || 'Unknown';
       if (!centerStats[centerName]) {
         centerStats[centerName] = { total: 0, active: 0, inactive: 0, expired: 0, withdrawn: 0 };
@@ -267,7 +306,7 @@ const getAllMembers = async (req, res) => {
 
     // 트레이너별 통계
     const trainerStats = {};
-    members.forEach(member => {
+    membersWithRemainingSessions.forEach(member => {
       const trainerName = member.trainer?.name || 'Unknown';
       if (!trainerStats[trainerName]) {
         trainerStats[trainerName] = { total: 0, active: 0, inactive: 0, expired: 0, withdrawn: 0 };
@@ -280,7 +319,7 @@ const getAllMembers = async (req, res) => {
       success: true,
       message: '멤버 목록 조회 성공',
       data: {
-        members: members,
+        members: membersWithRemainingSessions,
         pagination: {
           current_page: parseInt(page),
           total_pages: Math.ceil(count / limit),

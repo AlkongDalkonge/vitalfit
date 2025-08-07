@@ -27,6 +27,7 @@ const MemberPTSessionPage = () => {
     getYearOptions,
     getMonthOptions,
     setIsCreateModalOpen,
+    fetchMemberPTSessions,
   } = usePTSession(memberId);
 
   const {
@@ -113,7 +114,7 @@ const MemberPTSessionPage = () => {
             {member && (
               <div className="text-center">
                 <div className="text-2xl font-bold text-black">
-                  {(member.total_sessions || 0) - (member.used_sessions || 0)}
+                  {member.remaining_sessions || 0}
                 </div>
                 <div className="text-sm text-gray-600">잔여 PT</div>
               </div>
@@ -125,7 +126,7 @@ const MemberPTSessionPage = () => {
             {/* 무료 잔여 세션 정보 */}
             {member && (
               <div className="text-center">
-                <div className="text-2xl font-bold text-black">{member.free_sessions || 0}</div>
+                <div className="text-2xl font-bold text-black">{member.remaining_free_sessions || 0}</div>
                 <div className="text-sm text-gray-600">무료 잔여 PT</div>
               </div>
             )}
@@ -133,11 +134,11 @@ const MemberPTSessionPage = () => {
             {/* 구분선 */}
             <div className="h-12 w-px bg-gray-200"></div>
 
-            {/* 총 세션 정보 */}
+            {/* 누적 PT 정보 */}
             {member && (
               <div className="text-center">
-                <div className="text-2xl font-bold text-gray-500">{member.total_sessions || 0}</div>
-                <div className="text-sm text-gray-600">총 PT</div>
+                <div className="text-2xl font-bold text-orange-500">{(member.actual_used_sessions || 0) + (member.actual_used_free_sessions || 0)}</div>
+                <div className="text-sm text-gray-600">누적 PT</div>
               </div>
             )}
           </div>
@@ -347,8 +348,8 @@ const MemberPTSessionPage = () => {
                         {formatTime(session.start_time)} - {formatTime(session.end_time)}
                       </div>
                       <div className="flex-[1.5] min-w-[150px] justify-start text-neutral-600 text-sm font-normal font-['Nunito'] leading-normal">
-                        <div className="max-w-[150px] truncate" title={session.content}>
-                          {session.content || '-'}
+                        <div className="max-w-[150px] truncate" title={session.notes}>
+                          {session.notes || '-'}
                         </div>
                       </div>
                       <div className="flex-[1] min-w-[100px] justify-start text-neutral-600 text-sm font-normal font-['Nunito'] leading-normal">

@@ -124,13 +124,16 @@ export const useMemberForm = (initialData = null, isOpen = false) => {
       newErrors.trainer_id = '트레이너를 선택해주세요';
     }
 
-    // 가입일 필수 검증
-    if (!formData.join_date) {
-      newErrors.join_date = '가입일은 필수입니다';
+    // 가입일 검증 (수정 시에는 선택사항이지만, 있으면 유효성 검사)
+    if (formData.join_date && formData.join_date.trim() !== '') {
+      const joinDate = new Date(formData.join_date);
+      if (isNaN(joinDate.getTime())) {
+        newErrors.join_date = '올바른 날짜 형식을 입력해주세요';
+      }
     }
 
-    // 날짜 검증
-    if (formData.join_date && formData.expire_date) {
+    // 날짜 검증 (만료일이 있을 때만)
+    if (formData.join_date && formData.expire_date && formData.expire_date.trim() !== '') {
       const joinDate = new Date(formData.join_date);
       const expireDate = new Date(formData.expire_date);
 

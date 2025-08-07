@@ -21,8 +21,8 @@ module.exports = {
     password: process.env.DB_PASSWORD || 'postgres',
     database: process.env.DB_NAME || 'vitalfit',
     host: process.env.DB_HOST || 'localhost',
-    dialect: 'postgres',
-    port: process.env.DB_PORT || 5432,
+    dialect: process.env.DB_DIALECT || 'sqlite',
+    storage: process.env.DB_STORAGE || './database.sqlite',
     logging: false,
   },
   test: {
