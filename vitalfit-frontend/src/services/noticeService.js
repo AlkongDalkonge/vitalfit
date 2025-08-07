@@ -9,9 +9,9 @@ export const noticeService = {
   // 공지사항 목록 조회
   getNotices: async (params = {}) => {
     try {
-      const { page = 1, limit = 10, search = '' } = params;
+      const { page = 1, limit = 10, search = '', searchType = '전체' } = params;
       const response = await axios.get(`${API_BASE_URL}/api/notices`, {
-        params: { page, limit, search },
+        params: { page, limit, searchType, search },
       });
       return response.data;
     } catch (error) {
@@ -36,6 +36,12 @@ export const noticeService = {
   // 공지사항 생성
   createNotice: async noticeData => {
     try {
+      // FormData 디버깅 출력
+      if (noticeData instanceof FormData) {
+        for (let [key, value] of noticeData.entries()) {
+          console.log(`[FormData] ${key}:`, value);
+        }
+      }
       const response = await axios.post(`${API_BASE_URL}/api/notices`, noticeData, {
         headers: {
           'Content-Type': 'multipart/form-data',
@@ -102,10 +108,12 @@ export const noticeService = {
 
   getCenters: async () => {
     try {
-      const res = await axios.get('/api/centers');
+      const res = await axios.get(`${API_BASE_URL}/api/centers`);
+      console.log('센터조회:::', res.data.data.centers);
+
       return {
         success: true,
-        data: res.data,
+        data: res.data.data.centers,
       };
     } catch (error) {
       console.error('센터 목록 조회 실패:', error);
