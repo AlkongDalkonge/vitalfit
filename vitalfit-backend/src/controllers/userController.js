@@ -3,6 +3,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const Joi = require('joi');
 const { createHash, validateForeignKey } = require('../utils/userUtils');
+const { createUpload, deleteFile, createFilePath } = require('../utils/uploadUtils');
 const secret = process.env.JWT_SECRET;
 
 const signUpSchema = Joi.object({
@@ -45,6 +46,8 @@ const signUpSchema = Joi.object({
   }),
 
   join_date: Joi.date().optional(), // 필수 아니면 생략 가능
+  profile_image_name: Joi.string().optional(),
+  profile_image_url: Joi.string().optional(),
 });
 
 // ✅ 회원가입
@@ -67,8 +70,9 @@ const signUp = async (req, res, next) => {
     value.join_date = new Date();
 
     if (req.file) {
-      value.profile_image_name = req.file.filename;
-      value.profile_image_url = `/uploads/${req.file.filename}`;
+      // processFile 미들웨어가 이미 req.body에 설정해줌
+      value.profile_image_name = req.body.profile_image_name;
+      value.profile_image_url = req.body.profile_image_url;
     }
 
     const user = await User.create(value);
@@ -139,7 +143,7 @@ const signIn = async (req, res, next) => {
   }
 };
 
-// ✅ 내 계정 보기
+// 내 계정 보기
 const getMyAccount = async (req, res, next) => {
   try {
     const user = await User.findByPk(req.user.uid, {
@@ -158,7 +162,7 @@ const getMyAccount = async (req, res, next) => {
   }
 };
 
-// ✅ 내 정보 수정
+// 내 정보 수정
 const updateMyAccount = async (req, res, next) => {
   try {
     const updates = req.body;
@@ -166,14 +170,21 @@ const updateMyAccount = async (req, res, next) => {
     if (updates.position_id) await validateForeignKey(Position, updates.position_id, '직책');
     if (updates.team_id) await validateForeignKey(Team, updates.team_id, '팀');
 
-    if (req.file) {
-      updates.profile_image_name = req.file.filename;
-      updates.profile_image_url = `/uploads/${req.file.filename}`;
-    }
-
     const user = await User.findByPk(req.user.uid);
     if (!user)
       return res.status(404).json({ success: false, message: '사용자를 찾을 수 없습니다.' });
+
+    // 새 파일이 업로드된 경우 기존 파일 삭제
+    if (req.file && user.profile_image_url) {
+      const oldFilePath = createFilePath('profiles', user.profile_image_url.split('/').pop());
+      deleteFile(oldFilePath);
+    }
+
+    if (req.file) {
+      // processFile 미들웨어가 이미 req.body에 설정해줌
+      updates.profile_image_name = req.body.profile_image_name;
+      updates.profile_image_url = req.body.profile_image_url;
+    }
 
     await user.update(updates);
     return res.status(200).json({ success: true, message: '내 정보가 수정되었습니다.', user });
@@ -182,12 +193,12 @@ const updateMyAccount = async (req, res, next) => {
   }
 };
 
-// ✅ 로그아웃 (프론트에서 토큰 삭제로 처리)
+// 로그아웃 (프론트에서 토큰 삭제로 처리)
 const logout = async (req, res) => {
   return res.status(200).json({ success: true, message: '로그아웃 되었습니다.' });
 };
 
-// ✅ 비밀번호 초기화
+// 비밀번호 초기화
 const resetPassword = async (req, res, next) => {
   try {
     const { email } = req.body;
@@ -213,12 +224,41 @@ const resetPassword = async (req, res, next) => {
   }
 };
 
-// ✅ 소프트 삭제 (회원 탈퇴)
+// 프로필 이미지 삭제
+const deleteProfileImage = async (req, res, next) => {
+  try {
+    const user = await User.findByPk(req.user.uid);
+    if (!user)
+      return res.status(404).json({ success: false, message: '사용자를 찾을 수 없습니다.' });
+
+    if (user.profile_image_url) {
+      const filePath = createFilePath('profiles', user.profile_image_url.split('/').pop());
+      deleteFile(filePath);
+    }
+
+    await user.update({
+      profile_image_name: null,
+      profile_image_url: null,
+    });
+
+    return res.status(200).json({ success: true, message: '프로필 이미지가 삭제되었습니다.' });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// 회원 탈퇴
 const deactivateAccount = async (req, res, next) => {
   try {
     const user = await User.findByPk(req.user.uid);
     if (!user)
       return res.status(404).json({ success: false, message: '사용자를 찾을 수 없습니다.' });
+
+    // 프로필 이미지가 있으면 파일도 함께 삭제
+    if (user.profile_image_url) {
+      const filePath = createFilePath('profiles', user.profile_image_url.split('/').pop());
+      deleteFile(filePath);
+    }
 
     user.status = 'inactive';
     user.leave_date = new Date();
@@ -230,20 +270,20 @@ const deactivateAccount = async (req, res, next) => {
   }
 };
 
-// ✅ 모든 사용자 조회 (새로 추가)
+// 모든 사용자 조회
 const getAllUsers = async (req, res, next) => {
   try {
-    const { 
-      page = 1, 
-      limit = 1000, 
-      role, 
-      centerId, 
-      teamId, 
+    const {
+      page = 1,
+      limit = 1000,
+      role,
+      centerId,
+      teamId,
       positionId,
       status,
-      search 
+      search,
     } = req.query;
-    
+
     const offset = (page - 1) * limit;
     const whereClause = {};
 
@@ -387,11 +427,11 @@ const getAllUsers = async (req, res, next) => {
   }
 };
 
-// ✅ 특정 사용자 조회
+// 특정 사용자 조회
 const getUserById = async (req, res, next) => {
   try {
     const { id } = req.params;
-    
+
     const user = await User.findByPk(id, {
       include: [
         {
@@ -438,10 +478,12 @@ const getUserById = async (req, res, next) => {
 module.exports = {
   signUp,
   signIn,
+  getMe: getMyAccount, // getMe를 getMyAccount로 별칭
   getMyAccount,
   updateMyAccount,
   logout,
   resetPassword,
+  deleteProfileImage,
   deactivateAccount,
   getAllUsers,
   getUserById,

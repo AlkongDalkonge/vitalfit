@@ -10,17 +10,11 @@ const { Op } = require('sequelize');
 const Joi = require('joi');
 const path = require('path');
 const fs = require('fs');
+const { createUpload, deleteFile: uploadDeleteFile } = require('../utils/uploadUtils');
 
-// 파일 삭제 유틸리티 함수
+// 파일 삭제 유틸리티 함수 (uploadUtils.js 사용)
 const deleteFile = filePath => {
-  try {
-    if (filePath && fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
-      console.log(`파일 삭제 완료: ${filePath}`);
-    }
-  } catch (err) {
-    console.error(`파일 삭제 실패: ${filePath}`, err);
-  }
+  return uploadDeleteFile(filePath);
 };
 
 // Joi 스키마: GET /api/notices 목록조회
@@ -792,9 +786,6 @@ exports.downloadFile = async (req, res) => {
         message: '첨부파일이 없습니다.',
       });
     }
-
-    const path = require('path');
-    const fs = require('fs');
 
     // 파일 경로 생성
     const filePath = path.join(__dirname, '../../public', notice.attachment_url);
