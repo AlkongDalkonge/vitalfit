@@ -19,6 +19,11 @@ module.exports = (sequelize, DataTypes) => {
           isEmail: true,
         },
       },
+      email_verified: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+      },
       password: {
         type: DataTypes.STRING(255),
         allowNull: false,
@@ -30,10 +35,16 @@ module.exports = (sequelize, DataTypes) => {
           len: [10, 20],
         },
       },
-      phone_verified: {
+      terms_accepted: {
         type: DataTypes.BOOLEAN,
         allowNull: false,
         defaultValue: false,
+        comment: '약관 동의 여부',
+      },
+      terms_accepted_at: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        comment: '약관 동의 시각',
       },
       position_id: {
         type: DataTypes.INTEGER,
@@ -88,6 +99,11 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING(100),
         allowNull: true,
       },
+      shift: {
+        type: DataTypes.STRING(100),
+        allowNull: true,
+        comment: '근무 시간대',
+      },
       last_login_at: {
         type: DataTypes.DATE,
         allowNull: true,
@@ -102,76 +118,55 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
         defaultValue: false,
       },
+      remember_me: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+      },
     },
     {
       timestamps: true, // createdAt, updatedAt 자동 생성
       underscored: true,
       tableName: 'users',
       indexes: [
-        {
-          unique: true,
-          fields: ['email'],
-        },
-        {
-          fields: ['center_id'],
-        },
-        {
-          fields: ['team_id'],
-        },
-        {
-          fields: ['position_id'],
-        },
-        {
-          fields: ['status'],
-        },
+        { unique: true, fields: ['email'] },
+        { fields: ['center_id'] },
+        { fields: ['team_id'] },
+        { fields: ['position_id'] },
+        { fields: ['status'] },
       ],
     }
   );
 
   User.associate = function (models) {
-    // User belongs to Position (N:1)
     User.belongsTo(models.Position, {
       foreignKey: 'position_id',
       as: 'position',
     });
-
-    // User belongs to Center (N:1)
     User.belongsTo(models.Center, {
       foreignKey: 'center_id',
       as: 'center',
     });
-
-    // User belongs to Team (N:1)
     User.belongsTo(models.Team, {
       foreignKey: 'team_id',
       as: 'team',
     });
-
-    // User has many Notices (1:N) - 작성한 공지사항
     User.hasMany(models.Notice, {
       foreignKey: 'sender_id',
       as: 'sentNotices',
     });
-
-    // User has many Members (1:N) - 담당 회원들
     User.hasMany(models.Member, {
       foreignKey: 'trainer_id',
       as: 'members',
     });
-
-    // User has many Payments (1:N) - 트레이너 결제 내역
     User.hasMany(models.Payment, {
       foreignKey: 'trainer_id',
       as: 'trainerPayments',
     });
-
-    // User has many PTSessions (1:N) - 트레이너 PT 세션
     User.hasMany(models.PTSession, {
       foreignKey: 'trainer_id',
       as: 'trainerSessions',
     });
-
-    // User has many MonthlySettlements (1:N) - 정산 내역
     User.hasMany(models.MonthlySettlement, {
       foreignKey: 'user_id',
       as: 'settlements',

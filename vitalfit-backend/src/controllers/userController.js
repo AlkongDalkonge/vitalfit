@@ -45,9 +45,14 @@ const signUpSchema = Joi.object({
     'any.only': '약관 동의는 필수입니다.',
   }),
 
+  privacy_accepted: Joi.boolean().valid(true).required().messages({
+    'any.only': '개인정보처리방침 동의는 필수입니다.',
+  }),
+
   join_date: Joi.date().optional(), // 필수 아니면 생략 가능
   profile_image_name: Joi.string().optional(),
   profile_image_url: Joi.string().optional(),
+  remember_me: Joi.boolean().optional(),
 });
 
 // ✅ 회원가입
@@ -56,7 +61,7 @@ const signUp = async (req, res, next) => {
     const { error, value } = signUpSchema.validate(req.body);
     if (error) return res.status(400).json({ success: false, message: error.message });
 
-    const { email, password, center_id, position_id, team_id, terms_accepted } = value;
+    const { email, password, center_id, position_id, team_id, terms_accepted, remember_me } = value;
     const existing = await User.findOne({ where: { email } });
     if (existing)
       return res.status(400).json({ success: false, message: '이미 가입된 이메일입니다.' });
@@ -69,6 +74,13 @@ const signUp = async (req, res, next) => {
     if (terms_accepted) value.terms_accepted_at = new Date();
     value.join_date = new Date();
 
+    // 회원가입 시 초기값 설정
+    value.status = 'active';
+    value.email_verified = false;
+    value.login_attempts = 0;
+    value.is_locked = false;
+    value.remember_me = remember_me || false;
+
     if (req.file) {
       // processFile 미들웨어가 이미 req.body에 설정해줌
       value.profile_image_name = req.body.profile_image_name;
@@ -77,6 +89,14 @@ const signUp = async (req, res, next) => {
 
     const user = await User.create(value);
     const token = jwt.sign({ uid: user.id }, secret, { expiresIn: '1h' });
+
+    // 관리자에게 새 회원가입 알림 (선택사항)
+    try {
+      await sendNewUserNotification(user);
+    } catch (notificationError) {
+      console.error('관리자 알림 전송 실패:', notificationError);
+      // 알림 실패해도 회원가입은 성공으로 처리
+    }
 
     return res.status(201).json({
       success: true,
@@ -94,7 +114,40 @@ const signUp = async (req, res, next) => {
   }
 };
 
-// ✅ 로그인
+// 관리자에게 새 회원가입 알림 전송
+const sendNewUserNotification = async user => {
+  try {
+    // Position과 Center 정보 가져오기
+    const position = await Position.findByPk(user.position_id);
+    const center = await Center.findByPk(user.center_id);
+
+    const notificationData = {
+      type: 'new_user_registration',
+      user: {
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        position: position ? position.name : '알 수 없음',
+        center: center ? center.name : '알 수 없음',
+        join_date: user.join_date,
+      },
+      timestamp: new Date(),
+    };
+
+    // 여기에 실제 알림 로직 구현 (이메일, 웹훅 등)
+    console.log('새 회원가입 알림:', notificationData);
+
+    // TODO: 실제 알림 구현
+    // - 관리자 이메일로 알림
+    // - 웹 대시보드에 알림 표시
+    // - 슬랙/디스코드 웹훅 등
+  } catch (error) {
+    console.error('알림 전송 중 오류:', error);
+    throw error;
+  }
+};
+
+// 로그인
 const signIn = async (req, res, next) => {
   try {
     const { email, password } = req.body;

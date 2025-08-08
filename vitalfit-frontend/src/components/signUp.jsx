@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 export default function SignUp() {
@@ -8,18 +8,60 @@ export default function SignUp() {
     confirmPassword: '',
     name: '',
     phone: '',
+    position_id: 1,
+    center_id: 1,
+    terms_accepted: false,
+    privacy_accepted: false,
   });
+  const [profileImage, setProfileImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const fileInputRef = useRef(null);
 
   const navigate = useNavigate();
 
   const handleChange = e => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value,
+      [name]: type === 'checkbox' ? checked : value,
     }));
+  };
+
+  const handleImageChange = e => {
+    const file = e.target.files[0];
+    if (file) {
+      // 파일 크기 검증 (5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        setError('이미지 파일 크기는 5MB 이하여야 합니다.');
+        return;
+      }
+
+      // 파일 타입 검증
+      if (!file.type.startsWith('image/')) {
+        setError('이미지 파일만 업로드 가능합니다.');
+        return;
+      }
+
+      setProfileImage(file);
+      setError('');
+
+      // 이미지 미리보기 생성
+      const reader = new FileReader();
+      reader.onload = e => {
+        setImagePreview(e.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleImageRemove = () => {
+    setProfileImage(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const handleSubmit = async e => {
@@ -34,15 +76,72 @@ export default function SignUp() {
       return;
     }
 
-    try {
-      // TODO: 실제 회원가입 API 호출
-      console.log('회원가입 요청:', formData);
+    // 약관 동의 확인
+    if (!formData.terms_accepted || !formData.privacy_accepted) {
+      setError('이용약관과 개인정보처리방침에 동의해주세요.');
+      setLoading(false);
+      return;
+    }
 
-      // 임시로 성공 처리
-      alert('회원가입이 완료되었습니다!');
-      navigate('/login');
+    try {
+      const formDataToSend = new FormData();
+
+      // 기본 정보 추가
+      formDataToSend.append('email', formData.email);
+      formDataToSend.append('password', formData.password);
+      formDataToSend.append('confirmPassword', formData.confirmPassword);
+      formDataToSend.append('name', formData.name);
+      formDataToSend.append('phone', formData.phone);
+      formDataToSend.append('position_id', formData.position_id);
+      formDataToSend.append('center_id', formData.center_id);
+      formDataToSend.append('terms_accepted', formData.terms_accepted);
+      formDataToSend.append('privacy_accepted', formData.privacy_accepted);
+
+      // 프로필 이미지가 있으면 추가
+      if (profileImage) {
+        formDataToSend.append('profile_image', profileImage);
+      }
+
+      console.log('전송할 데이터:', {
+        email: formData.email,
+        name: formData.name,
+        phone: formData.phone,
+        hasImage: !!profileImage,
+      });
+
+      const response = await fetch('/api/users/signup', {
+        method: 'POST',
+        body: formDataToSend,
+        // FormData 사용 시 Content-Type 헤더를 설정하지 않음 (브라우저가 자동으로 설정)
+      });
+
+      console.log('응답 상태:', response.status);
+      console.log('응답 헤더:', response.headers);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('응답 에러 텍스트:', errorText);
+        try {
+          const errorData = JSON.parse(errorText);
+          setError(errorData.message || '회원가입 중 오류가 발생했습니다.');
+        } catch (e) {
+          setError(`서버 오류: ${response.status} ${response.statusText}`);
+        }
+        return;
+      }
+
+      const data = await response.json();
+      console.log('응답 데이터:', data);
+
+      if (response.ok) {
+        alert('회원가입이 완료되었습니다!');
+        navigate('/login');
+      } else {
+        setError(data.message || '회원가입 중 오류가 발생했습니다.');
+      }
     } catch (err) {
-      setError('회원가입 중 오류가 발생했습니다.');
+      console.error('회원가입 오류:', err);
+      setError('회원가입 중 오류가 발생했습니다. 네트워크 연결을 확인해주세요.');
     } finally {
       setLoading(false);
     }
@@ -84,6 +183,76 @@ export default function SignUp() {
 
           {/* 회원가입 폼 */}
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* 프로필 이미지 업로드 */}
+            <div className="text-center">
+              <label className="block text-sm font-medium text-gray-700 mb-2">프로필 이미지</label>
+              <div className="flex flex-col items-center space-y-4">
+                {/* 이미지 미리보기 */}
+                {imagePreview ? (
+                  <div className="relative">
+                    <img
+                      src={imagePreview}
+                      alt="프로필 미리보기"
+                      className="w-24 h-24 rounded-full object-cover border-2 border-gray-300"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleImageRemove}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600 transition-colors"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ) : (
+                  <div className="w-24 h-24 rounded-full bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center">
+                    <svg
+                      className="w-8 h-8 text-gray-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                      />
+                    </svg>
+                  </div>
+                )}
+
+                {/* 파일 업로드 버튼 */}
+                <div className="flex space-x-2">
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="px-4 py-2 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 transition-colors text-sm"
+                  >
+                    {imagePreview ? '이미지 변경' : '이미지 선택'}
+                  </button>
+                  {imagePreview && (
+                    <button
+                      type="button"
+                      onClick={handleImageRemove}
+                      className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors text-sm"
+                    >
+                      삭제
+                    </button>
+                  )}
+                </div>
+
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="hidden"
+                />
+
+                <p className="text-xs text-gray-500">JPG, PNG, GIF 파일만 가능 (최대 5MB)</p>
+              </div>
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">이름</label>
               <input
@@ -117,7 +286,7 @@ export default function SignUp() {
                 name="phone"
                 value={formData.phone}
                 onChange={handleChange}
-                placeholder="Enter phone number"
+                placeholder="010-1234-5678"
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-colors"
                 required
               />
@@ -130,9 +299,10 @@ export default function SignUp() {
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
-                placeholder="Enter password"
+                placeholder="Enter password (min 8 characters)"
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-colors"
                 required
+                minLength={8}
               />
             </div>
 
@@ -147,6 +317,51 @@ export default function SignUp() {
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-colors"
                 required
               />
+            </div>
+
+            {/* 약관 동의 */}
+            <div className="space-y-3">
+              <div className="flex items-start">
+                <input
+                  type="checkbox"
+                  name="terms_accepted"
+                  checked={formData.terms_accepted}
+                  onChange={handleChange}
+                  className="mt-1 h-4 w-4 text-cyan-600 focus:ring-cyan-500 border-gray-300 rounded"
+                  required
+                />
+                <label className="ml-2 text-sm text-gray-700">
+                  <a
+                    href="/api/users/terms"
+                    target="_blank"
+                    className="text-cyan-600 hover:text-cyan-500"
+                  >
+                    이용약관
+                  </a>
+                  에 동의합니다
+                </label>
+              </div>
+
+              <div className="flex items-start">
+                <input
+                  type="checkbox"
+                  name="privacy_accepted"
+                  checked={formData.privacy_accepted}
+                  onChange={handleChange}
+                  className="mt-1 h-4 w-4 text-cyan-600 focus:ring-cyan-500 border-gray-300 rounded"
+                  required
+                />
+                <label className="ml-2 text-sm text-gray-700">
+                  <a
+                    href="/api/users/privacy"
+                    target="_blank"
+                    className="text-cyan-600 hover:text-cyan-500"
+                  >
+                    개인정보처리방침
+                  </a>
+                  에 동의합니다
+                </label>
+              </div>
             </div>
 
             <button
