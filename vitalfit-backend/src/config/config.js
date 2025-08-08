@@ -10,6 +10,7 @@ module.exports = {
     dialect: process.env.DB_DIALECT || 'sqlite',
     storage: process.env.DB_STORAGE || './database.sqlite',
     logging: false,
+    use_env_variable: false,
     // SQLite 설정 추가
     dialectOptions: {
       // SQLite 관련 옵션
