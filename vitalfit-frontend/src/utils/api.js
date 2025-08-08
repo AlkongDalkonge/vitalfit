@@ -1,10 +1,17 @@
-const API_BASE_URL = 'http://localhost:3000/api';
+import AuthService from './auth';
+
+const API_BASE_URL = 'http://localhost:3001/api';
 
 const apiCall = async (endpoint, options = {}) => {
   const url = `${API_BASE_URL}${endpoint}`;
+
+  // 인증 토큰 가져오기 (AuthService 사용)
+  const token = AuthService.getAccessToken();
+
   const config = {
     headers: {
       'Content-Type': 'application/json',
+      ...(token && { Authorization: `Bearer ${token}` }),
       ...options.headers,
     },
     ...options,
@@ -43,6 +50,7 @@ export const centerAPI = {
   getAllCenters: () => apiGet('/centers'),
   getCenterById: id => apiGet(`/centers/${id}`),
   updateCenter: (id, data) => apiPut(`/centers/${id}`, data),
+  deleteCenter: id => apiDelete(`/centers/${id}`),
   searchCenters: (query, status = 'active') =>
     apiGet(`/centers/search?q=${encodeURIComponent(query)}&status=${status}`),
 

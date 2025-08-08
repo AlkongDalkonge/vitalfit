@@ -145,16 +145,18 @@ const CenterPage = () => {
                   return (
                     <div key={`users-${center.id}`} className="flex items-center py-1">
                       <span className="text-sm text-gray-600 flex-1 pl-2">{center.name}</span>
-                      <span className="text-sm font-bold text-gray-800 ml-2">{centerUsers.length}명</span>
+                      <span className="text-sm font-bold text-gray-800 ml-2">
+                        {centerUsers.length}명
+                      </span>
                     </div>
                   );
                 })}
               </div>
             </div>
-            
+
             {/* 세로 보더 */}
             <div className="w-px bg-gray-300 mx-8 h-32"></div>
-            
+
             {/* 고객 현황 */}
             <div className="flex-1 pl-12 pr-8">
               <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
@@ -163,13 +165,15 @@ const CenterPage = () => {
               </h3>
               <div className="space-y-2">
                 {centers.map(center => {
-                  const centerMembers = members.filter(member => 
-                    member.center_id === center.id && member.status === 'active'
+                  const centerMembers = members.filter(
+                    member => member.center_id === center.id && member.status === 'active'
                   );
                   return (
                     <div key={`members-${center.id}`} className="flex items-center py-1">
                       <span className="text-sm text-gray-600 flex-1 pl-2">{center.name}</span>
-                      <span className="text-sm font-bold text-gray-800 ml-2">{centerMembers.length}명</span>
+                      <span className="text-sm font-bold text-gray-800 ml-2">
+                        {centerMembers.length}명
+                      </span>
                     </div>
                   );
                 })}
@@ -376,21 +380,13 @@ const CenterPage = () => {
                     </div>
 
                     {/* 액션 버튼들 */}
-                    <div className="flex justify-between items-center mt-6 pt-4 border-t border-gray-200">
+                    <div className="flex justify-end items-center mt-6 pt-4 border-t border-gray-200">
                       <div className="flex gap-3">
                         <button
                           onClick={() => handleImageManagement(center)}
                           className="px-4 py-2 text-purple-600 border border-purple-300 rounded-lg hover:bg-purple-50 transition-colors duration-200"
                         >
                           이미지
-                        </button>
-                      </div>
-                      <div className="flex gap-3">
-                        <button className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200">
-                          수정
-                        </button>
-                        <button className="px-4 py-2 text-red-600 border border-red-300 rounded-lg hover:bg-red-50 transition-colors duration-200">
-                          삭제
                         </button>
                       </div>
                     </div>
