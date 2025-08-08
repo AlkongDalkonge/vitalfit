@@ -1,18 +1,26 @@
-import axios from 'axios';
-
-const API_BASE_URL = 'http://localhost:3000/api';
+import api from './api';
 
 class AuthService {
-  // Access Token 관리 (메모리)
+  // Access Token 관리 (localStorage)
   static setAccessToken(token) {
-    window.__accessToken = token;
+    localStorage.setItem('accessToken', token);
+    window.__accessToken = token; // 메모리에도 저장 (성능 향상)
   }
 
   static getAccessToken() {
-    return window.__accessToken;
+    // 메모리에서 먼저 확인, 없으면 localStorage에서 가져오기
+    if (window.__accessToken) {
+      return window.__accessToken;
+    }
+    const token = localStorage.getItem('accessToken');
+    if (token) {
+      window.__accessToken = token; // 메모리에 캐시
+    }
+    return token;
   }
 
   static removeAccessToken() {
+    localStorage.removeItem('accessToken');
     delete window.__accessToken;
   }
 
@@ -37,7 +45,7 @@ class AuthService {
         throw new Error('Refresh token이 없습니다.');
       }
 
-      const response = await axios.post(`${API_BASE_URL}/users/refresh`, {
+      const response = await api.post('/users/refresh', {
         refreshToken,
       });
 
@@ -47,7 +55,7 @@ class AuthService {
     } catch (error) {
       this.removeAccessToken();
       this.removeRefreshToken();
-      window.location.href = '/login';
+      localStorage.removeItem('rememberMe');
       throw error;
     }
   }
@@ -57,7 +65,7 @@ class AuthService {
     try {
       const refreshToken = this.getRefreshToken();
       if (refreshToken) {
-        await axios.post(`${API_BASE_URL}/users/logout`, {
+        await api.post('/users/logout', {
           refreshToken,
         });
       }
@@ -77,18 +85,44 @@ class AuthService {
 
   // 자동 로그인 시도 (페이지 로드 시)
   static async tryAutoLogin() {
+    const accessToken = this.getAccessToken();
     const refreshToken = this.getRefreshToken();
     const rememberMe = localStorage.getItem('rememberMe');
 
+    // Access Token이 있으면 먼저 시도
+    if (accessToken && rememberMe === 'true') {
+      try {
+        // 토큰 유효성 검증
+        const response = await api.get('/users/me');
+        return true;
+      } catch (error) {
+        // Access Token이 만료되었으면 Refresh Token으로 갱신 시도
+        if (refreshToken) {
+          try {
+            await this.refreshAccessToken();
+            return true;
+          } catch (refreshError) {
+            console.error('토큰 갱신 실패:', refreshError);
+            return false;
+          }
+        }
+        // Refresh Token도 없으면 로그인 실패
+        this.removeAccessToken();
+        return false;
+      }
+    }
+
+    // Access Token이 없지만 Refresh Token이 있으면 갱신 시도
     if (refreshToken && rememberMe === 'true') {
       try {
         await this.refreshAccessToken();
         return true;
       } catch (error) {
-        console.error('자동 로그인 실패:', error);
+        console.error('Refresh Token으로 자동 로그인 실패:', error);
         return false;
       }
     }
+
     return false;
   }
 }

@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { userAPI } from '../utils/api';
 
 export default function SignUp() {
   const [formData, setFormData] = useState({
@@ -209,35 +210,6 @@ export default function SignUp() {
         center_id: formData.center_id,
         hasImage: !!profileImage,
       });
-
-      const response = await fetch('/api/users/signup', {
-        method: 'POST',
-        body: formDataToSend,
-      });
-
-      console.log('응답 상태:', response.status);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('응답 에러 텍스트:', errorText);
-        try {
-          const errorData = JSON.parse(errorText);
-          setError(errorData.message || '회원가입 중 오류가 발생했습니다.');
-        } catch (e) {
-          setError(`서버 오류: ${response.status} ${response.statusText}`);
-        }
-        return;
-      }
-
-      const data = await response.json();
-      console.log('응답 데이터:', data);
-
-      if (response.ok) {
-        alert('회원가입이 완료되었습니다! 로그인 페이지로 이동합니다.');
-        navigate('/login');
-      } else {
-        setError(data.message || '회원가입 중 오류가 발생했습니다.');
-      }
     } catch (err) {
       console.error('회원가입 오류:', err);
       setError('회원가입 중 오류가 발생했습니다. 네트워크 연결을 확인해주세요.');

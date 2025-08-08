@@ -1,3 +1,5 @@
+const bcrypt = require('bcrypt');
+
 const {
   Center,
   User,
@@ -288,7 +290,7 @@ const seedUsers = async (centers, teams, positions) => {
       {
         name: '관리자',
         email: 'admin@vitalfit.co.kr',
-        password: '$2b$10$hashedpassword',
+        password: await bcrypt.hash('password123', 10),
         phone: '010-0000-0000',
         phone_verified: true,
         position_id: positions.find(p => p.code === 'admin').id,
@@ -304,7 +306,7 @@ const seedUsers = async (centers, teams, positions) => {
       {
         name: '김강남팀장',
         email: 'kim.gangnam1@vitalfit.co.kr',
-        password: '$2b$10$hashedpassword',
+        password: await bcrypt.hash('password123', 10),
         phone: '010-1001-0001',
         phone_verified: true,
         position_id: positions.find(p => p.code === 'team_leader').id,
@@ -317,7 +319,7 @@ const seedUsers = async (centers, teams, positions) => {
       {
         name: '이강남트레이너',
         email: 'lee.gangnam1@vitalfit.co.kr',
-        password: '$2b$10$hashedpassword',
+        password: await bcrypt.hash('password123', 10),
         phone: '010-1001-0002',
         phone_verified: true,
         position_id: positions.find(p => p.code === 'trainer').id,
@@ -330,7 +332,7 @@ const seedUsers = async (centers, teams, positions) => {
       {
         name: '박강남트레이너',
         email: 'park.gangnam1@vitalfit.co.kr',
-        password: '$2b$10$hashedpassword',
+        password: await bcrypt.hash('password123', 10),
         phone: '010-1001-0003',
         phone_verified: true,
         position_id: positions.find(p => p.code === 'trainer').id,
@@ -343,7 +345,7 @@ const seedUsers = async (centers, teams, positions) => {
       {
         name: '최강남트레이너',
         email: 'choi.gangnam1@vitalfit.co.kr',
-        password: '$2b$10$hashedpassword',
+        password: await bcrypt.hash('password123', 10),
         phone: '010-1001-0004',
         phone_verified: true,
         position_id: positions.find(p => p.code === 'trainer').id,
@@ -358,7 +360,7 @@ const seedUsers = async (centers, teams, positions) => {
       {
         name: '정강남2팀장',
         email: 'jung.gangnam2@vitalfit.co.kr',
-        password: '$2b$10$hashedpassword',
+        password: await bcrypt.hash('password123', 10),
         phone: '010-1002-0001',
         phone_verified: true,
         position_id: positions.find(p => p.code === 'team_leader').id,
@@ -371,7 +373,7 @@ const seedUsers = async (centers, teams, positions) => {
       {
         name: '한강남2트레이너',
         email: 'han.gangnam2@vitalfit.co.kr',
-        password: '$2b$10$hashedpassword',
+        password: await bcrypt.hash('password123', 10),
         phone: '010-1002-0002',
         phone_verified: true,
         position_id: positions.find(p => p.code === 'trainer').id,
@@ -384,7 +386,7 @@ const seedUsers = async (centers, teams, positions) => {
       {
         name: '오강남2트레이너',
         email: 'oh.gangnam2@vitalfit.co.kr',
-        password: '$2b$10$hashedpassword',
+        password: await bcrypt.hash('password123', 10),
         phone: '010-1002-0003',
         phone_verified: true,
         position_id: positions.find(p => p.code === 'trainer').id,
@@ -399,7 +401,7 @@ const seedUsers = async (centers, teams, positions) => {
       {
         name: '강강남3팀장',
         email: 'kang.gangnam3@vitalfit.co.kr',
-        password: '$2b$10$hashedpassword',
+        password: await bcrypt.hash('password123', 10),
         phone: '010-1003-0001',
         phone_verified: true,
         position_id: positions.find(p => p.code === 'team_leader').id,
@@ -412,7 +414,7 @@ const seedUsers = async (centers, teams, positions) => {
       {
         name: '윤강남3트레이너',
         email: 'yoon.gangnam3@vitalfit.co.kr',
-        password: '$2b$10$hashedpassword',
+        password: await bcrypt.hash('password123', 10),
         phone: '010-1003-0002',
         phone_verified: true,
         position_id: positions.find(p => p.code === 'trainer').id,
@@ -425,7 +427,7 @@ const seedUsers = async (centers, teams, positions) => {
       {
         name: '임강남3트레이너',
         email: 'lim.gangnam3@vitalfit.co.kr',
-        password: '$2b$10$hashedpassword',
+        password: await bcrypt.hash('password123', 10),
         phone: '010-1003-0003',
         phone_verified: true,
         position_id: positions.find(p => p.code === 'trainer').id,
@@ -440,7 +442,7 @@ const seedUsers = async (centers, teams, positions) => {
       {
         name: '장강남4팀장',
         email: 'jang.gangnam4@vitalfit.co.kr',
-        password: '$2b$10$hashedpassword',
+        password: await bcrypt.hash('password123', 10),
         phone: '010-1004-0001',
         phone_verified: true,
         position_id: positions.find(p => p.code === 'team_leader').id,
@@ -453,7 +455,7 @@ const seedUsers = async (centers, teams, positions) => {
       {
         name: '전강남4트레이너',
         email: 'jeon.gangnam4@vitalfit.co.kr',
-        password: '$2b$10$hashedpassword',
+        password: await bcrypt.hash('password123', 10),
         phone: '010-1004-0002',
         phone_verified: true,
         position_id: positions.find(p => p.code === 'trainer').id,
@@ -466,7 +468,7 @@ const seedUsers = async (centers, teams, positions) => {
       {
         name: '조강남4트레이너',
         email: 'jo.gangnam4@vitalfit.co.kr',
-        password: '$2b$10$hashedpassword',
+        password: await bcrypt.hash('password123', 10),
         phone: '010-1004-0003',
         phone_verified: true,
         position_id: positions.find(p => p.code === 'trainer').id,
@@ -482,7 +484,7 @@ const seedUsers = async (centers, teams, positions) => {
       {
         name: '홍홍대1팀장',
         email: 'hong.hongdae1@vitalfit.co.kr',
-        password: '$2b$10$hashedpassword',
+        password: await bcrypt.hash('password123', 10),
         phone: '010-2001-0001',
         phone_verified: true,
         position_id: positions.find(p => p.code === 'team_leader').id,
@@ -495,7 +497,7 @@ const seedUsers = async (centers, teams, positions) => {
       {
         name: '구홍대1트레이너',
         email: 'gu.hongdae1@vitalfit.co.kr',
-        password: '$2b$10$hashedpassword',
+        password: await bcrypt.hash('password123', 10),
         phone: '010-2001-0002',
         phone_verified: true,
         position_id: positions.find(p => p.code === 'trainer').id,
@@ -508,7 +510,7 @@ const seedUsers = async (centers, teams, positions) => {
       {
         name: '권홍대1트레이너',
         email: 'kwon.hongdae1@vitalfit.co.kr',
-        password: '$2b$10$hashedpassword',
+        password: await bcrypt.hash('password123', 10),
         phone: '010-2001-0003',
         phone_verified: true,
         position_id: positions.find(p => p.code === 'trainer').id,
@@ -523,7 +525,7 @@ const seedUsers = async (centers, teams, positions) => {
       {
         name: '김홍대2팀장',
         email: 'kim.hongdae2@vitalfit.co.kr',
-        password: '$2b$10$hashedpassword',
+        password: await bcrypt.hash('password123', 10),
         phone: '010-2002-0001',
         phone_verified: true,
         position_id: positions.find(p => p.code === 'team_leader').id,
@@ -536,7 +538,7 @@ const seedUsers = async (centers, teams, positions) => {
       {
         name: '나홍대2트레이너',
         email: 'na.hongdae2@vitalfit.co.kr',
-        password: '$2b$10$hashedpassword',
+        password: await bcrypt.hash('password123', 10),
         phone: '010-2002-0002',
         phone_verified: true,
         position_id: positions.find(p => p.code === 'trainer').id,
@@ -549,7 +551,7 @@ const seedUsers = async (centers, teams, positions) => {
       {
         name: '남홍대2트레이너',
         email: 'nam.hongdae2@vitalfit.co.kr',
-        password: '$2b$10$hashedpassword',
+        password: await bcrypt.hash('password123', 10),
         phone: '010-2002-0003',
         phone_verified: true,
         position_id: positions.find(p => p.code === 'trainer').id,
@@ -564,7 +566,7 @@ const seedUsers = async (centers, teams, positions) => {
       {
         name: '노홍대3팀장',
         email: 'no.hongdae3@vitalfit.co.kr',
-        password: '$2b$10$hashedpassword',
+        password: await bcrypt.hash('password123', 10),
         phone: '010-2003-0001',
         phone_verified: true,
         position_id: positions.find(p => p.code === 'team_leader').id,
@@ -577,7 +579,7 @@ const seedUsers = async (centers, teams, positions) => {
       {
         name: '류홍대3트레이너',
         email: 'ryu.hongdae3@vitalfit.co.kr',
-        password: '$2b$10$hashedpassword',
+        password: await bcrypt.hash('password123', 10),
         phone: '010-2003-0002',
         phone_verified: true,
         position_id: positions.find(p => p.code === 'trainer').id,
@@ -590,7 +592,7 @@ const seedUsers = async (centers, teams, positions) => {
       {
         name: '문홍대3트레이너',
         email: 'moon.hongdae3@vitalfit.co.kr',
-        password: '$2b$10$hashedpassword',
+        password: await bcrypt.hash('password123', 10),
         phone: '010-2003-0003',
         phone_verified: true,
         position_id: positions.find(p => p.code === 'trainer').id,
@@ -606,7 +608,7 @@ const seedUsers = async (centers, teams, positions) => {
       {
         name: '민신림1팀장',
         email: 'min.sillim1@vitalfit.co.kr',
-        password: '$2b$10$hashedpassword',
+        password: await bcrypt.hash('password123', 10),
         phone: '010-3001-0001',
         phone_verified: true,
         position_id: positions.find(p => p.code === 'team_leader').id,
@@ -619,7 +621,7 @@ const seedUsers = async (centers, teams, positions) => {
       {
         name: '박신림1트레이너',
         email: 'park.sillim1@vitalfit.co.kr',
-        password: '$2b$10$hashedpassword',
+        password: await bcrypt.hash('password123', 10),
         phone: '010-3001-0002',
         phone_verified: true,
         position_id: positions.find(p => p.code === 'trainer').id,
@@ -632,7 +634,7 @@ const seedUsers = async (centers, teams, positions) => {
       {
         name: '배신림1트레이너',
         email: 'bae.sillim1@vitalfit.co.kr',
-        password: '$2b$10$hashedpassword',
+        password: await bcrypt.hash('password123', 10),
         phone: '010-3001-0003',
         phone_verified: true,
         position_id: positions.find(p => p.code === 'trainer').id,
@@ -647,7 +649,7 @@ const seedUsers = async (centers, teams, positions) => {
       {
         name: '백신림2팀장',
         email: 'baek.sillim2@vitalfit.co.kr',
-        password: '$2b$10$hashedpassword',
+        password: await bcrypt.hash('password123', 10),
         phone: '010-3002-0001',
         phone_verified: true,
         position_id: positions.find(p => p.code === 'team_leader').id,
@@ -660,7 +662,7 @@ const seedUsers = async (centers, teams, positions) => {
       {
         name: '변신림2트레이너',
         email: 'byun.sillim2@vitalfit.co.kr',
-        password: '$2b$10$hashedpassword',
+        password: await bcrypt.hash('password123', 10),
         phone: '010-3002-0002',
         phone_verified: true,
         position_id: positions.find(p => p.code === 'trainer').id,
@@ -675,7 +677,7 @@ const seedUsers = async (centers, teams, positions) => {
       {
         name: '서신림3팀장',
         email: 'seo.sillim3@vitalfit.co.kr',
-        password: '$2b$10$hashedpassword',
+        password: await bcrypt.hash('password123', 10),
         phone: '010-3003-0001',
         phone_verified: true,
         position_id: positions.find(p => p.code === 'team_leader').id,
@@ -688,7 +690,7 @@ const seedUsers = async (centers, teams, positions) => {
       {
         name: '손신림3트레이너',
         email: 'son.sillim3@vitalfit.co.kr',
-        password: '$2b$10$hashedpassword',
+        password: await bcrypt.hash('password123', 10),
         phone: '010-3003-0002',
         phone_verified: true,
         position_id: positions.find(p => p.code === 'trainer').id,

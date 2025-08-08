@@ -22,12 +22,9 @@ const MemberCreateModal = ({ isOpen, onClose, onCreate }) => {
   const handleSubmit = async e => {
     e.preventDefault();
 
-    console.log('폼 검증 시작');
     if (!validateForm()) {
-      console.log('폼 검증 실패');
       return;
     }
-    console.log('폼 검증 성공');
 
     setLoading(true);
 
@@ -52,14 +49,6 @@ const MemberCreateModal = ({ isOpen, onClose, onCreate }) => {
       if (formData.memo && formData.memo.trim() !== '') {
         apiData.memo = formData.memo;
       }
-
-      console.log('전송할 데이터:', apiData);
-      console.log('폼 데이터:', formData);
-      console.log('center_id 타입:', typeof apiData.center_id, apiData.center_id);
-      console.log('trainer_id 타입:', typeof apiData.trainer_id, apiData.trainer_id);
-      console.log('join_date:', apiData.join_date);
-      console.log('expire_date 존재 여부:', 'expire_date' in apiData);
-      console.log('expire_date 값:', apiData.expire_date);
 
       const response = await memberAPI.createMember(apiData);
 
