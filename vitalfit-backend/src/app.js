@@ -11,6 +11,7 @@ const centerRouter = require('./routes/centerRoute');
 const userRouter = require('./routes/userRoute');
 const teamRouter = require('./routes/teamRoute');
 const dashboardRouter = require('./routes/dashboardRoute');
+const positionRouter = require('./routes/positionRoute');
 
 const { sequelize } = require('./models');
 const errorHandler = require('./middlewares/errorHandler');
@@ -38,6 +39,7 @@ app.use('/api/centers', centerRouter);
 app.use('/api/users', userRouter);
 app.use('/api/teams', teamRouter);
 app.use('/api/dashboard', dashboardRouter);
+app.use('/api/positions', positionRouter);
 
 // 404 처리
 app.use((req, res) => {
@@ -60,14 +62,20 @@ sequelize
   .then(async () => {
     console.log('1️⃣ DB 테이블 생성 완료!');
     
-    // 시드 데이터 실행
-    try {
-      console.log('2️⃣ 시드 데이터를 추가합니다...');
-      await seedAllData();
-      console.log('3️⃣ 시드 데이터 추가 완료!');
-    } catch (error) {
-      console.error('시드 데이터 추가 실패:', error);
-      // 시드 데이터 실패해도 서버는 계속 실행
+    // 시드 데이터 실행 조건 확인
+    const shouldSeedData = process.env.SEED_DATA === 'true';
+
+    if (shouldSeedData) {
+      try {
+        console.log('2️⃣ 시드 데이터를 추가합니다...');
+        await seedAllData();
+        console.log('3️⃣ 시드 데이터 추가 완료!');
+      } catch (error) {
+        console.error('시드 데이터 추가 실패:', error);
+        // 시드 데이터 실패해도 서버는 계속 실행
+      }
+    } else {
+      console.log('시드 데이터를 건너뜁니다. (SEED_DATA=false 또는 production 환경)');
     }
 
     console.log('4️⃣ 서버 실행 준비 완료');
