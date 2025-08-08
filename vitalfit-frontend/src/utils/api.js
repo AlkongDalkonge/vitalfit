@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:3001/api';
+const API_BASE_URL = 'http://localhost:3000/api';
 
 const apiCall = async (endpoint, options = {}) => {
   const url = `${API_BASE_URL}${endpoint}`;
@@ -117,6 +117,10 @@ export const userAPI = {
     const queryString = queryParams.toString();
     return apiGet(`/users${queryString ? `?${queryString}` : ''}`);
   },
+  signup: data => apiPost('/users/signup', data),
+  signin: data => apiPost('/users/signin', data),
+  getPositions: () => apiGet('/positions'),
+  getCenters: () => apiGet('/centers'),
 };
 
 // Team API
