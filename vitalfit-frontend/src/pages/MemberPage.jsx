@@ -114,7 +114,7 @@ const MemberPage = () => {
 
   return (
     <div className="w-full max-w-7xl mx-auto p-6 min-h-screen flex flex-col">
-      <div className="flex flex-col gap-6 flex-1">
+      <div className="flex flex-col gap-6 flex-1 pb-0">
         {/* 최상단 제목 */}
         <div
           data-layer="모든 고객"
@@ -295,7 +295,7 @@ const MemberPage = () => {
           <div className="flex flex-col">
             {/* 테이블 컨테이너 */}
             <div className="overflow-hidden">
-              <div className="overflow-y-auto max-h-[calc(100vh-450px)] relative">
+              <div className="overflow-y-auto max-h-[calc(100vh-350px)] relative">
                 {/* 테이블 헤더 */}
                 <div className="border-b border-gray-200 sticky top-0 z-30 bg-white shadow-sm relative">
                   <div className="flex items-center p-4 min-w-max gap-4">
@@ -388,14 +388,12 @@ const MemberPage = () => {
                         >
                           <button
                             onClick={e => {
-                              console.log('상태 버튼 클릭됨:', member.id);
                               const rect = e.currentTarget.getBoundingClientRect();
                               setDropdownPosition({
                                 top: rect.bottom + window.scrollY,
                                 left: rect.left + window.scrollX,
                               });
                               toggleStatusDropdown(member.id);
-                              console.log('드롭다운 토글 후 상태:', statusDropdowns);
                             }}
                             data-dropdown="status"
                             className="flex items-center gap-1 text-neutral-600 text-sm font-normal font-['Nunito'] leading-normal hover:text-neutral-800 transition-colors duration-200"
@@ -416,7 +414,7 @@ const MemberPage = () => {
                             </svg>
                           </button>
 
-                          {console.log('드롭다운 렌더링 체크:', member.id, statusDropdowns[member.id])}
+
                           {statusDropdowns[member.id] &&
                             createPortal(
                               <div
@@ -433,7 +431,6 @@ const MemberPage = () => {
                                       onClick={(e) => {
                                         e.preventDefault();
                                         e.stopPropagation();
-                                        console.log('상태 옵션 클릭됨:', member.id, option.value);
                                         handleStatusChange(member.id, option.value);
                                       }}
                                       className={`w-full px-3 py-1.5 text-left text-xs hover:bg-gray-100 transition-colors duration-200 status-dropdown-option ${
@@ -470,7 +467,7 @@ const MemberPage = () => {
             </div>
 
             {/* 고객 등록 버튼 */}
-            <div className="flex justify-start mt-8">
+            <div className="flex justify-start mt-16 mb-0">
               <button
                 onClick={handleRegisterMember}
                 data-layer="Button"

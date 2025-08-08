@@ -1,137 +1,202 @@
+import axios from 'axios';
 import AuthService from './auth';
 
 const API_BASE_URL = 'http://localhost:3001/api';
 
-const apiCall = async (endpoint, options = {}) => {
-  const url = `${API_BASE_URL}${endpoint}`;
+// axios 인스턴스 생성
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 10000,
+});
 
-  // 인증 토큰 가져오기 (AuthService 사용)
-  const token = AuthService.getAccessToken();
+// 요청 인터셉터 - 토큰 자동 추가
+api.interceptors.request.use(
+  (config) => {
+    const token = AuthService.getAccessToken();
+    console.log('API 요청 인터셉터:', {
+      url: config.url,
+      method: config.method,
+      hasToken: !!token,
+      token: token ? token.substring(0, 20) + '...' : null
+    });
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
 
-  const config = {
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token && { Authorization: `Bearer ${token}` }),
-      ...options.headers,
-    },
-    ...options,
-  };
+// 응답 인터셉터 - 토큰 만료 시 자동 갱신
+api.interceptors.response.use(
+  (response) => {
+    return response;
+  },
+  async (error) => {
+    const originalRequest = error.config;
 
-  console.log('API 호출 URL:', url);
-  console.log('API 호출 옵션:', config);
+    // 401 에러이고 아직 재시도하지 않은 경우
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
 
-  try {
-    const response = await fetch(url, config);
-    const data = await response.json();
-
-    console.log('API 응답:', data);
-
-    if (!response.ok) {
-      console.error('API 오류 응답:', data);
-      throw new Error(data.message || 'API 호출 실패');
+      try {
+        // Refresh Token으로 새로운 Access Token 발급
+        await AuthService.refreshAccessToken();
+        
+        // 새로운 토큰으로 원래 요청 재시도
+        const newToken = AuthService.getAccessToken();
+        originalRequest.headers.Authorization = `Bearer ${newToken}`;
+        
+        return api(originalRequest);
+      } catch (refreshError) {
+        // Refresh Token도 만료된 경우 로그아웃 처리
+        console.error('토큰 갱신 실패:', refreshError);
+        AuthService.removeAccessToken();
+        AuthService.removeRefreshToken();
+        localStorage.removeItem('rememberMe');
+        
+        // 로그인 페이지로 리다이렉트
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
+        
+        return Promise.reject(refreshError);
+      }
     }
 
-    return data;
-  } catch (error) {
-    console.error('API 호출 오류:', error);
-    throw error;
+    return Promise.reject(error);
+  }
+);
+
+// 기본 HTTP 메서드 함수들
+export const apiGet = async (url, config = {}) => {
+  const response = await api.get(url, config);
+  return response.data;
+};
+
+export const apiPost = async (url, data = {}, config = {}) => {
+  const response = await api.post(url, data, config);
+  return response.data;
+};
+
+export const apiPut = async (url, data = {}, config = {}) => {
+  const response = await api.put(url, data, config);
+  return response.data;
+};
+
+export const apiDelete = async (url, config = {}) => {
+  const response = await api.delete(url, config);
+  return response.data;
+};
+
+// 센터 API
+export const centerAPI = {
+  getAllCenters: async (params = {}) => {
+    return await apiGet('/centers', { params });
+  },
+  getCenter: async (id) => {
+    return await apiGet(`/centers/${id}`);
+  },
+  createCenter: async (data) => {
+    return await apiPost('/centers', data);
+  },
+  updateCenter: async (id, data) => {
+    return await apiPut(`/centers/${id}`, data);
+  },
+  deleteCenter: async (id) => {
+    return await apiDelete(`/centers/${id}`);
+  },
+  uploadCenterImage: async (id, formData) => {
+    return await apiPost(`/centers/${id}/images`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
+  deleteCenterImage: async (centerId, imageId) => {
+    return await apiDelete(`/centers/${centerId}/images/${imageId}`);
   }
 };
 
-export const apiGet = endpoint => apiCall(endpoint);
-export const apiPost = (endpoint, data) =>
-  apiCall(endpoint, { method: 'POST', body: JSON.stringify(data) });
-export const apiPut = (endpoint, data) =>
-  apiCall(endpoint, { method: 'PUT', body: JSON.stringify(data) });
-export const apiDelete = endpoint => apiCall(endpoint, { method: 'DELETE' });
-
-// Center API
-export const centerAPI = {
-  getAllCenters: () => apiGet('/centers'),
-  getCenterById: id => apiGet(`/centers/${id}`),
-  updateCenter: (id, data) => apiPut(`/centers/${id}`, data),
-  deleteCenter: id => apiDelete(`/centers/${id}`),
-  searchCenters: (query, status = 'active') =>
-    apiGet(`/centers/search?q=${encodeURIComponent(query)}&status=${status}`),
-
-  // 센터 이미지 관련 API
-  uploadImage: async formData => {
-    const url = `${API_BASE_URL}/centers/images`;
-    const response = await fetch(url, {
-      method: 'POST',
-      body: formData, // FormData는 Content-Type 헤더를 자동으로 설정
-    });
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || '이미지 업로드 실패');
-    }
-
-    return data;
-  },
-
-  deleteImage: imageId => apiDelete(`/centers/images/${imageId}`),
-  setMainImage: imageId => apiCall(`/centers/images/${imageId}/main`, { method: 'PUT' }),
-};
-
-// Member API (개선된 필터링 기능)
-export const memberAPI = {
-  getAllMembers: (params = {}) => {
-    const queryParams = new URLSearchParams();
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== '') {
-        queryParams.append(key, value);
-      }
-    });
-    const queryString = queryParams.toString();
-    return apiGet(`/members${queryString ? `?${queryString}` : ''}`);
-  },
-  createMember: data => apiPost('/members', data),
-  updateMember: (id, data) => apiPut(`/members/${id}`, data),
-};
-
-// PT Session API (개선된 기능)
-export const ptSessionAPI = {
-  // 월별 PT 세션 조회 (새로 추가)
-  getSessionsByMonth: (year, month) => apiGet(`/pt-sessions/month/${year}/${month}`),
-  // 멤버별 PT 세션 조회
-  getSessionsByMember: (memberId, params = {}) => {
-    const queryParams = new URLSearchParams();
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== '') {
-        queryParams.append(key, value);
-      }
-    });
-    const queryString = queryParams.toString();
-    return apiGet(`/pt-sessions/member/${memberId}${queryString ? `?${queryString}` : ''}`);
-  },
-  // PT 세션 생성
-  createSession: data => apiPost('/pt-sessions', data),
-  // PT 세션 수정
-  updateSession: (id, data) => apiPut(`/pt-sessions/${id}`, data),
-  // PT 세션 삭제 (새로 추가)
-  deleteSession: id => apiDelete(`/pt-sessions/${id}`),
-};
-
-// User API
+// 사용자 API
 export const userAPI = {
-  getAllUsers: (params = {}) => {
-    const queryParams = new URLSearchParams();
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== '') {
-        queryParams.append(key, value);
-      }
-    });
-    const queryString = queryParams.toString();
-    return apiGet(`/users${queryString ? `?${queryString}` : ''}`);
+  getAllUsers: async (params = {}) => {
+    return await apiGet('/users', { params });
   },
-  signup: data => apiPost('/users/signup', data),
-  signin: data => apiPost('/users/signin', data),
-  getPositions: () => apiGet('/positions'),
-  getCenters: () => apiGet('/centers'),
+  getUser: async (id) => {
+    return await apiGet(`/users/${id}`);
+  },
+  createUser: async (data) => {
+    return await apiPost('/users', data);
+  },
+  updateUser: async (id, data) => {
+    return await apiPut(`/users/${id}`, data);
+  },
+  deleteUser: async (id) => {
+    return await apiDelete(`/users/${id}`);
+  },
+  signUp: async (data) => {
+    return await apiPost('/auth/signup', data);
+  }
 };
 
-// Team API
-export const teamAPI = {
-  getAllTeams: () => apiGet('/teams'),
+// 멤버 API
+export const memberAPI = {
+  getAllMembers: async (params = {}) => {
+    return await apiGet('/members', { params });
+  },
+  getMember: async (id) => {
+    return await apiGet(`/members/${id}`);
+  },
+  createMember: async (data) => {
+    return await apiPost('/members', data);
+  },
+  updateMember: async (id, data) => {
+    return await apiPut(`/members/${id}`, data);
+  },
+  deleteMember: async (id) => {
+    return await apiDelete(`/members/${id}`);
+  }
 };
+
+// PT 세션 API
+export const ptSessionAPI = {
+  getAllPTSessions: async (params = {}) => {
+    return await apiGet('/pt-sessions', { params });
+  },
+  getPTSession: async (id) => {
+    return await apiGet(`/pt-sessions/${id}`);
+  },
+  createPTSession: async (data) => {
+    return await apiPost('/pt-sessions', data);
+  },
+  updatePTSession: async (id, data) => {
+    return await apiPut(`/pt-sessions/${id}`, data);
+  },
+  deletePTSession: async (id) => {
+    return await apiDelete(`/pt-sessions/${id}`);
+  }
+};
+
+// 팀 API
+export const teamAPI = {
+  getAllTeams: async (params = {}) => {
+    return await apiGet('/teams', { params });
+  },
+  getTeam: async (id) => {
+    return await apiGet(`/teams/${id}`);
+  },
+  createTeam: async (data) => {
+    return await apiPost('/teams', data);
+  },
+  updateTeam: async (id, data) => {
+    return await apiPut(`/teams/${id}`, data);
+  },
+  deleteTeam: async (id) => {
+    return await apiDelete(`/teams/${id}`);
+  }
+};
+
+export default api;

@@ -13,7 +13,8 @@ const auth = async (req, res, next) => {
     }
 
     const token = authHeader.substring(7); // "Bearer " 제거
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const secret = process.env.JWT_SECRET || 'default-secret-key-for-development';
+    const decoded = jwt.verify(token, secret);
 
     const user = await User.findByPk(decoded.uid);
     if (!user) {

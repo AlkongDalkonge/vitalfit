@@ -1,8 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import AuthService from '../utils/auth';
-import axios from 'axios';
-
-const API_BASE_URL = 'http://localhost:3001/api';
+import api from '../utils/api';
 
 const AuthContext = createContext();
 
@@ -27,8 +25,10 @@ export const AuthProvider = ({ children }) => {
         if (success) {
           // 사용자 정보 가져오기
           const userInfo = await getUserInfo();
-          setUser(userInfo);
-          setIsAuthenticated(true);
+          if (userInfo) {
+            setUser(userInfo);
+            setIsAuthenticated(true);
+          }
         }
       } catch (error) {
         console.error('자동 로그인 실패:', error);
@@ -43,11 +43,7 @@ export const AuthProvider = ({ children }) => {
   // 사용자 정보 가져오기
   const getUserInfo = async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/users/me`, {
-        headers: {
-          Authorization: `Bearer ${AuthService.getAccessToken()}`,
-        },
-      });
+      const response = await api.get('/users/me');
       return response.data.user;
     } catch (error) {
       console.error('사용자 정보 가져오기 실패:', error);
@@ -58,19 +54,35 @@ export const AuthProvider = ({ children }) => {
   // 로그인
   const login = async (email, password, rememberMe = false) => {
     try {
-      const response = await axios.post(`${API_BASE_URL}/users/signin`, {
+      const response = await api.post('/users/signin', {
         email,
         password,
         rememberMe,
       });
 
-      const { token, user: userData } = response.data;
+      const { token, refreshToken, user: userData } = response.data;
+
+      console.log('로그인 응답:', response.data);
+      console.log('토큰 저장 전:', { token, refreshToken });
 
       // 토큰 저장
       AuthService.setAccessToken(token);
+      if (refreshToken) {
+        AuthService.setRefreshToken(refreshToken);
+      }
+      
+      // Remember Me 설정
       if (rememberMe) {
         localStorage.setItem('rememberMe', 'true');
+      } else {
+        localStorage.removeItem('rememberMe');
       }
+
+      console.log('토큰 저장 후:', {
+        accessToken: AuthService.getAccessToken(),
+        refreshToken: AuthService.getRefreshToken(),
+        rememberMe: localStorage.getItem('rememberMe')
+      });
 
       // 사용자 정보 설정
       setUser(userData);
@@ -78,6 +90,7 @@ export const AuthProvider = ({ children }) => {
 
       return { success: true, user: userData };
     } catch (error) {
+      console.error('로그인 오류:', error);
       const message = error.response?.data?.message || '로그인에 실패했습니다.';
       return { success: false, message };
     }
@@ -98,7 +111,7 @@ export const AuthProvider = ({ children }) => {
   // 회원가입
   const signup = async userData => {
     try {
-      const response = await axios.post(`${API_BASE_URL}/users/signup`, userData);
+      const response = await api.post('/users/signup', userData);
       const { token, user: newUser } = response.data;
 
       // 토큰 저장

@@ -59,7 +59,6 @@ export const formatCenterPhone = phoneNumber => {
   // 숫자만 추출
   const numbers = phoneNumber.replace(/\D/g, '');
 
-  // 지역번호가 있는 경우 (02-xxxx-xxxx 또는 031-xxx-xxxx 등)
   if (numbers.length === 10 && numbers.startsWith('02')) {
     return `${numbers.slice(0, 2)}-${numbers.slice(2, 6)}-${numbers.slice(6)}`;
   } else if (numbers.length === 10) {

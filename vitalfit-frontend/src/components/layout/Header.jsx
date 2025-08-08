@@ -35,9 +35,9 @@ export default function Header({ activeMenu = null, userInfo }) {
           <span>반갑습니다, {userInfo?.name || '관리자'}님!</span>
         )}
       </div>
-      <div className="flex items-center gap-6">
+      <div className="flex items-center gap-16">
         <span className="text-sm text-gray-500 font-medium">{getFormattedDate()}</span>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-8">
           <img
             src="https://placehold.co/32x32"
             alt="profile"
@@ -48,7 +48,7 @@ export default function Header({ activeMenu = null, userInfo }) {
           </span>
           <button
             onClick={handleLogout}
-            className="text-sm text-gray-500 hover:text-red-500 transition-colors"
+            className="text-sm text-gray-500 hover:text-red-500 transition-colors mr-4"
           >
             로그아웃
           </button>

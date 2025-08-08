@@ -30,14 +30,12 @@ const UserPage = () => {
 
   // 직원 등록 핸들러
   const handleRegisterUser = () => {
-    console.log('직원 등록 버튼 클릭됨');
     // TODO: 직원 등록 모달 또는 페이지로 이동
     alert('직원 등록 기능이 준비 중입니다.');
   };
 
   // 사용자 상세보기 핸들러
   const handleViewUser = userId => {
-    console.log('사용자 상세보기:', userId);
     // TODO: 사용자 상세 정보 모달 또는 페이지로 이동
   };
 

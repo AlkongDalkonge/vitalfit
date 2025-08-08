@@ -27,8 +27,7 @@ export const usePTSession = memberId => {
       setLoading(true);
       setError(null);
 
-      console.log(`🔍 API 호출: ${memberId}/month/${currentYear}/${currentMonth}`);
-      console.log(`📅 UI 표시: ${currentYear}년 ${currentMonth}월`);
+
 
       const response = await ptSessionAPI.getSessionsByMember(memberId, {
         year: currentYear,

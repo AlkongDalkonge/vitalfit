@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { userAPI } from '../utils/api';
 
 export default function SignUp() {
   const [formData, setFormData] = useState({
@@ -99,7 +100,7 @@ export default function SignUp() {
 
       // 프로필 이미지가 있으면 추가
       if (profileImage) {
-        formDataToSend.append('profile_image', profileImage);
+        formDataToSend.append('profile_image_url', profileImage);
       }
 
       console.log('전송할 데이터:', {
@@ -109,35 +110,15 @@ export default function SignUp() {
         hasImage: !!profileImage,
       });
 
-      const response = await fetch('/api/users/signup', {
-        method: 'POST',
-        body: formDataToSend,
-        // FormData 사용 시 Content-Type 헤더를 설정하지 않음 (브라우저가 자동으로 설정)
-      });
-
-      console.log('응답 상태:', response.status);
-      console.log('응답 헤더:', response.headers);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('응답 에러 텍스트:', errorText);
-        try {
-          const errorData = JSON.parse(errorText);
-          setError(errorData.message || '회원가입 중 오류가 발생했습니다.');
-        } catch (e) {
-          setError(`서버 오류: ${response.status} ${response.statusText}`);
-        }
-        return;
-      }
-
-      const data = await response.json();
-      console.log('응답 데이터:', data);
-
-      if (response.ok) {
+      try {
+        const data = await userAPI.signup(formDataToSend, true); // FormData 사용
+        console.log('응답 데이터:', data);
+        
         alert('회원가입이 완료되었습니다!');
         navigate('/login');
-      } else {
-        setError(data.message || '회원가입 중 오류가 발생했습니다.');
+      } catch (error) {
+        console.error('회원가입 오류:', error);
+        setError(error.message || '회원가입 중 오류가 발생했습니다.');
       }
     } catch (err) {
       console.error('회원가입 오류:', err);

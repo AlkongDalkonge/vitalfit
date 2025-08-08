@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { getMenuFromPath, getPathFromMenu } from '../../router/routeUtils';
+import { useAuth } from '../../contexts/AuthContext';
 
 export const useNavigation = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuth();
   const [activeMenu, setActiveMenu] = useState(getMenuFromPath(location.pathname));
 
   // 경로 변경 시 활성 메뉴 업데이트 (대시보드 제외)
@@ -22,14 +24,14 @@ export const useNavigation = () => {
   // 로고 클릭 시 대시보드로 이동
   const handleLogoClick = () => {
     setActiveMenu(null); // 대시보드로 이동 시 메뉴 활성화 해제
-    navigate('/');
+    navigate('/dashboard');
   };
 
-  // 사용자 정보 (실제로는 API에서 가져와야 함)
-  const userInfo = {
-    name: '김관리',
-    role: '관리자',
-  };
+  // 실제 로그인한 사용자 정보 사용
+  const userInfo = user ? {
+    name: user.name,
+    role: user.role || '사용자',
+  } : null;
 
   return {
     activeMenu,

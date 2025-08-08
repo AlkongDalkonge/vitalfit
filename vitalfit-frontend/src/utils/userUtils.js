@@ -107,12 +107,10 @@ export const formatPhoneNumber = phoneNumber => {
   // 숫자만 추출
   const numbers = phoneNumber.replace(/\D/g, '');
 
-  // 휴대폰 번호 (010-xxxx-xxxx)
   if (numbers.length === 11 && numbers.startsWith('010')) {
     return `${numbers.slice(0, 3)}-${numbers.slice(3, 7)}-${numbers.slice(7)}`;
   }
 
-  // 일반 전화번호 (02-xxxx-xxxx 또는 031-xxx-xxxx 등)
   if (numbers.length === 10 && numbers.startsWith('02')) {
     return `${numbers.slice(0, 2)}-${numbers.slice(2, 6)}-${numbers.slice(6)}`;
   } else if (numbers.length === 10) {
