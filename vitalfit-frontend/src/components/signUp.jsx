@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 export default function SignUp() {
@@ -8,8 +8,8 @@ export default function SignUp() {
     confirmPassword: '',
     name: '',
     phone: '',
-    position_id: 1,
-    center_id: 1,
+    position_id: '',
+    center_id: '',
     terms_accepted: false,
     privacy_accepted: false,
   });
@@ -17,9 +17,55 @@ export default function SignUp() {
   const [imagePreview, setImagePreview] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [positions, setPositions] = useState([]);
+  const [centers, setCenters] = useState([]);
+  const [showTermsModal, setShowTermsModal] = useState(false);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
+  const [modalContent, setModalContent] = useState('');
+  const [modalTitle, setModalTitle] = useState('');
   const fileInputRef = useRef(null);
 
   const navigate = useNavigate();
+
+  // 컴포넌트 마운트 시 position과 center 데이터 로드
+  useEffect(() => {
+    loadPositions();
+    loadCenters();
+  }, []);
+
+  const loadPositions = async () => {
+    try {
+      console.log('포지션 데이터 로드 시작...');
+      const response = await fetch('/api/users/positions');
+      console.log('포지션 응답 상태:', response.status);
+      if (response.ok) {
+        const data = await response.json();
+        console.log('포지션 데이터:', data);
+        setPositions(data.data);
+      } else {
+        console.error('포지션 응답 오류:', response.status, response.statusText);
+      }
+    } catch (error) {
+      console.error('포지션 데이터 로드 실패:', error);
+    }
+  };
+
+  const loadCenters = async () => {
+    try {
+      console.log('센터 데이터 로드 시작...');
+      const response = await fetch('/api/users/centers');
+      console.log('센터 응답 상태:', response.status);
+      if (response.ok) {
+        const data = await response.json();
+        console.log('센터 데이터:', data);
+        setCenters(data.data);
+      } else {
+        console.error('센터 응답 오류:', response.status, response.statusText);
+      }
+    } catch (error) {
+      console.error('센터 데이터 로드 실패:', error);
+    }
+  };
 
   const handleChange = e => {
     const { name, value, type, checked } = e.target;
@@ -64,10 +110,63 @@ export default function SignUp() {
     }
   };
 
+  const openTermsModal = async () => {
+    try {
+      const response = await fetch('/api/users/terms');
+      const content = await response.text();
+      setModalTitle('이용약관');
+      setModalContent(content);
+      setShowTermsModal(true);
+    } catch (error) {
+      console.error('약관 로드 실패:', error);
+      setError('약관을 불러오는데 실패했습니다.');
+    }
+  };
+
+  const openPrivacyModal = async () => {
+    try {
+      const response = await fetch('/api/users/privacy');
+      const content = await response.text();
+      setModalTitle('개인정보처리방침');
+      setModalContent(content);
+      setShowPrivacyModal(true);
+    } catch (error) {
+      console.error('개인정보처리방침 로드 실패:', error);
+      setError('개인정보처리방침을 불러오는데 실패했습니다.');
+    }
+  };
+
+  const closeModal = () => {
+    setShowTermsModal(false);
+    setShowPrivacyModal(false);
+    setModalContent('');
+    setModalTitle('');
+  };
+
   const handleSubmit = async e => {
     e.preventDefault();
     setLoading(true);
     setError('');
+
+    // 필수 필드 검증
+    if (
+      !formData.name ||
+      !formData.email ||
+      !formData.password ||
+      !formData.confirmPassword ||
+      !formData.phone
+    ) {
+      setError('모든 필수 항목을 입력해주세요.');
+      setLoading(false);
+      return;
+    }
+
+    // position과 center 선택 검증
+    if (!formData.position_id || !formData.center_id) {
+      setError('직책과 센터를 선택해주세요.');
+      setLoading(false);
+      return;
+    }
 
     // 비밀번호 확인
     if (formData.password !== formData.confirmPassword) {
@@ -99,24 +198,24 @@ export default function SignUp() {
 
       // 프로필 이미지가 있으면 추가
       if (profileImage) {
-        formDataToSend.append('profile_image', profileImage);
+        formDataToSend.append('profile_image_url', profileImage);
       }
 
       console.log('전송할 데이터:', {
         email: formData.email,
         name: formData.name,
         phone: formData.phone,
+        position_id: formData.position_id,
+        center_id: formData.center_id,
         hasImage: !!profileImage,
       });
 
       const response = await fetch('/api/users/signup', {
         method: 'POST',
         body: formDataToSend,
-        // FormData 사용 시 Content-Type 헤더를 설정하지 않음 (브라우저가 자동으로 설정)
       });
 
       console.log('응답 상태:', response.status);
-      console.log('응답 헤더:', response.headers);
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -134,7 +233,7 @@ export default function SignUp() {
       console.log('응답 데이터:', data);
 
       if (response.ok) {
-        alert('회원가입이 완료되었습니다!');
+        alert('회원가입이 완료되었습니다! 로그인 페이지로 이동합니다.');
         navigate('/login');
       } else {
         setError(data.message || '회원가입 중 오류가 발생했습니다.');
@@ -185,7 +284,9 @@ export default function SignUp() {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* 프로필 이미지 업로드 */}
             <div className="text-center">
-              <label className="block text-sm font-medium text-gray-700 mb-2">프로필 이미지</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                프로필 이미지 <span className="text-gray-500 text-xs">(선택사항)</span>
+              </label>
               <div className="flex flex-col items-center space-y-4">
                 {/* 이미지 미리보기 */}
                 {imagePreview ? (
@@ -254,33 +355,39 @@ export default function SignUp() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">이름</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                이름 <span className="text-red-500">*</span>
+              </label>
               <input
                 type="text"
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                placeholder="Enter your name"
+                placeholder="이름을 입력하세요"
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-colors"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">이메일 주소</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                이메일 주소 <span className="text-red-500">*</span>
+              </label>
               <input
                 type="email"
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                placeholder="Enter email address"
+                placeholder="이메일을 입력하세요"
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-colors"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">전화번호</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                전화번호 <span className="text-red-500">*</span>
+              </label>
               <input
                 type="tel"
                 name="phone"
@@ -293,13 +400,15 @@ export default function SignUp() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">비밀번호</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                비밀번호 <span className="text-red-500">*</span>
+              </label>
               <input
                 type="password"
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
-                placeholder="Enter password (min 8 characters)"
+                placeholder="비밀번호를 입력하세요 (최소 8자)"
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-colors"
                 required
                 minLength={8}
@@ -307,16 +416,60 @@ export default function SignUp() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">비밀번호 확인</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                비밀번호 확인 <span className="text-red-500">*</span>
+              </label>
               <input
                 type="password"
                 name="confirmPassword"
                 value={formData.confirmPassword}
                 onChange={handleChange}
-                placeholder="Confirm password"
+                placeholder="비밀번호를 다시 입력하세요"
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-colors"
                 required
               />
+            </div>
+
+            {/* 직책 선택 */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                직책 <span className="text-red-500">*</span>
+              </label>
+              <select
+                name="position_id"
+                value={formData.position_id}
+                onChange={handleChange}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-colors"
+                required
+              >
+                <option value="">직책을 선택하세요</option>
+                {positions.map(position => (
+                  <option key={position.id} value={position.id}>
+                    {position.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* 센터 선택 */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                센터 <span className="text-red-500">*</span>
+              </label>
+              <select
+                name="center_id"
+                value={formData.center_id}
+                onChange={handleChange}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-colors"
+                required
+              >
+                <option value="">센터를 선택하세요</option>
+                {centers.map(center => (
+                  <option key={center.id} value={center.id}>
+                    {center.name} - {center.address}
+                  </option>
+                ))}
+              </select>
             </div>
 
             {/* 약관 동의 */}
@@ -331,14 +484,14 @@ export default function SignUp() {
                   required
                 />
                 <label className="ml-2 text-sm text-gray-700">
-                  <a
-                    href="/api/users/terms"
-                    target="_blank"
-                    className="text-cyan-600 hover:text-cyan-500"
+                  <button
+                    type="button"
+                    onClick={openTermsModal}
+                    className="text-cyan-600 hover:text-cyan-500 underline"
                   >
                     이용약관
-                  </a>
-                  에 동의합니다
+                  </button>
+                  에 동의합니다 <span className="text-red-500">*</span>
                 </label>
               </div>
 
@@ -352,14 +505,14 @@ export default function SignUp() {
                   required
                 />
                 <label className="ml-2 text-sm text-gray-700">
-                  <a
-                    href="/api/users/privacy"
-                    target="_blank"
-                    className="text-cyan-600 hover:text-cyan-500"
+                  <button
+                    type="button"
+                    onClick={openPrivacyModal}
+                    className="text-cyan-600 hover:text-cyan-500 underline"
                   >
                     개인정보처리방침
-                  </a>
-                  에 동의합니다
+                  </button>
+                  에 동의합니다 <span className="text-red-500">*</span>
                 </label>
               </div>
             </div>
@@ -392,6 +545,31 @@ export default function SignUp() {
           )}
         </div>
       </div>
+
+      {/* 약관 모달 */}
+      {(showTermsModal || showPrivacyModal) && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-hidden">
+            <div className="flex justify-between items-center p-4 border-b">
+              <h3 className="text-lg font-semibold">{modalTitle}</h3>
+              <button onClick={closeModal} className="text-gray-500 hover:text-gray-700 text-2xl">
+                ×
+              </button>
+            </div>
+            <div className="p-4 overflow-y-auto max-h-[60vh]">
+              <div dangerouslySetInnerHTML={{ __html: modalContent }} />
+            </div>
+            <div className="p-4 border-t">
+              <button
+                onClick={closeModal}
+                className="w-full bg-cyan-500 text-white py-2 px-4 rounded-lg hover:bg-cyan-600 transition-colors"
+              >
+                확인
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

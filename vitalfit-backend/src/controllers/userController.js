@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 const Joi = require('joi');
 const { createHash, validateForeignKey } = require('../utils/userUtils');
 const { createUpload, deleteFile, createFilePath } = require('../utils/uploadUtils');
-const secret = process.env.JWT_SECRET;
+const secret = process.env.JWT_SECRET || 'vitalfit-secret-key-2025';
 
 const signUpSchema = Joi.object({
   name: Joi.string().min(2).max(20).required().messages({
@@ -528,6 +528,50 @@ const getUserById = async (req, res, next) => {
   }
 };
 
+// ✅ 포지션 목록 조회 (회원가입용)
+const getPositions = async (req, res, next) => {
+  try {
+    const positions = await Position.findAll({
+      where: { is_active: true },
+      attributes: ['id', 'name', 'code', 'level', 'description'],
+      order: [['level', 'ASC']],
+    });
+
+    res.json({
+      success: true,
+      data: positions,
+    });
+  } catch (error) {
+    console.error('포지션 목록 조회 오류:', error);
+    res.status(500).json({
+      success: false,
+      message: '포지션 목록을 가져오는 중 오류가 발생했습니다.',
+    });
+  }
+};
+
+// ✅ 센터 목록 조회 (회원가입용)
+const getCenters = async (req, res, next) => {
+  try {
+    const centers = await Center.findAll({
+      where: { status: 'active' },
+      attributes: ['id', 'name', 'address', 'phone', 'description'],
+      order: [['name', 'ASC']],
+    });
+
+    res.json({
+      success: true,
+      data: centers,
+    });
+  } catch (error) {
+    console.error('센터 목록 조회 오류:', error);
+    res.status(500).json({
+      success: false,
+      message: '센터 목록을 가져오는 중 오류가 발생했습니다.',
+    });
+  }
+};
+
 module.exports = {
   signUp,
   signIn,
@@ -540,4 +584,6 @@ module.exports = {
   deactivateAccount,
   getAllUsers,
   getUserById,
+  getPositions,
+  getCenters,
 };

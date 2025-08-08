@@ -8,7 +8,13 @@ const auth = require('../middlewares/authMiddleware');
 // 사용자 목록 조회 (관리자용)
 router.get('/', auth, userController.getAllUsers);
 
+// 회원가입 관련 라우트
 router.post('/signup', uploadSingle, handleError, processFile, userController.signUp);
+
+// 회원가입 시 필요한 데이터 조회 (인증 불필요)
+router.get('/positions', userController.getPositions);
+router.get('/centers', userController.getCenters);
+
 router.post('/signin', userController.signIn);
 router.get('/me', auth, userController.getMe);
 router.get('/my-account', auth, userController.getMyAccount);

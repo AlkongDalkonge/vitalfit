@@ -5,9 +5,16 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node src/app.js",
-    "dev": "nodemon src/app.js"
+    "dev": "nodemon src/app.js",
+    "seed": "node -e \"const { seedAllData } = require('./src/utils/seedData.js'); seedAllData().then(() => console.log('✅ 시드데이터 완료')).catch(console.error);\"",
+    "setup": "npm install && npm run seed"
   },
-  "keywords": ["vitalfit", "fitness", "pt", "management"],
+  "keywords": [
+    "vitalfit",
+    "fitness",
+    "pt",
+    "management"
+  ],
   "author": "sawolharu <r10302310@gmail.com>",
   "license": "MIT",
   "description": "VitalFit PT 관리 시스템 백엔드 API",
