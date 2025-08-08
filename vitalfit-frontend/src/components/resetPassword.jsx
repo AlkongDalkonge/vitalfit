@@ -15,17 +15,34 @@ export default function ResetPassword() {
     setError('');
     setSuccess('');
 
-    try {
-      // TODO: 실제 비밀번호 재설정 API 호출
-      console.log('비밀번호 재설정 요청:', { email });
+    if (!email) {
+      setError('이메일 주소를 입력해주세요.');
+      setLoading(false);
+      return;
+    }
 
-      // 임시로 성공 처리
-      setSuccess('비밀번호 재설정 링크가 이메일로 전송되었습니다.');
-      setTimeout(() => {
-        navigate('/login');
-      }, 3000);
+    try {
+      const response = await fetch('/api/users/reset-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setSuccess('임시 비밀번호가 이메일로 발송되었습니다. 이메일을 확인해주세요.');
+        setTimeout(() => {
+          navigate('/login');
+        }, 3000);
+      } else {
+        setError(data.message || '비밀번호 재설정 중 오류가 발생했습니다.');
+      }
     } catch (err) {
-      setError('비밀번호 재설정 중 오류가 발생했습니다.');
+      console.error('비밀번호 재설정 오류:', err);
+      setError('비밀번호 재설정 중 오류가 발생했습니다. 네트워크 연결을 확인해주세요.');
     } finally {
       setLoading(false);
     }

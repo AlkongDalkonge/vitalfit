@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const Joi = require('joi');
 const { createHash, validateForeignKey } = require('../utils/userUtils');
 const { createUpload, deleteFile, createFilePath } = require('../utils/uploadUtils');
+const { sendPasswordResetEmail } = require('../utils/emailService');
 const secret = process.env.JWT_SECRET || 'vitalfit-secret-key-2025';
 
 const signUpSchema = Joi.object({
@@ -255,24 +256,45 @@ const logout = async (req, res) => {
 const resetPassword = async (req, res, next) => {
   try {
     const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: '이메일 주소를 입력해주세요.',
+      });
+    }
+
     const user = await User.findOne({ where: { email } });
-    if (!user)
+    if (!user) {
       return res.status(404).json({
         success: false,
         message: '해당 이메일 사용자를 찾을 수 없습니다.',
       });
+    }
 
+    // 임시 비밀번호 생성 (8자리 영숫자)
     const tempPassword = Math.random().toString(36).slice(-8);
     user.password = await createHash(tempPassword);
     await user.save();
 
-    // 실제 운영에선 이메일 발송 처리 필요
-    return res.status(200).json({
-      success: true,
-      message: '임시 비밀번호가 발급되었습니다.',
-      tempPassword,
-    });
+    // 이메일 발송
+    const emailResult = await sendPasswordResetEmail(email, user.name, tempPassword);
+
+    if (emailResult.success) {
+      return res.status(200).json({
+        success: true,
+        message: '임시 비밀번호가 이메일로 발송되었습니다. 이메일을 확인해주세요.',
+      });
+    } else {
+      // 이메일 발송 실패 시 비밀번호를 원래대로 되돌림
+      console.error('이메일 발송 실패:', emailResult.error);
+      return res.status(500).json({
+        success: false,
+        message: '이메일 발송에 실패했습니다. 잠시 후 다시 시도해주세요.',
+      });
+    }
   } catch (err) {
+    console.error('비밀번호 재설정 오류:', err);
     next(err);
   }
 };
