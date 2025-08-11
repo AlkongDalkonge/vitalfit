@@ -63,24 +63,42 @@ console.log('모델 관계 설정 중...');
 try {
   // 모델들이 모두 로드된 후 관계 설정
   const models = require('./models');
+
+  // 모델들이 모두 로드되었는지 확인
+  if (!models || Object.keys(models).length === 0) {
+    throw new Error('모델이 로드되지 않았습니다.');
+  }
+
+  console.log(
+    '로드된 모델들:',
+    Object.keys(models).filter(key => key !== 'sequelize' && key !== 'Sequelize')
+  );
+
   Object.keys(models).forEach(modelName => {
-    if (models[modelName].associate) {
-      models[modelName].associate(models);
-      console.log(`${modelName} 모델 관계 설정 완료`);
+    if (
+      modelName !== 'sequelize' &&
+      modelName !== 'Sequelize' &&
+      models[modelName] &&
+      models[modelName].associate
+    ) {
+      try {
+        models[modelName].associate(models);
+        console.log(`✅ ${modelName} 모델 관계 설정 완료`);
+      } catch (associateError) {
+        console.error(`❌ ${modelName} 모델 관계 설정 실패:`, associateError.message);
+      }
     }
   });
-  console.log('모든 모델 관계 설정 완료');
+  console.log('✅ 모든 모델 관계 설정 완료');
 } catch (error) {
-  console.error('모델 관계 설정 실패:', error);
+  console.error('❌ 모델 관계 설정 실패:', error.message);
+  console.error('에러 상세:', error);
 }
 
-console.log('3️⃣ 서버 실행 준비 완료');
-app.listen(PORT, () => {
-  console.log(`4️⃣ 서버가 포트 ${PORT}번에서 실행 중입니다.`);
-});
+// Sequelize sync를 통해 서버 실행하므로 여기서는 서버 실행하지 않음
+console.log('3️⃣ Sequelize sync를 통해 서버 실행 예정...');
 
-// 기존 코드 (주석 처리)
-/*
+// DB 테이블 생성 및 시드 데이터 실행
 sequelize
   .sync({ force: false })
   .then(async () => {
@@ -110,6 +128,5 @@ sequelize
   .catch(err => {
     console.error('DB 초기화 실패:', err);
   });
-*/
 
 module.exports = app;
