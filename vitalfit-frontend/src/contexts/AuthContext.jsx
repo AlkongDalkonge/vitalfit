@@ -88,6 +88,9 @@ export const AuthProvider = ({ children }) => {
       setUser(userData);
       setIsAuthenticated(true);
 
+      console.log('AuthContext - 로그인 성공, 사용자 정보:', userData);
+      console.log('AuthContext - profile_image_url:', userData?.profile_image_url);
+
       return { success: true, user: userData };
     } catch (error) {
       console.error('로그인 오류:', error);

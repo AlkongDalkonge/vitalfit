@@ -1,16 +1,76 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { toast } from 'react-toastify';
 
 export default function SignIn() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
+  const [saveAccount, setSaveAccount] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const { login } = useAuth();
+  const { login, isAuthenticated, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+
+  // 페이지 로드 시 저장된 이메일 불러오기
+  useEffect(() => {
+    const savedEmail = localStorage.getItem('savedEmail');
+    const savedRememberMe = localStorage.getItem('rememberMe');
+    const savedSaveAccount = localStorage.getItem('saveAccount');
+    
+    if (savedEmail) {
+      setEmail(savedEmail);
+      setSaveAccount(true);
+    }
+    
+    if (savedRememberMe === 'true') {
+      setRememberMe(true);
+    }
+    
+    if (savedSaveAccount === 'true') {
+      setSaveAccount(true);
+    }
+  }, []);
+
+  // 로그인된 상태에서 로그인 페이지 접속 시 대시보드로 리다이렉트
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      toast.info('로그인중...');
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 1000);
+    }
+  }, [authLoading, isAuthenticated, navigate]);
+
+  // 인증 상태 확인 중일 때 로딩 화면 표시
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex bg-gradient-to-br from-cyan-500 to-indigo-800">
+        <div className="flex w-full justify-center items-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-white mx-auto mb-4"></div>
+            <p className="text-white text-lg font-semibold">로그인중...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 이미 로그인된 상태라면 로딩 화면 표시
+  if (isAuthenticated) {
+    return (
+      <div className="min-h-screen flex bg-gradient-to-br from-cyan-500 to-indigo-800">
+        <div className="flex w-full justify-center items-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-white mx-auto mb-4"></div>
+            <p className="text-white text-lg font-semibold">로그인중...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const loginSubmit = async e => {
     e.preventDefault();
@@ -23,6 +83,17 @@ export default function SignIn() {
 
       if (result.success) {
         console.log('로그인 성공');
+        
+        // 계정 저장 설정
+        if (saveAccount) {
+          localStorage.setItem('savedEmail', email);
+          localStorage.setItem('saveAccount', 'true');
+        } else {
+          localStorage.removeItem('savedEmail');
+          localStorage.removeItem('saveAccount');
+        }
+        
+        toast.success('로그인되었습니다.');
         navigate('/dashboard');
       } else {
         setError(result.message || '로그인에 실패했습니다.');
@@ -97,7 +168,7 @@ export default function SignIn() {
                     onChange={e => setRememberMe(e.target.checked)}
                     className="h-4 w-4 text-cyan-600 focus:ring-cyan-500 border-gray-300 rounded"
                   />
-                  <label className="ml-2 block text-sm text-gray-700">Remember me</label>
+                  <label className="ml-2 block text-sm text-gray-700">자동 로그인</label>
                 </div>
                 <button
                   type="button"
@@ -106,6 +177,16 @@ export default function SignIn() {
                 >
                   비밀번호 재설정
                 </button>
+              </div>
+
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={saveAccount}
+                  onChange={e => setSaveAccount(e.target.checked)}
+                  className="h-4 w-4 text-cyan-600 focus:ring-cyan-500 border-gray-300 rounded"
+                />
+                <label className="ml-2 block text-sm text-gray-700">Remember me</label>
               </div>
 
               <button
@@ -123,10 +204,12 @@ export default function SignIn() {
                 <button
                   type="button"
                   onClick={handleSignUp}
-                  className="Button w-24 h-11 p-2.5 rounded-[10px] outline outline-1 outline-offset-[-0.50px] outline-cyan-500 inline-flex justify-center items-center gap-2.5"
+                  className="Button w-24 h-11 p-2.5 rounded-[10px] bg-gradient-to-r from-cyan-500 to-indigo-600 p-[1px] inline-flex justify-center items-center gap-2.5 shadow-md"
                 >
-                  <div className="PrimaryButton justify-start text-cyan-500 text-sm font-normal font-['Nunito'] leading-normal">
-                    Sign Up
+                  <div className="w-full h-full bg-white rounded-[9px] flex items-center justify-center">
+                    <div className="PrimaryButton justify-start bg-gradient-to-r from-cyan-500 to-indigo-600 bg-clip-text text-transparent text-sm font-normal font-['Nunito'] leading-normal">
+                      Sign Up
+                    </div>
                   </div>
                 </button>
               </div>
@@ -134,7 +217,7 @@ export default function SignIn() {
 
             {/* 에러 메시지 */}
             {error && (
-              <div className="mt-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+              <div className="mt-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-xs">
                 {error}
               </div>
             )}

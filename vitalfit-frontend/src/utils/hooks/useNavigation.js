@@ -32,6 +32,7 @@ export const useNavigation = () => {
     ? {
         name: user.name,
         role: user.role || '사용자',
+        profile_image_url: user.profile_image_url,
       }
     : null;
 
