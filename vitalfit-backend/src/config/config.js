@@ -8,23 +8,24 @@ module.exports = {
     database: process.env.DB_NAME || 'vitalfit',
     host: process.env.DB_HOST || 'localhost',
     dialect: process.env.DB_DIALECT || 'postgres',
-    // dialect: process.env.DB_DIALECT || 'sqlite',
-    // storage: process.env.DB_STORAGE || './database.sqlite',
     logging: false,
     use_env_variable: false,
-    // SQLite 설정 추가
-    dialectOptions: {
-      // SQLite 관련 옵션
-      ssl: {
-        require: false,
-        rejectUnauthorized: false,
-      }, 
-    },
+    dialectOptions: (() => {
+      if (process.env.DB_SSL === 'true') {
+        return {
+          ssl: {
+            require: true,
+            rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false',
+          },
+        };
+      }
+      return {};
+    })(),
   },
   test: {
     username: process.env.DB_USERNAME || 'postgres',
     password: process.env.DB_PASSWORD || 'postgres',
-    database: process.env.DB_NAME || 'vitalfit_test',
+    database: process.env.DB_NAME || 'vitalfit',
     host: process.env.DB_HOST || 'localhost',
     dialect: 'postgres',
     logging: false,
@@ -39,8 +40,8 @@ module.exports = {
     logging: false,
     dialectOptions: {
       ssl: {
-        require: process.env.DB_SSL === 'true',
-        rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false',
+        require: true, // Azure PostgreSQL는 무조건 true
+        rejectUnauthorized: false // 인증서 검증 비활성화
       },
     },
     pool: {

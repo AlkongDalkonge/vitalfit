@@ -16,6 +16,7 @@ router.get('/positions', userController.getPositions);
 router.get('/centers', userController.getCenters);
 
 router.post('/signin', userController.signIn);
+router.post('/refresh', userController.refreshAccessToken);
 router.get('/me', auth, userController.getMe);
 router.get('/my-account', auth, userController.getMyAccount);
 router.put('/me', auth, uploadSingle, handleError, processFile, userController.updateMyAccount);
