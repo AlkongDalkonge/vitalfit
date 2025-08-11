@@ -1,29 +1,73 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
+import { useCenter } from '../hooks/useCenter';
+import { useTeam } from '../hooks/useTeam';
+import { useUserByTeam } from '../hooks/useUser';
+import PaymentFilterBar from './PaymentFilterBar';
 
 const PaymentPage = () => {
+  const [selectedCenter, setSelectedCenter] = useState(null);
+  const [selectedTeam, setSelectedTeam] = useState(null);
+  const [selectedTrainer, setSelectedTrainer] = useState(null);
+
+  // 이름 검색 & 월 선택
+  const [search, setSearch] = useState('');
+  const [selectedMonth, setSelectedMonth] = useState('2025-08'); // 'YYYY-MM'
+
+  // HOOKS: 센터 / 팀 / 트레이너 목록
+  const { centers, loading: centerLoading, error: centerError } = useCenter();
+  const { teams, loading: teamLoading } = useTeam(selectedCenter);
+  const { users: trainers, loading: trainerLoading } = useUserByTeam(selectedTeam);
+
+  // 트레이너/월 → 요약 데이터 훅
+  const trainerId = selectedTrainer?.id ?? null;
+  const [year, month] = useMemo(() => {
+    if (!selectedMonth) return [null, null];
+    const [y, m] = selectedMonth.split('-').map(Number);
+    return [y, m];
+  }, [selectedMonth]);
+
+  // const trainerId = 3; // 임시 하드코딩
+  // const year = 2025; // 임시 하드코딩
+  // const month = 7; // 임시 하드코딩
+
+  // const {
+  //   data: ptSummary,
+  //   loading: ptLoading,
+  //   error: ptError,
+  //   refetch: refetchSummary,
+  // } = usePTSummary(trainerId, year, month);
+
+  // 검색 필터 (회원명 기준, 부분 일치)
+  // const filteredRows = useMemo(() => {
+  //   const q = search?.trim().toLowerCase() ?? '';
+  //   if (!q) return ptSummary || [];
+  //   return (ptSummary || []).filter(r =>
+  //     String(r.member_name || '')
+  //       .toLowerCase()
+  //       .includes(q)
+  //   );
+  // }, [ptSummary, search]);
+
   return (
     <div className="p-6 space-y-8 max-w-[1200px] mx-auto bg-white rounded-xl shadow">
       {/* 필터 영역 */}
-      <div className="flex flex-wrap gap-4 items-center">
-        <select className="border rounded p-2">
-          <option>지점 선택</option>
-        </select>
-        <select className="border rounded p-2">
-          <option>팀 선택</option>
-        </select>
-        <select className="border rounded p-2">
-          <option>직급 선택</option>
-        </select>
-        <select className="border rounded p-2">
-          <option>트레이너 선택</option>
-        </select>
-        <select className="ml-auto border rounded p-2">
-          <option>2025년 08월</option>
-          <option>2025년 07월</option>
-        </select>
-      </div>
+      <PaymentFilterBar
+        centers={centers}
+        teams={teams}
+        trainers={trainers}
+        selectedCenter={selectedCenter}
+        setSelectedCenter={setSelectedCenter}
+        selectedTeam={selectedTeam}
+        setSelectedTeam={setSelectedTeam}
+        selectedTrainer={selectedTrainer}
+        setSelectedTrainer={setSelectedTrainer}
+        search={search}
+        setSearch={setSearch}
+        selectedMonth={selectedMonth}
+        setSelectedMonth={setSelectedMonth}
+      />
 
-      {/* 카드 요약 영역 */}
+      {/* 카드 요약 영역 (임시 고정 값 - 이후 API 연동시 교체) */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-yellow-100 p-4 rounded text-center">
           <div className="text-sm text-gray-500">보너스</div>
