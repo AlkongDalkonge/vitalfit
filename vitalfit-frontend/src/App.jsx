@@ -48,7 +48,7 @@ export default function App() {
           <Route path="report" element={<ReportPage />} />
           <Route path="account" element={<AccountPage />} />
         </Route>
-        
+
         <Route
           path="/center/*"
           element={
@@ -59,7 +59,7 @@ export default function App() {
         >
           <Route index element={<CenterPage />} />
         </Route>
-        
+
         <Route
           path="/user/*"
           element={
@@ -70,7 +70,7 @@ export default function App() {
         >
           <Route index element={<UserPage />} />
         </Route>
-        
+
         <Route
           path="/member/*"
           element={
@@ -82,7 +82,7 @@ export default function App() {
           <Route index element={<MemberPage />} />
           <Route path=":memberId/pt-sessions" element={<MemberPTSessionPage />} />
         </Route>
-        
+
         <Route
           path="/payment/*"
           element={
@@ -93,7 +93,7 @@ export default function App() {
         >
           <Route index element={<PaymentPage />} />
         </Route>
-        
+
         <Route
           path="/notice/*"
           element={
@@ -105,7 +105,7 @@ export default function App() {
           <Route index element={<NoticePage />} />
           <Route path=":id" element={<NoticeDetailPage />} />
         </Route>
-        
+
         <Route
           path="/report/*"
           element={
@@ -116,7 +116,7 @@ export default function App() {
         >
           <Route index element={<ReportPage />} />
         </Route>
-        
+
         <Route
           path="/account/*"
           element={
