@@ -55,16 +55,16 @@ export default function SignIn() {
 
       {/* 오른쪽 로그인 폼 섹션 */}
       <div className="flex w-1/2 justify-start items-center">
-        <div className="w-[550px] bg-white rounded-r-3xl p-8 shadow-2xl border border-white/30">
-          <div className="max-w-xs mx-auto py-8">
+        <div className="w-[550px] h-[706px] bg-white rounded-r-3xl p-8 shadow-2xl border border-white/30">
+          <div className="max-w-xs mx-auto py-6">
             {/* 헤더 */}
-            <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold text-gray-900 mb-4">VitalFit 관리시스템</h2>
-              <p className="text-gray-600">건강한 라이프스타일을 위한 최고의 선택</p>
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-bold text-gray-900 mb-2">VitalFit 관리시스템</h2>
+              <p className="text-sm text-gray-600">건강한 라이프스타일을 위한 최고의 선택</p>
             </div>
 
             {/* 로그인 폼 */}
-            <form onSubmit={loginSubmit} className="space-y-8">
+            <form onSubmit={loginSubmit} className="space-y-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">이메일 주소</label>
                 <input
@@ -118,8 +118,8 @@ export default function SignIn() {
                 </div>
               </button>
 
-              <div className="text-center pt-4">
-                <p className="text-sm text-gray-600 mb-6">계정이 없으신가요?</p>
+              <div className="text-center pt-2">
+                <p className="text-sm text-gray-600 mb-4">계정이 없으신가요?</p>
                 <button
                   type="button"
                   onClick={handleSignUp}
@@ -134,7 +134,7 @@ export default function SignIn() {
 
             {/* 에러 메시지 */}
             {error && (
-              <div className="mt-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+              <div className="mt-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
                 {error}
               </div>
             )}

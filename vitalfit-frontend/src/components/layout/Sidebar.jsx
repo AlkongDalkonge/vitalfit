@@ -33,7 +33,7 @@ export default function Sidebar({ activeMenu = null, setActiveMenu, onLogoClick 
                     ? 'bg-gradient-to-r from-blue-50 to-cyan-50 border-gradient-left font-semibold'
                     : ''
                 }`}
-                onClick={() => setActiveMenu && setActiveMenu(item.name)}
+                onClick={() => setActiveMenu(item.name)}
               >
                 <div
                   className={`flex items-center justify-center w-4 h-4 transition-all duration-300 ease-in-out ${
