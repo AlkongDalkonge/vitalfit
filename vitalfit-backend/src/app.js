@@ -38,15 +38,14 @@ function formatSequelizeError(err) {
       name: err.name,
       items: err.errors.map(e => ({
         message: e.message,
-        path: e.path,           // 어느 필드인지
-        value: e.value,         // 어떤 값이 문제였는지
-        type: e.type,           // uniqueViolation, notNull Violation 등
+        path: e.path, // 어느 필드인지
+        value: e.value, // 어떤 값이 문제였는지
+        type: e.type, // uniqueViolation, notNull Violation 등
       })),
     };
   }
   return { name: err?.name || 'Error', message: err?.message || String(err) };
 }
-
 
 const seedStatus = {
   started: false,
@@ -76,10 +75,10 @@ app.post('/admin/run-seed', async (req, res) => {
   try {
     await sequelize.authenticate();
     seedStatus.step = 'sync';
-    await sequelize.sync({ force:false });
+    await sequelize.sync({ force: false });
 
     seedStatus.step = 'seeding';
-    await seedAllData((info) => {
+    await seedAllData(info => {
       if (info?.step) seedStatus.step = info.step;
       if (info?.counts) seedStatus.counts = { ...seedStatus.counts, ...info.counts };
     });
@@ -91,10 +90,11 @@ app.post('/admin/run-seed', async (req, res) => {
     const details = formatSequelizeError(e);
     seedStatus.error = details; // 상태에도 저장
     seedStatus.done = false;
-    return res.status(500).json({ ok: false, error: 'Validation error', details, status: seedStatus });
+    return res
+      .status(500)
+      .json({ ok: false, error: 'Validation error', details, status: seedStatus });
   }
 });
-
 
 // Azure 백엔드 상태 확인용
 app.get('/health', (_, res) => res.status(200).json({ ok: true, time: new Date() }));

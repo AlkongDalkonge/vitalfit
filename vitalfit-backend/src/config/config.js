@@ -41,7 +41,7 @@ module.exports = {
     dialectOptions: {
       ssl: {
         require: true, // Azure PostgreSQL는 무조건 true
-        rejectUnauthorized: false // 인증서 검증 비활성화
+        rejectUnauthorized: false, // 인증서 검증 비활성화
       },
     },
     pool: {

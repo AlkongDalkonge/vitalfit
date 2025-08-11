@@ -46,11 +46,11 @@ class AuthService {
 
     try {
       const response = await api.post('/users/refresh', {
-        refreshToken: refreshToken
+        refreshToken: refreshToken,
       });
 
       const { accessToken, refreshToken: newRefreshToken } = response.data;
-      
+
       this.setAccessToken(accessToken);
       if (newRefreshToken) {
         this.setRefreshToken(newRefreshToken);

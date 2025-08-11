@@ -192,7 +192,7 @@ const signIn = async (req, res, next) => {
           name: user.name,
           email: user.email,
           profile_image_url: user.profile_image_url,
-        }
+        },
       },
       message: '로그인 성공!',
     });
@@ -205,22 +205,22 @@ const signIn = async (req, res, next) => {
 const refreshAccessToken = async (req, res, next) => {
   try {
     const { refreshToken } = req.body;
-    
+
     if (!refreshToken) {
       return res.status(400).json({
         success: false,
-        message: 'Refresh token이 필요합니다.'
+        message: 'Refresh token이 필요합니다.',
       });
     }
 
     // Refresh token 검증
     const decoded = jwt.verify(refreshToken, secret);
     const user = await User.findByPk(decoded.uid);
-    
+
     if (!user) {
       return res.status(401).json({
         success: false,
-        message: '유효하지 않은 refresh token입니다.'
+        message: '유효하지 않은 refresh token입니다.',
       });
     }
 
@@ -238,15 +238,15 @@ const refreshAccessToken = async (req, res, next) => {
           id: user.id,
           name: user.name,
           email: user.email,
-          nickname: user.nickname
-        }
-      }
+          nickname: user.nickname,
+        },
+      },
     });
   } catch (error) {
     console.error('토큰 갱신 실패:', error);
     return res.status(401).json({
       success: false,
-      message: '유효하지 않은 refresh token입니다.'
+      message: '유효하지 않은 refresh token입니다.',
     });
   }
 };
