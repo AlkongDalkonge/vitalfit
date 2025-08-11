@@ -1,16 +1,22 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function SignIn() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const { login } = useAuth();
+  const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+
+  // 이미 로그인된 상태라면 대시보드로 리다이렉트
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard');
+    }
+  }, [isAuthenticated, navigate]);
 
   const loginSubmit = async e => {
     e.preventDefault();
@@ -19,7 +25,7 @@ export default function SignIn() {
     setError('');
 
     try {
-      const result = await login(email, password, rememberMe);
+      const result = await login(email, password);
 
       if (result.success) {
         console.log('로그인 성공');
@@ -89,16 +95,7 @@ export default function SignIn() {
                 />
               </div>
 
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={rememberMe}
-                    onChange={e => setRememberMe(e.target.checked)}
-                    className="h-4 w-4 text-cyan-600 focus:ring-cyan-500 border-gray-300 rounded"
-                  />
-                  <label className="ml-2 block text-sm text-gray-700">Remember me</label>
-                </div>
+              <div className="flex items-center justify-end">
                 <button
                   type="button"
                   onClick={handlePasswordReset}

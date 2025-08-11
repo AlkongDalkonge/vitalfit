@@ -53,7 +53,6 @@ const signUpSchema = Joi.object({
   join_date: Joi.date().optional(), // 필수 아니면 생략 가능
   profile_image_name: Joi.string().optional(),
   profile_image_url: Joi.string().optional(),
-  remember_me: Joi.boolean().optional(),
 });
 
 // ✅ 회원가입
@@ -62,7 +61,7 @@ const signUp = async (req, res, next) => {
     const { error, value } = signUpSchema.validate(req.body);
     if (error) return res.status(400).json({ success: false, message: error.message });
 
-    const { email, password, center_id, position_id, team_id, terms_accepted, remember_me } = value;
+    const { email, password, center_id, position_id, team_id, terms_accepted } = value;
     const existing = await User.findOne({ where: { email } });
     if (existing)
       return res.status(400).json({ success: false, message: '이미 가입된 이메일입니다.' });
@@ -80,7 +79,6 @@ const signUp = async (req, res, next) => {
     value.email_verified = false;
     value.login_attempts = 0;
     value.is_locked = false;
-    value.remember_me = remember_me || false;
 
     if (req.file) {
       // processFile 미들웨어가 이미 req.body에 설정해줌
@@ -151,7 +149,7 @@ const sendNewUserNotification = async user => {
 // ✅ 로그인
 const signIn = async (req, res, next) => {
   try {
-    const { email, password, rememberMe } = req.body;
+    const { email, password } = req.body;
     if (!email || !password)
       return res.status(400).json({
         success: false,
@@ -180,19 +178,12 @@ const signIn = async (req, res, next) => {
     user.last_login_at = new Date();
     await user.save();
 
-    // Access Token 생성 (1시간)
-    const accessToken = jwt.sign({ uid: user.id }, secret, { expiresIn: '1h' });
-
-    // Refresh Token 생성 (7일 또는 30일)
-    const refreshTokenExpiry = rememberMe ? '30d' : '7d';
-    const refreshToken = jwt.sign({ uid: user.id, type: 'refresh' }, secret, {
-      expiresIn: refreshTokenExpiry,
-    });
+    // Access Token 생성 (24시간)
+    const accessToken = jwt.sign({ uid: user.id }, secret, { expiresIn: '24h' });
 
     return res.status(200).json({
       success: true,
       token: accessToken,
-      refreshToken: refreshToken,
       user: {
         id: user.id,
         name: user.name,
@@ -261,55 +252,7 @@ const logout = async (req, res) => {
   res.status(200).json({ success: true, message: '로그아웃되었습니다.' });
 };
 
-// ✅ 토큰 갱신
-const refreshToken = async (req, res, next) => {
-  try {
-    const { refreshToken } = req.body;
 
-    if (!refreshToken) {
-      return res.status(400).json({
-        success: false,
-        message: 'Refresh token이 필요합니다.',
-      });
-    }
-
-    // Refresh Token 검증
-    const decoded = jwt.verify(refreshToken, secret);
-
-    if (decoded.type !== 'refresh') {
-      return res.status(401).json({
-        success: false,
-        message: '유효하지 않은 refresh token입니다.',
-      });
-    }
-
-    // 사용자 존재 확인
-    const user = await User.findByPk(decoded.uid);
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: '사용자를 찾을 수 없습니다.',
-      });
-    }
-
-    // 새로운 Access Token 생성
-    const newAccessToken = jwt.sign({ uid: user.id }, secret, { expiresIn: '1h' });
-
-    return res.status(200).json({
-      success: true,
-      accessToken: newAccessToken,
-      message: '토큰이 갱신되었습니다.',
-    });
-  } catch (err) {
-    if (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError') {
-      return res.status(401).json({
-        success: false,
-        message: '유효하지 않은 refresh token입니다.',
-      });
-    }
-    next(err);
-  }
-};
 
 // 비밀번호 초기화
 const resetPassword = async (req, res, next) => {
@@ -660,7 +603,6 @@ module.exports = {
   getMyAccount,
   updateMyAccount,
   logout,
-  refreshToken,
   resetPassword,
   deleteProfileImage,
   deactivateAccount,

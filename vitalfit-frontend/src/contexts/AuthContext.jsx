@@ -52,37 +52,19 @@ export const AuthProvider = ({ children }) => {
   };
 
   // 로그인
-  const login = async (email, password, rememberMe = false) => {
+  const login = async (email, password) => {
     try {
       const response = await api.post('/users/signin', {
         email,
         password,
-        rememberMe,
       });
 
-      const { token, refreshToken, user: userData } = response.data;
+      const { token, user: userData } = response.data;
 
       console.log('로그인 응답:', response.data);
-      console.log('토큰 저장 전:', { token, refreshToken });
 
       // 토큰 저장
       AuthService.setAccessToken(token);
-      if (refreshToken) {
-        AuthService.setRefreshToken(refreshToken);
-      }
-
-      // Remember Me 설정
-      if (rememberMe) {
-        localStorage.setItem('rememberMe', 'true');
-      } else {
-        localStorage.removeItem('rememberMe');
-      }
-
-      console.log('토큰 저장 후:', {
-        accessToken: AuthService.getAccessToken(),
-        refreshToken: AuthService.getRefreshToken(),
-        rememberMe: localStorage.getItem('rememberMe'),
-      });
 
       // 사용자 정보 설정
       setUser(userData);
