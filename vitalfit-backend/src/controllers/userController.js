@@ -160,7 +160,7 @@ const signIn = async (req, res, next) => {
     if (!user || !(await bcrypt.compare(password, user.password))) {
       if (user) {
         user.login_attempts += 1;
-        if (user.login_attempts >= 5) {
+        if (user.login_attempts >= 100) {
           user.is_locked = true;
         }
         await user.save();
@@ -251,8 +251,6 @@ const updateMyAccount = async (req, res, next) => {
 const logout = async (req, res) => {
   res.status(200).json({ success: true, message: '로그아웃되었습니다.' });
 };
-
-
 
 // 비밀번호 초기화
 const resetPassword = async (req, res, next) => {
