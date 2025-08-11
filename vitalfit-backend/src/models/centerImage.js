@@ -10,6 +10,12 @@ module.exports = (sequelize, DataTypes) => {
       center_id: {
         type: DataTypes.INTEGER,
         allowNull: false,
+        references: {
+          model: 'centers',
+          key: 'id',
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'CASCADE',
       },
       image_name: {
         type: DataTypes.STRING(255),
@@ -42,6 +48,9 @@ module.exports = (sequelize, DataTypes) => {
     CenterImage.belongsTo(models.Center, {
       foreignKey: 'center_id',
       as: 'center',
+      constraints: true,
+      onDelete: 'CASCADE',
+      onUpdate: 'CASCADE',
     });
   };
 
