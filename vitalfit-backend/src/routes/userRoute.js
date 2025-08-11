@@ -21,6 +21,7 @@ router.get('/my-account', auth, userController.getMyAccount);
 router.put('/me', auth, uploadSingle, handleError, processFile, userController.updateMyAccount);
 router.post('/logout', auth, userController.logout);
 router.post('/reset-password', userController.resetPassword);
+router.put('/change-password', auth, userController.changePassword);
 router.delete('/me', auth, userController.deactivateAccount);
 
 // 약관 관련 라우트 (구체적인 라우트를 먼저 정의)

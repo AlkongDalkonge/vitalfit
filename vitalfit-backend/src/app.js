@@ -56,9 +56,33 @@ app.use(errorHandler);
 // DB 연결 및 서버 실행
 const PORT = process.env.SERVER_PORT || 3001;
 
+// 모델 관계 설정: 로컬에서 개발 시에는 동기화 없이도(db생성 없이) 가능하지만,
+// Azure DB에서는 동기화가 필요함.
+// 즉, 아래내용은 로컬에서 개발 시 연결 확인 용도 디버깅 입니다.(로컬 개발 중에 DB 연결이 잘 되는지 확인하는 용도)
+console.log('모델 관계 설정 중...');
+try {
+  // 모델들이 모두 로드된 후 관계 설정
+  const models = require('./models');
+  Object.keys(models).forEach(modelName => {
+    if (models[modelName].associate) {
+      models[modelName].associate(models);
+      console.log(`${modelName} 모델 관계 설정 완료`);
+    }
+  });
+  console.log('모든 모델 관계 설정 완료');
+} catch (error) {
+  console.error('모델 관계 설정 실패:', error);
+}
+
+console.log('3️⃣ 서버 실행 준비 완료');
+app.listen(PORT, () => {
+  console.log(`4️⃣ 서버가 포트 ${PORT}번에서 실행 중입니다.`);
+});
+
+// 기존 코드 (주석 처리)
+/*
 sequelize
   .sync({ force: false })
-  // .sync({ force: true })
   .then(async () => {
     console.log('1️⃣ DB 테이블 생성 완료!');
 
@@ -86,5 +110,6 @@ sequelize
   .catch(err => {
     console.error('DB 초기화 실패:', err);
   });
+*/
 
 module.exports = app;

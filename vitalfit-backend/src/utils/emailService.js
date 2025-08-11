@@ -1,4 +1,36 @@
 const nodemailer = require('nodemailer');
+const crypto = require('crypto');
+
+// 안전한 임시 비밀번호 생성 함수
+const generateSecureTempPassword = (length = 8) => {
+  try {
+    const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let password = '';
+
+    // 최소 1개의 대문자, 소문자, 숫자 포함
+    password += charset.charAt(Math.floor(Math.random() * 26)); // 대문자
+    password += charset.charAt(26 + Math.floor(Math.random() * 26)); // 소문자
+    password += charset.charAt(52 + Math.floor(Math.random() * 10)); // 숫자
+
+    // 나머지 문자들로 채우기
+    for (let i = 3; i < length; i++) {
+      password += charset.charAt(Math.floor(Math.random() * charset.length));
+    }
+
+    // 문자 순서를 섞기
+    const shuffledPassword = password
+      .split('')
+      .sort(() => Math.random() - 0.5)
+      .join('');
+
+    console.log('생성된 임시 비밀번호:', shuffledPassword);
+    return shuffledPassword;
+  } catch (error) {
+    console.error('임시 비밀번호 생성 오류:', error);
+    // 기본 임시 비밀번호 반환
+    return 'Temp1234';
+  }
+};
 
 // 이메일 설정 (개발 환경용)
 const createTransporter = () => {
@@ -70,13 +102,13 @@ const sendPasswordResetEmail = async (userEmail, userName, tempPassword) => {
   try {
     // 개발 환경에서는 실제 이메일 발송 대신 콘솔에 출력
     if (process.env.NODE_ENV === 'development' && !process.env.EMAIL_PASSWORD) {
-      console.log('📧 === 비밀번호 재설정 이메일 (개발 모드) ===');
-      console.log('📧 발송자: vitalfit.dev@gmail.com');
-      console.log('📧 수신자:', userEmail);
-      console.log('📧 제목: [VitalFit] 비밀번호 재설정 완료');
-      console.log('📧 사용자명:', userName);
-      console.log('📧 임시 비밀번호:', tempPassword);
-      console.log('📧 이메일 내용:');
+      console.log('=== 비밀번호 재설정 이메일 (개발 모드) ===');
+      console.log('발송자: vitalfit.dev@gmail.com');
+      console.log('수신자:', userEmail);
+      console.log('제목: [VitalFit] 비밀번호 재설정 완료');
+      console.log('사용자명:', userName);
+      console.log('임시 비밀번호:', tempPassword);
+      console.log('이메일 내용:');
       console.log(createPasswordResetEmail(userName, tempPassword));
       console.log('📧 === 이메일 내용 끝 ===');
 
@@ -108,4 +140,5 @@ const sendPasswordResetEmail = async (userEmail, userName, tempPassword) => {
 module.exports = {
   sendPasswordResetEmail,
   createPasswordResetEmail,
+  generateSecureTempPassword,
 };
