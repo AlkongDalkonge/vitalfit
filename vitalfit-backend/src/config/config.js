@@ -11,15 +11,15 @@ module.exports = {
     // dialect: process.env.DB_DIALECT || 'sqlite',
     // storage: process.env.DB_STORAGE || './database.sqlite',
     logging: false,
-    use_env_variable: false,
-    // SQLite 설정 추가
-    dialectOptions: {
-      // SQLite 관련 옵션
-      ssl: {
-        require: false,
-        rejectUnauthorized: false,
-      }, 
-    },
+    // use_env_variable: false,
+    // // SQLite 설정 추가
+    // dialectOptions: {
+    //   // SQLite 관련 옵션
+    //   ssl: {
+    //     require: false,
+    //     rejectUnauthorized: false,
+    //   },
+    // },
   },
   test: {
     username: process.env.DB_USERNAME || 'postgres',
@@ -27,7 +27,7 @@ module.exports = {
     database: process.env.DB_NAME || 'vitalfit_test',
     host: process.env.DB_HOST || 'localhost',
     dialect: 'postgres',
-    logging: false,
+    logging: true,
   },
   production: {
     username: process.env.DB_USERNAME,

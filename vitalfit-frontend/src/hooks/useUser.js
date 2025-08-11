@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { userAPI, centerAPI, teamAPI } from '../utils/api';
 
 /**
@@ -142,4 +142,64 @@ export const useUser = () => {
     setShowTeamDropdown,
     setSearchTerm,
   };
+};
+
+/**
+ * PaymentPage용: 선택된 팀(teamId)에 따라 사용자 목록을 반환하는 훅
+ * - teamId가 없으면 빈 배열([]) 반환
+ * - PaymentPage에서 트레이너 필터링용으로 사용
+ */
+export const useUserByTeam = teamId => {
+  const [allUsers, setAllUsers] = useState([]); // 전체 사용자 캐시
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  // 응답 정규화
+  const normalize = useCallback(
+    user => ({
+      ...user,
+      id: user.id,
+      name: user.name ?? user.user_name ?? '',
+      // 다양한 스키마 대응: team_id, teamId, team?.id
+      teamId: Number(user.team_id ?? user.teamId ?? user.team?.id ?? 0),
+    }),
+    []
+  );
+
+  // 전체 사용자 1회 로드
+  const loadAllUsers = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await userAPI.getAllUsers({ limit: 1000 });
+      const raw = res?.success ? res?.data?.users : null;
+      const list = Array.isArray(raw) ? raw.map(normalize) : [];
+      if (!Array.isArray(raw)) {
+        throw new Error(res?.message || '사용자 목록 형식이 올바르지 않습니다.');
+      }
+      setAllUsers(list);
+    } catch (e) {
+      console.error('사용자 목록 불러오기 실패:', e);
+      setAllUsers([]);
+      setError(e?.message || '사용자 목록을 불러오지 못했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  }, [normalize]);
+
+  useEffect(() => {
+    loadAllUsers();
+  }, [loadAllUsers]);
+
+  // teamId 기준 필터링 (teamId 미선택이면 빈 배열 반환)
+  const users = useMemo(() => {
+    if (!teamId) return [];
+    const tid = Number(teamId);
+    return allUsers.filter(user => user.teamId === tid);
+  }, [allUsers, teamId]);
+
+  // 외부에서 강제 새로고침 가능
+  const refresh = useCallback(() => loadAllUsers(), [loadAllUsers]);
+
+  return { users, loading, error, refresh };
 };
