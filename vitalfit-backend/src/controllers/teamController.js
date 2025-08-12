@@ -8,24 +8,11 @@ const getAllTeams = async (req, res) => {
       order: [['name', 'ASC']],
     });
 
-    // 중복 제거: name 기준으로 고유한 팀만 필터링
-    const uniqueTeams = [];
-    const seenNames = new Set();
-
-    teams.forEach(team => {
-      if (!seenNames.has(team.name)) {
-        seenNames.add(team.name);
-        uniqueTeams.push(team);
-      }
-    });
-
-    console.log(`팀 데이터 정리: 총 ${teams.length}개 → 고유 ${uniqueTeams.length}개`);
-
     return res.status(200).json({
       success: true,
       message: '팀 목록 조회 성공',
       data: {
-        teams: uniqueTeams,
+        teams: teams,
       },
     });
   } catch (error) {
@@ -41,7 +28,7 @@ const getAllTeams = async (req, res) => {
 const getTeamById = async (req, res) => {
   try {
     const { id } = req.params;
-
+    
     const team = await Team.findByPk(id, {
       attributes: ['id', 'name'],
     });
@@ -72,4 +59,4 @@ const getTeamById = async (req, res) => {
 module.exports = {
   getAllTeams,
   getTeamById,
-};
+}; 

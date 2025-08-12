@@ -1,61 +1,55 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import MemberEditModal from './MemberEditModal';
-import MemberCreateModal from './MemberCreateModal';
+import React, { useState, useEffect } from "react";
 
 const MemberPage = () => {
-  const navigate = useNavigate();
   const [members, setMembers] = useState([]);
   const [filteredMembers, setFilteredMembers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [centerFilter, setCenterFilter] = useState('Select option');
-  const [trainerFilter, setTrainerFilter] = useState('Select option');
+  const [centerFilter, setCenterFilter] = useState("All memos");
+  const [trainerFilter, setTrainerFilter] = useState("All memos");
   const [showCenterDropdown, setShowCenterDropdown] = useState(false);
   const [showTrainerDropdown, setShowTrainerDropdown] = useState(false);
   const [centers, setCenters] = useState([]);
   const [trainers, setTrainers] = useState([]);
   const [filteredTrainers, setFilteredTrainers] = useState([]);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editingMember, setEditingMember] = useState(null);
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [statusDropdowns, setStatusDropdowns] = useState({});
 
   // API 호출 함수들
   const fetchMembers = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/member');
+      const response = await fetch("http://localhost:3000/api/member");
       const data = await response.json();
       if (data.success) {
         setMembers(data.data.members);
         setFilteredMembers(data.data.members);
       }
     } catch (error) {
-      console.error('멤버 조회 실패:', error);
+      console.error("멤버 조회 실패:", error);
     }
   };
 
   const fetchCenters = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/centers');
+      const response = await fetch("http://localhost:3000/api/centers");
       const data = await response.json();
       if (data.success) {
         setCenters(data.data.centers);
       }
     } catch (error) {
-      console.error('지점 조회 실패:', error);
+      console.error("지점 조회 실패:", error);
     }
   };
 
   const fetchTrainers = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/users?role=trainer');
+      const response = await fetch(
+        "http://localhost:3000/api/users?role=trainer"
+      );
       const data = await response.json();
       if (data.success) {
         setTrainers(data.data.users);
         setFilteredTrainers(data.data.users);
       }
     } catch (error) {
-      console.error('트레이너 조회 실패:', error);
+      console.error("트레이너 조회 실패:", error);
     }
   };
 
@@ -72,27 +66,27 @@ const MemberPage = () => {
   // 필터링 함수
   const filterMembers = async () => {
     try {
-      let url = 'http://localhost:3000/api/member';
+      let url = "http://localhost:3000/api/member";
       const params = new URLSearchParams();
 
-      if (centerFilter !== 'Select option') {
+      if (centerFilter !== "All memos") {
         // 지점 이름으로 ID 찾기
-        const center = centers.find(c => c.name === centerFilter);
+        const center = centers.find((c) => c.name === centerFilter);
         if (center) {
-          params.append('centerId', center.id);
+          params.append("centerId", center.id);
         }
       }
 
-      if (trainerFilter !== 'Select option') {
+      if (trainerFilter !== "All memos") {
         // 트레이너 이름으로 ID 찾기
-        const trainer = trainers.find(t => t.name === trainerFilter);
+        const trainer = trainers.find((t) => t.name === trainerFilter);
         if (trainer) {
-          params.append('trainerId', trainer.id);
+          params.append("trainerId", trainer.id);
         }
       }
 
       if (params.toString()) {
-        url += '?' + params.toString();
+        url += "?" + params.toString();
       }
 
       const response = await fetch(url);
@@ -101,32 +95,35 @@ const MemberPage = () => {
         setFilteredMembers(data.data.members);
       }
     } catch (error) {
-      console.error('필터링 실패:', error);
+      console.error("필터링 실패:", error);
     }
   };
 
   // 지점 필터 변경 시 트레이너 필터 업데이트
-  const handleCenterFilterChange = async value => {
+  const handleCenterFilterChange = async (value) => {
     setCenterFilter(value);
     setShowCenterDropdown(false);
 
-    if (value === 'Select option') {
+    if (value === "All memos") {
       setFilteredTrainers(trainers);
-      setTrainerFilter('Select option');
+      setTrainerFilter("All memos");
     } else {
       // 해당 지점의 트레이너만 필터링
-      const centerTrainers = trainers.filter(trainer =>
-        members.some(member => member.center?.name === value && member.trainer?.id === trainer.id)
+      const centerTrainers = trainers.filter((trainer) =>
+        members.some(
+          (member) =>
+            member.center?.name === value && member.trainer?.id === trainer.id
+        )
       );
       setFilteredTrainers(centerTrainers);
-      setTrainerFilter('Select option');
+      setTrainerFilter("All memos");
     }
 
     // API 호출로 필터링
     await filterMembers();
   };
 
-  const handleTrainerFilterChange = async value => {
+  const handleTrainerFilterChange = async (value) => {
     setTrainerFilter(value);
     setShowTrainerDropdown(false);
 
@@ -141,138 +138,15 @@ const MemberPage = () => {
     }
   }, [centerFilter, trainerFilter]);
 
-  // 드롭다운 외부 클릭 시 닫기
-  useEffect(() => {
-    const handleClickOutside = event => {
-      if (!event.target.closest('[data-dropdown="status"]')) {
-        setStatusDropdowns({});
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
-
   const handleRegisterMember = () => {
-    setIsCreateModalOpen(true);
+    // 고객 등록 모달 또는 페이지로 이동
+    console.log("고객 등록");
   };
 
-  const handleViewMore = memberId => {
+  const handleViewMore = (memberId) => {
     // 회원 상세 정보 보기
-    console.log('회원 상세보기:', memberId);
+    console.log("회원 상세보기:", memberId);
   };
-
-  // 멤버 수정 모달 열기
-  const handleEditMember = member => {
-    setEditingMember(member);
-    setIsEditModalOpen(true);
-  };
-
-  // 멤버 수정 모달 닫기
-  const handleCloseEditModal = () => {
-    setIsEditModalOpen(false);
-    setEditingMember(null);
-  };
-
-  // 멤버 정보 업데이트
-  const handleUpdateMember = updatedMember => {
-    // 로컬 상태 업데이트
-    setMembers(prevMembers =>
-      prevMembers.map(member => (member.id === updatedMember.id ? updatedMember : member))
-    );
-    setFilteredMembers(prevMembers =>
-      prevMembers.map(member => (member.id === updatedMember.id ? updatedMember : member))
-    );
-
-    // 모달 닫기
-    handleCloseEditModal();
-  };
-
-  // 새 멤버 생성
-  const handleCreateMember = newMember => {
-    // 로컬 상태에 새 멤버 추가
-    setMembers(prevMembers => [newMember, ...prevMembers]);
-    setFilteredMembers(prevMembers => [newMember, ...prevMembers]);
-
-    // 모달 닫기
-    setIsCreateModalOpen(false);
-  };
-
-  // 고객 등록 모달 닫기
-  const handleCloseCreateModal = () => {
-    setIsCreateModalOpen(false);
-  };
-
-  // PT 세션 조회 페이지로 이동
-  const handleViewPTSessions = memberId => {
-    navigate(`/member/${memberId}/pt-sessions`);
-  };
-
-  // 상태 변경 처리
-  const handleStatusChange = async (memberId, newStatus) => {
-    try {
-      const response = await fetch(`http://localhost:3000/api/member/${memberId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ status: newStatus }),
-      });
-
-      if (response.ok) {
-        // 로컬 상태 업데이트
-        setMembers(prevMembers =>
-          prevMembers.map(member =>
-            member.id === memberId ? { ...member, status: newStatus } : member
-          )
-        );
-        setFilteredMembers(prevMembers =>
-          prevMembers.map(member =>
-            member.id === memberId ? { ...member, status: newStatus } : member
-          )
-        );
-      }
-    } catch (error) {
-      console.error('상태 변경 오류:', error);
-    }
-
-    // 드롭다운 닫기
-    setStatusDropdowns(prev => ({ ...prev, [memberId]: false }));
-  };
-
-  // 상태 드롭다운 토글
-  const toggleStatusDropdown = memberId => {
-    setStatusDropdowns(prev => ({
-      ...prev,
-      [memberId]: !prev[memberId],
-    }));
-  };
-
-  // 상태 텍스트 변환
-  const getStatusText = status => {
-    switch (status) {
-      case 'active':
-        return '활성';
-      case 'inactive':
-        return '비활성';
-      case 'expired':
-        return '만료';
-      case 'withdrawn':
-        return '탈퇴';
-      default:
-        return '알 수 없음';
-    }
-  };
-
-  // 상태 옵션들
-  const statusOptions = [
-    { value: 'active', label: '활성' },
-    { value: 'inactive', label: '비활성' },
-    { value: 'expired', label: '만료' },
-    { value: 'withdrawn', label: '탈퇴' },
-  ];
 
   if (loading) {
     return (
@@ -288,7 +162,7 @@ const MemberPage = () => {
         {/* 최상단 제목 */}
         <div
           data-layer="모든 고객"
-          className="text-black text-3xl font-extrabold font-['Nunito'] pt-2"
+          className="text-black text-xl font-extrabold font-['Nunito']"
         >
           모든 고객
         </div>
@@ -317,11 +191,11 @@ const MemberPage = () => {
             <div
               data-layer="Input Field"
               data-property-1="Small"
-              className="w-[120px] h-[30px] flex flex-col justify-start items-start"
+              className="InputField w-[120px] h-[30px] flex flex-col justify-start items-start"
             >
               <div
                 data-layer="Rectangle 3"
-                className="w-[120px] h-[30px] bg-sky-50 rounded-[8px] border border-gray-200 relative"
+                className="Rectangle3 w-[120px] h-[30px] bg-sky-50 rounded-[8px] border border-gray-200 relative"
               >
                 <button
                   onClick={() => setShowCenterDropdown(!showCenterDropdown)}
@@ -353,12 +227,12 @@ const MemberPage = () => {
                   <div className="absolute top-full left-0 w-[120px] bg-white border border-gray-200 rounded-[8px] shadow-lg z-10 mt-1">
                     <div className="py-1">
                       <button
-                        onClick={() => handleCenterFilterChange('Select option')}
+                        onClick={() => handleCenterFilterChange("All memos")}
                         className="w-full px-3 py-1.5 text-left text-xs text-neutral-600 hover:bg-sky-50"
                       >
-                        Select option
+                        All memos
                       </button>
-                      {centers.map(center => (
+                      {centers.map((center) => (
                         <button
                           key={center.id}
                           onClick={() => handleCenterFilterChange(center.name)}
@@ -377,11 +251,11 @@ const MemberPage = () => {
             <div
               data-layer="Input Field"
               data-property-1="Small"
-              className="w-[120px] h-[30px] flex flex-col justify-start items-start"
+              className="InputField w-[120px] h-[30px] flex flex-col justify-start items-start"
             >
               <div
                 data-layer="Rectangle 3"
-                className="w-[120px] h-[30px] bg-sky-50 rounded-[8px] border border-gray-200 relative"
+                className="Rectangle3 w-[120px] h-[30px] bg-sky-50 rounded-[8px] border border-gray-200 relative"
               >
                 <button
                   onClick={() => setShowTrainerDropdown(!showTrainerDropdown)}
@@ -413,15 +287,17 @@ const MemberPage = () => {
                   <div className="absolute top-full left-0 w-[120px] bg-white border border-gray-200 rounded-[8px] shadow-lg z-10 mt-1">
                     <div className="py-1">
                       <button
-                        onClick={() => handleTrainerFilterChange('Select option')}
+                        onClick={() => handleTrainerFilterChange("All memos")}
                         className="w-full px-3 py-1.5 text-left text-xs text-neutral-600 hover:bg-sky-50"
                       >
-                        Select option
+                        All memos
                       </button>
-                      {filteredTrainers.map(trainer => (
+                      {filteredTrainers.map((trainer) => (
                         <button
                           key={trainer.id}
-                          onClick={() => handleTrainerFilterChange(trainer.name)}
+                          onClick={() =>
+                            handleTrainerFilterChange(trainer.name)
+                          }
                           className="w-full px-3 py-1.5 text-left text-xs text-neutral-600 hover:bg-sky-50"
                         >
                           {trainer.name}
@@ -456,7 +332,7 @@ const MemberPage = () => {
                 >
                   <div
                     data-layer="16"
-                    className="w-4 h-6 text-center text-cyan-500 text-sm font-normal font-['Nunito'] leading-normal"
+                    className="w-4 h-6 justify-start text-cyan-500 text-sm font-normal font-['Nunito'] leading-normal"
                   >
                     {filteredMembers.length}
                   </div>
@@ -517,12 +393,6 @@ const MemberPage = () => {
                   >
                     상태
                   </div>
-                  <div
-                    data-layer="PT 기록"
-                    className="w-32 justify-start text-neutral-600 text-xs font-extrabold font-['Nunito']"
-                  >
-                    PT 기록
-                  </div>
                 </div>
 
                 {/* 데이터 행들 */}
@@ -530,13 +400,11 @@ const MemberPage = () => {
                   {filteredMembers.map((member, index) => (
                     <div key={member.id} className="flex flex-col gap-2">
                       <div className="flex justify-start items-center gap-10">
-                        <div data-layer="고객명" className="w-32 justify-start">
-                          <button
-                            onClick={() => handleEditMember(member)}
-                            className="text-left text-cyan-600 text-sm font-normal font-['Nunito'] leading-normal hover:text-cyan-800 hover:underline cursor-pointer transition-colors duration-200"
-                          >
-                            {member.name}
-                          </button>
+                        <div
+                          data-layer="고객명"
+                          className="w-32 justify-start text-neutral-600 text-sm font-normal font-['Nunito'] leading-normal"
+                        >
+                          {member.name}
                         </div>
                         <div
                           data-layer="담당"
@@ -568,59 +436,23 @@ const MemberPage = () => {
                         >
                           {member.free_sessions || 0}
                         </div>
-                        <div data-layer="상태" data-dropdown="status" className="w-32 relative">
-                          <button
-                            onClick={() => toggleStatusDropdown(member.id)}
-                            className="w-full text-left px-2 py-1 text-neutral-600 text-sm font-normal font-['Nunito'] leading-normal hover:bg-gray-100 rounded cursor-pointer transition-colors duration-200"
-                          >
-                            <span className="flex justify-between items-center">
-                              {getStatusText(member.status)}
-                              <svg
-                                className="w-3 h-3 ml-1"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M19 9l-7 7-7-7"
-                                />
-                              </svg>
-                            </span>
-                          </button>
-
-                          {statusDropdowns[member.id] && (
-                            <div className="absolute top-full left-0 w-24 bg-white border border-gray-200 rounded-md shadow-lg z-20 mt-1">
-                              <div className="py-1">
-                                {statusOptions.map(option => (
-                                  <button
-                                    key={option.value}
-                                    onClick={() => handleStatusChange(member.id, option.value)}
-                                    className={`w-full px-3 py-1.5 text-left text-xs hover:bg-gray-100 transition-colors duration-200 ${
-                                      member.status === option.value
-                                        ? 'bg-cyan-50 text-cyan-600 font-medium'
-                                        : 'text-neutral-600'
-                                    }`}
-                                  >
-                                    {option.label}
-                                  </button>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                        <div data-layer="PT 기록" className="w-32 justify-start">
-                          <button
-                            onClick={() => handleViewPTSessions(member.id)}
-                            className="text-cyan-600 text-sm font-normal font-['Nunito'] leading-normal hover:text-cyan-800 hover:underline cursor-pointer transition-colors duration-200"
-                          >
-                            조회
-                          </button>
+                        <div
+                          data-layer="상태"
+                          className="w-32 justify-start text-neutral-600 text-sm font-normal font-['Nunito'] leading-normal"
+                        >
+                          {member.status === "active"
+                            ? "활성"
+                            : member.status === "inactive"
+                            ? "비활성"
+                            : member.status === "expired"
+                            ? "만료"
+                            : "탈퇴"}
                         </div>
                       </div>
-                      <div data-layer="Line 3" className="h-0 border-b border-gray-100"></div>
+                      <div
+                        data-layer="Line 3"
+                        className="h-0 border-b border-gray-100"
+                      ></div>
                     </div>
                   ))}
                 </div>
@@ -633,7 +465,7 @@ const MemberPage = () => {
                 onClick={handleRegisterMember}
                 data-layer="Button"
                 data-property-1="Default"
-                className="Button w-52 h-11 p-2.5 bg-gradient-to-br from-blue-400 to-blue-600 rounded-[10px] inline-flex justify-center items-center gap-2.5 hover:from-blue-500 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/15 before:via-transparent before:to-transparent before:pointer-events-none"
+                className="Button w-52 h-11 p-2.5 bg-gradient-to-br from-cyan-500 to-indigo-800 rounded-[10px] inline-flex justify-center items-center gap-2.5 hover:from-cyan-600 hover:to-indigo-900 transition-all duration-200"
               >
                 <div
                   data-layer="Primary Button"
@@ -645,21 +477,6 @@ const MemberPage = () => {
             </div>
           </div>
         </div>
-
-        {/* 멤버 수정 모달 */}
-        <MemberEditModal
-          isOpen={isEditModalOpen}
-          onClose={handleCloseEditModal}
-          member={editingMember}
-          onUpdate={handleUpdateMember}
-        />
-
-        {/* 멤버 등록 모달 */}
-        <MemberCreateModal
-          isOpen={isCreateModalOpen}
-          onClose={handleCloseCreateModal}
-          onCreate={handleCreateMember}
-        />
       </div>
     </div>
   );

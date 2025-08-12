@@ -1,5 +1,5 @@
-const { Member, Center, User, PTSession } = require('../models');
-const Joi = require('joi');
+const { Member, Center, User } = require("../models");
+const Joi = require("joi");
 
 // 멤버 생성 스키마
 const createMemberSchema = Joi.object({
@@ -13,7 +13,9 @@ const createMemberSchema = Joi.object({
   used_sessions: Joi.number().integer().min(0).optional(),
   free_sessions: Joi.number().integer().min(0).optional(),
   memo: Joi.string().trim().optional(),
-  status: Joi.string().valid('active', 'inactive', 'expired', 'withdrawn').optional(),
+  status: Joi.string()
+    .valid("active", "inactive", "expired", "withdrawn")
+    .optional(),
 });
 
 // 멤버 수정 스키마
@@ -23,12 +25,14 @@ const updateMemberSchema = Joi.object({
   center_id: Joi.number().integer().positive().optional(),
   trainer_id: Joi.number().integer().positive().optional(),
   join_date: Joi.date().optional(),
-  expire_date: Joi.date().allow(null, '').optional(),
-  total_sessions: Joi.number().integer().min(0).allow(null, '').optional(),
-  used_sessions: Joi.number().integer().min(0).allow(null, '').optional(),
-  free_sessions: Joi.number().integer().min(0).allow(null, '').optional(),
-  memo: Joi.string().trim().allow(null, '').optional(),
-  status: Joi.string().valid('active', 'inactive', 'expired', 'withdrawn').optional(),
+  expire_date: Joi.date().optional(),
+  total_sessions: Joi.number().integer().min(0).optional(),
+  used_sessions: Joi.number().integer().min(0).optional(),
+  free_sessions: Joi.number().integer().min(0).optional(),
+  memo: Joi.string().trim().optional(),
+  status: Joi.string()
+    .valid("active", "inactive", "expired", "withdrawn")
+    .optional(),
 });
 
 // 멤버 생성
@@ -38,7 +42,7 @@ const createMember = async (req, res) => {
   if (error) {
     return res.status(400).json({
       success: false,
-      message: '입력값이 올바르지 않습니다.',
+      message: "입력값이 올바르지 않습니다.",
       details: error.details[0].message,
     });
   }
@@ -63,7 +67,7 @@ const createMember = async (req, res) => {
     if (!center) {
       return res.status(400).json({
         success: false,
-        message: '존재하지 않는 센터입니다.',
+        message: "존재하지 않는 센터입니다.",
       });
     }
 
@@ -71,7 +75,7 @@ const createMember = async (req, res) => {
     if (!trainer) {
       return res.status(400).json({
         success: false,
-        message: '존재하지 않는 트레이너입니다.',
+        message: "존재하지 않는 트레이너입니다.",
       });
     }
 
@@ -86,35 +90,19 @@ const createMember = async (req, res) => {
       used_sessions: used_sessions || 0,
       free_sessions: free_sessions || 0,
       memo,
-      status: status || 'active',
-    });
-
-    // 생성된 멤버를 관계 데이터와 함께 조회
-    const createdMember = await Member.findByPk(member.id, {
-      include: [
-        {
-          model: Center,
-          as: 'center',
-          attributes: ['id', 'name', 'address'],
-        },
-        {
-          model: User,
-          as: 'trainer',
-          attributes: ['id', 'name', 'nickname'],
-        },
-      ],
+      status: status || "active",
     });
 
     res.status(201).json({
       success: true,
-      message: '멤버가 성공적으로 생성되었습니다.',
-      data: createdMember,
+      message: "멤버가 성공적으로 생성되었습니다.",
+      data: member,
     });
   } catch (error) {
-    console.error('멤버 생성 오류:', error);
+    console.error("멤버 생성 오류:", error);
     res.status(500).json({
       success: false,
-      message: '멤버 생성 중 오류가 발생했습니다.',
+      message: "멤버 생성 중 오류가 발생했습니다.",
       error: error.message,
     });
   }
@@ -127,30 +115,20 @@ const updateMember = async (req, res) => {
   if (error) {
     return res.status(400).json({
       success: false,
-      message: '입력값이 올바르지 않습니다.',
+      message: "입력값이 올바르지 않습니다.",
       details: error.details[0].message,
     });
   }
 
   try {
     const { id } = req.params;
-    const updateData = { ...value };
-
-    // 빈 문자열을 null로 변환
-    if (updateData.expire_date === '') updateData.expire_date = null;
-    if (updateData.memo === '') updateData.memo = null;
-    if (updateData.total_sessions === '' || updateData.total_sessions === null)
-      updateData.total_sessions = 0;
-    if (updateData.used_sessions === '' || updateData.used_sessions === null)
-      updateData.used_sessions = 0;
-    if (updateData.free_sessions === '' || updateData.free_sessions === null)
-      updateData.free_sessions = 0;
+    const updateData = value;
 
     const member = await Member.findByPk(id);
     if (!member) {
       return res.status(404).json({
         success: false,
-        message: '존재하지 않는 멤버입니다.',
+        message: "존재하지 않는 멤버입니다.",
       });
     }
 
@@ -160,7 +138,7 @@ const updateMember = async (req, res) => {
       if (!center) {
         return res.status(400).json({
           success: false,
-          message: '존재하지 않는 센터입니다.',
+          message: "존재하지 않는 센터입니다.",
         });
       }
     }
@@ -170,73 +148,43 @@ const updateMember = async (req, res) => {
       if (!trainer) {
         return res.status(400).json({
           success: false,
-          message: '존재하지 않는 트레이너입니다.',
+          message: "존재하지 않는 트레이너입니다.",
         });
       }
     }
 
     await member.update(updateData);
 
-    // 수정된 멤버를 관계 데이터와 함께 조회
-    const updatedMember = await Member.findByPk(id, {
-      include: [
-        {
-          model: Center,
-          as: 'center',
-          attributes: ['id', 'name', 'address'],
-        },
-        {
-          model: User,
-          as: 'trainer',
-          attributes: ['id', 'name', 'nickname'],
-        },
-      ],
-    });
-
     res.json({
       success: true,
-      message: '멤버가 성공적으로 수정되었습니다.',
-      data: updatedMember,
+      message: "멤버가 성공적으로 수정되었습니다.",
+      data: member,
     });
   } catch (error) {
-    console.error('멤버 수정 오류:', error);
+    console.error("멤버 수정 오류:", error);
     res.status(500).json({
       success: false,
-      message: '멤버 수정 중 오류가 발생했습니다.',
+      message: "멤버 수정 중 오류가 발생했습니다.",
       error: error.message,
     });
   }
 };
 
-// 멤버 목록 조회 (필터링 기능 추가)
+// 멤버 전체 조회 (센터별, 트레이너별 필터링 포함)
 const getAllMembers = async (req, res) => {
   try {
-    const { page = 1, limit = 1000, centerId, trainerId, status, search } = req.query;
-
+    const { page = 1, limit = 10, status, centerId, trainerId } = req.query;
     const offset = (page - 1) * limit;
+
     const whereClause = {};
-
-    // 센터별 필터링
-    if (centerId) {
-      whereClause.center_id = parseInt(centerId);
-    }
-
-    // 트레이너별 필터링
-    if (trainerId) {
-      whereClause.trainer_id = parseInt(trainerId);
-    }
-
-    // 상태별 필터링
     if (status) {
       whereClause.status = status;
     }
-
-    // 검색 필터링 (이름 또는 전화번호)
-    if (search) {
-      whereClause[require('sequelize').Op.or] = [
-        { name: { [require('sequelize').Op.iLike]: `%${search}%` } },
-        { phone: { [require('sequelize').Op.iLike]: `%${search}%` } },
-      ];
+    if (centerId) {
+      whereClause.center_id = centerId;
+    }
+    if (trainerId) {
+      whereClause.trainer_id = trainerId;
     }
 
     const { count, rows: members } = await Member.findAndCountAll({
@@ -244,121 +192,39 @@ const getAllMembers = async (req, res) => {
       include: [
         {
           model: Center,
-          as: 'center',
-          attributes: ['id', 'name', 'address'],
+          as: "center",
+          attributes: ["id", "name", "address"],
         },
         {
           model: User,
-          as: 'trainer',
-          attributes: ['id', 'name', 'nickname'],
+          as: "trainer",
+          attributes: ["id", "name", "email"],
         },
       ],
-      order: [['created_at', 'DESC']],
       limit: parseInt(limit),
       offset: parseInt(offset),
+      order: [["createdAt", "DESC"]], // 최근 등록순
     });
 
-    // 각 멤버의 잔여 세션 계산
-    const membersWithRemainingSessions = await Promise.all(
-      members.map(async member => {
-        // 해당 멤버의 실제 사용된 세션 수 조회
-        const usedSessions = await PTSession.count({
-          where: {
-            member_id: member.id,
-            session_type: 'regular',
-          },
-        });
-
-        const usedFreeSessions = await PTSession.count({
-          where: {
-            member_id: member.id,
-            session_type: 'free',
-          },
-        });
-
-        // 잔여 세션 계산
-        const remainingSessions = Math.max(0, (member.total_sessions || 0) - usedSessions);
-        const remainingFreeSessions = Math.max(0, (member.free_sessions || 0) - usedFreeSessions);
-
-        return {
-          ...member.toJSON(),
-          remaining_sessions: remainingSessions,
-          remaining_free_sessions: remainingFreeSessions,
-          actual_used_sessions: usedSessions,
-          actual_used_free_sessions: usedFreeSessions,
-        };
-      })
-    );
-
-    // 통계 정보 계산
-    const activeMembers = membersWithRemainingSessions.filter(
-      member => member.status === 'active'
-    ).length;
-    const inactiveMembers = membersWithRemainingSessions.filter(
-      member => member.status === 'inactive'
-    ).length;
-    const expiredMembers = membersWithRemainingSessions.filter(
-      member => member.status === 'expired'
-    ).length;
-    const withdrawnMembers = membersWithRemainingSessions.filter(
-      member => member.status === 'withdrawn'
-    ).length;
-
-    // 센터별 통계
-    const centerStats = {};
-    membersWithRemainingSessions.forEach(member => {
-      const centerName = member.center?.name || 'Unknown';
-      if (!centerStats[centerName]) {
-        centerStats[centerName] = { total: 0, active: 0, inactive: 0, expired: 0, withdrawn: 0 };
-      }
-      centerStats[centerName].total++;
-      centerStats[centerName][member.status]++;
-    });
-
-    // 트레이너별 통계
-    const trainerStats = {};
-    membersWithRemainingSessions.forEach(member => {
-      const trainerName = member.trainer?.name || 'Unknown';
-      if (!trainerStats[trainerName]) {
-        trainerStats[trainerName] = { total: 0, active: 0, inactive: 0, expired: 0, withdrawn: 0 };
-      }
-      trainerStats[trainerName].total++;
-      trainerStats[trainerName][member.status]++;
-    });
-
-    return res.status(200).json({
+    res.json({
       success: true,
-      message: '멤버 목록 조회 성공',
+      message: "멤버 목록을 성공적으로 조회했습니다.",
       data: {
-        members: membersWithRemainingSessions,
+        members,
         pagination: {
           current_page: parseInt(page),
           total_pages: Math.ceil(count / limit),
-          total_count: count,
-          limit: parseInt(limit),
-        },
-        statistics: {
-          total_members: count,
-          active_members: activeMembers,
-          inactive_members: inactiveMembers,
-          expired_members: expiredMembers,
-          withdrawn_members: withdrawnMembers,
-          center_stats: centerStats,
-          trainer_stats: trainerStats,
-        },
-        filters: {
-          center_id: centerId || null,
-          trainer_id: trainerId || null,
-          status: status || null,
-          search: search || null,
+          total_items: count,
+          items_per_page: parseInt(limit),
         },
       },
     });
   } catch (error) {
-    console.error('멤버 목록 조회 오류:', error);
-    return res.status(500).json({
+    console.error("멤버 조회 오류:", error);
+    res.status(500).json({
       success: false,
-      message: '멤버 목록 조회 중 오류가 발생했습니다.',
+      message: "멤버 조회 중 오류가 발생했습니다.",
+      error: error.message,
     });
   }
 };
@@ -380,7 +246,7 @@ const getMembersByCenter = async (req, res) => {
     if (!center) {
       return res.status(404).json({
         success: false,
-        message: '존재하지 않는 센터입니다.',
+        message: "존재하지 않는 센터입니다.",
       });
     }
 
@@ -389,23 +255,23 @@ const getMembersByCenter = async (req, res) => {
       include: [
         {
           model: Center,
-          as: 'center',
-          attributes: ['id', 'name', 'address'],
+          as: "center",
+          attributes: ["id", "name", "address"],
         },
         {
           model: User,
-          as: 'trainer',
-          attributes: ['id', 'name', 'email'],
+          as: "trainer",
+          attributes: ["id", "name", "email"],
         },
       ],
       limit: parseInt(limit),
       offset: parseInt(offset),
-      order: [['createdAt', 'DESC']],
+      order: [["createdAt", "DESC"]],
     });
 
     res.json({
       success: true,
-      message: '센터별 멤버 목록을 성공적으로 조회했습니다.',
+      message: "센터별 멤버 목록을 성공적으로 조회했습니다.",
       data: {
         center: {
           id: center.id,
@@ -422,10 +288,10 @@ const getMembersByCenter = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('센터별 멤버 조회 오류:', error);
+    console.error("센터별 멤버 조회 오류:", error);
     res.status(500).json({
       success: false,
-      message: '센터별 멤버 조회 중 오류가 발생했습니다.',
+      message: "센터별 멤버 조회 중 오류가 발생했습니다.",
       error: error.message,
     });
   }
@@ -448,7 +314,7 @@ const getMembersByTrainer = async (req, res) => {
     if (!trainer) {
       return res.status(404).json({
         success: false,
-        message: '존재하지 않는 트레이너입니다.',
+        message: "존재하지 않는 트레이너입니다.",
       });
     }
 
@@ -457,23 +323,23 @@ const getMembersByTrainer = async (req, res) => {
       include: [
         {
           model: Center,
-          as: 'center',
-          attributes: ['id', 'name', 'address'],
+          as: "center",
+          attributes: ["id", "name", "address"],
         },
         {
           model: User,
-          as: 'trainer',
-          attributes: ['id', 'name', 'email'],
+          as: "trainer",
+          attributes: ["id", "name", "email"],
         },
       ],
       limit: parseInt(limit),
       offset: parseInt(offset),
-      order: [['createdAt', 'DESC']],
+      order: [["createdAt", "DESC"]],
     });
 
     res.json({
       success: true,
-      message: '트레이너별 멤버 목록을 성공적으로 조회했습니다.',
+      message: "트레이너별 멤버 목록을 성공적으로 조회했습니다.",
       data: {
         trainer: {
           id: trainer.id,
@@ -490,10 +356,10 @@ const getMembersByTrainer = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('트레이너별 멤버 조회 오류:', error);
+    console.error("트레이너별 멤버 조회 오류:", error);
     res.status(500).json({
       success: false,
-      message: '트레이너별 멤버 조회 중 오류가 발생했습니다.',
+      message: "트레이너별 멤버 조회 중 오류가 발생했습니다.",
       error: error.message,
     });
   }
@@ -508,7 +374,7 @@ const getMembersByName = async (req, res) => {
 
     const whereClause = {
       name: {
-        [require('sequelize').Op.iLike]: `%${name}%`, // 대소문자 구분 없이 부분 검색
+        [require("sequelize").Op.iLike]: `%${name}%`, // 대소문자 구분 없이 부분 검색
       },
     };
 
@@ -521,23 +387,23 @@ const getMembersByName = async (req, res) => {
       include: [
         {
           model: Center,
-          as: 'center',
-          attributes: ['id', 'name', 'address'],
+          as: "center",
+          attributes: ["id", "name", "address"],
         },
         {
           model: User,
-          as: 'trainer',
-          attributes: ['id', 'name', 'email'],
+          as: "trainer",
+          attributes: ["id", "name", "email"],
         },
       ],
       limit: parseInt(limit),
       offset: parseInt(offset),
-      order: [['createdAt', 'DESC']],
+      order: [["createdAt", "DESC"]],
     });
 
     res.json({
       success: true,
-      message: '이름으로 멤버 목록을 성공적으로 조회했습니다.',
+      message: "이름으로 멤버 목록을 성공적으로 조회했습니다.",
       data: {
         search_name: name,
         members,
@@ -550,10 +416,10 @@ const getMembersByName = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('이름별 멤버 조회 오류:', error);
+    console.error("이름별 멤버 조회 오류:", error);
     res.status(500).json({
       success: false,
-      message: '이름별 멤버 조회 중 오류가 발생했습니다.',
+      message: "이름별 멤버 조회 중 오류가 발생했습니다.",
       error: error.message,
     });
   }
@@ -566,10 +432,10 @@ const createDummyCenterAndUser = async (req, res) => {
     const [center] = await Center.findOrCreate({
       where: { id: 1 },
       defaults: {
-        name: '테스트센터',
-        location: '강남',
-        address: '서울시 강남구',
-        phone: '02-1234-5678',
+        name: "테스트센터",
+
+        address: "서울시 강남구",
+        phone: "02-1234-5678",
       },
     });
 
@@ -577,11 +443,11 @@ const createDummyCenterAndUser = async (req, res) => {
     const [user] = await User.findOrCreate({
       where: { id: 1 },
       defaults: {
-        name: '테스트트레이너',
-        email: 'trainer1@test.com',
-        password: '123456', // 실제 운영에서는 암호화 필요
-        role: 'trainer',
-        phone: '010-1234-5678',
+        name: "테스트트레이너",
+        email: "trainer1@test.com",
+        password: "123456", // 실제 운영에서는 암호화 필요
+        role: "trainer",
+        phone: "010-1234-5678",
         center_id: center.id, // 생성된 센터와 연결
         join_date: new Date(),
       },
@@ -589,17 +455,17 @@ const createDummyCenterAndUser = async (req, res) => {
 
     res.json({
       success: true,
-      message: '센터와 유저 더미데이터가 생성되었습니다.',
+      message: "센터와 유저 더미데이터가 생성되었습니다.",
       data: {
         center,
         user,
       },
     });
   } catch (error) {
-    console.error('더미데이터 생성 오류:', error);
+    console.error("더미데이터 생성 오류:", error);
     res.status(500).json({
       success: false,
-      message: '더미데이터 생성 중 오류가 발생했습니다.',
+      message: "더미데이터 생성 중 오류가 발생했습니다.",
       error: error.message,
     });
   }
@@ -609,8 +475,5 @@ module.exports = {
   createMember,
   updateMember,
   getAllMembers,
-  getMembersByCenter,
-  getMembersByTrainer,
-  getMembersByName,
   createDummyCenterAndUser,
 };

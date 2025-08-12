@@ -10,4 +10,4 @@ router.get('/', teamController.getAllTeams);
 // GET /api/teams/:id
 router.get('/:id', teamController.getTeamById);
 
-module.exports = router;
+module.exports = router; 
