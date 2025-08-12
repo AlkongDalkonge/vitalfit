@@ -24,7 +24,44 @@ class AuthService {
     delete window.__accessToken;
   }
 
+  // Refresh Token 관리
+  static setRefreshToken(token) {
+    localStorage.setItem('refreshToken', token);
+  }
 
+  static getRefreshToken() {
+    return localStorage.getItem('refreshToken');
+  }
+
+  static removeRefreshToken() {
+    localStorage.removeItem('refreshToken');
+  }
+
+  // 토큰 갱신
+  static async refreshAccessToken() {
+    const refreshToken = this.getRefreshToken();
+    if (!refreshToken) {
+      throw new Error('Refresh token not found');
+    }
+
+    try {
+      const response = await api.post('/users/refresh', {
+        refreshToken: refreshToken,
+      });
+
+      const { accessToken, refreshToken: newRefreshToken } = response.data;
+
+      this.setAccessToken(accessToken);
+      if (newRefreshToken) {
+        this.setRefreshToken(newRefreshToken);
+      }
+
+      return accessToken;
+    } catch (error) {
+      console.error('Token refresh failed:', error);
+      throw error;
+    }
+  }
 
   // 로그아웃
   static async logout() {
@@ -34,6 +71,7 @@ class AuthService {
       console.error('로그아웃 중 오류:', error);
     } finally {
       this.removeAccessToken();
+      this.removeRefreshToken();
     }
   }
 

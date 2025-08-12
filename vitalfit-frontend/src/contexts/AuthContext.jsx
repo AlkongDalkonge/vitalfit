@@ -59,12 +59,14 @@ export const AuthProvider = ({ children }) => {
         password,
       });
 
-      const { token, user: userData } = response.data;
+      const { data } = response.data;
+      const { accessToken, refreshToken, user: userData } = data;
 
       console.log('로그인 응답:', response.data);
 
       // 토큰 저장
-      AuthService.setAccessToken(token);
+      AuthService.setAccessToken(accessToken);
+      AuthService.setRefreshToken(refreshToken);
 
       // 사용자 정보 설정
       setUser(userData);

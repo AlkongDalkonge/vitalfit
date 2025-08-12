@@ -178,22 +178,76 @@ const signIn = async (req, res, next) => {
     user.last_login_at = new Date();
     await user.save();
 
-    // Access Token 생성 (24시간)
-    const accessToken = jwt.sign({ uid: user.id }, secret, { expiresIn: '24h' });
+    // Access Token과 Refresh Token 생성
+    const accessToken = jwt.sign({ uid: user.id }, secret, { expiresIn: '1h' });
+    const refreshToken = jwt.sign({ uid: user.id }, secret, { expiresIn: '7d' });
 
     return res.status(200).json({
       success: true,
-      token: accessToken,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        profile_image_url: user.profile_image_url,
+      data: {
+        accessToken: accessToken,
+        refreshToken: refreshToken,
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          profile_image_url: user.profile_image_url,
+        },
       },
       message: '로그인 성공!',
     });
   } catch (err) {
     next(err);
+  }
+};
+
+// ✅ 토큰 갱신
+const refreshAccessToken = async (req, res, next) => {
+  try {
+    const { refreshToken } = req.body;
+
+    if (!refreshToken) {
+      return res.status(400).json({
+        success: false,
+        message: 'Refresh token이 필요합니다.',
+      });
+    }
+
+    // Refresh token 검증
+    const decoded = jwt.verify(refreshToken, secret);
+    const user = await User.findByPk(decoded.uid);
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: '유효하지 않은 refresh token입니다.',
+      });
+    }
+
+    // 새로운 access token과 refresh token 발급
+    const newAccessToken = jwt.sign({ uid: user.id }, secret, { expiresIn: '1h' });
+    const newRefreshToken = jwt.sign({ uid: user.id }, secret, { expiresIn: '7d' });
+
+    return res.status(200).json({
+      success: true,
+      message: '토큰이 성공적으로 갱신되었습니다.',
+      data: {
+        accessToken: newAccessToken,
+        refreshToken: newRefreshToken,
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          nickname: user.nickname,
+        },
+      },
+    });
+  } catch (error) {
+    console.error('토큰 갱신 실패:', error);
+    return res.status(401).json({
+      success: false,
+      message: '유효하지 않은 refresh token입니다.',
+    });
   }
 };
 
@@ -608,4 +662,5 @@ module.exports = {
   getUserById,
   getPositions,
   getCenters,
+  refreshAccessToken,
 };
