@@ -1,11 +1,7 @@
 const express = require('express');
 const router = express.Router();
 
-const {
-  createMember,
-  updateMember,
-  getAllMembers,
-} = require('../controllers/memberController');
+const { createMember, updateMember, getAllMembers } = require('../controllers/memberController');
 
 // ✅ 멤버 생성
 // POST /api/members

@@ -126,7 +126,9 @@ const MemberPTSessionPage = () => {
             {/* 무료 잔여 세션 정보 */}
             {member && (
               <div className="text-center">
-                <div className="text-2xl font-bold text-black">{member.remaining_free_sessions || 0}</div>
+                <div className="text-2xl font-bold text-black">
+                  {member.remaining_free_sessions || 0}
+                </div>
                 <div className="text-sm text-gray-600">무료 잔여 PT</div>
               </div>
             )}
@@ -137,7 +139,9 @@ const MemberPTSessionPage = () => {
             {/* 누적 PT 정보 */}
             {member && (
               <div className="text-center">
-                <div className="text-2xl font-bold text-orange-500">{(member.actual_used_sessions || 0) + (member.actual_used_free_sessions || 0)}</div>
+                <div className="text-2xl font-bold text-orange-500">
+                  {(member.actual_used_sessions || 0) + (member.actual_used_free_sessions || 0)}
+                </div>
                 <div className="text-sm text-gray-600">누적 PT</div>
               </div>
             )}

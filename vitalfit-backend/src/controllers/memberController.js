@@ -135,13 +135,16 @@ const updateMember = async (req, res) => {
   try {
     const { id } = req.params;
     const updateData = { ...value };
-    
+
     // 빈 문자열을 null로 변환
     if (updateData.expire_date === '') updateData.expire_date = null;
     if (updateData.memo === '') updateData.memo = null;
-    if (updateData.total_sessions === '' || updateData.total_sessions === null) updateData.total_sessions = 0;
-    if (updateData.used_sessions === '' || updateData.used_sessions === null) updateData.used_sessions = 0;
-    if (updateData.free_sessions === '' || updateData.free_sessions === null) updateData.free_sessions = 0;
+    if (updateData.total_sessions === '' || updateData.total_sessions === null)
+      updateData.total_sessions = 0;
+    if (updateData.used_sessions === '' || updateData.used_sessions === null)
+      updateData.used_sessions = 0;
+    if (updateData.free_sessions === '' || updateData.free_sessions === null)
+      updateData.free_sessions = 0;
 
     const member = await Member.findByPk(id);
     if (!member) {
@@ -257,20 +260,20 @@ const getAllMembers = async (req, res) => {
 
     // 각 멤버의 잔여 세션 계산
     const membersWithRemainingSessions = await Promise.all(
-      members.map(async (member) => {
+      members.map(async member => {
         // 해당 멤버의 실제 사용된 세션 수 조회
         const usedSessions = await PTSession.count({
-          where: { 
+          where: {
             member_id: member.id,
-            session_type: 'regular'
-          }
+            session_type: 'regular',
+          },
         });
 
         const usedFreeSessions = await PTSession.count({
-          where: { 
+          where: {
             member_id: member.id,
-            session_type: 'free'
-          }
+            session_type: 'free',
+          },
         });
 
         // 잔여 세션 계산
@@ -288,10 +291,18 @@ const getAllMembers = async (req, res) => {
     );
 
     // 통계 정보 계산
-    const activeMembers = membersWithRemainingSessions.filter(member => member.status === 'active').length;
-    const inactiveMembers = membersWithRemainingSessions.filter(member => member.status === 'inactive').length;
-    const expiredMembers = membersWithRemainingSessions.filter(member => member.status === 'expired').length;
-    const withdrawnMembers = membersWithRemainingSessions.filter(member => member.status === 'withdrawn').length;
+    const activeMembers = membersWithRemainingSessions.filter(
+      member => member.status === 'active'
+    ).length;
+    const inactiveMembers = membersWithRemainingSessions.filter(
+      member => member.status === 'inactive'
+    ).length;
+    const expiredMembers = membersWithRemainingSessions.filter(
+      member => member.status === 'expired'
+    ).length;
+    const withdrawnMembers = membersWithRemainingSessions.filter(
+      member => member.status === 'withdrawn'
+    ).length;
 
     // 센터별 통계
     const centerStats = {};

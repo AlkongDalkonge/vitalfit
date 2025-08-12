@@ -247,7 +247,8 @@ const MemberEditModal = ({ isOpen, onClose, member, onUpdate }) => {
                   <span>
                     {formData.trainer_id
                       ? filteredTrainers.find(t => t.id === parseInt(formData.trainer_id))?.name +
-                        (filteredTrainers.find(t => t.id === parseInt(formData.trainer_id))?.nickname
+                        (filteredTrainers.find(t => t.id === parseInt(formData.trainer_id))
+                          ?.nickname
                           ? ` (${filteredTrainers.find(t => t.id === parseInt(formData.trainer_id))?.nickname})`
                           : '')
                       : formData.center_id
@@ -379,7 +380,9 @@ const MemberEditModal = ({ isOpen, onClose, member, onUpdate }) => {
                   min="0"
                 />
               </div>
-              {errors.total_sessions && <p className="text-red-500 text-xs mt-1">{errors.total_sessions}</p>}
+              {errors.total_sessions && (
+                <p className="text-red-500 text-xs mt-1">{errors.total_sessions}</p>
+              )}
             </div>
           </div>
 
@@ -401,7 +404,9 @@ const MemberEditModal = ({ isOpen, onClose, member, onUpdate }) => {
                   min="0"
                 />
               </div>
-              {errors.free_sessions && <p className="text-red-500 text-xs mt-1">{errors.free_sessions}</p>}
+              {errors.free_sessions && (
+                <p className="text-red-500 text-xs mt-1">{errors.free_sessions}</p>
+              )}
             </div>
           </div>
 

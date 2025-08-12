@@ -173,9 +173,19 @@ const updatePTSession = async (req, res) => {
     // 수정된 데이터를 다시 조회하여 반환
     const updatedPtSession = await PTSession.findByPk(id, {
       attributes: [
-        'id', 'member_id', 'trainer_id', 'center_id', 'session_date', 
-        'start_time', 'end_time', 'session_type', 'signature_data', 
-        'signature_time', 'notes', 'created_at', 'updated_at'
+        'id',
+        'member_id',
+        'trainer_id',
+        'center_id',
+        'session_date',
+        'start_time',
+        'end_time',
+        'session_type',
+        'signature_data',
+        'signature_time',
+        'notes',
+        'created_at',
+        'updated_at',
       ],
       include: [
         {
@@ -228,7 +238,7 @@ const deletePTSession = async (req, res) => {
     // 삭제 전 세션 타입 확인
     const sessionType = ptSession.session_type;
     const memberId = ptSession.member_id;
-    
+
     // 멤버 정보 조회
     const member = await Member.findByPk(memberId);
     if (!member) {
@@ -237,7 +247,7 @@ const deletePTSession = async (req, res) => {
         message: '멤버 정보를 찾을 수 없습니다.',
       });
     }
-    
+
     await ptSession.destroy();
 
     // 멤버의 사용된 세션 수 감소
@@ -269,14 +279,14 @@ const getPTSessionsByMonth = async (req, res) => {
     // 년월 유효성 검증
     const yearNum = parseInt(year);
     const monthNum = parseInt(month);
-    
+
     if (isNaN(yearNum) || yearNum < 1900 || yearNum > 2100) {
       return res.status(400).json({
         success: false,
         message: '유효하지 않은 년도입니다.',
       });
     }
-    
+
     if (isNaN(monthNum) || monthNum < 1 || monthNum > 12) {
       return res.status(400).json({
         success: false,
@@ -296,9 +306,19 @@ const getPTSessionsByMonth = async (req, res) => {
         },
       },
       attributes: [
-        'id', 'member_id', 'trainer_id', 'center_id', 'session_date', 
-        'start_time', 'end_time', 'session_type', 'signature_data', 
-        'signature_time', 'notes', 'created_at', 'updated_at'
+        'id',
+        'member_id',
+        'trainer_id',
+        'center_id',
+        'session_date',
+        'start_time',
+        'end_time',
+        'session_type',
+        'signature_data',
+        'signature_time',
+        'notes',
+        'created_at',
+        'updated_at',
       ],
       include: [
         {
@@ -317,13 +337,17 @@ const getPTSessionsByMonth = async (req, res) => {
           attributes: ['id', 'name'],
         },
       ],
-      order: [['session_date', 'ASC'], ['start_time', 'ASC']],
+      order: [
+        ['session_date', 'ASC'],
+        ['start_time', 'ASC'],
+      ],
     });
 
     // 통계 정보 계산
     const totalSessions = ptSessions.length;
     const completedSessions = ptSessions.filter(session => session.end_time).length;
-    const completionRate = totalSessions > 0 ? Math.round((completedSessions / totalSessions) * 100) : 0;
+    const completionRate =
+      totalSessions > 0 ? Math.round((completedSessions / totalSessions) * 100) : 0;
 
     // 센터별 통계
     const centerStats = {};
@@ -389,11 +413,11 @@ const getPTSessionsByMember = async (req, res) => {
     if (year && month) {
       const yearNum = parseInt(year);
       const monthNum = parseInt(month);
-      
+
       if (!isNaN(yearNum) && !isNaN(monthNum) && monthNum >= 1 && monthNum <= 12) {
         const startDate = new Date(yearNum, monthNum - 1, 1);
         const endDate = new Date(yearNum, monthNum, 0, 23, 59, 59);
-        
+
         whereClause.session_date = {
           [Op.between]: [startDate, endDate],
         };
@@ -402,7 +426,16 @@ const getPTSessionsByMember = async (req, res) => {
 
     // 멤버 정보 조회
     const member = await Member.findByPk(memberId, {
-      attributes: ['id', 'name', 'phone', 'join_date', 'expire_date', 'total_sessions', 'used_sessions', 'free_sessions'],
+      attributes: [
+        'id',
+        'name',
+        'phone',
+        'join_date',
+        'expire_date',
+        'total_sessions',
+        'used_sessions',
+        'free_sessions',
+      ],
     });
 
     if (!member) {
@@ -415,9 +448,19 @@ const getPTSessionsByMember = async (req, res) => {
     const { count, rows: ptSessions } = await PTSession.findAndCountAll({
       where: whereClause,
       attributes: [
-        'id', 'member_id', 'trainer_id', 'center_id', 'session_date', 
-        'start_time', 'end_time', 'session_type', 'signature_data', 
-        'signature_time', 'notes', 'created_at', 'updated_at'
+        'id',
+        'member_id',
+        'trainer_id',
+        'center_id',
+        'session_date',
+        'start_time',
+        'end_time',
+        'session_type',
+        'signature_data',
+        'signature_time',
+        'notes',
+        'created_at',
+        'updated_at',
       ],
       include: [
         {
@@ -436,7 +479,10 @@ const getPTSessionsByMember = async (req, res) => {
           attributes: ['id', 'name'],
         },
       ],
-      order: [['session_date', 'DESC'], ['start_time', 'ASC']],
+      order: [
+        ['session_date', 'DESC'],
+        ['start_time', 'ASC'],
+      ],
       limit: parseInt(limit),
       offset: parseInt(offset),
     });
@@ -444,7 +490,8 @@ const getPTSessionsByMember = async (req, res) => {
     // 통계 정보 계산
     const totalSessions = count;
     const completedSessions = ptSessions.filter(session => session.end_time).length;
-    const completionRate = totalSessions > 0 ? Math.round((completedSessions / totalSessions) * 100) : 0;
+    const completionRate =
+      totalSessions > 0 ? Math.round((completedSessions / totalSessions) * 100) : 0;
 
     // 전체 PT 세션 수 조회 (월별 필터 없이)
     const allPtSessions = await PTSession.findAll({
@@ -453,8 +500,12 @@ const getPTSessionsByMember = async (req, res) => {
     });
 
     // 실제 사용된 세션 수 계산
-    const actualUsedSessions = allPtSessions.filter(session => session.session_type === 'regular').length;
-    const actualUsedFreeSessions = allPtSessions.filter(session => session.session_type === 'free').length;
+    const actualUsedSessions = allPtSessions.filter(
+      session => session.session_type === 'regular'
+    ).length;
+    const actualUsedFreeSessions = allPtSessions.filter(
+      session => session.session_type === 'free'
+    ).length;
 
     // 잔여 세션 계산
     const remainingSessions = Math.max(0, (member.total_sessions || 0) - actualUsedSessions);

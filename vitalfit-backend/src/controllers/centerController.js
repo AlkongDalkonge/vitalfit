@@ -67,12 +67,25 @@ const getAllCenters = async (req, res, next) => {
       order: [['name', 'ASC']],
     });
 
+    // 중복 제거: name 기준으로 고유한 센터만 필터링
+    const uniqueCenters = [];
+    const seenNames = new Set();
+
+    centers.forEach(center => {
+      if (!seenNames.has(center.name)) {
+        seenNames.add(center.name);
+        uniqueCenters.push(center);
+      }
+    });
+
+    console.log(`센터 데이터 정리: 총 ${centers.length}개 → 고유 ${uniqueCenters.length}개`);
+
     return res.status(200).json({
       success: true,
       message: '센터 목록 조회 성공',
       data: {
-        centers,
-        total: centers.length,
+        centers: uniqueCenters,
+        total: uniqueCenters.length,
       },
     });
   } catch (err) {
