@@ -28,7 +28,9 @@ export default function Header({ activeMenu = null, userInfo }) {
   const currentUser = userInfo || user;
 
   // 프로필 이미지 URL 생성
-  const profileImageUrl = currentUser?.profile_image_url ? `${API_BASE_URL}${currentUser.profile_image_url}` : "https://placehold.co/32x32";
+  const profileImageUrl = currentUser?.profile_image_url
+    ? `${API_BASE_URL}${currentUser.profile_image_url}`
+    : 'https://placehold.co/32x32';
 
   return (
     <header className="h-20 bg-white flex justify-between items-center px-8 border-b border-gray-100">
@@ -51,8 +53,8 @@ export default function Header({ activeMenu = null, userInfo }) {
             src={profileImageUrl}
             alt="profile"
             className="w-10 h-10 rounded-full border-2 border-gray-200 object-cover"
-            onError={(e) => {
-              e.target.src = "https://placehold.co/32x32";
+            onError={e => {
+              e.target.src = 'https://placehold.co/32x32';
             }}
           />
           <span className="text-base font-semibold text-gray-800">

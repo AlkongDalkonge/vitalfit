@@ -87,8 +87,8 @@ class AuthService {
     if (accessToken) {
       try {
         // 토큰 유효성 검증
-              await api.get('/users/me');
-      return true;
+        await api.get('/users/me');
+        return true;
       } catch (error) {
         // Access Token이 만료되었으면 로그인 실패
         this.removeAccessToken();

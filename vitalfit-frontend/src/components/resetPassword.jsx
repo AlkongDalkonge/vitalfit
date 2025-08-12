@@ -68,7 +68,9 @@ export default function ResetPassword() {
             {/* 헤더 */}
             <div className="text-center mb-12">
               <h2 className="text-3xl font-bold text-gray-900 mb-3">비밀번호 재설정</h2>
-              <p className="text-sm text-gray-600">이메일 주소를 입력하시면 재설정 링크를 보내드립니다</p>
+              <p className="text-sm text-gray-600">
+                이메일 주소를 입력하시면 재설정 링크를 보내드립니다
+              </p>
             </div>
 
             {/* 비밀번호 재설정 폼 */}

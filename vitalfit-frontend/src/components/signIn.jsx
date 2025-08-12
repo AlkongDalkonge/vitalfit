@@ -19,16 +19,16 @@ export default function SignIn() {
     const savedEmail = localStorage.getItem('savedEmail');
     const savedRememberMe = localStorage.getItem('rememberMe');
     const savedSaveAccount = localStorage.getItem('saveAccount');
-    
+
     if (savedEmail) {
       setEmail(savedEmail);
       setSaveAccount(true);
     }
-    
+
     if (savedRememberMe === 'true') {
       setRememberMe(true);
     }
-    
+
     if (savedSaveAccount === 'true') {
       setSaveAccount(true);
     }
@@ -83,7 +83,7 @@ export default function SignIn() {
 
       if (result.success) {
         console.log('로그인 성공');
-        
+
         // 계정 저장 설정
         if (saveAccount) {
           localStorage.setItem('savedEmail', email);
@@ -92,7 +92,7 @@ export default function SignIn() {
           localStorage.removeItem('savedEmail');
           localStorage.removeItem('saveAccount');
         }
-        
+
         toast.success('로그인되었습니다.');
         navigate('/dashboard');
       } else {

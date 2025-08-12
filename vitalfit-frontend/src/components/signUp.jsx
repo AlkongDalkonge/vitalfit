@@ -47,7 +47,7 @@ export default function SignUp() {
 
   // 외부 클릭 시 드롭다운 닫기
   useEffect(() => {
-    const handleClickOutside = (event) => {
+    const handleClickOutside = event => {
       if (!event.target.closest('.dropdown-container')) {
         setShowPositionDropdown(false);
         setShowCenterDropdown(false);

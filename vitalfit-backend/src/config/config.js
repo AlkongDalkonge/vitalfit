@@ -18,7 +18,7 @@ module.exports = {
       ssl: {
         require: false,
         rejectUnauthorized: false,
-      }, 
+      },
     },
   },
   test: {
