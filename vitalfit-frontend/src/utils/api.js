@@ -135,7 +135,7 @@ export const userAPI = {
     return await apiPut(`/users/${id}`, data);
   },
   // 내 계정 정보 수정 (인증된 사용자용)
-  updateMyAccount: async (data) => {
+  updateMyAccount: async data => {
     return await apiPut('/users/me', data);
   },
   deleteUser: async id => {
@@ -152,6 +152,10 @@ export const userAPI = {
       },
       onUploadProgress: onProgress,
     });
+  },
+  // 프로필 이미지 삭제
+  deleteProfileImage: async () => {
+    return await apiDelete('/users/profile-image');
   },
 };
 

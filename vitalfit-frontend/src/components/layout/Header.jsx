@@ -59,11 +59,23 @@ export default function Header({ activeMenu = null, userInfo }) {
           <span className="text-sm text-gray-500 font-medium">{getFormattedDate()}</span>
 
           <div className="flex items-center gap-4 font-semibold text-gray-800 select-none">
-            <img
-              src="https://placehold.co/32x32"
-              alt="profile"
-              className="w-10 h-10 rounded-full border-2 border-gray-200"
-            />
+            {currentUser?.profile_image_url ? (
+              <img
+                src={
+                  currentUser.profile_image_url.startsWith('http')
+                    ? currentUser.profile_image_url
+                    : `http://localhost:3001${currentUser.profile_image_url}`
+                }
+                alt="profile"
+                className="w-10 h-10 rounded-full border-2 border-gray-200 object-cover"
+              />
+            ) : (
+              <img
+                src="/profileDefault.png"
+                alt="기본 프로필"
+                className="w-10 h-10 rounded-full border-2 border-gray-200 object-cover"
+              />
+            )}
 
             {/* 사용자 이름 | 비밀번호 변경 | 로그아웃 */}
             <span className={textStyle}>{currentUser?.name || '관리자'}</span>
@@ -110,6 +122,11 @@ const PasswordChangeModal = ({ onClose }) => {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
+
+  // 비밀번호 표시/숨김 상태 추가
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
 
   const handlePasswordChange = e => {
     const { name, value } = e.target;
@@ -211,42 +228,69 @@ const PasswordChangeModal = ({ onClose }) => {
         <form onSubmit={handlePasswordSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">현재 비밀번호</label>
-            <input
-              type="password"
-              name="currentPassword"
-              value={passwordData.currentPassword}
-              onChange={handlePasswordChange}
-              className="w-full h-12 rounded-[10px] border border-stone-300 px-3 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-              placeholder="현재 비밀번호를 입력하세요"
-              required
-            />
+            <div className="relative">
+              <input
+                type={showCurrentPassword ? 'text' : 'password'}
+                name="currentPassword"
+                value={passwordData.currentPassword}
+                onChange={handlePasswordChange}
+                className="w-full h-12 rounded-[10px] border border-stone-300 px-3 focus:outline-none focus:ring-2 focus:ring-cyan-500 pr-10"
+                placeholder="현재 비밀번호를 입력하세요"
+                required
+              />
+              <button
+                type="button"
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700 transition-colors"
+                onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+              >
+                {showCurrentPassword ? '😵‍💫' : '🥺'}
+              </button>
+            </div>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">새 비밀번호</label>
-            <input
-              type="password"
-              name="newPassword"
-              value={passwordData.newPassword}
-              onChange={handlePasswordChange}
-              className="w-full h-12 rounded-[10px] border border-stone-300 px-3 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-              placeholder="새 비밀번호를 입력하세요 (최소 8자)"
-              required
-            />
+            <div className="relative">
+              <input
+                type={showNewPassword ? 'text' : 'password'}
+                name="newPassword"
+                value={passwordData.newPassword}
+                onChange={handlePasswordChange}
+                className="w-full h-12 rounded-[10px] border border-stone-300 px-3 focus:outline-none focus:ring-2 focus:ring-cyan-500 pr-10"
+                placeholder="새 비밀번호를 입력하세요 (최소 8자)"
+                required
+              />
+              <button
+                type="button"
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700 transition-colors"
+                onClick={() => setShowNewPassword(!showNewPassword)}
+              >
+                {showNewPassword ? '😵‍💫' : '🥺'}
+              </button>
+            </div>
             <small className="text-xs text-gray-500">최소 8자 이상 입력해주세요.</small>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">새 비밀번호 확인</label>
-            <input
-              type="password"
-              name="confirmNewPassword"
-              value={passwordData.confirmNewPassword}
-              onChange={handlePasswordChange}
-              className="w-full h-12 rounded-[10px] border border-stone-300 px-3 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-              placeholder="새 비밀번호를 다시 입력하세요"
-              required
-            />
+            <div className="relative">
+              <input
+                type={showConfirmNewPassword ? 'text' : 'password'}
+                name="confirmNewPassword"
+                value={passwordData.confirmNewPassword}
+                onChange={handlePasswordChange}
+                className="w-full h-12 rounded-[10px] border border-stone-300 px-3 focus:outline-none focus:ring-2 focus:ring-cyan-500 pr-10"
+                placeholder="새 비밀번호를 다시 입력하세요"
+                required
+              />
+              <button
+                type="button"
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700 transition-colors"
+                onClick={() => setShowConfirmNewPassword(!showConfirmNewPassword)}
+              >
+                {showConfirmNewPassword ? '😵‍💫' : '🥺'}
+              </button>
+            </div>
           </div>
 
           <div className="flex gap-3 pt-4">

@@ -22,12 +22,12 @@ const DeactivationModal = ({ isOpen, onClose, onDeactivationSuccess }) => {
       });
 
       if (response.ok) {
-        alert('회원 탈퇴가 완료되었습니다.');
+        const result = await response.json();
         onDeactivationSuccess();
         onClose();
       } else {
         const errorData = await response.json();
-        alert(`회원 탈퇴 실패: ${errorData.message}`);
+        alert(`회원 탈퇴 실패: ${errorData.message || '알 수 없는 오류가 발생했습니다.'}`);
       }
     } catch (error) {
       console.error('회원 탈퇴 오류:', error);

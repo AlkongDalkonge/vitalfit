@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import WebcamCapture from './WebcamCapture';
 
 export default function SignUp() {
   const [formData, setFormData] = useState({
@@ -24,30 +25,33 @@ export default function SignUp() {
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [modalContent, setModalContent] = useState('');
   const [modalTitle, setModalTitle] = useState('');
+  const [showWebcam, setShowWebcam] = useState(false);
   const fileInputRef = useRef(null);
 
   // 드롭다운 상태 추가
   const [showPositionDropdown, setShowPositionDropdown] = useState(false);
   const [showCenterDropdown, setShowCenterDropdown] = useState(false);
 
+  // 비밀번호 표시/숨김 상태 추가
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   const navigate = useNavigate();
 
   // 드롭다운 토글 함수들
   const togglePositionDropdown = () => {
-    console.log('직책 드롭다운 토글:', !showPositionDropdown);
     setShowPositionDropdown(!showPositionDropdown);
     setShowCenterDropdown(false); // 다른 드롭다운 닫기
   };
 
   const toggleCenterDropdown = () => {
-    console.log('센터 드롭다운 토글:', !showCenterDropdown);
     setShowCenterDropdown(!showCenterDropdown);
     setShowPositionDropdown(false); // 다른 드롭다운 닫기
   };
 
   // 외부 클릭 시 드롭다운 닫기
   useEffect(() => {
-    const handleClickOutside = (event) => {
+    const handleClickOutside = event => {
       if (!event.target.closest('.dropdown-container')) {
         setShowPositionDropdown(false);
         setShowCenterDropdown(false);
@@ -68,12 +72,9 @@ export default function SignUp() {
 
   const loadPositions = async () => {
     try {
-      console.log('포지션 데이터 로드 시작...');
       const response = await fetch('/api/users/positions');
-      console.log('포지션 응답 상태:', response.status);
       if (response.ok) {
         const data = await response.json();
-        console.log('포지션 데이터:', data);
         setPositions(data.data);
       } else {
         console.error('포지션 응답 오류:', response.status, response.statusText);
@@ -85,12 +86,9 @@ export default function SignUp() {
 
   const loadCenters = async () => {
     try {
-      console.log('센터 데이터 로드 시작...');
       const response = await fetch('/api/users/centers');
-      console.log('센터 응답 상태:', response.status);
       if (response.ok) {
         const data = await response.json();
-        console.log('센터 데이터:', data);
         setCenters(data.data);
       } else {
         console.error('센터 응답 오류:', response.status, response.statusText);
@@ -110,29 +108,42 @@ export default function SignUp() {
 
   const handleImageChange = e => {
     const file = e.target.files[0];
-    if (file) {
-      // 파일 크기 검증 (5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        setError('이미지 파일 크기는 5MB 이하여야 합니다.');
-        return;
-      }
+    if (!file) return;
 
-      // 파일 타입 검증
-      if (!file.type.startsWith('image/')) {
-        setError('이미지 파일만 업로드 가능합니다.');
-        return;
-      }
-
-      setProfileImage(file);
-      setError('');
-
-      // 이미지 미리보기 생성
-      const reader = new FileReader();
-      reader.onload = e => {
-        setImagePreview(e.target.result);
-      };
-      reader.readAsDataURL(file);
+    // 파일 크기 검증 (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setError('이미지 파일 크기는 5MB 이하여야 합니다.');
+      return;
     }
+
+    // 파일 타입 검증
+    if (!file.type.startsWith('image/')) {
+      setError('이미지 파일만 업로드 가능합니다.');
+      return;
+    }
+
+    setProfileImage(file);
+    setError('');
+
+    // 이미지 미리보기 생성
+    const reader = new FileReader();
+    reader.onload = e => {
+      setImagePreview(e.target.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // 웹캠으로 촬영한 이미지 처리
+  const handleWebcamCapture = file => {
+    setProfileImage(file);
+    setError('');
+
+    // 이미지 미리보기 생성
+    const reader = new FileReader();
+    reader.onload = e => {
+      setImagePreview(e.target.result);
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleImageRemove = () => {
@@ -248,8 +259,6 @@ export default function SignUp() {
         body: formDataToSend,
       });
 
-      console.log('응답 상태:', response.status);
-
       if (!response.ok) {
         const errorText = await response.text();
         console.error('응답 에러 텍스트:', errorText);
@@ -263,10 +272,14 @@ export default function SignUp() {
       }
 
       const data = await response.json();
-      console.log('응답 데이터:', data);
 
       if (response.ok) {
-        toast.success('회원가입이 완료되었습니다! 로그인 페이지로 이동합니다.');
+        // 계정 재활성화인지 새 회원가입인지 확인
+        if (data.message === '계정이 재활성화되었습니다.') {
+          toast.success('기존 계정이 재활성화되었습니다! 로그인 페이지로 이동합니다.');
+        } else {
+          toast.success('회원가입이 완료되었습니다! 로그인 페이지로 이동합니다.');
+        }
         navigate('/login');
       } else {
         setError(data.message || '회원가입 중 오류가 발생했습니다.');
@@ -287,7 +300,11 @@ export default function SignUp() {
       {/* 왼쪽 박스 섹션 */}
       <div className="flex w-1/2 justify-end items-center">
         <div className="w-[550px] h-[706px] bg-white/20 backdrop-blur-sm rounded-l-3xl shadow-2xl border border-white/30 overflow-hidden">
-          <img src="/img/main.jpg" alt="Main Image" className="w-full h-full object-cover" />
+          <img
+            src="/img/infovitalfit.png"
+            alt="VitalFit Info"
+            className="w-full h-full object-cover"
+          />
         </div>
       </div>
 
@@ -327,19 +344,11 @@ export default function SignUp() {
                     </div>
                   ) : (
                     <div className="w-20 h-20 rounded-full bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center">
-                      <svg
-                        className="w-6 h-6 text-gray-400"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                        />
-                      </svg>
+                      <img
+                        src="/profileDefault.png"
+                        alt="기본 프로필"
+                        className="w-full h-full rounded-full object-cover"
+                      />
                     </div>
                   )}
 
@@ -351,6 +360,13 @@ export default function SignUp() {
                       className="px-3 py-1 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 transition-colors text-xs"
                     >
                       {imagePreview ? '변경' : '선택'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowWebcam(true)}
+                      className="px-3 py-1 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors text-xs"
+                    >
+                      📸 웹캠
                     </button>
                     {imagePreview && (
                       <button
@@ -424,31 +440,49 @@ export default function SignUp() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   비밀번호 <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  placeholder="비밀번호를 입력하세요 (최소 8자)"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-colors"
-                  required
-                  minLength={8}
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    placeholder="비밀번호를 입력하세요 (최소 8자)"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-colors pr-10"
+                    required
+                    minLength={8}
+                  />
+                  <button
+                    type="button"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700 transition-colors"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? '😵‍💫' : '🥺'}
+                  </button>
+                </div>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   비밀번호 확인 <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="password"
-                  name="confirmPassword"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  placeholder="비밀번호를 다시 입력하세요"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-colors"
-                  required
-                />
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    name="confirmPassword"
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    placeholder="비밀번호를 다시 입력하세요"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-colors pr-10"
+                    required
+                  />
+                  <button
+                    type="button"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700 transition-colors"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    {showConfirmPassword ? '😵‍💫' : '🥺'}
+                  </button>
+                </div>
               </div>
 
               {/* 직책 선택 */}
@@ -703,6 +737,11 @@ export default function SignUp() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* 웹캠 모달 */}
+      {showWebcam && (
+        <WebcamCapture onCapture={handleWebcamCapture} onClose={() => setShowWebcam(false)} />
       )}
     </div>
   );
