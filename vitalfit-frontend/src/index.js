@@ -7,9 +7,12 @@ import reportWebVitals from './reportWebVitals';
 // ResizeObserver 경고 무시 (개선된 버전)
 const originalError = console.error;
 console.error = (...args) => {
-  if (args[0] && typeof args[0] === 'string' && 
-      (args[0].includes('ResizeObserver loop completed with undelivered notifications') ||
-       args[0].includes('ResizeObserver loop limit exceeded'))) {
+  if (
+    args[0] &&
+    typeof args[0] === 'string' &&
+    (args[0].includes('ResizeObserver loop completed with undelivered notifications') ||
+      args[0].includes('ResizeObserver loop limit exceeded'))
+  ) {
     return;
   }
   originalError.call(console, ...args);
@@ -18,8 +21,7 @@ console.error = (...args) => {
 // ResizeObserver 경고를 완전히 억제
 const originalWarn = console.warn;
 console.warn = (...args) => {
-  if (args[0] && typeof args[0] === 'string' && 
-      args[0].includes('ResizeObserver')) {
+  if (args[0] && typeof args[0] === 'string' && args[0].includes('ResizeObserver')) {
     return;
   }
   originalWarn.call(console, ...args);
