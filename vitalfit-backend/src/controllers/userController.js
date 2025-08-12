@@ -302,6 +302,14 @@ const updateMyAccount = async (req, res, next) => {
       updates.profile_image_url = req.body.profile_image_url;
     }
 
+    // enum 필드들이 빈 문자열이면 null로 변환
+    if (updates.gender === '') {
+      updates.gender = null;
+    }
+    if (updates.status === '') {
+      updates.status = null;
+    }
+
     console.log('업데이트할 데이터:', updates);
 
     await user.update(updates);

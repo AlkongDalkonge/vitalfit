@@ -805,12 +805,11 @@ const AccountPage = () => {
 
           {/* shift - 근무 일정 섹션 */}
           <div className="col-span-2">
-            <h3 className="text-lg font-semibold mb-4 text-gray-700">근무 일정</h3>
             <div className="space-y-4">
               {formData.shiftData.schedules.map((schedule, scheduleIndex) => (
                 <div key={scheduleIndex} className="border rounded-lg p-4 bg-gray-50">
                   <div className="flex items-center justify-between mb-3">
-                    <h4 className="font-medium text-gray-600">근무 일정 {scheduleIndex + 1}</h4>
+                    <h4 className="font-medium text-gray-600">근무일정</h4>
                     {formData.shiftData.schedules.length > 1 && (
                       <button
                         type="button"
@@ -998,7 +997,7 @@ const AccountPage = () => {
             onChange={handleInputChange}
             placeholder="경력"
             className="p-3 border rounded resize-none"
-            rows="3"
+            rows="1"
           />
 
           {/* education */}
@@ -1007,7 +1006,7 @@ const AccountPage = () => {
             value={formData.education}
             onChange={handleInputChange}
             placeholder="학력"
-            className="p-3 border rounded"
+            className="p-3 border rounded resize-none"
           />
 
           {/* instagram */}
@@ -1028,11 +1027,9 @@ const AccountPage = () => {
               onChange={handleInputChange}
               className="p-3 pt-7 border rounded w-full"
             />
-            {!formData.join_date && (
-              <span className="absolute left-3 top-1 text-gray-400 text-sm pointer-events-none select-none">
-                고용 날짜 선택
-              </span>
-            )}
+            <span className="absolute left-3 top-1 text-gray-400 text-sm pointer-events-none select-none">
+              고용 날짜 선택
+            </span>
           </div>
 
           <div className="relative">
@@ -1043,11 +1040,9 @@ const AccountPage = () => {
               onChange={handleInputChange}
               className="p-3 pt-7 border rounded w-full"
             />
-            {!formData.leave_date && (
-              <span className="absolute left-3 top-1 text-gray-400 text-sm pointer-events-none select-none">
-                퇴직 날짜 선택
-              </span>
-            )}
+            <span className="absolute left-3 top-1 text-gray-400 text-sm pointer-events-none select-none">
+              퇴직 날짜 선택
+            </span>
           </div>
         </div>
       </section>
