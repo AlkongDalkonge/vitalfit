@@ -17,7 +17,6 @@ const NoticeCreateModal = ({ isOpen, onClose, onSuccess }) => {
   const [error, setError] = useState(null);
   const [centers, setCenters] = useState([]);
   const [selectedCenters, setSelectedCenters] = useState([]);
-  const [selectedRoles, setSelectedRoles] = useState([]);
 
   // 센터 목록 로드
   useEffect(() => {
@@ -49,7 +48,6 @@ const NoticeCreateModal = ({ isOpen, onClose, onSuccess }) => {
     // receiver_type이 변경되면 선택된 센터 초기화
     if (name === 'receiver_type') {
       setSelectedCenters([]);
-      setSelectedRoles([]);
     }
   };
 
@@ -59,15 +57,6 @@ const NoticeCreateModal = ({ isOpen, onClose, onSuccess }) => {
       setSelectedCenters(prev => [...prev, centerId]);
     } else {
       setSelectedCenters(prev => prev.filter(id => id !== centerId));
-    }
-  };
-
-  //수신자: 직급별
-  const handleRoleChange = (roleCode, checked) => {
-    if (checked) {
-      setSelectedRoles(prev => [...prev, roleCode]);
-    } else {
-      setSelectedRoles(prev => prev.filter(code => code !== roleCode));
     }
   };
 
@@ -90,7 +79,6 @@ const NoticeCreateModal = ({ isOpen, onClose, onSuccess }) => {
     });
     setSelectedFile(null);
     setSelectedCenters([]);
-    setSelectedRoles([]);
     setError(null);
   };
 
@@ -123,15 +111,13 @@ const NoticeCreateModal = ({ isOpen, onClose, onSuccess }) => {
       if (formData.receiver_type === 'center' && selectedCenters.length > 0) {
         // 센터별 선택 시 선택된 센터 ID들 전송
         selectedCenters.forEach(centerId => {
-          submitData.append('target_centers[]', centerId);
-        });
-      } else if (formData.receiver_type === 'role' && selectedRoles.length > 0) {
-        // 직급별 선택 시 선택된 직급 전송
-        selectedRoles.forEach(roleId => {
-          submitData.append('target_roles[]', roleId);
+          submitData.append('center_ids[]', centerId);
         });
       } else if (formData.receiver_id) {
         submitData.append('receiver_id', formData.receiver_id);
+      }
+      if (formData.receiver_role) {
+        submitData.append('receiver_role', formData.receiver_role);
       }
       submitData.append('is_important', formData.is_important);
       if (formData.pin_until) {
@@ -280,32 +266,19 @@ const NoticeCreateModal = ({ isOpen, onClose, onSuccess }) => {
           {/* 수신자 역할 (직급별일 때) */}
           {formData.receiver_type === 'role' && (
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                직급 선택 <span className="text-red-500">*</span>
-              </label>
-              <div className="space-y-2 border border-gray-300 rounded-md p-3">
-                {[
-                  { label: '팀원', value: 'team_member' },
-                  { label: '팀장', value: 'team_leader' },
-                  { label: '센터장', value: 'center_manager' },
-                ].map(role => (
-                  <label key={role.value} className="flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={selectedRoles.includes(role.value)}
-                      onChange={e => handleRoleChange(role.value, e.target.checked)}
-                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                      disabled={loading}
-                    />
-                    <span className="ml-2 text-sm text-gray-700">{role.label}</span>
-                  </label>
-                ))}
-              </div>
-              {selectedRoles.length > 0 && (
-                <div className="mt-2 text-sm text-gray-600">
-                  선택된 직급: {selectedRoles.length}개
-                </div>
-              )}
+              <label className="block text-sm font-medium text-gray-700 mb-2">직급</label>
+              <select
+                name="receiver_role"
+                value={formData.receiver_role}
+                onChange={handleChange}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={loading}
+              >
+                <option value="">직급을 선택하세요</option>
+                <option value="team_member">팀원</option>
+                <option value="team_leader">팀장</option>
+                <option value="center_manager">센터장</option>
+              </select>
             </div>
           )}
 
@@ -379,8 +352,7 @@ const NoticeCreateModal = ({ isOpen, onClose, onSuccess }) => {
                 loading ||
                 !formData.title.trim() ||
                 !formData.content.trim() ||
-                (formData.receiver_type === 'center' && selectedCenters.length === 0) ||
-                (formData.receiver_type === 'role' && selectedRoles.length === 0)
+                (formData.receiver_type === 'center' && selectedCenters.length === 0)
               }
             >
               {loading ? '등록 중...' : '등록하기'}

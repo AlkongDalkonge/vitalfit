@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
 
 const MemberPage = () => {
   const [members, setMembers] = useState([]);
   const [filteredMembers, setFilteredMembers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [centerFilter, setCenterFilter] = useState("All memos");
-  const [trainerFilter, setTrainerFilter] = useState("All memos");
+  const [centerFilter, setCenterFilter] = useState('All memos');
+  const [trainerFilter, setTrainerFilter] = useState('All memos');
   const [showCenterDropdown, setShowCenterDropdown] = useState(false);
   const [showTrainerDropdown, setShowTrainerDropdown] = useState(false);
   const [centers, setCenters] = useState([]);
@@ -15,41 +15,39 @@ const MemberPage = () => {
   // API 호출 함수들
   const fetchMembers = async () => {
     try {
-      const response = await fetch("http://localhost:3000/api/member");
+      const response = await fetch('http://localhost:3000/api/member');
       const data = await response.json();
       if (data.success) {
         setMembers(data.data.members);
         setFilteredMembers(data.data.members);
       }
     } catch (error) {
-      console.error("멤버 조회 실패:", error);
+      console.error('멤버 조회 실패:', error);
     }
   };
 
   const fetchCenters = async () => {
     try {
-      const response = await fetch("http://localhost:3000/api/centers");
+      const response = await fetch('http://localhost:3000/api/centers');
       const data = await response.json();
       if (data.success) {
         setCenters(data.data.centers);
       }
     } catch (error) {
-      console.error("지점 조회 실패:", error);
+      console.error('지점 조회 실패:', error);
     }
   };
 
   const fetchTrainers = async () => {
     try {
-      const response = await fetch(
-        "http://localhost:3000/api/users?role=trainer"
-      );
+      const response = await fetch('http://localhost:3000/api/users?role=trainer');
       const data = await response.json();
       if (data.success) {
         setTrainers(data.data.users);
         setFilteredTrainers(data.data.users);
       }
     } catch (error) {
-      console.error("트레이너 조회 실패:", error);
+      console.error('트레이너 조회 실패:', error);
     }
   };
 
@@ -66,27 +64,27 @@ const MemberPage = () => {
   // 필터링 함수
   const filterMembers = async () => {
     try {
-      let url = "http://localhost:3000/api/member";
+      let url = 'http://localhost:3000/api/member';
       const params = new URLSearchParams();
 
-      if (centerFilter !== "All memos") {
+      if (centerFilter !== 'All memos') {
         // 지점 이름으로 ID 찾기
-        const center = centers.find((c) => c.name === centerFilter);
+        const center = centers.find(c => c.name === centerFilter);
         if (center) {
-          params.append("centerId", center.id);
+          params.append('centerId', center.id);
         }
       }
 
-      if (trainerFilter !== "All memos") {
+      if (trainerFilter !== 'All memos') {
         // 트레이너 이름으로 ID 찾기
-        const trainer = trainers.find((t) => t.name === trainerFilter);
+        const trainer = trainers.find(t => t.name === trainerFilter);
         if (trainer) {
-          params.append("trainerId", trainer.id);
+          params.append('trainerId', trainer.id);
         }
       }
 
       if (params.toString()) {
-        url += "?" + params.toString();
+        url += '?' + params.toString();
       }
 
       const response = await fetch(url);
@@ -95,35 +93,32 @@ const MemberPage = () => {
         setFilteredMembers(data.data.members);
       }
     } catch (error) {
-      console.error("필터링 실패:", error);
+      console.error('필터링 실패:', error);
     }
   };
 
   // 지점 필터 변경 시 트레이너 필터 업데이트
-  const handleCenterFilterChange = async (value) => {
+  const handleCenterFilterChange = async value => {
     setCenterFilter(value);
     setShowCenterDropdown(false);
 
-    if (value === "All memos") {
+    if (value === 'All memos') {
       setFilteredTrainers(trainers);
-      setTrainerFilter("All memos");
+      setTrainerFilter('All memos');
     } else {
       // 해당 지점의 트레이너만 필터링
-      const centerTrainers = trainers.filter((trainer) =>
-        members.some(
-          (member) =>
-            member.center?.name === value && member.trainer?.id === trainer.id
-        )
+      const centerTrainers = trainers.filter(trainer =>
+        members.some(member => member.center?.name === value && member.trainer?.id === trainer.id)
       );
       setFilteredTrainers(centerTrainers);
-      setTrainerFilter("All memos");
+      setTrainerFilter('All memos');
     }
 
     // API 호출로 필터링
     await filterMembers();
   };
 
-  const handleTrainerFilterChange = async (value) => {
+  const handleTrainerFilterChange = async value => {
     setTrainerFilter(value);
     setShowTrainerDropdown(false);
 
@@ -140,12 +135,12 @@ const MemberPage = () => {
 
   const handleRegisterMember = () => {
     // 고객 등록 모달 또는 페이지로 이동
-    console.log("고객 등록");
+    console.log('고객 등록');
   };
 
-  const handleViewMore = (memberId) => {
+  const handleViewMore = memberId => {
     // 회원 상세 정보 보기
-    console.log("회원 상세보기:", memberId);
+    console.log('회원 상세보기:', memberId);
   };
 
   if (loading) {
@@ -160,10 +155,7 @@ const MemberPage = () => {
     <div className="w-full max-w-7xl mx-auto p-6">
       <div className="flex flex-col gap-6">
         {/* 최상단 제목 */}
-        <div
-          data-layer="모든 고객"
-          className="text-black text-xl font-extrabold font-['Nunito']"
-        >
+        <div data-layer="모든 고객" className="text-black text-xl font-extrabold font-['Nunito']">
           모든 고객
         </div>
 
@@ -227,12 +219,12 @@ const MemberPage = () => {
                   <div className="absolute top-full left-0 w-[120px] bg-white border border-gray-200 rounded-[8px] shadow-lg z-10 mt-1">
                     <div className="py-1">
                       <button
-                        onClick={() => handleCenterFilterChange("All memos")}
+                        onClick={() => handleCenterFilterChange('All memos')}
                         className="w-full px-3 py-1.5 text-left text-xs text-neutral-600 hover:bg-sky-50"
                       >
                         All memos
                       </button>
-                      {centers.map((center) => (
+                      {centers.map(center => (
                         <button
                           key={center.id}
                           onClick={() => handleCenterFilterChange(center.name)}
@@ -287,17 +279,15 @@ const MemberPage = () => {
                   <div className="absolute top-full left-0 w-[120px] bg-white border border-gray-200 rounded-[8px] shadow-lg z-10 mt-1">
                     <div className="py-1">
                       <button
-                        onClick={() => handleTrainerFilterChange("All memos")}
+                        onClick={() => handleTrainerFilterChange('All memos')}
                         className="w-full px-3 py-1.5 text-left text-xs text-neutral-600 hover:bg-sky-50"
                       >
                         All memos
                       </button>
-                      {filteredTrainers.map((trainer) => (
+                      {filteredTrainers.map(trainer => (
                         <button
                           key={trainer.id}
-                          onClick={() =>
-                            handleTrainerFilterChange(trainer.name)
-                          }
+                          onClick={() => handleTrainerFilterChange(trainer.name)}
                           className="w-full px-3 py-1.5 text-left text-xs text-neutral-600 hover:bg-sky-50"
                         >
                           {trainer.name}
@@ -440,19 +430,16 @@ const MemberPage = () => {
                           data-layer="상태"
                           className="w-32 justify-start text-neutral-600 text-sm font-normal font-['Nunito'] leading-normal"
                         >
-                          {member.status === "active"
-                            ? "활성"
-                            : member.status === "inactive"
-                            ? "비활성"
-                            : member.status === "expired"
-                            ? "만료"
-                            : "탈퇴"}
+                          {member.status === 'active'
+                            ? '활성'
+                            : member.status === 'inactive'
+                              ? '비활성'
+                              : member.status === 'expired'
+                                ? '만료'
+                                : '탈퇴'}
                         </div>
                       </div>
-                      <div
-                        data-layer="Line 3"
-                        className="h-0 border-b border-gray-100"
-                      ></div>
+                      <div data-layer="Line 3" className="h-0 border-b border-gray-100"></div>
                     </div>
                   ))}
                 </div>

@@ -13,11 +13,11 @@ const apiCall = async (endpoint, options = {}) => {
   try {
     const response = await fetch(url, config);
     const data = await response.json();
-    
+
     if (!response.ok) {
       throw new Error(data.message || 'API 호출 실패');
     }
-    
+
     return data;
   } catch (error) {
     console.error('API 호출 오류:', error);
@@ -25,16 +25,19 @@ const apiCall = async (endpoint, options = {}) => {
   }
 };
 
-export const apiGet = (endpoint) => apiCall(endpoint);
-export const apiPost = (endpoint, data) => apiCall(endpoint, { method: 'POST', body: JSON.stringify(data) });
-export const apiPut = (endpoint, data) => apiCall(endpoint, { method: 'PUT', body: JSON.stringify(data) });
-export const apiDelete = (endpoint) => apiCall(endpoint, { method: 'DELETE' });
+export const apiGet = endpoint => apiCall(endpoint);
+export const apiPost = (endpoint, data) =>
+  apiCall(endpoint, { method: 'POST', body: JSON.stringify(data) });
+export const apiPut = (endpoint, data) =>
+  apiCall(endpoint, { method: 'PUT', body: JSON.stringify(data) });
+export const apiDelete = endpoint => apiCall(endpoint, { method: 'DELETE' });
 
 // Center API
 export const centerAPI = {
   getAllCenters: () => apiGet('/centers'),
-  getCenterById: (id) => apiGet(`/centers/${id}`),
-  searchCenters: (query, status = 'active') => apiGet(`/centers/search?q=${encodeURIComponent(query)}&status=${status}`),
+  getCenterById: id => apiGet(`/centers/${id}`),
+  searchCenters: (query, status = 'active') =>
+    apiGet(`/centers/search?q=${encodeURIComponent(query)}&status=${status}`),
 };
 
 // Member API (개선된 필터링 기능)
@@ -49,7 +52,7 @@ export const memberAPI = {
     const queryString = queryParams.toString();
     return apiGet(`/members${queryString ? `?${queryString}` : ''}`);
   },
-  createMember: (data) => apiPost('/members', data),
+  createMember: data => apiPost('/members', data),
   updateMember: (id, data) => apiPut(`/members/${id}`, data),
 };
 
@@ -69,11 +72,11 @@ export const ptSessionAPI = {
     return apiGet(`/pt-sessions/member/${memberId}${queryString ? `?${queryString}` : ''}`);
   },
   // PT 세션 생성
-  createSession: (data) => apiPost('/pt-sessions', data),
+  createSession: data => apiPost('/pt-sessions', data),
   // PT 세션 수정
   updateSession: (id, data) => apiPut(`/pt-sessions/${id}`, data),
   // PT 세션 삭제 (새로 추가)
-  deleteSession: (id) => apiDelete(`/pt-sessions/${id}`),
+  deleteSession: id => apiDelete(`/pt-sessions/${id}`),
 };
 
 // User API
@@ -93,4 +96,4 @@ export const userAPI = {
 // Team API
 export const teamAPI = {
   getAllTeams: () => apiGet('/teams'),
-}; 
+};

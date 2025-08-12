@@ -14,4 +14,4 @@ router.get('/search', centerController.searchCenters);
 // GET /api/centers/:id
 router.get('/:id', centerController.getCenterById);
 
-module.exports = router; 
+module.exports = router;

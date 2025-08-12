@@ -28,7 +28,7 @@ const getAllTeams = async (req, res) => {
 const getTeamById = async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     const team = await Team.findByPk(id, {
       attributes: ['id', 'name'],
     });
@@ -59,4 +59,4 @@ const getTeamById = async (req, res) => {
 module.exports = {
   getAllTeams,
   getTeamById,
-}; 
+};

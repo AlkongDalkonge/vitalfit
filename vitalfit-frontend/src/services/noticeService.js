@@ -2,16 +2,16 @@ import axios from 'axios';
 
 // API 기본 URL 설정
 // eslint-disable-next-line no-undef
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000';
 
 // 공지사항 API 서비스
 export const noticeService = {
   // 공지사항 목록 조회
   getNotices: async (params = {}) => {
     try {
-      const { page = 1, limit = 10, search = '', searchType = '전체' } = params;
+      const { page = 1, limit = 10, search = '' } = params;
       const response = await axios.get(`${API_BASE_URL}/api/notices`, {
-        params: { page, limit, searchType, search },
+        params: { page, limit, search },
       });
       return response.data;
     } catch (error) {
@@ -36,12 +36,6 @@ export const noticeService = {
   // 공지사항 생성
   createNotice: async noticeData => {
     try {
-      // FormData 디버깅 출력
-      if (noticeData instanceof FormData) {
-        for (let [key, value] of noticeData.entries()) {
-          console.log(`[FormData] ${key}:`, value);
-        }
-      }
       const response = await axios.post(`${API_BASE_URL}/api/notices`, noticeData, {
         headers: {
           'Content-Type': 'multipart/form-data',
@@ -111,7 +105,7 @@ export const noticeService = {
       const res = await axios.get('/api/centers');
       return {
         success: true,
-        data: res.data.data.centers,
+        data: res.data,
       };
     } catch (error) {
       console.error('센터 목록 조회 실패:', error);

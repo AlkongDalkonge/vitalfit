@@ -66,7 +66,10 @@ const getCenterById = async (req, res, next) => {
           model: CenterImage,
           as: 'images',
           attributes: ['id', 'image_url', 'is_main', 'created_at'],
-          order: [['is_main', 'DESC'], ['created_at', 'ASC']],
+          order: [
+            ['is_main', 'DESC'],
+            ['created_at', 'ASC'],
+          ],
         },
       ],
       attributes: [
@@ -177,4 +180,4 @@ module.exports = {
   getAllCenters,
   getCenterById,
   searchCenters,
-}; 
+};

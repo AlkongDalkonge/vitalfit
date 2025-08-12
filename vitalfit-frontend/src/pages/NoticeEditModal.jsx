@@ -11,9 +11,6 @@ const NoticeEditModal = ({ isOpen, onClose, onSuccess, notice }) => {
     pin_until: '',
   });
   const [loading, setLoading] = useState(false);
-  const [currentAttachments, setCurrentAttachments] = useState([]);
-  const [newFiles, setNewFiles] = useState([]);
-  const [filesToRemove, setFilesToRemove] = useState([]);
 
   useEffect(() => {
     if (notice) {
@@ -23,21 +20,6 @@ const NoticeEditModal = ({ isOpen, onClose, onSuccess, notice }) => {
         receiver_type: notice.receiver_type || 'all',
         is_important: notice.is_important || false,
       });
-
-      // 기존 첨부파일 정보 설정 (배열로 처리)
-      if (notice.attachment_name && notice.attachment_url) {
-        setCurrentAttachments([
-          {
-            id: 'current-1',
-            name: notice.attachment_name,
-            url: notice.attachment_url,
-          },
-        ]);
-      } else {
-        setCurrentAttachments([]);
-      }
-      setNewFiles([]);
-      setFilesToRemove([]);
     }
   }, [notice]);
 
@@ -49,49 +31,12 @@ const NoticeEditModal = ({ isOpen, onClose, onSuccess, notice }) => {
     }));
   };
 
-  const handleFileChange = e => {
-    const files = Array.from(e.target.files);
-    const filesWithIds = files.map((file, index) => ({
-      id: `new-${Date.now()}-${index}`,
-      file,
-      name: file.name,
-    }));
-    setNewFiles(prev => [...prev, ...filesWithIds]);
-  };
-
-  const handleRemoveCurrentFile = fileId => {
-    setFilesToRemove(prev => [...prev, fileId]);
-    setCurrentAttachments(prev => prev.filter(file => file.id !== fileId));
-  };
-
-  const handleRemoveNewFile = fileId => {
-    setNewFiles(prev => prev.filter(file => file.id !== fileId));
-  };
-
   const handleSubmit = async e => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      const formDataToSend = new FormData();
-
-      // 기본 폼 데이터 추가
-      Object.keys(formData).forEach(key => {
-        formDataToSend.append(key, formData[key]);
-      });
-
-      // 파일 처리
-      if (filesToRemove.length > 0) {
-        // 삭제할 파일들 (현재는 1개만 지원하므로 전체 삭제)
-        formDataToSend.append('remove_attachment', 'true');
-      }
-
-      // 새 파일들 추가 (현재 백엔드는 1개만 지원하므로 첫 번째만)
-      if (newFiles.length > 0) {
-        formDataToSend.append('attachment', newFiles[0].file);
-      }
-
-      const response = await noticeService.updateNotice(notice.id, formDataToSend);
+      const response = await noticeService.updateNotice(notice.id, formData);
       if (response.success) {
         onSuccess && onSuccess();
         onClose();
@@ -153,62 +98,6 @@ const NoticeEditModal = ({ isOpen, onClose, onSuccess, notice }) => {
               <option value="role">직급별</option>
               <option value="team">팀별</option>
             </select>
-          </div>
-
-          {/* 첨부파일 섹션 */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-2">첨부파일</label>
-
-            {/* 기존 파일들 표시 */}
-            {currentAttachments.map(file => (
-              <div key={file.id} className="mb-3 p-3 bg-gray-50 rounded-md border">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <span className="text-sm text-gray-600">현재 파일:</span>
-                    <span className="ml-2 text-sm font-medium">{file.name}</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveCurrentFile(file.id)}
-                    className="text-red-500 hover:text-red-700 text-sm"
-                  >
-                    삭제
-                  </button>
-                </div>
-              </div>
-            ))}
-
-            {/* 새 파일들 표시 */}
-            {newFiles.map(file => (
-              <div key={file.id} className="mb-3 p-3 bg-blue-50 rounded-md border border-blue-200">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <span className="text-sm text-blue-600">새 파일:</span>
-                    <span className="ml-2 text-sm font-medium">{file.name}</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveNewFile(file.id)}
-                    className="text-red-500 hover:text-red-700 text-sm"
-                  >
-                    제거
-                  </button>
-                </div>
-              </div>
-            ))}
-
-            {/* 파일 입력 */}
-            <input
-              id="file-input"
-              type="file"
-              multiple
-              onChange={handleFileChange}
-              className="w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500"
-              accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.jpg,.jpeg,.png,.gif"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              지원 형식: PDF, Word, Excel, PowerPoint, 텍스트, 이미지 파일
-            </p>
           </div>
 
           <div className="mb-6">
