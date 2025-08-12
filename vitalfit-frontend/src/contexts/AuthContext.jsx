@@ -51,6 +51,25 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // 사용자 정보 새로고침
+  const refreshUserInfo = async () => {
+    try {
+      console.log('🔄 refreshUserInfo 시작');
+      const userInfo = await getUserInfo();
+      if (userInfo) {
+        console.log('✅ 새로운 사용자 정보:', userInfo);
+        setUser(userInfo);
+        return userInfo;
+      } else {
+        console.warn('⚠️ 사용자 정보를 가져올 수 없음');
+        return null;
+      }
+    } catch (error) {
+      console.error('❌ refreshUserInfo 실패:', error);
+      return null;
+    }
+  };
+
   // 로그인
   const login = async (email, password) => {
     try {
@@ -120,6 +139,7 @@ export const AuthProvider = ({ children }) => {
     login,
     logout,
     signup,
+    refreshUserInfo,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -100,7 +100,7 @@ console.log('3️⃣ Sequelize sync를 통해 서버 실행 예정...');
 
 // DB 테이블 생성 및 시드 데이터 실행
 sequelize
-  .sync({ force: false })
+  .sync({ alter: true }) // alter: true로 설정하여 테이블 구조만 수정
   .then(async () => {
     console.log('1️⃣ DB 테이블 생성 완료!');
 

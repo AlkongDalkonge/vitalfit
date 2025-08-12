@@ -16,13 +16,6 @@ const {
 // 센터 시드 데이터
 const seedCenters = async () => {
   try {
-    // 기존 센터 데이터 확인
-    const existingCenters = await Center.findAll();
-    if (existingCenters.length > 0) {
-      console.log(`✅ 센터 데이터가 이미 존재합니다 (${existingCenters.length}개 센터)`);
-      return existingCenters;
-    }
-
     const centers = await Center.bulkCreate([
       {
         name: '바이탈핏 강남센터',
@@ -74,13 +67,6 @@ const seedCenters = async () => {
 const seedPositions = async () => {
   try {
     console.log('📊 Position 시드 데이터 생성 중...');
-
-    // 기존 Position 데이터 확인
-    const existingPositions = await Position.findAll();
-    if (existingPositions.length > 0) {
-      console.log(`✅ Position 데이터가 이미 존재합니다 (${existingPositions.length}개 Position)`);
-      return existingPositions;
-    }
 
     const positions = await Position.bulkCreate([
       {
@@ -250,6 +236,7 @@ const seedUsers = async (centers, teams, positions) => {
         password: '$2b$10$hashedpassword', // 실제로는 해시된 비밀번호
         phone: '010-0000-0000',
         phone_verified: true,
+        gender: 'male',
         position_id: positions.find(p => p.code === 'admin').id,
         team_id: null,
         center_id: centers[0].id,
@@ -263,6 +250,7 @@ const seedUsers = async (centers, teams, positions) => {
         password: '$2b$10$hashedpassword',
         phone: '010-1111-1111',
         phone_verified: true,
+        gender: 'female',
         position_id: positions.find(p => p.code === 'center_manager').id,
         team_id: null,
         center_id: centers[0].id,
@@ -276,6 +264,7 @@ const seedUsers = async (centers, teams, positions) => {
         password: '$2b$10$hashedpassword',
         phone: '010-2222-2222',
         phone_verified: true,
+        gender: 'male',
         position_id: positions.find(p => p.code === 'team_leader').id,
         team_id: teams[0].id,
         center_id: centers[0].id,
@@ -289,6 +278,7 @@ const seedUsers = async (centers, teams, positions) => {
         password: '$2b$10$hashedpassword',
         phone: '010-3333-3333',
         phone_verified: true,
+        gender: 'male',
         position_id: positions.find(p => p.code === 'trainer').id,
         team_id: teams[0].id,
         center_id: centers[0].id,
@@ -302,6 +292,7 @@ const seedUsers = async (centers, teams, positions) => {
         password: '$2b$10$hashedpassword',
         phone: '010-4444-4444',
         phone_verified: true,
+        gender: 'female',
         position_id: positions.find(p => p.code === 'senior').id,
         team_id: teams[1].id,
         center_id: centers[0].id,
@@ -405,15 +396,6 @@ const seedPayments = async (centers, users, members) => {
 const seedCommissionRates = async (centers, positions) => {
   try {
     console.log('📊 커미션 비율 시드 데이터 생성 중...');
-
-    // 기존 커미션 비율 데이터 확인
-    const existingCommissionRates = await CommissionRate.findAll();
-    if (existingCommissionRates.length > 0) {
-      console.log(
-        `✅ 커미션 비율 데이터가 이미 존재합니다 (${existingCommissionRates.length}개 구간)`
-      );
-      return existingCommissionRates;
-    }
 
     const commissionRates = await CommissionRate.bulkCreate([
       // === 기본 정책 (전체 지점, 전체 직급 적용) ===

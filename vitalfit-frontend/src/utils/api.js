@@ -134,11 +134,24 @@ export const userAPI = {
   updateUser: async (id, data) => {
     return await apiPut(`/users/${id}`, data);
   },
+  // 내 계정 정보 수정 (인증된 사용자용)
+  updateMyAccount: async (data) => {
+    return await apiPut('/users/me', data);
+  },
   deleteUser: async id => {
     return await apiDelete(`/users/${id}`);
   },
   signUp: async data => {
     return await apiPost('/auth/signup', data);
+  },
+  // 프로필 이미지 업로드
+  uploadProfileImage: async (userId, formData, onProgress) => {
+    return await api.post(`/users/profile-image`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+      onUploadProgress: onProgress,
+    });
   },
 };
 

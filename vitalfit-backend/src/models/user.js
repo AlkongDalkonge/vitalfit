@@ -35,16 +35,18 @@ module.exports = (sequelize, DataTypes) => {
           len: [10, 20],
         },
       },
+      gender: {
+        type: DataTypes.ENUM('male', 'female'),
+        allowNull: true,
+      },
       terms_accepted: {
         type: DataTypes.BOOLEAN,
         allowNull: false,
         defaultValue: false,
-        comment: '약관 동의 여부',
       },
       terms_accepted_at: {
         type: DataTypes.DATE,
         allowNull: true,
-        comment: '약관 동의 시각',
       },
       position_id: {
         type: DataTypes.INTEGER,
@@ -102,7 +104,6 @@ module.exports = (sequelize, DataTypes) => {
       shift: {
         type: DataTypes.STRING(100),
         allowNull: true,
-        comment: '근무 시간대',
       },
       last_login_at: {
         type: DataTypes.DATE,

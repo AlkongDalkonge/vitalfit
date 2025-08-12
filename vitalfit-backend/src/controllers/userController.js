@@ -220,6 +220,68 @@ const getMyAccount = async (req, res, next) => {
 const updateMyAccount = async (req, res, next) => {
   try {
     const updates = req.body;
+
+    // shift 데이터 검증
+    if (updates.shift) {
+      try {
+        const parsedShift = JSON.parse(updates.shift);
+        if (!parsedShift || typeof parsedShift !== 'object') {
+          return res.status(400).json({
+            success: false,
+            message: '근무 일정 데이터 형식이 올바르지 않습니다.',
+          });
+        }
+
+        // 압축된 형식 (s, d, t) 또는 일반 형식 (schedules) 모두 지원
+        let schedules;
+        if (parsedShift.schedules && Array.isArray(parsedShift.schedules)) {
+          // 일반 형식
+          schedules = parsedShift.schedules;
+        } else if (parsedShift.s && Array.isArray(parsedShift.s)) {
+          // 압축된 형식
+          schedules = parsedShift.s;
+        } else {
+          return res.status(400).json({
+            success: false,
+            message: '근무 일정 스케줄 데이터가 올바르지 않습니다.',
+          });
+        }
+
+        // 각 스케줄 검증
+        for (let i = 0; i < schedules.length; i++) {
+          const schedule = schedules[i];
+          // 압축된 형식 (d, t.s, t.e) 또는 일반 형식 (days, time.start, time.end) 모두 지원
+          const days = schedule.days || schedule.d;
+          const time = schedule.time || schedule.t;
+
+          if (!days || !Array.isArray(days) || !time) {
+            return res.status(400).json({
+              success: false,
+              message: `스케줄 ${i + 1}의 데이터 형식이 올바르지 않습니다.`,
+            });
+          }
+
+          // 시간 검증
+          const startTime = time.start || time.s;
+          const endTime = time.end || time.e;
+          if (!startTime || !endTime) {
+            return res.status(400).json({
+              success: false,
+              message: `스케줄 ${i + 1}의 시간 데이터가 올바르지 않습니다.`,
+            });
+          }
+        }
+
+        console.log('✅ shift 데이터 검증 통과:', parsedShift);
+      } catch (parseError) {
+        console.error('shift 데이터 파싱 실패:', parseError);
+        return res.status(400).json({
+          success: false,
+          message: '근무 일정 데이터를 파싱할 수 없습니다.',
+        });
+      }
+    }
+
     if (updates.center_id) await validateForeignKey(Center, updates.center_id, '센터');
     if (updates.position_id) await validateForeignKey(Position, updates.position_id, '직책');
     if (updates.team_id) await validateForeignKey(Team, updates.team_id, '팀');
@@ -240,9 +302,26 @@ const updateMyAccount = async (req, res, next) => {
       updates.profile_image_url = req.body.profile_image_url;
     }
 
+    console.log('업데이트할 데이터:', updates);
+
     await user.update(updates);
-    return res.status(200).json({ success: true, message: '내 정보가 수정되었습니다.', user });
+
+    // 업데이트된 사용자 정보 조회
+    const updatedUser = await User.findByPk(req.user.uid, {
+      include: [
+        { model: Position, as: 'position' },
+        { model: Center, as: 'center' },
+        { model: Team, as: 'team' },
+      ],
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: '내 정보가 수정되었습니다.',
+      user: updatedUser,
+    });
   } catch (err) {
+    console.error('updateMyAccount 에러:', err);
     next(err);
   }
 };
@@ -378,6 +457,49 @@ const deleteProfileImage = async (req, res, next) => {
     });
 
     return res.status(200).json({ success: true, message: '프로필 이미지가 삭제되었습니다.' });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// 프로필 이미지만 업로드
+const uploadProfileImage = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: '프로필 이미지 파일이 필요합니다.',
+      });
+    }
+
+    const user = await User.findByPk(req.user.uid);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: '사용자를 찾을 수 없습니다.',
+      });
+    }
+
+    // 기존 프로필 이미지가 있으면 파일 삭제
+    if (user.profile_image_url) {
+      const oldFilePath = createFilePath('profiles', user.profile_image_url.split('/').pop());
+      deleteFile(oldFilePath);
+    }
+
+    // 새 프로필 이미지 정보 업데이트
+    await user.update({
+      profile_image_name: req.body.profile_image_name,
+      profile_image_url: req.body.profile_image_url,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: '프로필 이미지가 업로드되었습니다.',
+      data: {
+        profile_image_name: user.profile_image_name,
+        profile_image_url: user.profile_image_url,
+      },
+    });
   } catch (err) {
     next(err);
   }
@@ -665,6 +787,7 @@ module.exports = {
   resetPassword,
   changePassword,
   deleteProfileImage,
+  uploadProfileImage, // 새로 추가된 함수
   deactivateAccount,
   getAllUsers,
   getUserById,
