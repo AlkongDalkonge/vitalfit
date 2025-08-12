@@ -1,30 +1,24 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
 
-const PTSessionCreateModal = ({
-  isOpen,
-  onClose,
-  memberId,
-  member,
-  onSessionCreated,
-}) => {
+const PTSessionCreateModal = ({ isOpen, onClose, memberId, member, onSessionCreated }) => {
   const [formData, setFormData] = useState({
-    session_date: "",
-    session_type: "regular",
-    start_time: "",
-    end_time: "",
-    notes: "",
+    session_date: '',
+    session_type: 'regular',
+    start_time: '',
+    end_time: '',
+    notes: '',
   });
   const [loading, setLoading] = useState(false);
 
-  const handleInputChange = (e) => {
+  const handleInputChange = e => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
+    setFormData(prev => ({
       ...prev,
       [name]: value,
     }));
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async e => {
     e.preventDefault();
     setLoading(true);
 
@@ -35,27 +29,21 @@ const PTSessionCreateModal = ({
         trainer_id: member?.trainer_id || 1, // 멤버의 담당 트레이너
         center_id: member?.center_id || 1, // 멤버의 소속 센터
         session_date: formData.session_date,
-        start_time: formData.start_time
-          ? formData.start_time.substring(0, 5)
-          : "", // HH:MM:SS → HH:MM
-        end_time: formData.end_time ? formData.end_time.substring(0, 5) : "", // HH:MM:SS → HH:MM
+        start_time: formData.start_time ? formData.start_time.substring(0, 5) : '', // HH:MM:SS → HH:MM
+        end_time: formData.end_time ? formData.end_time.substring(0, 5) : '', // HH:MM:SS → HH:MM
         session_type: formData.session_type,
-        signature_data: "temp_signature", // 임시 서명 데이터
+        signature_data: 'temp_signature', // 임시 서명 데이터
         notes: formData.notes.trim() || undefined, // 빈 문자열은 undefined로 전송
       };
 
       // 필수 필드 검증
-      if (
-        !submitData.member_id ||
-        !submitData.trainer_id ||
-        !submitData.center_id
-      ) {
-        throw new Error("필수 정보가 누락되었습니다.");
+      if (!submitData.member_id || !submitData.trainer_id || !submitData.center_id) {
+        throw new Error('필수 정보가 누락되었습니다.');
       }
-      const response = await fetch("http://localhost:3000/api/pt-sessions", {
-        method: "POST",
+      const response = await fetch('http://localhost:3000/api/pt-sessions', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify(submitData),
       });
@@ -65,15 +53,9 @@ const PTSessionCreateModal = ({
         try {
           errorData = await response.json();
         } catch (parseError) {
-          throw new Error(
-            `서버 오류 (${response.status}): ${response.statusText}`
-          );
+          throw new Error(`서버 오류 (${response.status}): ${response.statusText}`);
         }
-        throw new Error(
-          errorData.message ||
-            errorData.details ||
-            `서버 오류 (${response.status})`
-        );
+        throw new Error(errorData.message || errorData.details || `서버 오류 (${response.status})`);
       }
 
       const result = await response.json();
@@ -86,17 +68,17 @@ const PTSessionCreateModal = ({
         onClose();
         // 폼 초기화
         setFormData({
-          session_date: "",
-          session_type: "regular",
-          start_time: "",
-          end_time: "",
-          notes: "",
+          session_date: '',
+          session_type: 'regular',
+          start_time: '',
+          end_time: '',
+          notes: '',
         });
       } else {
-        throw new Error(result.message || "PT 세션 등록에 실패했습니다.");
+        throw new Error(result.message || 'PT 세션 등록에 실패했습니다.');
       }
     } catch (error) {
-      alert(error.message || "알 수 없는 오류가 발생했습니다.");
+      alert(error.message || '알 수 없는 오류가 발생했습니다.');
     } finally {
       setLoading(false);
     }
@@ -217,7 +199,7 @@ const PTSessionCreateModal = ({
             className="absolute left-[38px] top-[410px] w-52 h-11 p-2.5 bg-gradient-to-br from-blue-400 to-blue-600 rounded-[10px] inline-flex justify-center items-center gap-2.5 hover:from-blue-500 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/15 before:via-transparent before:to-transparent before:pointer-events-none disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <div className="justify-start text-white text-sm font-normal font-['Nunito'] leading-normal">
-              {loading ? "저장 중..." : "저장"}
+              {loading ? '저장 중...' : '저장'}
             </div>
           </button>
         </form>

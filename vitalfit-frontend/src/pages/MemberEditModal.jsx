@@ -1,18 +1,18 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
 
 const MemberEditModal = ({ isOpen, onClose, member, onUpdate }) => {
   const [formData, setFormData] = useState({
-    name: "",
-    phone: "",
-    center_id: "",
-    trainer_id: "",
-    join_date: "",
-    expire_date: "",
-    total_sessions: "",
-    used_sessions: "",
-    free_sessions: "",
-    memo: "",
-    status: "active",
+    name: '',
+    phone: '',
+    center_id: '',
+    trainer_id: '',
+    join_date: '',
+    expire_date: '',
+    total_sessions: '',
+    used_sessions: '',
+    free_sessions: '',
+    memo: '',
+    status: 'active',
   });
   const [centers, setCenters] = useState([]);
   const [trainers, setTrainers] = useState([]);
@@ -23,21 +23,19 @@ const MemberEditModal = ({ isOpen, onClose, member, onUpdate }) => {
   useEffect(() => {
     if (member && isOpen) {
       setFormData({
-        name: member.name || "",
-        phone: member.phone || "",
-        center_id: member.center_id || "",
-        trainer_id: member.trainer_id || "",
-        join_date: member.join_date
-          ? new Date(member.join_date).toISOString().split("T")[0]
-          : "",
+        name: member.name || '',
+        phone: member.phone || '',
+        center_id: member.center_id || '',
+        trainer_id: member.trainer_id || '',
+        join_date: member.join_date ? new Date(member.join_date).toISOString().split('T')[0] : '',
         expire_date: member.expire_date
-          ? new Date(member.expire_date).toISOString().split("T")[0]
-          : "",
-        total_sessions: member.total_sessions || "",
-        used_sessions: member.used_sessions || "",
-        free_sessions: member.free_sessions || "",
-        memo: member.memo || "",
-        status: member.status || "active",
+          ? new Date(member.expire_date).toISOString().split('T')[0]
+          : '',
+        total_sessions: member.total_sessions || '',
+        used_sessions: member.used_sessions || '',
+        free_sessions: member.free_sessions || '',
+        memo: member.memo || '',
+        status: member.status || 'active',
       });
     }
   }, [member, isOpen]);
@@ -52,8 +50,8 @@ const MemberEditModal = ({ isOpen, onClose, member, onUpdate }) => {
   const fetchCentersAndTrainers = async () => {
     try {
       const [centersResponse, trainersResponse] = await Promise.all([
-        fetch("http://localhost:3000/api/centers"),
-        fetch("http://localhost:3000/api/users?role=trainer"),
+        fetch('http://localhost:3000/api/centers'),
+        fetch('http://localhost:3000/api/users?role=trainer'),
       ]);
 
       const centersData = await centersResponse.json();
@@ -62,21 +60,21 @@ const MemberEditModal = ({ isOpen, onClose, member, onUpdate }) => {
       if (centersData.success) setCenters(centersData.data.centers);
       if (trainersData.success) setTrainers(trainersData.data.users);
     } catch (error) {
-      console.error("데이터 로드 실패:", error);
+      console.error('데이터 로드 실패:', error);
     }
   };
 
-  const handleInputChange = (e) => {
+  const handleInputChange = e => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
+    setFormData(prev => ({
       ...prev,
       [name]: value,
     }));
     // 에러 메시지 초기화
     if (errors[name]) {
-      setErrors((prev) => ({
+      setErrors(prev => ({
         ...prev,
-        [name]: "",
+        [name]: '',
       }));
     }
   };
@@ -85,26 +83,26 @@ const MemberEditModal = ({ isOpen, onClose, member, onUpdate }) => {
     const newErrors = {};
 
     if (!formData.name.trim()) {
-      newErrors.name = "이름은 필수입니다";
+      newErrors.name = '이름은 필수입니다';
     }
     if (!formData.phone.trim()) {
-      newErrors.phone = "연락처는 필수입니다";
+      newErrors.phone = '연락처는 필수입니다';
     }
     if (!formData.center_id) {
-      newErrors.center_id = "센터를 선택해주세요";
+      newErrors.center_id = '센터를 선택해주세요';
     }
     if (!formData.trainer_id) {
-      newErrors.trainer_id = "트레이너를 선택해주세요";
+      newErrors.trainer_id = '트레이너를 선택해주세요';
     }
     if (!formData.join_date) {
-      newErrors.join_date = "가입일은 필수입니다";
+      newErrors.join_date = '가입일은 필수입니다';
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async e => {
     e.preventDefault();
 
     if (!validateForm()) {
@@ -114,16 +112,13 @@ const MemberEditModal = ({ isOpen, onClose, member, onUpdate }) => {
     setLoading(true);
 
     try {
-      const response = await fetch(
-        `http://localhost:3000/api/member/${member.id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(formData),
-        }
-      );
+      const response = await fetch(`http://localhost:3000/api/member/${member.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
 
       const data = await response.json();
 
@@ -132,14 +127,14 @@ const MemberEditModal = ({ isOpen, onClose, member, onUpdate }) => {
         onUpdate(data.data);
         onClose();
         // 성공 메시지 (선택사항)
-        alert("멤버 정보가 성공적으로 수정되었습니다.");
+        alert('멤버 정보가 성공적으로 수정되었습니다.');
       } else {
         // 에러 메시지 표시
-        alert(data.message || "수정에 실패했습니다.");
+        alert(data.message || '수정에 실패했습니다.');
       }
     } catch (error) {
-      console.error("멤버 수정 오류:", error);
-      alert("수정 중 오류가 발생했습니다.");
+      console.error('멤버 수정 오류:', error);
+      alert('수정 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
     }
@@ -148,17 +143,17 @@ const MemberEditModal = ({ isOpen, onClose, member, onUpdate }) => {
   const handleClose = () => {
     if (!loading) {
       setFormData({
-        name: "",
-        phone: "",
-        center_id: "",
-        trainer_id: "",
-        join_date: "",
-        expire_date: "",
-        total_sessions: "",
-        used_sessions: "",
-        free_sessions: "",
-        memo: "",
-        status: "active",
+        name: '',
+        phone: '',
+        center_id: '',
+        trainer_id: '',
+        join_date: '',
+        expire_date: '',
+        total_sessions: '',
+        used_sessions: '',
+        free_sessions: '',
+        memo: '',
+        status: 'active',
       });
       setErrors({});
       onClose();
@@ -187,13 +182,7 @@ const MemberEditModal = ({ isOpen, onClose, member, onUpdate }) => {
           disabled={loading}
           className="absolute right-[24px] top-[34px] w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-full transition-colors duration-200"
         >
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 16 16"
-            fill="none"
-            className="text-neutral-600"
-          >
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-neutral-600">
             <path
               d="M12 4L4 12M4 4L12 12"
               stroke="currentColor"
@@ -228,9 +217,7 @@ const MemberEditModal = ({ isOpen, onClose, member, onUpdate }) => {
                   disabled={loading}
                 />
               </div>
-              {errors.name && (
-                <p className="text-red-500 text-xs mt-1">{errors.name}</p>
-              )}
+              {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
             </div>
           </div>
 
@@ -257,9 +244,7 @@ const MemberEditModal = ({ isOpen, onClose, member, onUpdate }) => {
                   disabled={loading}
                 />
               </div>
-              {errors.phone && (
-                <p className="text-red-500 text-xs mt-1">{errors.phone}</p>
-              )}
+              {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
             </div>
           </div>
 
@@ -282,16 +267,14 @@ const MemberEditModal = ({ isOpen, onClose, member, onUpdate }) => {
                   onChange={handleInputChange}
                   required
                   className={`w-72 h-12 rounded-[10px] outline outline-1 outline-offset-[-0.50px] outline-stone-300 px-3 text-sm font-['Nunito'] focus:outline-cyan-500 appearance-none bg-white ${
-                    !formData.trainer_id
-                      ? "text-neutral-400"
-                      : "text-neutral-900"
+                    !formData.trainer_id ? 'text-neutral-400' : 'text-neutral-900'
                   }`}
                   disabled={loading}
                 >
                   <option value="" className="text-neutral-400">
                     Select option
                   </option>
-                  {trainers.map((trainer) => (
+                  {trainers.map(trainer => (
                     <option key={trainer.id} value={trainer.id}>
                       {trainer.name}
                     </option>
@@ -336,16 +319,14 @@ const MemberEditModal = ({ isOpen, onClose, member, onUpdate }) => {
                   onChange={handleInputChange}
                   required
                   className={`w-72 h-12 rounded-[10px] outline outline-1 outline-offset-[-0.50px] outline-stone-300 px-3 text-sm font-['Nunito'] focus:outline-cyan-500 appearance-none bg-white ${
-                    !formData.center_id
-                      ? "text-neutral-400"
-                      : "text-neutral-900"
+                    !formData.center_id ? 'text-neutral-400' : 'text-neutral-900'
                   }`}
                   disabled={loading}
                 >
                   <option value="" className="text-neutral-400">
                     Select option
                   </option>
-                  {centers.map((center) => (
+                  {centers.map(center => (
                     <option key={center.id} value={center.id}>
                       {center.name}
                     </option>
@@ -365,9 +346,7 @@ const MemberEditModal = ({ isOpen, onClose, member, onUpdate }) => {
                   </div>
                 </div>
               </div>
-              {errors.center_id && (
-                <p className="text-red-500 text-xs mt-1">{errors.center_id}</p>
-              )}
+              {errors.center_id && <p className="text-red-500 text-xs mt-1">{errors.center_id}</p>}
             </div>
           </div>
 
@@ -393,9 +372,7 @@ const MemberEditModal = ({ isOpen, onClose, member, onUpdate }) => {
                   disabled={loading}
                 />
               </div>
-              {errors.join_date && (
-                <p className="text-red-500 text-xs mt-1">{errors.join_date}</p>
-              )}
+              {errors.join_date && <p className="text-red-500 text-xs mt-1">{errors.join_date}</p>}
             </div>
           </div>
 
@@ -517,7 +494,7 @@ const MemberEditModal = ({ isOpen, onClose, member, onUpdate }) => {
                 data-layer="Primary Button"
                 className="PrimaryButton justify-start text-white text-sm font-normal font-['Nunito'] leading-normal"
               >
-                {loading ? "저장 중..." : "저장"}
+                {loading ? '저장 중...' : '저장'}
               </div>
             </button>
           </div>

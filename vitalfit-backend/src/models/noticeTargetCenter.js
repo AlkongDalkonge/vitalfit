@@ -10,10 +10,12 @@ module.exports = (sequelize, DataTypes) => {
       notice_id: {
         type: DataTypes.INTEGER,
         allowNull: false,
+        comment: '공지 ID (notices 테이블 참조)',
       },
       center_id: {
         type: DataTypes.INTEGER,
         allowNull: false,
+        comment: '지점 ID (centers 테이블 참조)',
       },
     },
     {

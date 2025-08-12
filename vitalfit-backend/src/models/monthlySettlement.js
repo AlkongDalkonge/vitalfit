@@ -107,7 +107,7 @@ module.exports = (sequelize, DataTypes) => {
       },
     },
     {
-      timestamps: true,
+      timestamps: true, // createdAt, updatedAt 자동 생성
       underscored: true,
       tableName: 'monthly_settlements',
       indexes: [
@@ -126,7 +126,7 @@ module.exports = (sequelize, DataTypes) => {
         {
           fields: ['status'],
         },
-
+        // Unique 제약: 같은 트레이너의 같은 연월 중복 정산 방지
         {
           fields: ['user_id', 'settlement_year', 'settlement_month'],
           unique: true,
@@ -137,11 +137,13 @@ module.exports = (sequelize, DataTypes) => {
   );
 
   MonthlySettlement.associate = function (models) {
+    // MonthlySettlement belongs to User (N:1) - 트레이너
     MonthlySettlement.belongsTo(models.User, {
       foreignKey: 'user_id',
       as: 'trainer',
     });
 
+    // MonthlySettlement belongs to Center (N:1)
     MonthlySettlement.belongsTo(models.Center, {
       foreignKey: 'center_id',
       as: 'center',

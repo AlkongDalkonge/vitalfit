@@ -23,9 +23,9 @@ router.delete('/:id', deletePTSession);
 router.get('/member/:memberId', getPTSessionsByMember);
 
 // 특정 멤버의 월별 PT 세션 조회
-router.get("/member/:memberId/month/:year/:month", getPTSessionsByMemberMonth);
+router.get('/member/:memberId/month/:year/:month', getPTSessionsByMemberMonth);
 
 // 월별 PT 세션 조회 (모든 멤버)
-router.get("/month/:year/:month", getPTSessionsByMonth);
+router.get('/month/:year/:month', getPTSessionsByMonth);
 
 module.exports = router;

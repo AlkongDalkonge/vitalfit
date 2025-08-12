@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
-import PTSessionCreateModal from "./PTSessionCreateModal";
-import PTSessionEditModal from "./PTSessionEditModal";
+import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import PTSessionCreateModal from './PTSessionCreateModal';
+import PTSessionEditModal from './PTSessionEditModal';
 
 const MemberPTSessionPage = () => {
   const { memberId } = useParams();
@@ -31,9 +31,7 @@ const MemberPTSessionPage = () => {
       setLoading(true);
 
       // 디버깅: API 호출 정보 로그
-      console.log(
-        `🔍 API 호출: ${memberId}/month/${currentYear}/${currentMonth}`
-      );
+      console.log(`🔍 API 호출: ${memberId}/month/${currentYear}/${currentMonth}`);
       console.log(`📅 UI 표시: ${currentYear}년 ${currentMonth}월`);
 
       // 멤버의 이번달 PT 세션 조회
@@ -42,7 +40,7 @@ const MemberPTSessionPage = () => {
       );
 
       if (!response.ok) {
-        throw new Error("PT 세션 데이터를 불러오는데 실패했습니다.");
+        throw new Error('PT 세션 데이터를 불러오는데 실패했습니다.');
       }
 
       const data = await response.json();
@@ -60,29 +58,29 @@ const MemberPTSessionPage = () => {
     }
   };
 
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString("ko-KR");
+  const formatDate = dateString => {
+    return new Date(dateString).toLocaleDateString('ko-KR');
   };
 
-  const formatDateTime = (dateTimeString) => {
+  const formatDateTime = dateTimeString => {
     const date = new Date(dateTimeString);
     const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    const hours = String(date.getHours()).padStart(2, "0");
-    const minutes = String(date.getMinutes()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
     return `${year}-${month}-${day} ${hours}:${minutes}`;
   };
 
   // 시간 포맷 함수 (HH:MM 형식으로 변환)
-  const formatTime = (timeString) => {
-    if (!timeString) return "";
+  const formatTime = timeString => {
+    if (!timeString) return '';
     // HH:MM:SS 형식에서 HH:MM만 추출
     return timeString.substring(0, 5);
   };
 
-  const getSessionTypeText = (type) => {
-    return type === "regular" ? "일반" : "무료";
+  const getSessionTypeText = type => {
+    return type === 'regular' ? '일반' : '무료';
   };
 
   // 년도/월 변경 함수
@@ -109,17 +107,17 @@ const MemberPTSessionPage = () => {
 
   // 드롭다운 외부 클릭 시 닫기
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (showDatePicker && !event.target.closest(".date-picker-container")) {
+    const handleClickOutside = event => {
+      if (showDatePicker && !event.target.closest('.date-picker-container')) {
         setShowDatePicker(false);
         setShowYearDropdown(false);
         setShowMonthDropdown(false);
       }
     };
 
-    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside);
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [showDatePicker]);
 
@@ -144,7 +142,7 @@ const MemberPTSessionPage = () => {
       <div className="flex flex-col gap-6">
         {/* 제목 */}
         <div className="text-black text-xl font-extrabold font-['Nunito'] relative date-picker-container flex items-center gap-2">
-          <span>'{member?.name || "고객명"}'님 출결 현황</span>
+          <span>'{member?.name || '고객명'}'님 출결 현황</span>
           <div className="relative">
             <button
               onClick={() => setShowDatePicker(!showDatePicker)}
@@ -154,13 +152,7 @@ const MemberPTSessionPage = () => {
             >
               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24">
                 <defs>
-                  <linearGradient
-                    id="calendarGradient"
-                    x1="0%"
-                    y1="0%"
-                    x2="100%"
-                    y2="100%"
-                  >
+                  <linearGradient id="calendarGradient" x1="0%" y1="0%" x2="100%" y2="100%">
                     <stop offset="0%" stopColor="#9CA3AF" />
                     <stop offset="100%" stopColor="#3B82F6" />
                   </linearGradient>
@@ -188,9 +180,7 @@ const MemberPTSessionPage = () => {
               <div className="absolute top-0 left-full ml-2 bg-white border border-gray-200 rounded-lg shadow-xl z-50 p-3 w-48">
                 <div className="space-y-3">
                   <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                      년도
-                    </label>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">년도</label>
                     <div className="relative">
                       <button
                         onClick={() => setShowYearDropdown(!showYearDropdown)}
@@ -213,7 +203,7 @@ const MemberPTSessionPage = () => {
                       </button>
                       {showYearDropdown && (
                         <div className="absolute top-full left-0 w-full bg-white border border-gray-300 rounded-b shadow-lg z-[100] max-h-32 overflow-y-auto">
-                          {getYearOptions().map((year) => (
+                          {getYearOptions().map(year => (
                             <button
                               key={year}
                               onClick={() => {
@@ -221,9 +211,7 @@ const MemberPTSessionPage = () => {
                                 setShowYearDropdown(false);
                               }}
                               className={`w-full px-2 py-1.5 text-sm font-normal text-left hover:bg-blue-50 ${
-                                currentYear === year
-                                  ? "bg-blue-100 text-blue-600 font-medium"
-                                  : ""
+                                currentYear === year ? 'bg-blue-100 text-blue-600 font-medium' : ''
                               }`}
                             >
                               {year}년
@@ -234,9 +222,7 @@ const MemberPTSessionPage = () => {
                     </div>
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                      월
-                    </label>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">월</label>
                     <div className="relative">
                       <button
                         onClick={() => setShowMonthDropdown(!showMonthDropdown)}
@@ -259,7 +245,7 @@ const MemberPTSessionPage = () => {
                       </button>
                       {showMonthDropdown && (
                         <div className="absolute top-full left-0 w-full bg-white border border-gray-300 rounded-b shadow-lg z-[50] max-h-32 overflow-y-auto">
-                          {getMonthOptions().map((month) => (
+                          {getMonthOptions().map(month => (
                             <button
                               key={month}
                               onClick={() => {
@@ -268,8 +254,8 @@ const MemberPTSessionPage = () => {
                               }}
                               className={`w-full px-2 py-1.5 text-sm font-normal text-left hover:bg-blue-50 ${
                                 currentMonth === month
-                                  ? "bg-blue-100 text-blue-600 font-medium"
-                                  : ""
+                                  ? 'bg-blue-100 text-blue-600 font-medium'
+                                  : ''
                               }`}
                             >
                               {month}월
@@ -303,30 +289,16 @@ const MemberPTSessionPage = () => {
         <div className="bg-white">
           {/* 테이블 헤더 */}
           <div>
-            <div
-              className="grid gap-4 px-6 py-3 grid-cols-[1fr_1fr_1.2fr_1.2fr_1.2fr_1.2fr_2fr_1.5fr]"
-            >
-              <div className="text-neutral-600 text-xs font-extrabold font-['Nunito']">
-                회차
-              </div>
-              <div className="text-neutral-600 text-xs font-extrabold font-['Nunito']">
-                종류
-              </div>
+            <div className="grid gap-4 px-6 py-3 grid-cols-[1fr_1fr_1.2fr_1.2fr_1.2fr_1.2fr_2fr_1.5fr]">
+              <div className="text-neutral-600 text-xs font-extrabold font-['Nunito']">회차</div>
+              <div className="text-neutral-600 text-xs font-extrabold font-['Nunito']">종류</div>
               <div className="text-neutral-600 text-xs font-extrabold font-['Nunito']">
                 트레이너
               </div>
-              <div className="text-neutral-600 text-xs font-extrabold font-['Nunito']">
-                센터
-              </div>
-              <div className="text-neutral-600 text-xs font-extrabold font-['Nunito']">
-                PT 일자
-              </div>
-              <div className="text-neutral-600 text-xs font-extrabold font-['Nunito']">
-                PT시간
-              </div>
-              <div className="text-neutral-600 text-xs font-extrabold font-['Nunito']">
-                내용
-              </div>
+              <div className="text-neutral-600 text-xs font-extrabold font-['Nunito']">센터</div>
+              <div className="text-neutral-600 text-xs font-extrabold font-['Nunito']">PT 일자</div>
+              <div className="text-neutral-600 text-xs font-extrabold font-['Nunito']">PT시간</div>
+              <div className="text-neutral-600 text-xs font-extrabold font-['Nunito']">내용</div>
               <div className="text-neutral-600 text-xs font-extrabold font-['Nunito']">
                 서명 일시
               </div>
@@ -348,42 +320,36 @@ const MemberPTSessionPage = () => {
                       setIsEditModalOpen(true);
                     }}
                   >
-                    {String(index + 1).padStart(2, "0")}
+                    {String(index + 1).padStart(2, '0')}
                   </div>
                   <div className="text-neutral-800 text-sm font-normal font-['Nunito']">
                     {getSessionTypeText(session.session_type)}
                   </div>
                   <div className="text-neutral-800 text-sm font-normal font-['Nunito'] truncate">
-                    {session.trainer?.name || "-"}
+                    {session.trainer?.name || '-'}
                   </div>
                   <div className="text-neutral-800 text-sm font-normal font-['Nunito'] truncate">
-                    {session.center?.name || "-"}
+                    {session.center?.name || '-'}
                   </div>
                   <div className="text-neutral-800 text-sm font-normal font-['Nunito']">
                     {formatDate(session.session_date)}
                   </div>
                   <div className="text-neutral-800 text-sm font-normal font-['Nunito']">
                     {session.start_time && session.end_time
-                      ? `${formatTime(session.start_time)}-${formatTime(
-                          session.end_time
-                        )}`
-                      : formatTime(session.start_time) || "-"}
+                      ? `${formatTime(session.start_time)}-${formatTime(session.end_time)}`
+                      : formatTime(session.start_time) || '-'}
                   </div>
                   <div className="text-neutral-800 text-sm font-normal font-['Nunito']">
-                    {session.notes || "-"}
+                    {session.notes || '-'}
                   </div>
                   <div className="text-neutral-800 text-sm font-normal font-['Nunito'] truncate">
-                    {session.signature_time
-                      ? formatDateTime(session.signature_time)
-                      : "-"}
+                    {session.signature_time ? formatDateTime(session.signature_time) : '-'}
                   </div>
                 </div>
               ))
             ) : (
               <div className="px-6 py-12 text-center">
-                <div className="text-neutral-500 text-sm">
-                  이번달 PT 세션이 없습니다.
-                </div>
+                <div className="text-neutral-500 text-sm">이번달 PT 세션이 없습니다.</div>
               </div>
             )}
           </div>
@@ -394,9 +360,7 @@ const MemberPTSessionPage = () => {
 
         {/* 고객 정보 */}
         <div className="space-y-6">
-          <h2 className="text-black text-base font-extrabold font-['Nunito']">
-            고객 정보
-          </h2>
+          <h2 className="text-black text-base font-extrabold font-['Nunito']">고객 정보</h2>
           <div className="grid grid-cols-5 gap-12 px-16">
             <div className="space-y-2">
               <label className="text-neutral-600 text-xs font-extrabold font-['Nunito']">
@@ -404,7 +368,7 @@ const MemberPTSessionPage = () => {
               </label>
               <div className="w-full h-9 rounded-[10px] border border-stone-300 px-3 flex items-center">
                 <div className="text-neutral-800 text-sm font-normal font-['Nunito']">
-                  {member?.phone || "-"}
+                  {member?.phone || '-'}
                 </div>
               </div>
             </div>
@@ -415,7 +379,7 @@ const MemberPTSessionPage = () => {
               </label>
               <div className="w-full h-9 rounded-[10px] border border-stone-300 px-3 flex items-center">
                 <div className="text-neutral-800 text-sm font-normal font-['Nunito']">
-                  {member?.join_date ? formatDate(member.join_date) : "-"}
+                  {member?.join_date ? formatDate(member.join_date) : '-'}
                 </div>
               </div>
             </div>
@@ -426,7 +390,7 @@ const MemberPTSessionPage = () => {
               </label>
               <div className="w-full h-9 rounded-[10px] border border-stone-300 px-3 flex items-center">
                 <div className="text-neutral-800 text-sm font-normal font-['Nunito']">
-                  {member?.expire_date ? formatDate(member.expire_date) : "-"}
+                  {member?.expire_date ? formatDate(member.expire_date) : '-'}
                 </div>
               </div>
             </div>

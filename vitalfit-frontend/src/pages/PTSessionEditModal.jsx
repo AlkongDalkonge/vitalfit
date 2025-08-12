@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
 
 const PTSessionEditModal = ({
   isOpen,
@@ -8,11 +8,11 @@ const PTSessionEditModal = ({
   onSessionDeleted,
 }) => {
   const [formData, setFormData] = useState({
-    session_date: "",
-    session_type: "regular",
-    start_time: "",
-    end_time: "",
-    notes: "",
+    session_date: '',
+    session_type: 'regular',
+    start_time: '',
+    end_time: '',
+    notes: '',
   });
   const [loading, setLoading] = useState(false);
 
@@ -20,24 +20,24 @@ const PTSessionEditModal = ({
   useEffect(() => {
     if (sessionData) {
       setFormData({
-        session_date: sessionData.session_date || "",
-        session_type: sessionData.session_type || "regular",
-        start_time: sessionData.start_time || "",
-        end_time: sessionData.end_time || "",
-        notes: sessionData.notes || "",
+        session_date: sessionData.session_date || '',
+        session_type: sessionData.session_type || 'regular',
+        start_time: sessionData.start_time || '',
+        end_time: sessionData.end_time || '',
+        notes: sessionData.notes || '',
       });
     }
   }, [sessionData]);
 
-  const handleInputChange = (e) => {
+  const handleInputChange = e => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
+    setFormData(prev => ({
       ...prev,
       [name]: value,
     }));
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async e => {
     e.preventDefault();
     setLoading(true);
 
@@ -45,32 +45,25 @@ const PTSessionEditModal = ({
       // 백엔드 스키마에 맞게 데이터 형식 조정
       const submitData = {
         session_date: formData.session_date,
-        start_time: formData.start_time
-          ? formData.start_time.substring(0, 5)
-          : "", // HH:MM:SS → HH:MM
-        end_time: formData.end_time ? formData.end_time.substring(0, 5) : "", // HH:MM:SS → HH:MM
+        start_time: formData.start_time ? formData.start_time.substring(0, 5) : '', // HH:MM:SS → HH:MM
+        end_time: formData.end_time ? formData.end_time.substring(0, 5) : '', // HH:MM:SS → HH:MM
         session_type: formData.session_type,
         notes: formData.notes.trim() || undefined, // 빈 문자열은 undefined로 전송
         // signature_data와 signature_time은 선택사항이므로 기존 값 유지
       };
 
-      const response = await fetch(
-        `http://localhost:3000/api/pt-sessions/${sessionData.id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(submitData),
-        }
-      );
+      const response = await fetch(`http://localhost:3000/api/pt-sessions/${sessionData.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(submitData),
+      });
 
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(
-          result.message || result.details || "PT 세션 수정에 실패했습니다."
-        );
+        throw new Error(result.message || result.details || 'PT 세션 수정에 실패했습니다.');
       }
       if (result.success) {
         // 성공 시 콜백 호출하여 목록 새로고침
@@ -79,7 +72,7 @@ const PTSessionEditModal = ({
         }
         onClose();
       } else {
-        throw new Error(result.message || "PT 세션 수정에 실패했습니다.");
+        throw new Error(result.message || 'PT 세션 수정에 실패했습니다.');
       }
     } catch (error) {
       alert(error.message);
@@ -92,7 +85,7 @@ const PTSessionEditModal = ({
     if (!sessionData?.id) return;
 
     const confirmDelete = window.confirm(
-      "정말로 이 PT 기록을 삭제하시겠습니까?\n삭제된 데이터는 복구할 수 없습니다."
+      '정말로 이 PT 기록을 삭제하시겠습니까?\n삭제된 데이터는 복구할 수 없습니다.'
     );
 
     if (!confirmDelete) return;
@@ -100,26 +93,23 @@ const PTSessionEditModal = ({
     setLoading(true);
 
     try {
-      const response = await fetch(
-        `http://localhost:3000/api/pt-sessions/${sessionData.id}`,
-        {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const response = await fetch(`http://localhost:3000/api/pt-sessions/${sessionData.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
 
       const result = await response.json();
 
       if (result.success) {
-        alert("PT 기록이 성공적으로 삭제되었습니다.");
+        alert('PT 기록이 성공적으로 삭제되었습니다.');
         onClose();
         if (onSessionDeleted) {
           onSessionDeleted();
         }
       } else {
-        throw new Error(result.message || "PT 기록 삭제에 실패했습니다.");
+        throw new Error(result.message || 'PT 기록 삭제에 실패했습니다.');
       }
     } catch (error) {
       alert(error.message);
@@ -245,7 +235,7 @@ const PTSessionEditModal = ({
               className="w-52 h-11 p-2.5 bg-gradient-to-br from-blue-400 to-blue-600 rounded-[10px] inline-flex justify-center items-center gap-2.5 hover:from-blue-500 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/15 before:via-transparent before:to-transparent before:pointer-events-none disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <div className="justify-start text-white text-sm font-normal font-['Nunito'] leading-normal">
-                {loading ? "수정 중..." : "수정"}
+                {loading ? '수정 중...' : '수정'}
               </div>
             </button>
 

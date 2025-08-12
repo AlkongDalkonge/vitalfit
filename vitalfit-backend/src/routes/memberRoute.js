@@ -24,12 +24,12 @@ router.put('/:id', updateMember);
 router.get('/', getAllMembers);
 
 // 센터별 멤버 조회
-router.get("/center/:center_id", getMembersByCenter);
+router.get('/center/:center_id', getMembersByCenter);
 
 // 트레이너별 멤버 조회
-router.get("/trainer/:trainer_id", getMembersByTrainer);
+router.get('/trainer/:trainer_id', getMembersByTrainer);
 
 // 이름으로 멤버 조회
-router.get("/name/:name", getMembersByName);
+router.get('/name/:name', getMembersByName);
 
 module.exports = router;

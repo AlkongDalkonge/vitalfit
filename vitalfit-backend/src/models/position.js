@@ -11,31 +11,38 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING(50),
         allowNull: false,
         unique: true,
+        comment: '직급 코드 (trainee, student, trainer, ...)',
       },
       name: {
         type: DataTypes.STRING(50),
         allowNull: false,
+        comment: '직급명 (연습생, 교육생, 트레이너, ...)',
       },
       level: {
         type: DataTypes.INTEGER,
         allowNull: false,
+        comment: '직급 레벨 (1=연습생, 11=센터장)',
       },
       base_salary: {
         type: DataTypes.INTEGER,
         allowNull: false,
+        comment: '기본급(영업지원금)',
       },
       effective_date: {
         type: DataTypes.DATEONLY,
         allowNull: false,
+        comment: '적용일',
       },
       description: {
         type: DataTypes.STRING(200),
         allowNull: true,
+        comment: '직급 설명',
       },
       is_active: {
         type: DataTypes.BOOLEAN,
         allowNull: false,
         defaultValue: true,
+        comment: '활성 상태',
       },
     },
     {
