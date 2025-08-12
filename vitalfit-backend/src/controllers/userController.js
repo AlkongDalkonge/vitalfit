@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 const Joi = require('joi');
 const { createHash, validateForeignKey } = require('../utils/userUtils');
 const { createUpload, deleteFile, createFilePath } = require('../utils/uploadUtils');
-const { sendPasswordResetEmail, generateSecureTempPassword } = require('../utils/emailService');
+const { sendPasswordResetEmail } = require('../utils/emailService');
 const secret = process.env.JWT_SECRET || 'vitalfit-secret-key-2025';
 
 const signUpSchema = Joi.object({
@@ -62,101 +62,52 @@ const signUp = async (req, res, next) => {
     if (error) return res.status(400).json({ success: false, message: error.message });
 
     const { email, password, center_id, position_id, team_id, terms_accepted } = value;
-
-    // 탈퇴한 사용자의 이메일인지 확인
-    const existingUser = await User.findOne({ where: { email } });
-    if (existingUser && existingUser.status === 'active') {
+    const existing = await User.findOne({ where: { email } });
+    if (existing)
       return res.status(400).json({ success: false, message: '이미 가입된 이메일입니다.' });
+
+    await validateForeignKey(Center, center_id, '센터');
+    await validateForeignKey(Position, position_id, '직책');
+    if (team_id) await validateForeignKey(Team, team_id, '팀');
+
+    value.password = await createHash(password);
+    if (terms_accepted) value.terms_accepted_at = new Date();
+    value.join_date = new Date();
+
+    // 회원가입 시 초기값 설정
+    value.status = 'active';
+    value.email_verified = false;
+    value.login_attempts = 0;
+    value.is_locked = false;
+
+    if (req.file) {
+      // processFile 미들웨어가 이미 req.body에 설정해줌
+      value.profile_image_name = req.body.profile_image_name;
+      value.profile_image_url = req.body.profile_image_url;
     }
 
-    // 탈퇴한 사용자라면 기존 계정을 재활성화
-    if (existingUser && existingUser.status === 'inactive') {
-      // 기존 계정 정보 업데이트
-      existingUser.name = value.name;
-      existingUser.password = await createHash(password);
-      existingUser.phone = value.phone;
-      existingUser.position_id = value.position_id;
-      existingUser.center_id = value.center_id;
-      existingUser.team_id = value.team_id;
-      existingUser.nickname = value.nickname || null;
-      existingUser.license = value.license || null;
-      existingUser.experience = value.experience || null;
-      existingUser.education = value.education || null;
-      existingUser.instagram = value.instagram || null;
-      existingUser.shift = value.shift || null;
-      existingUser.terms_accepted = value.terms_accepted;
-      existingUser.terms_accepted_at = new Date();
-      existingUser.status = 'active';
-      existingUser.join_date = new Date();
-      existingUser.leave_date = null; // 탈퇴일 초기화
+    const user = await User.create(value);
+    const token = jwt.sign({ uid: user.id }, secret, { expiresIn: '1h' });
 
-      if (req.file) {
-        existingUser.profile_image_name = req.body.profile_image_name;
-        existingUser.profile_image_url = req.body.profile_image_url;
-      }
-
-      await existingUser.save();
-
-      const token = jwt.sign({ uid: existingUser.id }, secret, { expiresIn: '1h' });
-
-      return res.status(200).json({
-        success: true,
-        message: '계정이 재활성화되었습니다.',
-        token,
-        user: {
-          id: existingUser.id,
-          name: existingUser.name,
-          email: existingUser.email,
-          profile_image_url: existingUser.profile_image_url,
-        },
-      });
+    // 관리자에게 새 회원가입 알림 (선택사항)
+    try {
+      await sendNewUserNotification(user);
+    } catch (notificationError) {
+      console.error('관리자 알림 전송 실패:', notificationError);
+      // 알림 실패해도 회원가입은 성공으로 처리
     }
 
-    // 탈퇴한 사용자가 아닌 경우에만 새 계정 생성
-    if (!existingUser) {
-      await validateForeignKey(Center, center_id, '센터');
-      await validateForeignKey(Position, position_id, '직책');
-      if (team_id) await validateForeignKey(Team, team_id, '팀');
-
-      value.password = await createHash(password);
-      if (terms_accepted) value.terms_accepted_at = new Date();
-      value.join_date = new Date();
-
-      // 회원가입 시 초기값 설정
-      value.status = 'active';
-      value.email_verified = false;
-      value.login_attempts = 0;
-      value.is_locked = false;
-
-      if (req.file) {
-        // processFile 미들웨어가 이미 req.body에 설정해줌
-        value.profile_image_name = req.body.profile_image_name;
-        value.profile_image_url = req.body.profile_image_url;
-      }
-
-      const user = await User.create(value);
-      const token = jwt.sign({ uid: user.id }, secret, { expiresIn: '1h' });
-
-      // 관리자에게 새 회원가입 알림 (선택사항)
-      try {
-        await sendNewUserNotification(user);
-      } catch (notificationError) {
-        console.error('관리자 알림 전송 실패:', notificationError);
-        // 알림 실패해도 회원가입은 성공으로 처리
-      }
-
-      return res.status(201).json({
-        success: true,
-        message: '회원가입 완료',
-        token,
-        user: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          profile_image_url: user.profile_image_url,
-        },
-      });
-    }
+    return res.status(201).json({
+      success: true,
+      message: '회원가입 완료',
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        profile_image_url: user.profile_image_url,
+      },
+    });
   } catch (err) {
     next(err);
   }
@@ -183,6 +134,7 @@ const sendNewUserNotification = async user => {
     };
 
     // 여기에 실제 알림 로직 구현 (이메일, 웹훅 등)
+    console.log('새 회원가입 알림:', notificationData);
 
     // TODO: 실제 알림 구현
     // - 관리자 이메일로 알림
@@ -222,35 +174,80 @@ const signIn = async (req, res, next) => {
         message: '계정이 잠겼습니다. 관리자에게 문의해주세요.',
       });
 
-    // 탈퇴된 사용자는 로그인 차단
-    if (user.status === 'inactive') {
-      return res.status(403).json({
-        success: false,
-        message: '탈퇴된 계정입니다. 회원가입을 다시 진행해주세요.',
-        code: 'ACCOUNT_DEACTIVATED',
-      });
-    }
-
     user.login_attempts = 0;
     user.last_login_at = new Date();
     await user.save();
 
-    // Access Token 생성 (24시간)
-    const accessToken = jwt.sign({ uid: user.id }, secret, { expiresIn: '24h' });
+    // Access Token과 Refresh Token 생성
+    const accessToken = jwt.sign({ uid: user.id }, secret, { expiresIn: '1h' });
+    const refreshToken = jwt.sign({ uid: user.id }, secret, { expiresIn: '7d' });
 
     return res.status(200).json({
       success: true,
-      token: accessToken,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        profile_image_url: user.profile_image_url,
+      data: {
+        accessToken: accessToken,
+        refreshToken: refreshToken,
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          profile_image_url: user.profile_image_url,
+        },
       },
       message: '로그인 성공!',
     });
   } catch (err) {
     next(err);
+  }
+};
+
+// ✅ 토큰 갱신
+const refreshAccessToken = async (req, res, next) => {
+  try {
+    const { refreshToken } = req.body;
+
+    if (!refreshToken) {
+      return res.status(400).json({
+        success: false,
+        message: 'Refresh token이 필요합니다.',
+      });
+    }
+
+    // Refresh token 검증
+    const decoded = jwt.verify(refreshToken, secret);
+    const user = await User.findByPk(decoded.uid);
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: '유효하지 않은 refresh token입니다.',
+      });
+    }
+
+    // 새로운 access token과 refresh token 발급
+    const newAccessToken = jwt.sign({ uid: user.id }, secret, { expiresIn: '1h' });
+    const newRefreshToken = jwt.sign({ uid: user.id }, secret, { expiresIn: '7d' });
+
+    return res.status(200).json({
+      success: true,
+      message: '토큰이 성공적으로 갱신되었습니다.',
+      data: {
+        accessToken: newAccessToken,
+        refreshToken: newRefreshToken,
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          nickname: user.nickname,
+        },
+      },
+    });
+  } catch (error) {
+    console.error('토큰 갱신 실패:', error);
+    return res.status(401).json({
+      success: false,
+      message: '유효하지 않은 refresh token입니다.',
+    });
   }
 };
 
@@ -267,16 +264,6 @@ const getMyAccount = async (req, res, next) => {
     });
     if (!user)
       return res.status(404).json({ success: false, message: '사용자를 찾을 수 없습니다.' });
-
-    // 탈퇴된 사용자는 접근 차단
-    if (user.status === 'inactive') {
-      return res.status(403).json({
-        success: false,
-        message: '탈퇴된 계정입니다. 다시 로그인해주세요.',
-        code: 'ACCOUNT_DEACTIVATED',
-      });
-    }
-
     return res.status(200).json({ success: true, user });
   } catch (err) {
     next(err);
@@ -287,68 +274,6 @@ const getMyAccount = async (req, res, next) => {
 const updateMyAccount = async (req, res, next) => {
   try {
     const updates = req.body;
-
-    // shift 데이터 검증
-    if (updates.shift) {
-      try {
-        const parsedShift = JSON.parse(updates.shift);
-        if (!parsedShift || typeof parsedShift !== 'object') {
-          return res.status(400).json({
-            success: false,
-            message: '근무 일정 데이터 형식이 올바르지 않습니다.',
-          });
-        }
-
-        // 압축된 형식 (s, d, t) 또는 일반 형식 (schedules) 모두 지원
-        let schedules;
-        if (parsedShift.schedules && Array.isArray(parsedShift.schedules)) {
-          // 일반 형식
-          schedules = parsedShift.schedules;
-        } else if (parsedShift.s && Array.isArray(parsedShift.s)) {
-          // 압축된 형식
-          schedules = parsedShift.s;
-        } else {
-          return res.status(400).json({
-            success: false,
-            message: '근무 일정 스케줄 데이터가 올바르지 않습니다.',
-          });
-        }
-
-        // 각 스케줄 검증
-        for (let i = 0; i < schedules.length; i++) {
-          const schedule = schedules[i];
-          // 압축된 형식 (d, t.s, t.e) 또는 일반 형식 (days, time.start, time.end) 모두 지원
-          const days = schedule.days || schedule.d;
-          const time = schedule.time || schedule.t;
-
-          if (!days || !Array.isArray(days) || !time) {
-            return res.status(400).json({
-              success: false,
-              message: `스케줄 ${i + 1}의 데이터 형식이 올바르지 않습니다.`,
-            });
-          }
-
-          // 시간 검증
-          const startTime = time.start || time.s;
-          const endTime = time.end || time.e;
-          if (!startTime || !endTime) {
-            return res.status(400).json({
-              success: false,
-              message: `스케줄 ${i + 1}의 시간 데이터가 올바르지 않습니다.`,
-            });
-          }
-        }
-
-        // shift 데이터 검증 통과
-      } catch (parseError) {
-        console.error('shift 데이터 파싱 실패:', parseError);
-        return res.status(400).json({
-          success: false,
-          message: '근무 일정 데이터를 파싱할 수 없습니다.',
-        });
-      }
-    }
-
     if (updates.center_id) await validateForeignKey(Center, updates.center_id, '센터');
     if (updates.position_id) await validateForeignKey(Position, updates.position_id, '직책');
     if (updates.team_id) await validateForeignKey(Team, updates.team_id, '팀');
@@ -357,48 +282,21 @@ const updateMyAccount = async (req, res, next) => {
     if (!user)
       return res.status(404).json({ success: false, message: '사용자를 찾을 수 없습니다.' });
 
+    // 새 파일이 업로드된 경우 기존 파일 삭제
+    if (req.file && user.profile_image_url) {
+      const oldFilePath = createFilePath('profiles', user.profile_image_url.split('/').pop());
+      deleteFile(oldFilePath);
+    }
+
     if (req.file) {
       // processFile 미들웨어가 이미 req.body에 설정해줌
       updates.profile_image_name = req.body.profile_image_name;
       updates.profile_image_url = req.body.profile_image_url;
     }
 
-    // enum 필드들이 빈 문자열이면 null로 변환
-    if (updates.gender === '') {
-      updates.gender = null;
-    }
-    if (updates.status === '') {
-      updates.status = null;
-    }
-
-    // 날짜 필드 처리: 빈 문자열이거나 "Invalid date"면 null로 변환
-    if (updates.join_date === '' || updates.join_date === 'Invalid date') {
-      updates.join_date = null;
-    }
-    if (updates.leave_date === '' || updates.leave_date === 'Invalid date') {
-      updates.leave_date = null;
-    }
-
-    // 업데이트할 데이터 준비 완료
-
     await user.update(updates);
-
-    // 업데이트된 사용자 정보 조회
-    const updatedUser = await User.findByPk(req.user.uid, {
-      include: [
-        { model: Position, as: 'position' },
-        { model: Center, as: 'center' },
-        { model: Team, as: 'team' },
-      ],
-    });
-
-    return res.status(200).json({
-      success: true,
-      message: '내 정보가 수정되었습니다.',
-      user: updatedUser,
-    });
+    return res.status(200).json({ success: true, message: '내 정보가 수정되었습니다.', user });
   } catch (err) {
-    console.error('updateMyAccount 에러:', err);
     next(err);
   }
 };
@@ -428,17 +326,8 @@ const resetPassword = async (req, res, next) => {
       });
     }
 
-    // 탈퇴한 계정인지 확인
-    if (user.status === 'inactive') {
-      return res.status(403).json({
-        success: false,
-        message: '탈퇴된 계정입니다. 회원가입을 다시 진행해주세요.',
-        code: 'ACCOUNT_DEACTIVATED',
-      });
-    }
-
-    // 안전한 임시 비밀번호 생성 (8자리 영숫자)
-    const tempPassword = generateSecureTempPassword(8);
+    // 임시 비밀번호 생성 (8자리 영숫자)
+    const tempPassword = Math.random().toString(36).slice(-8);
     user.password = await createHash(tempPassword);
     await user.save();
 
@@ -460,67 +349,6 @@ const resetPassword = async (req, res, next) => {
     }
   } catch (err) {
     console.error('비밀번호 재설정 오류:', err);
-    next(err);
-  }
-};
-
-// 비밀번호 변경
-const changePassword = async (req, res, next) => {
-  try {
-    const { currentPassword, newPassword } = req.body;
-    const userId = req.user.uid;
-
-    if (!currentPassword || !newPassword) {
-      return res.status(400).json({
-        success: false,
-        message: '현재 비밀번호와 새 비밀번호를 모두 입력해주세요.',
-      });
-    }
-
-    if (newPassword.length < 8) {
-      return res.status(400).json({
-        success: false,
-        message: '새 비밀번호는 최소 8자 이상이어야 합니다.',
-      });
-    }
-
-    // 사용자 조회
-    const user = await User.findByPk(userId);
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: '사용자를 찾을 수 없습니다.',
-      });
-    }
-
-    // 현재 비밀번호 확인
-    const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password);
-    if (!isCurrentPasswordValid) {
-      return res.status(400).json({
-        success: false,
-        message: '현재 비밀번호가 올바르지 않습니다.',
-      });
-    }
-
-    // 새 비밀번호가 현재 비밀번호와 같은지 확인
-    const isSamePassword = await bcrypt.compare(newPassword, user.password);
-    if (isSamePassword) {
-      return res.status(400).json({
-        success: false,
-        message: '새 비밀번호는 현재 비밀번호와 달라야 합니다.',
-      });
-    }
-
-    // 새 비밀번호 해시화 및 저장
-    const hashedNewPassword = await createHash(newPassword);
-    await user.update({ password: hashedNewPassword });
-
-    return res.status(200).json({
-      success: true,
-      message: '비밀번호가 성공적으로 변경되었습니다.',
-    });
-  } catch (err) {
-    console.error('비밀번호 변경 오류:', err);
     next(err);
   }
 };
@@ -548,93 +376,6 @@ const deleteProfileImage = async (req, res, next) => {
   }
 };
 
-// 프로필 이미지만 업로드
-const uploadProfileImage = async (req, res, next) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({
-        success: false,
-        message: '프로필 이미지 파일이 필요합니다.',
-      });
-    }
-
-    const user = await User.findByPk(req.user.uid);
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: '사용자를 찾을 수 없습니다.',
-      });
-    }
-
-    // 기존 프로필 이미지가 있으면 파일 삭제
-    if (user.profile_image_url) {
-      const oldFilePath = createFilePath('profiles', user.profile_image_url.split('/').pop());
-      deleteFile(oldFilePath);
-    }
-
-    // 새 프로필 이미지 정보 업데이트
-    await user.update({
-      profile_image_name: req.body.profile_image_name,
-      profile_image_url: req.body.profile_image_url,
-    });
-
-    return res.status(200).json({
-      success: true,
-      message: '프로필 이미지가 업로드되었습니다.',
-      data: {
-        profile_image_name: user.profile_image_name,
-        profile_image_url: user.profile_image_url,
-      },
-    });
-  } catch (err) {
-    next(err);
-  }
-};
-
-// 추가 이미지 업로드 (자격증, 경력, 학력, 인스타그램)
-const uploadAdditionalImage = async (req, res, next) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({
-        success: false,
-        message: '이미지 파일이 필요합니다.',
-      });
-    }
-
-    const { field } = req.body;
-
-    if (!field) {
-      return res.status(400).json({
-        success: false,
-        message: '필드명이 필요합니다.',
-      });
-    }
-
-    // 허용된 필드명인지 확인
-    const allowedFields = ['license', 'experience', 'education', 'instagram'];
-    if (!allowedFields.includes(field)) {
-      return res.status(400).json({
-        success: false,
-        message: '허용되지 않는 필드명입니다.',
-      });
-    }
-
-    // 이미지 URL 생성
-    const imageUrl = `/uploads/user-additional/${req.file.filename}`;
-
-    return res.status(200).json({
-      success: true,
-      message: '이미지가 업로드되었습니다.',
-      imageUrl: imageUrl,
-      filename: req.file.filename,
-      originalName: req.file.originalname,
-    });
-  } catch (err) {
-    console.error('이미지 업로드 오류:', err);
-    next(err);
-  }
-};
-
 // 회원 탈퇴
 const deactivateAccount = async (req, res, next) => {
   try {
@@ -644,13 +385,8 @@ const deactivateAccount = async (req, res, next) => {
 
     // 프로필 이미지가 있으면 파일도 함께 삭제
     if (user.profile_image_url) {
-      try {
-        const filePath = createFilePath('profiles', user.profile_image_url.split('/').pop());
-        deleteFile(filePath);
-      } catch (fileError) {
-        console.error('프로필 이미지 파일 삭제 실패:', fileError);
-        // 파일 삭제 실패해도 계정 탈퇴는 계속 진행
-      }
+      const filePath = createFilePath('profiles', user.profile_image_url.split('/').pop());
+      deleteFile(filePath);
     }
 
     user.status = 'inactive';
@@ -920,13 +656,11 @@ module.exports = {
   updateMyAccount,
   logout,
   resetPassword,
-  changePassword,
   deleteProfileImage,
-  uploadProfileImage, // 새로 추가된 함수
-  uploadAdditionalImage, // 새로 추가된 함수
   deactivateAccount,
   getAllUsers,
   getUserById,
   getPositions,
   getCenters,
+  refreshAccessToken,
 };

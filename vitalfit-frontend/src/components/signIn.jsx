@@ -11,9 +11,6 @@ export default function SignIn() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // 비밀번호 표시/숨김 상태 추가
-  const [showPassword, setShowPassword] = useState(false);
-
   const { login, isAuthenticated, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
@@ -22,16 +19,16 @@ export default function SignIn() {
     const savedEmail = localStorage.getItem('savedEmail');
     const savedRememberMe = localStorage.getItem('rememberMe');
     const savedSaveAccount = localStorage.getItem('saveAccount');
-
+    
     if (savedEmail) {
       setEmail(savedEmail);
       setSaveAccount(true);
     }
-
+    
     if (savedRememberMe === 'true') {
       setRememberMe(true);
     }
-
+    
     if (savedSaveAccount === 'true') {
       setSaveAccount(true);
     }
@@ -82,11 +79,11 @@ export default function SignIn() {
     setError('');
 
     try {
-      const result = await login(email, password);
+      const result = await login(email, password, rememberMe);
 
       if (result.success) {
         console.log('로그인 성공');
-
+        
         // 계정 저장 설정
         if (saveAccount) {
           localStorage.setItem('savedEmail', email);
@@ -95,7 +92,7 @@ export default function SignIn() {
           localStorage.removeItem('savedEmail');
           localStorage.removeItem('saveAccount');
         }
-
+        
         toast.success('로그인되었습니다.');
         navigate('/dashboard');
       } else {
@@ -123,11 +120,7 @@ export default function SignIn() {
       {/* 왼쪽 박스 섹션 */}
       <div className="flex w-1/2 justify-end items-center">
         <div className="w-[550px] h-[706px] bg-white/20 backdrop-blur-sm rounded-l-3xl shadow-2xl border border-white/30 overflow-hidden">
-          <img
-            src="/img/infovitalfit.png"
-            alt="VitalFit Info"
-            className="w-full h-full object-cover"
-          />
+          <img src="/img/main.jpg" alt="Main Image" className="w-full h-full object-cover" />
         </div>
       </div>
 
@@ -157,23 +150,14 @@ export default function SignIn() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">비밀번호</label>
-                <div className="relative">
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    value={password}
-                    onChange={e => setPassword(e.target.value)}
-                    placeholder="Enter password"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-colors pr-10"
-                    required
-                  />
-                  <button
-                    type="button"
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700 transition-colors"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? '😵‍💫' : '🥺'}
-                  </button>
-                </div>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  placeholder="Enter password"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-colors"
+                  required
+                />
               </div>
 
               <div className="flex items-center justify-between">

@@ -24,6 +24,45 @@ class AuthService {
     delete window.__accessToken;
   }
 
+  // Refresh Token 관리
+  static setRefreshToken(token) {
+    localStorage.setItem('refreshToken', token);
+  }
+
+  static getRefreshToken() {
+    return localStorage.getItem('refreshToken');
+  }
+
+  static removeRefreshToken() {
+    localStorage.removeItem('refreshToken');
+  }
+
+  // 토큰 갱신
+  static async refreshAccessToken() {
+    const refreshToken = this.getRefreshToken();
+    if (!refreshToken) {
+      throw new Error('Refresh token not found');
+    }
+
+    try {
+      const response = await api.post('/users/refresh', {
+        refreshToken: refreshToken,
+      });
+
+      const { accessToken, refreshToken: newRefreshToken } = response.data;
+
+      this.setAccessToken(accessToken);
+      if (newRefreshToken) {
+        this.setRefreshToken(newRefreshToken);
+      }
+
+      return accessToken;
+    } catch (error) {
+      console.error('Token refresh failed:', error);
+      throw error;
+    }
+  }
+
   // 로그아웃
   static async logout() {
     try {
@@ -32,6 +71,7 @@ class AuthService {
       console.error('로그아웃 중 오류:', error);
     } finally {
       this.removeAccessToken();
+      this.removeRefreshToken();
     }
   }
 
@@ -44,46 +84,19 @@ class AuthService {
   static async tryAutoLogin() {
     const accessToken = this.getAccessToken();
 
-    if (!accessToken) {
-      console.log('🔍 tryAutoLogin: 토큰이 없습니다.');
-      return false;
-    }
-
-    try {
-      console.log('🔍 tryAutoLogin: 토큰 유효성 검증 시작');
-      // 토큰 유효성 검증
-      const response = await api.get('/users/me');
-
-      // 응답이 성공적이고 사용자 데이터가 있는 경우에만 true 반환
-      if (response.data && response.data.user) {
-        const user = response.data.user;
-        console.log('🔍 tryAutoLogin: 사용자 상태 확인:', user.status);
-
-        if (user.status === 'active') {
-          console.log('✅ tryAutoLogin: 유효한 활성 사용자입니다.');
-          return true;
-        } else {
-          // 사용자 데이터가 있지만 비활성 상태면 토큰 제거
-          console.warn('⚠️ tryAutoLogin: 비활성 사용자입니다. 상태:', user.status);
-          this.removeAccessToken();
-          return false;
-        }
-      } else {
-        // 사용자 데이터가 없으면 토큰 제거
-        console.warn('⚠️ tryAutoLogin: 사용자 데이터가 없습니다.');
+    if (accessToken) {
+      try {
+        // 토큰 유효성 검증
+              await api.get('/users/me');
+      return true;
+      } catch (error) {
+        // Access Token이 만료되었으면 로그인 실패
         this.removeAccessToken();
         return false;
       }
-    } catch (error) {
-      console.error('❌ tryAutoLogin: 토큰 유효성 검증 실패:', error);
-
-      // 403 에러 (탈퇴된 계정) 또는 401 에러 (토큰 만료)인 경우
-      if (error.response?.status === 403 || error.response?.status === 401) {
-        console.warn('⚠️ tryAutoLogin: 인증 실패로 토큰 제거. 상태:', error.response?.status);
-        this.removeAccessToken();
-      }
-      return false;
     }
+
+    return false;
   }
 }
 
