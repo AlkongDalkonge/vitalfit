@@ -14,7 +14,7 @@ export default function Sidebar({ activeMenu = null, setActiveMenu, onLogoClick 
       >
         <img src="/logo.png" alt="Logo" className="w-16 h-16" />
         <div className="flex flex-col items-center text-center">
-          <span className="text-base font-bold text-gray-800 leading-tight">UiUxOtor</span>
+          <span className="text-base font-bold text-gray-800 leading-tight">Vitalfit</span>
           <span className="text-xs text-gray-500 leading-tight">ERP System</span>
         </div>
       </div>
@@ -33,7 +33,7 @@ export default function Sidebar({ activeMenu = null, setActiveMenu, onLogoClick 
                     ? 'bg-gradient-to-r from-blue-50 to-cyan-50 border-gradient-left font-semibold'
                     : ''
                 }`}
-                onClick={() => setActiveMenu && setActiveMenu(item.name)}
+                onClick={() => setActiveMenu(item.name)}
               >
                 <div
                   className={`flex items-center justify-center w-4 h-4 transition-all duration-300 ease-in-out ${

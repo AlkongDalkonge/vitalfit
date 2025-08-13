@@ -1,7 +1,7 @@
+import { Outlet } from 'react-router-dom';
 import Header from './Header';
 import Sidebar from './Sidebar';
 import Footer from './Footer';
-import AppRouter from '../../router/AppRouter';
 import { useNavigation } from '../../utils/hooks';
 
 export default function Layout() {
@@ -17,7 +17,7 @@ export default function Layout() {
       <div className="flex-1 flex flex-col ml-60 h-screen">
         <Header activeMenu={activeMenu} userInfo={userInfo} />
         <main className="flex-1 p-8 bg-white overflow-y-auto">
-          <AppRouter />
+          <Outlet />
         </main>
         <Footer />
       </div>

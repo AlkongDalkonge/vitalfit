@@ -36,3 +36,8 @@ Thumbs.db
 
 # 업로드 파일 (사용자가 업로드한 파일들, git에 올릴 필요 없음)
 /public/uploads/
+
+# 데이터베이스 파일 (로컬 개발용, git에 올릴 필요 없음)
+*.sqlite
+*.db
+database.sqlite

@@ -1,16 +1,25 @@
 {
   "name": "vitalfit-backend",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "src/app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node src/app.js",
-    "dev": "nodemon src/app.js"
+    "dev": "nodemon src/app.js",
+    "seed": "node -e \"const { seedAllData } = require('./src/utils/seedData.js'); seedAllData().then(() => console.log('✅ 시드데이터 완료')).catch(console.error);\"",
+    "setup": "npm install && npm run seed",
+    "build": "echo 'No build step required for Node.js'",
+    "postinstall": "echo 'Post-install script completed'"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
+  "keywords": [
+    "vitalfit",
+    "fitness",
+    "pt",
+    "management"
+  ],
+  "author": "sawolharu <r10302310@gmail.com>",
+  "license": "MIT",
+  "description": "VitalFit PT 관리 시스템 백엔드 API",
   "dependencies": {
     "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
@@ -20,9 +29,11 @@
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.1",
     "multer": "^2.0.2",
+    "nodemailer": "^7.0.5",
     "pg": "^8.16.3",
     "pg-hstore": "^2.3.4",
     "sequelize": "^6.37.7",
+    "sqlite3": "^5.1.7",
     "winston": "^3.17.0"
   },
   "devDependencies": {

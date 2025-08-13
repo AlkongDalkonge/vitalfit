@@ -1,4 +1,9 @@
 {
+  "name": "vitalfit",
+  "version": "1.0.0",
+  "description": "VitalFit PT 관리 시스템",
+  "author": "sawolharu <r10302310@gmail.com>",
+  "license": "MIT",
   "scripts": {
     "lint": "eslint vitalfit-frontend/src/ vitalfit-backend/src/",
     "lint:fix": "eslint --fix vitalfit-frontend/src/ vitalfit-backend/src/",

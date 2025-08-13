@@ -1,110 +1,24 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from 'react';
+import { memberAPI } from '../utils/api';
+import { useMemberForm } from '../utils/hooks';
 
 const MemberEditModal = ({ isOpen, onClose, member, onUpdate }) => {
-  const [formData, setFormData] = useState({
-    name: "",
-    phone: "",
-    center_id: "",
-    trainer_id: "",
-    join_date: "",
-    expire_date: "",
-    total_sessions: "",
-    used_sessions: "",
-    free_sessions: "",
-    memo: "",
-    status: "active",
-  });
-  const [centers, setCenters] = useState([]);
-  const [trainers, setTrainers] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState({});
+  // 커스텀 훅 사용
+  const {
+    formData,
+    centers,
+    trainers,
+    loading,
+    errors,
+    handleInputChange,
+    validateForm,
+    getFilteredTrainers,
+    setLoading,
+    setErrors,
+  } = useMemberForm(member, isOpen);
 
-  // 멤버 정보로 폼 데이터 초기화
-  useEffect(() => {
-    if (member && isOpen) {
-      setFormData({
-        name: member.name || "",
-        phone: member.phone || "",
-        center_id: member.center_id || "",
-        trainer_id: member.trainer_id || "",
-        join_date: member.join_date
-          ? new Date(member.join_date).toISOString().split("T")[0]
-          : "",
-        expire_date: member.expire_date
-          ? new Date(member.expire_date).toISOString().split("T")[0]
-          : "",
-        total_sessions: member.total_sessions || "",
-        used_sessions: member.used_sessions || "",
-        free_sessions: member.free_sessions || "",
-        memo: member.memo || "",
-        status: member.status || "active",
-      });
-    }
-  }, [member, isOpen]);
-
-  // 센터와 트레이너 데이터 가져오기
-  useEffect(() => {
-    if (isOpen) {
-      fetchCentersAndTrainers();
-    }
-  }, [isOpen]);
-
-  const fetchCentersAndTrainers = async () => {
-    try {
-      const [centersResponse, trainersResponse] = await Promise.all([
-        fetch("http://localhost:3000/api/centers"),
-        fetch("http://localhost:3000/api/users?role=trainer"),
-      ]);
-
-      const centersData = await centersResponse.json();
-      const trainersData = await trainersResponse.json();
-
-      if (centersData.success) setCenters(centersData.data.centers);
-      if (trainersData.success) setTrainers(trainersData.data.users);
-    } catch (error) {
-      console.error("데이터 로드 실패:", error);
-    }
-  };
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-    // 에러 메시지 초기화
-    if (errors[name]) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: "",
-      }));
-    }
-  };
-
-  const validateForm = () => {
-    const newErrors = {};
-
-    if (!formData.name.trim()) {
-      newErrors.name = "이름은 필수입니다";
-    }
-    if (!formData.phone.trim()) {
-      newErrors.phone = "연락처는 필수입니다";
-    }
-    if (!formData.center_id) {
-      newErrors.center_id = "센터를 선택해주세요";
-    }
-    if (!formData.trainer_id) {
-      newErrors.trainer_id = "트레이너를 선택해주세요";
-    }
-    if (!formData.join_date) {
-      newErrors.join_date = "가입일은 필수입니다";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = async (e) => {
+  // 폼 제출 핸들러
+  const handleSubmit = async e => {
     e.preventDefault();
 
     if (!validateForm()) {
@@ -114,69 +28,62 @@ const MemberEditModal = ({ isOpen, onClose, member, onUpdate }) => {
     setLoading(true);
 
     try {
-      const response = await fetch(
-        `http://localhost:3000/api/member/${member.id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(formData),
-        }
-      );
+      // 빈 문자열을 null로 변환
+      const cleanedData = {
+        ...formData,
+        expire_date: formData.expire_date || null,
+        memo: formData.memo || null,
+        total_sessions: formData.total_sessions || null,
+        used_sessions: formData.used_sessions || null,
+        free_sessions: formData.free_sessions || null,
+      };
 
-      const data = await response.json();
+      const response = await memberAPI.updateMember(member.id, cleanedData);
 
-      if (data.success) {
-        // 성공 시 부모 컴포넌트에 업데이트 알림
-        onUpdate(data.data);
+      if (response.success) {
+        onUpdate(response.data);
         onClose();
-        // 성공 메시지 (선택사항)
-        alert("멤버 정보가 성공적으로 수정되었습니다.");
       } else {
-        // 에러 메시지 표시
-        alert(data.message || "수정에 실패했습니다.");
+        setErrors({ submit: response.message || '수정에 실패했습니다.' });
       }
     } catch (error) {
-      console.error("멤버 수정 오류:", error);
-      alert("수정 중 오류가 발생했습니다.");
+      console.error('멤버 수정 실패:', error);
+      setErrors({ submit: '수정 중 오류가 발생했습니다.' });
     } finally {
       setLoading(false);
     }
   };
 
+  // 모달 닫기 핸들러
   const handleClose = () => {
     if (!loading) {
-      setFormData({
-        name: "",
-        phone: "",
-        center_id: "",
-        trainer_id: "",
-        join_date: "",
-        expire_date: "",
-        total_sessions: "",
-        used_sessions: "",
-        free_sessions: "",
-        memo: "",
-        status: "active",
-      });
-      setErrors({});
       onClose();
     }
   };
+
+  // 필터링된 트레이너 목록 가져오기
+  const filteredTrainers = getFilteredTrainers();
+
+  // 드롭다운 상태
+  const [showCenterDropdown, setShowCenterDropdown] = useState(false);
+  const [showTrainerDropdown, setShowTrainerDropdown] = useState(false);
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div
-        data-layer="고객등록/수정"
-        className="w-[738px] h-[771px] relative bg-white overflow-hidden rounded-[10px]"
-      >
+      <div className="w-[750px] h-[680px] bg-white rounded-[20px] relative overflow-hidden">
+        {/* 로딩 오버레이 */}
+        {loading && (
+          <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center z-10">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-500"></div>
+          </div>
+        )}
+
         {/* 제목 */}
         <div
           data-layer="고객 수정"
-          className="left-[50px] top-[34px] absolute justify-start text-black text-xl font-extrabold font-['Nunito']"
+          className="left-[50px] top-[40px] absolute justify-start text-black text-xl font-extrabold font-['Nunito'] leading-7"
         >
           고객 수정
         </div>
@@ -187,13 +94,7 @@ const MemberEditModal = ({ isOpen, onClose, member, onUpdate }) => {
           disabled={loading}
           className="absolute right-[24px] top-[34px] w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-full transition-colors duration-200"
         >
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 16 16"
-            fill="none"
-            className="text-neutral-600"
-          >
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-neutral-600">
             <path
               d="M12 4L4 12M4 4L12 12"
               stroke="currentColor"
@@ -206,16 +107,10 @@ const MemberEditModal = ({ isOpen, onClose, member, onUpdate }) => {
 
         <form onSubmit={handleSubmit}>
           {/* 성함 */}
-          <div
-            data-layer="Input Field"
-            className="w-72 left-[50px] top-[93px] absolute inline-flex flex-col justify-start items-start gap-[5px]"
-          >
+          <div className="w-72 left-[50px] top-[93px] absolute inline-flex flex-col justify-start items-start gap-[5px]">
             <div className="w-72 flex flex-col justify-start items-start gap-2">
-              <div
-                data-layer="성함"
-                className="justify-start text-neutral-900 text-sm font-normal font-['Nunito'] leading-normal"
-              >
-                성함
+              <div className="justify-start text-neutral-900 text-sm font-normal font-['Nunito'] leading-normal">
+                성함 <span className="text-red-500">*</span>
               </div>
               <div className="relative w-72 h-12">
                 <input
@@ -226,25 +121,18 @@ const MemberEditModal = ({ isOpen, onClose, member, onUpdate }) => {
                   className="w-72 h-12 rounded-[10px] outline outline-1 outline-offset-[-0.50px] outline-stone-300 px-3 text-sm font-['Nunito'] focus:outline-cyan-500 placeholder:text-neutral-400"
                   placeholder="이름을 입력하세요"
                   disabled={loading}
+                  required
                 />
               </div>
-              {errors.name && (
-                <p className="text-red-500 text-xs mt-1">{errors.name}</p>
-              )}
+              {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
             </div>
           </div>
 
           {/* 연락처 */}
-          <div
-            data-layer="Input Field"
-            className="w-72 left-[370px] top-[93px] absolute inline-flex flex-col justify-start items-start gap-[5px]"
-          >
+          <div className="w-72 left-[370px] top-[93px] absolute inline-flex flex-col justify-start items-start gap-[5px]">
             <div className="w-72 flex flex-col justify-start items-start gap-2">
-              <div
-                data-layer="연락처"
-                className="justify-start text-neutral-900 text-sm font-normal font-['Nunito'] leading-normal"
-              >
-                연락처
+              <div className="justify-start text-neutral-900 text-sm font-normal font-['Nunito'] leading-normal">
+                연락처 <span className="text-red-500">*</span>
               </div>
               <div className="relative w-72 h-12">
                 <input
@@ -255,61 +143,175 @@ const MemberEditModal = ({ isOpen, onClose, member, onUpdate }) => {
                   className="w-72 h-12 rounded-[10px] outline outline-1 outline-offset-[-0.50px] outline-stone-300 px-3 text-sm font-['Nunito'] focus:outline-cyan-500 placeholder:text-neutral-400"
                   placeholder="연락처를 입력하세요"
                   disabled={loading}
+                  required
                 />
               </div>
-              {errors.phone && (
-                <p className="text-red-500 text-xs mt-1">{errors.phone}</p>
-              )}
+              {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
+            </div>
+          </div>
+
+          {/* 소속 센터 */}
+          <div className="w-72 left-[50px] top-[199px] absolute inline-flex flex-col justify-start items-start gap-[5px]">
+            <div className="w-72 flex flex-col justify-start items-start gap-2">
+              <div className="justify-start text-neutral-900 text-sm font-normal font-['Nunito'] leading-normal">
+                소속 센터 <span className="text-red-500">*</span>
+              </div>
+              <div className="relative w-72">
+                <button
+                  type="button"
+                  onClick={() => setShowCenterDropdown(!showCenterDropdown)}
+                  disabled={loading}
+                  className={`w-72 h-12 rounded-[10px] outline outline-1 outline-offset-[-0.50px] outline-stone-300 px-3 text-sm font-['Nunito'] focus:outline-cyan-500 bg-white flex items-center justify-between ${
+                    !formData.center_id ? 'text-neutral-400' : 'text-neutral-900'
+                  }`}
+                >
+                  <span>
+                    {formData.center_id
+                      ? centers.find(c => c.id === parseInt(formData.center_id))?.name
+                      : '센터를 선택하세요'}
+                  </span>
+                  <svg
+                    width="16"
+                    height="8"
+                    viewBox="0 0 16 8"
+                    fill="none"
+                    className={`transition-transform duration-200 ${showCenterDropdown ? 'rotate-180' : ''}`}
+                  >
+                    <path
+                      d="M1 1L8 7L15 1"
+                      stroke="#1F2937"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </button>
+
+                {/* 커스텀 드롭다운 */}
+                {showCenterDropdown && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-stone-300 rounded-[10px] shadow-lg z-10">
+                    <div className="py-1">
+                      {centers.map(center => (
+                        <button
+                          key={center.id}
+                          type="button"
+                          onClick={() => {
+                            handleInputChange({ target: { name: 'center_id', value: center.id } });
+                            setShowCenterDropdown(false);
+                          }}
+                          className="w-full px-3 py-2 text-left text-sm font-['Nunito'] hover:bg-gray-50 transition-colors duration-200"
+                        >
+                          {center.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 숨겨진 select (폼 제출용) */}
+                <select
+                  name="center_id"
+                  value={formData.center_id}
+                  onChange={handleInputChange}
+                  required
+                  className="hidden"
+                  disabled={loading}
+                >
+                  <option value="">센터를 선택하세요</option>
+                  {centers.map(center => (
+                    <option key={center.id} value={center.id}>
+                      {center.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {errors.center_id && <p className="text-red-500 text-xs mt-1">{errors.center_id}</p>}
             </div>
           </div>
 
           {/* 담당 트레이너 */}
-          <div
-            data-layer="Input Field"
-            className="w-72 left-[50px] top-[199px] absolute inline-flex flex-col justify-start items-start gap-[5px]"
-          >
+          <div className="w-72 left-[370px] top-[199px] absolute inline-flex flex-col justify-start items-start gap-[5px]">
             <div className="w-72 flex flex-col justify-start items-start gap-2">
-              <div
-                data-layer="담당 트레이너"
-                className="justify-start text-neutral-900 text-sm font-normal font-['Nunito'] leading-normal"
-              >
-                담당 트레이너
+              <div className="justify-start text-neutral-900 text-sm font-normal font-['Nunito'] leading-normal">
+                담당 트레이너 <span className="text-red-500">*</span>
               </div>
-              <div className="relative w-72 h-12">
+              <div className="relative w-72">
+                <button
+                  type="button"
+                  onClick={() => setShowTrainerDropdown(!showTrainerDropdown)}
+                  disabled={loading || !formData.center_id}
+                  className={`w-72 h-12 rounded-[10px] outline outline-1 outline-offset-[-0.50px] outline-stone-300 px-3 text-sm font-['Nunito'] focus:outline-cyan-500 bg-white flex items-center justify-between ${
+                    !formData.trainer_id ? 'text-neutral-400' : 'text-neutral-900'
+                  }`}
+                >
+                  <span>
+                    {formData.trainer_id
+                      ? filteredTrainers.find(t => t.id === parseInt(formData.trainer_id))?.name +
+                        (filteredTrainers.find(t => t.id === parseInt(formData.trainer_id))?.nickname
+                          ? ` (${filteredTrainers.find(t => t.id === parseInt(formData.trainer_id))?.nickname})`
+                          : '')
+                      : formData.center_id
+                        ? '트레이너를 선택하세요'
+                        : '먼저 센터를 선택하세요'}
+                  </span>
+                  <svg
+                    width="16"
+                    height="8"
+                    viewBox="0 0 16 8"
+                    fill="none"
+                    className={`transition-transform duration-200 ${showTrainerDropdown ? 'rotate-180' : ''}`}
+                  >
+                    <path
+                      d="M1 1L8 7L15 1"
+                      stroke="#1F2937"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </button>
+
+                {/* 커스텀 드롭다운 */}
+                {showTrainerDropdown && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-stone-300 rounded-[10px] shadow-lg z-10">
+                    <div className="py-1">
+                      {filteredTrainers.map(trainer => (
+                        <button
+                          key={trainer.id}
+                          type="button"
+                          onClick={() => {
+                            handleInputChange({
+                              target: { name: 'trainer_id', value: trainer.id },
+                            });
+                            setShowTrainerDropdown(false);
+                          }}
+                          className="w-full px-3 py-2 text-left text-sm font-['Nunito'] hover:bg-gray-50 transition-colors duration-200"
+                        >
+                          {trainer.name} {trainer.nickname ? `(${trainer.nickname})` : ''}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 숨겨진 select (폼 제출용) */}
                 <select
                   name="trainer_id"
                   value={formData.trainer_id}
                   onChange={handleInputChange}
                   required
-                  className={`w-72 h-12 rounded-[10px] outline outline-1 outline-offset-[-0.50px] outline-stone-300 px-3 text-sm font-['Nunito'] focus:outline-cyan-500 appearance-none bg-white ${
-                    !formData.trainer_id
-                      ? "text-neutral-400"
-                      : "text-neutral-900"
-                  }`}
-                  disabled={loading}
+                  className="hidden"
+                  disabled={loading || !formData.center_id}
                 >
-                  <option value="" className="text-neutral-400">
-                    Select option
+                  <option value="">
+                    {formData.center_id ? '트레이너를 선택하세요' : '먼저 센터를 선택하세요'}
                   </option>
-                  {trainers.map((trainer) => (
+                  {filteredTrainers.map(trainer => (
                     <option key={trainer.id} value={trainer.id}>
-                      {trainer.name}
+                      {trainer.name} {trainer.nickname ? `(${trainer.nickname})` : ''}
                     </option>
                   ))}
                 </select>
-                <div className="ArrowDown w-6 h-6 absolute right-3 top-3 pointer-events-none">
-                  <div className="Shape w-4 h-2 left-[4px] top-[9px] absolute">
-                    <svg width="16" height="8" viewBox="0 0 16 8" fill="none">
-                      <path
-                        d="M1 1L8 7L15 1"
-                        stroke="#1F2937"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </div>
-                </div>
               </div>
               {errors.trainer_id && (
                 <p className="text-red-500 text-xs mt-1">{errors.trainer_id}</p>
@@ -317,71 +319,11 @@ const MemberEditModal = ({ isOpen, onClose, member, onUpdate }) => {
             </div>
           </div>
 
-          {/* 소속 센터 */}
-          <div
-            data-layer="Input Field"
-            className="w-72 left-[370px] top-[199px] absolute inline-flex flex-col justify-start items-start gap-[5px]"
-          >
+          {/* 가입일 */}
+          <div className="w-72 left-[50px] top-[305px] absolute inline-flex flex-col justify-start items-start gap-[5px]">
             <div className="w-72 flex flex-col justify-start items-start gap-2">
-              <div
-                data-layer="소속 센터"
-                className="justify-start text-neutral-900 text-sm font-normal font-['Nunito'] leading-normal"
-              >
-                소속 센터
-              </div>
-              <div className="relative w-72 h-12">
-                <select
-                  name="center_id"
-                  value={formData.center_id}
-                  onChange={handleInputChange}
-                  required
-                  className={`w-72 h-12 rounded-[10px] outline outline-1 outline-offset-[-0.50px] outline-stone-300 px-3 text-sm font-['Nunito'] focus:outline-cyan-500 appearance-none bg-white ${
-                    !formData.center_id
-                      ? "text-neutral-400"
-                      : "text-neutral-900"
-                  }`}
-                  disabled={loading}
-                >
-                  <option value="" className="text-neutral-400">
-                    Select option
-                  </option>
-                  {centers.map((center) => (
-                    <option key={center.id} value={center.id}>
-                      {center.name}
-                    </option>
-                  ))}
-                </select>
-                <div className="ArrowDown w-6 h-6 absolute right-3 top-3 pointer-events-none">
-                  <div className="Shape w-4 h-2 left-[4px] top-[9px] absolute">
-                    <svg width="16" height="8" viewBox="0 0 16 8" fill="none">
-                      <path
-                        d="M1 1L8 7L15 1"
-                        stroke="#1F2937"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </div>
-                </div>
-              </div>
-              {errors.center_id && (
-                <p className="text-red-500 text-xs mt-1">{errors.center_id}</p>
-              )}
-            </div>
-          </div>
-
-          {/* 등록일 */}
-          <div
-            data-layer="Input Field"
-            className="w-72 left-[50px] top-[305px] absolute inline-flex flex-col justify-start items-start gap-[5px]"
-          >
-            <div className="w-72 flex flex-col justify-start items-start gap-2">
-              <div
-                data-layer="등록일"
-                className="justify-start text-neutral-900 text-sm font-normal font-['Nunito'] leading-normal"
-              >
-                등록일
+              <div className="justify-start text-neutral-900 text-sm font-normal font-['Nunito'] leading-normal">
+                가입일
               </div>
               <div className="relative w-72 h-12">
                 <input
@@ -389,26 +331,18 @@ const MemberEditModal = ({ isOpen, onClose, member, onUpdate }) => {
                   name="join_date"
                   value={formData.join_date}
                   onChange={handleInputChange}
-                  className="w-72 h-12 rounded-[10px] outline outline-1 outline-offset-[-0.50px] outline-stone-300 px-3 text-sm font-['Nunito'] focus:outline-cyan-500 placeholder:text-neutral-400"
+                  className="w-72 h-12 rounded-[10px] outline outline-1 outline-offset-[-0.50px] outline-stone-300 px-3 text-sm font-['Nunito'] focus:outline-cyan-500"
                   disabled={loading}
                 />
               </div>
-              {errors.join_date && (
-                <p className="text-red-500 text-xs mt-1">{errors.join_date}</p>
-              )}
+              {errors.join_date && <p className="text-red-500 text-xs mt-1">{errors.join_date}</p>}
             </div>
           </div>
 
           {/* 만료일 */}
-          <div
-            data-layer="Input Field"
-            className="w-72 left-[370px] top-[305px] absolute inline-flex flex-col justify-start items-start gap-[5px]"
-          >
+          <div className="w-72 left-[370px] top-[305px] absolute inline-flex flex-col justify-start items-start gap-[5px]">
             <div className="w-72 flex flex-col justify-start items-start gap-2">
-              <div
-                data-layer="만료일"
-                className="justify-start text-neutral-900 text-sm font-normal font-['Nunito'] leading-normal"
-              >
+              <div className="justify-start text-neutral-900 text-sm font-normal font-['Nunito'] leading-normal">
                 만료일
               </div>
               <div className="relative w-72 h-12">
@@ -417,24 +351,21 @@ const MemberEditModal = ({ isOpen, onClose, member, onUpdate }) => {
                   name="expire_date"
                   value={formData.expire_date}
                   onChange={handleInputChange}
-                  className="w-72 h-12 rounded-[10px] outline outline-1 outline-offset-[-0.50px] outline-stone-300 px-3 text-sm font-['Nunito'] focus:outline-cyan-500 placeholder:text-neutral-400"
+                  className="w-72 h-12 rounded-[10px] outline outline-1 outline-offset-[-0.50px] outline-stone-300 px-3 text-sm font-['Nunito'] focus:outline-cyan-500"
                   disabled={loading}
                 />
               </div>
+              {errors.expire_date && (
+                <p className="text-red-500 text-xs mt-1">{errors.expire_date}</p>
+              )}
             </div>
           </div>
 
-          {/* 잔여 PT */}
-          <div
-            data-layer="Input Field"
-            className="w-72 left-[50px] top-[412px] absolute inline-flex flex-col justify-start items-start gap-[5px]"
-          >
+          {/* PT 세션 수 */}
+          <div className="w-72 left-[50px] top-[411px] absolute inline-flex flex-col justify-start items-start gap-[5px]">
             <div className="w-72 flex flex-col justify-start items-start gap-2">
-              <div
-                data-layer="잔여 PT"
-                className="Pt justify-start text-neutral-900 text-sm font-normal font-['Nunito'] leading-normal"
-              >
-                잔여 PT
+              <div className="justify-start text-neutral-900 text-sm font-normal font-['Nunito'] leading-normal">
+                PT 세션 수
               </div>
               <div className="relative w-72 h-12">
                 <input
@@ -443,25 +374,20 @@ const MemberEditModal = ({ isOpen, onClose, member, onUpdate }) => {
                   value={formData.total_sessions}
                   onChange={handleInputChange}
                   className="w-72 h-12 rounded-[10px] outline outline-1 outline-offset-[-0.50px] outline-stone-300 px-3 text-sm font-['Nunito'] focus:outline-cyan-500 placeholder:text-neutral-400"
-                  placeholder="잔여 PT 수를 입력하세요"
-                  min="0"
+                  placeholder="PT 세션 수를 입력하세요"
                   disabled={loading}
+                  min="0"
                 />
               </div>
+              {errors.total_sessions && <p className="text-red-500 text-xs mt-1">{errors.total_sessions}</p>}
             </div>
           </div>
 
-          {/* 잔여 무료PT */}
-          <div
-            data-layer="Input Field"
-            className="w-72 left-[370px] top-[412px] absolute inline-flex flex-col justify-start items-start gap-[5px]"
-          >
+          {/* 무료 세션 수 */}
+          <div className="w-72 left-[370px] top-[411px] absolute inline-flex flex-col justify-start items-start gap-[5px]">
             <div className="w-72 flex flex-col justify-start items-start gap-2">
-              <div
-                data-layer="잔여 무료PT"
-                className="Pt justify-start text-neutral-900 text-sm font-normal font-['Nunito'] leading-normal"
-              >
-                잔여 무료PT
+              <div className="justify-start text-neutral-900 text-sm font-normal font-['Nunito'] leading-normal">
+                무료 세션 수
               </div>
               <div className="relative w-72 h-12">
                 <input
@@ -470,55 +396,50 @@ const MemberEditModal = ({ isOpen, onClose, member, onUpdate }) => {
                   value={formData.free_sessions}
                   onChange={handleInputChange}
                   className="w-72 h-12 rounded-[10px] outline outline-1 outline-offset-[-0.50px] outline-stone-300 px-3 text-sm font-['Nunito'] focus:outline-cyan-500 placeholder:text-neutral-400"
-                  placeholder="잔여 무료PT 수를 입력하세요"
-                  min="0"
+                  placeholder="무료 세션 수를 입력하세요"
                   disabled={loading}
+                  min="0"
                 />
               </div>
+              {errors.free_sessions && <p className="text-red-500 text-xs mt-1">{errors.free_sessions}</p>}
             </div>
           </div>
 
           {/* 메모 */}
-          <div
-            data-layer="Input Field"
-            className="w-72 left-[50px] top-[522px] absolute inline-flex flex-col justify-start items-start gap-[5px]"
-          >
-            <div className="w-72 flex flex-col justify-start items-start gap-2">
-              <div
-                data-layer="메모"
-                className="justify-start text-neutral-900 text-sm font-normal font-['Nunito'] leading-normal"
-              >
+          <div className="w-[620px] left-[50px] top-[517px] absolute inline-flex flex-col justify-start items-start gap-[5px]">
+            <div className="w-[620px] flex flex-col justify-start items-start gap-2 mb-16">
+              <div className="justify-start text-neutral-900 text-sm font-normal font-['Nunito'] leading-normal">
                 메모
               </div>
-              <div className="relative">
+              <div className="relative w-[620px] h-12">
                 <textarea
                   name="memo"
                   value={formData.memo}
                   onChange={handleInputChange}
-                  className="w-[608px] h-24 rounded-[10px] outline outline-1 outline-offset-[-0.50px] outline-stone-300 px-3 py-3 text-sm font-['Nunito'] focus:outline-cyan-500 resize-none placeholder:text-neutral-400"
-                  placeholder="특이사항"
+                  className="w-[620px] h-12 rounded-[10px] outline outline-1 outline-offset-[-0.50px] outline-stone-300 px-3 py-3 text-sm font-['Nunito'] focus:outline-cyan-500 placeholder:text-neutral-400 resize-none"
+                  placeholder="메모를 입력하세요"
                   disabled={loading}
                 />
               </div>
+              {errors.memo && <p className="text-red-500 text-xs mt-1">{errors.memo}</p>}
             </div>
           </div>
 
-          {/* 저장 버튼 */}
-          <div
-            data-layer="Frame 102"
-            className="Frame102 left-[50px] top-[690px] absolute inline-flex justify-start items-start gap-5"
-          >
+          {/* 에러 메시지 */}
+          {errors.submit && (
+            <div className="left-[50px] top-[600px] absolute text-red-500 text-sm">
+              {errors.submit}
+            </div>
+          )}
+
+          {/* 수정 버튼 */}
+          <div className="flex justify-end absolute bottom-6 right-6">
             <button
               type="submit"
               disabled={loading}
-              className="Button w-52 h-11 p-2.5 bg-gradient-to-br from-blue-400 to-blue-600 rounded-[10px] flex justify-center items-center gap-2.5 hover:from-blue-500 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/15 before:via-transparent before:to-transparent before:pointer-events-none disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-12 py-3 bg-gradient-to-br from-blue-400 to-blue-600 text-white text-sm rounded-lg hover:from-blue-500 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50"
             >
-              <div
-                data-layer="Primary Button"
-                className="PrimaryButton justify-start text-white text-sm font-normal font-['Nunito'] leading-normal"
-              >
-                {loading ? "저장 중..." : "저장"}
-              </div>
+              {loading ? '수정 중...' : '수정'}
             </button>
           </div>
         </form>

@@ -1,35 +1,54 @@
 require('dotenv').config();
-console.log(process.env.DB_USERNAME);
+console.log('Database configuration loaded');
+
 module.exports = {
-  // 환경변수 사용 (보안상 권장)
   development: {
-    username: process.env.DB_USERNAME,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_DATABASE,
-    host: process.env.DB_HOST,
-    dialect: 'postgres',
-    port: process.env.DB_PORT,
+    username: process.env.DB_USERNAME || 'aldalkong',
+    password: process.env.DB_PASSWORD || 'postgres',
+    database: process.env.DB_NAME || 'vitalfit',
+    host: process.env.DB_HOST || 'localhost',
+    dialect: process.env.DB_DIALECT || 'postgres',
+    logging: true,
+    use_env_variable: false,
+    dialectOptions: (() => {
+      if (process.env.DB_SSL === 'true') {
+        return {
+          ssl: {
+            require: true,
+            rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false',
+          },
+        };
+      }
+      return {};
+    })(),
   },
-  // development: {
-  //   username: "aldalkong",
-  //   password: "postgres",
-  //   database: "vitalfit",
-  //   host: "localhost",
-  //   dialect: "postgres",
-  //   port: 5432,
-  // },
   test: {
-    username: 'root',
-    password: null,
-    database: 'database_test',
-    host: '127.0.0.1',
-    dialect: 'mysql',
+    username: process.env.DB_USERNAME || 'postgres',
+    password: process.env.DB_PASSWORD || 'postgres',
+    database: process.env.DB_NAME || 'vitalfit',
+    host: process.env.DB_HOST || 'localhost',
+    dialect: 'postgres',
+    logging: false,
   },
   production: {
-    username: 'root',
-    password: null,
-    database: 'database_production',
-    host: '127.0.0.1',
-    dialect: 'mysql',
+    username: process.env.DB_USERNAME,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+    host: process.env.DB_HOST,
+    port: process.env.DB_PORT || 5432,
+    dialect: 'postgres',
+    logging: false,
+    dialectOptions: {
+      ssl: {
+        require: true, // Azure PostgreSQL는 무조건 true
+        rejectUnauthorized: false, // 인증서 검증 비활성화
+      },
+    },
+    pool: {
+      max: 5,
+      min: 0,
+      acquire: 30000,
+      idle: 10000,
+    },
   },
 };

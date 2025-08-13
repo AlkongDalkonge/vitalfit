@@ -30,6 +30,7 @@ const NoticePage = () => {
       const response = await noticeService.getNotices({
         page,
         limit: 10,
+        searchType,
         search: search.trim(),
       });
 

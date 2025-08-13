@@ -10,17 +10,11 @@ const { Op } = require('sequelize');
 const Joi = require('joi');
 const path = require('path');
 const fs = require('fs');
+const { createUpload, deleteFile: uploadDeleteFile } = require('../utils/uploadUtils');
 
-// 파일 삭제 유틸리티 함수
+// 파일 삭제 유틸리티 함수 (uploadUtils.js 사용)
 const deleteFile = filePath => {
-  try {
-    if (filePath && fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
-      console.log(`파일 삭제 완료: ${filePath}`);
-    }
-  } catch (err) {
-    console.error(`파일 삭제 실패: ${filePath}`, err);
-  }
+  return uploadDeleteFile(filePath);
 };
 
 // Joi 스키마: GET /api/notices 목록조회
@@ -28,6 +22,7 @@ const getNoticesSchema = Joi.object({
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(100).default(10),
   search: Joi.string().allow('').trim().default(''),
+  searchType: Joi.string().valid('전체', '제목', '내용').default('전체'),
 });
 
 // Joi 스키마: POST /api/notices 등록
@@ -43,6 +38,8 @@ const createNoticeSchema = Joi.object({
   pin_until: Joi.date().iso().optional(),
   attachment_name: Joi.string().optional(),
   attachment_url: Joi.string().optional(),
+  target_centers: Joi.array().items(Joi.alternatives().try(Joi.string(), Joi.number())).optional(),
+  target_roles: Joi.array().items(Joi.string()).optional(),
 });
 
 // Joi 스키마: GET /api/notices 상세보기
@@ -85,17 +82,34 @@ exports.getNotices = async (req, res) => {
       });
     }
 
-    const { page, limit, search } = query;
+    const { page, limit, search, searchType = '전체' } = query;
     const offset = (page - 1) * limit;
 
-    const where = search
-      ? {
+    let where = {};
+
+    if (search) {
+      if (searchType === '제목') {
+        where = {
+          title: {
+            [Op.iLike]: `%${search}%`,
+          },
+        };
+      } else if (searchType === '내용') {
+        where = {
+          content: {
+            [Op.iLike]: `%${search}%`,
+          },
+        };
+      } else {
+        // 전체: 제목 + 내용
+        where = {
           [Op.or]: [
             { title: { [Op.iLike]: `%${search}%` } },
             { content: { [Op.iLike]: `%${search}%` } },
           ],
-        }
-      : {};
+        };
+      }
+    }
 
     const { count: totalItems, rows: notices } = await Notice.findAndCountAll({
       where,
@@ -135,18 +149,24 @@ exports.getNotices = async (req, res) => {
  * POST /api/notices
  */
 exports.createNotice = async (req, res) => {
+  console.log(':::공지사항작성:::');
+  console.log('req.body:::', req.body);
+
   //트렌젝션 시작
   const t = await sequelize.transaction();
 
   try {
     const { value: body, error } = createNoticeSchema.validate(req.body);
     if (error) {
+      console.error('🧨 Joi 유효성검사 실패:', error.details); // ✅ 에러 이유 명확히 출력
       return res.status(400).json({
         success: false,
         message: '입력값이 유효하지 않습니다.',
         details: error.details[0].message,
       });
     }
+
+    console.log('✅ Joi 검사 통과. target_centers:', body.target_centers);
 
     // 전체발송여부
     console.log('전체발송여부::::', body.receiver_type);
@@ -164,13 +184,20 @@ exports.createNotice = async (req, res) => {
       //센터 타겟 추가
       if (body.target_centers?.length > 0) {
         console.log('target_centers:::', body.target_centers);
+        console.log('notice.id:::', notice.id);
 
         const centerTargets = body.target_centers.map(center_id => ({
           notice_id: notice.id,
           center_id,
         }));
+
+        console.log('centerTargets:::', centerTargets);
+
         //bulkCreate : 여러 개의 객체를 한 번에 insert
-        await NoticeTargetCenter.bulkCreate(centerTargets, { transaction: t });
+        await NoticeTargetCenter.bulkCreate(centerTargets, {
+          transaction: t,
+          logging: console.log,
+        });
       }
 
       //직책 타겟 추가
@@ -287,8 +314,18 @@ exports.updateNotice = async (req, res) => {
       });
     }
 
-    // 4) 새 파일이 업로드된 경우 기존 파일 삭제
-    if (
+    // 4) 파일 삭제 요청 처리
+    if (req.body.remove_attachment === 'true') {
+      if (notice.attachment_url) {
+        const oldFilePath = path.join(__dirname, '../../public', notice.attachment_url);
+        deleteFile(oldFilePath);
+      }
+      validatedBody.attachment_name = null;
+      validatedBody.attachment_url = null;
+    }
+
+    // 5) 새 파일이 업로드된 경우 기존 파일 삭제 (새 파일로 교체)
+    else if (
       validatedBody.attachment_url &&
       notice.attachment_url &&
       notice.attachment_url !== validatedBody.attachment_url
@@ -749,9 +786,6 @@ exports.downloadFile = async (req, res) => {
         message: '첨부파일이 없습니다.',
       });
     }
-
-    const path = require('path');
-    const fs = require('fs');
 
     // 파일 경로 생성
     const filePath = path.join(__dirname, '../../public', notice.attachment_url);
