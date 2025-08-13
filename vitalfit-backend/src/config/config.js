@@ -3,24 +3,26 @@ console.log('Database configuration loaded');
 
 module.exports = {
   development: {
-    username: process.env.DB_USERNAME || 'aldalkong',
-    password: process.env.DB_PASSWORD || 'postgres',
+    username: process.env.DB_USERNAME || 'vitalfit_admin',
+    password: process.env.DB_PASSWORD || 'your_password_here',
     database: process.env.DB_NAME || 'vitalfit',
-    host: process.env.DB_HOST || 'localhost',
+    host: process.env.DB_HOST || 'vitalfit.postgres.database.azure.com',
+    port: process.env.DB_PORT || 5432,
     dialect: process.env.DB_DIALECT || 'postgres',
-    logging: true,
+    logging: false,
     use_env_variable: false,
-    dialectOptions: (() => {
-      if (process.env.DB_SSL === 'true') {
-        return {
-          ssl: {
-            require: true,
-            rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false',
-          },
-        };
-      }
-      return {};
-    })(),
+    dialectOptions: {
+      ssl: {
+        require: true, // Azure PostgreSQL은 SSL 필수
+        rejectUnauthorized: false, // 인증서 검증 비활성화
+      },
+    },
+    pool: {
+      max: 5,
+      min: 0,
+      acquire: 30000,
+      idle: 10000,
+    },
   },
   test: {
     username: process.env.DB_USERNAME || 'postgres',
