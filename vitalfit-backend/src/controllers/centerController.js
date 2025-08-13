@@ -236,6 +236,9 @@ const uploadCenterImage = async (req, res, next) => {
       });
     }
 
+    // 해당 센터의 기존 이미지 개수 확인
+    const existingImages = await CenterImage.count({ where: { center_id: center_id } });
+    
     // 메인 이미지로 설정하는 경우 기존 메인 이미지 해제
     if (is_main === 'true' || is_main === true) {
       await CenterImage.update({ is_main: false }, { where: { center_id: center_id } });
@@ -250,6 +253,11 @@ const uploadCenterImage = async (req, res, next) => {
       is_main: is_main === 'true' || is_main === true,
       sort_order: 0,
     });
+
+    // 센터에 이미지가 없었던 경우 첫 번째 이미지를 자동으로 메인으로 설정
+    if (existingImages === 0 && !(is_main === 'true' || is_main === true)) {
+      await centerImage.update({ is_main: true });
+    }
 
     return res.status(201).json({
       success: true,

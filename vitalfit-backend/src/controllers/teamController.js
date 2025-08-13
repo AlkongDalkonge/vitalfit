@@ -8,11 +8,26 @@ const getAllTeams = async (req, res) => {
       order: [['name', 'ASC']],
     });
 
+    // 중복된 팀 이름 제거 (같은 이름의 팀 중 첫 번째 것만 유지)
+    const uniqueTeamsMap = new Map();
+    
+    teams.forEach(team => {
+      if (!uniqueTeamsMap.has(team.name)) {
+        uniqueTeamsMap.set(team.name, team);
+      }
+    });
+
+    const uniqueTeams = Array.from(uniqueTeamsMap.values());
+
+    console.log('원본 팀 수:', teams.length);
+    console.log('중복 제거 후 팀 수:', uniqueTeams.length);
+    console.log('고유한 팀들:', uniqueTeams.map(t => t.name));
+
     return res.status(200).json({
       success: true,
       message: '팀 목록 조회 성공',
       data: {
-        teams: teams,
+        teams: uniqueTeams,
       },
     });
   } catch (error) {

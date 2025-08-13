@@ -1,7 +1,7 @@
 import axios from 'axios';
 import AuthService from './auth';
 
-const API_BASE_URL = 'http://localhost:3001/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
 
 // axios 인스턴스 생성
 const api = axios.create({
@@ -99,6 +99,9 @@ export const centerAPI = {
   getCenter: async id => {
     return await apiGet(`/centers/${id}`);
   },
+  getCenterById: async id => {
+    return await apiGet(`/centers/${id}`);
+  },
   createCenter: async data => {
     return await apiPost('/centers', data);
   },
@@ -115,8 +118,21 @@ export const centerAPI = {
       },
     });
   },
+  uploadImage: async (formData) => {
+    return await apiPost('/centers/images', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
   deleteCenterImage: async (centerId, imageId) => {
     return await apiDelete(`/centers/${centerId}/images/${imageId}`);
+  },
+  deleteImage: async (imageId) => {
+    return await apiDelete(`/centers/images/${imageId}`);
+  },
+  setMainImage: async (imageId) => {
+    return await apiPut(`/centers/images/${imageId}/main`);
   },
 };
 
@@ -176,6 +192,18 @@ export const ptSessionAPI = {
     return await apiPut(`/pt-sessions/${id}`, data);
   },
   deletePTSession: async id => {
+    return await apiDelete(`/pt-sessions/${id}`);
+  },
+  getSessionsByMember: async (memberId, params = {}) => {
+    return await apiGet(`/pt-sessions/member/${memberId}`, { params });
+  },
+  createSession: async data => {
+    return await apiPost('/pt-sessions', data);
+  },
+  updateSession: async (id, data) => {
+    return await apiPut(`/pt-sessions/${id}`, data);
+  },
+  deleteSession: async id => {
     return await apiDelete(`/pt-sessions/${id}`);
   },
 };

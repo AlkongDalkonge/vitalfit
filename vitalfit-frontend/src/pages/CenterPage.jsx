@@ -3,6 +3,9 @@ import { centerAPI, memberAPI } from '../utils/api';
 import CenterImageModal from '../components/CenterImageModal';
 import { useUser } from '../utils/hooks';
 
+// API 기본 URL 환경 변수
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+
 const CenterPage = () => {
   const [expandedCenter, setExpandedCenter] = useState(null);
   const [centers, setCenters] = useState([]);
@@ -257,7 +260,7 @@ const CenterPage = () => {
                             <div className="mb-4">
                               <div className="relative">
                                 <img
-                                  src={`http://localhost:3001${center.images.find(img => img.is_main).image_url}`}
+                                  src={`${API_BASE_URL}${center.images.find(img => img.is_main).image_url}`}
                                   alt={`${center.name} 메인 이미지`}
                                   className="w-full h-64 md:h-80 object-cover rounded-lg shadow-md"
                                   onError={e => {
@@ -280,7 +283,7 @@ const CenterPage = () => {
                                       className="aspect-square bg-gray-200 rounded-lg overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-200"
                                       onClick={() => {
                                         // 이미지 클릭 시 새 창에서 크게 보기
-                                        const imgUrl = `http://localhost:3001${image.image_url}`;
+                                        const imgUrl = `${API_BASE_URL}${image.image_url}`;
                                         window.open(
                                           imgUrl,
                                           '_blank',
@@ -289,7 +292,7 @@ const CenterPage = () => {
                                       }}
                                     >
                                       <img
-                                        src={`http://localhost:3001${image.image_url}`}
+                                        src={`${API_BASE_URL}${image.image_url}`}
                                         alt={`${center.name} 이미지 ${index + 1}`}
                                         className="w-full h-full object-cover hover:scale-110 transition-transform duration-200"
                                         onError={e => {

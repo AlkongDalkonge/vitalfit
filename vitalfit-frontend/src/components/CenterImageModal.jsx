@@ -20,7 +20,9 @@ const CenterImageModal = ({ isOpen, onClose, center, onImagesUpdated }) => {
 
     setLoading(true);
     try {
+      console.log('센터 이미지 로드 시작:', center.id);
       const result = await centerAPI.getCenterById(center.id);
+      console.log('센터 이미지 로드 결과:', result);
 
       if (result.success && result.data.images) {
         setImages(
@@ -33,6 +35,9 @@ const CenterImageModal = ({ isOpen, onClose, center, onImagesUpdated }) => {
             onRemove: index => handleRemoveImage(img.id, index),
           }))
         );
+      } else {
+        console.log('이미지가 없거나 응답 구조가 예상과 다름:', result);
+        setImages([]);
       }
     } catch (error) {
       console.error('센터 이미지 로드 실패:', error);
@@ -49,11 +54,17 @@ const CenterImageModal = ({ isOpen, onClose, center, onImagesUpdated }) => {
     setUploading(true);
 
     try {
-      const uploadPromises = newImages.map(async imageData => {
+      // 현재 이미지가 없으면 첫 번째 이미지만 메인으로 설정
+      const currentImageCount = images.length;
+      
+      const uploadPromises = newImages.map(async (imageData, index) => {
         const formData = new FormData();
         formData.append('image', imageData.file);
         formData.append('center_id', center.id);
-        formData.append('is_main', imageData.isMain ? 'true' : 'false');
+        
+        // 현재 이미지가 없고 첫 번째 이미지인 경우에만 메인으로 설정
+        const isMain = currentImageCount === 0 && index === 0;
+        formData.append('is_main', isMain ? 'true' : 'false');
 
         const result = await centerAPI.uploadImage(formData);
 
@@ -137,34 +148,31 @@ const CenterImageModal = ({ isOpen, onClose, center, onImagesUpdated }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="w-[900px] max-h-[90vh] bg-white rounded-lg overflow-hidden">
-        {/* 헤더 */}
-        <div className="flex justify-between items-center p-6 border-b border-gray-200">
-          <h2 className="text-xl font-extrabold text-gray-800">{center?.name} - 이미지 관리</h2>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-full transition-colors duration-200"
+      <div className="w-[900px] max-h-[90vh] bg-white rounded-lg overflow-hidden relative">
+        {/* 닫기 버튼 */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-full transition-colors duration-200 z-10"
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 16 16"
+            fill="none"
+            className="text-neutral-600"
           >
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 16 16"
-              fill="none"
-              className="text-neutral-600"
-            >
-              <path
-                d="M12 4L4 12M4 4L12 12"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </button>
-        </div>
+            <path
+              d="M12 4L4 12M4 4L12 12"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </button>
 
         {/* 내용 */}
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+        <div className="p-6 overflow-y-auto max-h-[90vh]">
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
@@ -237,24 +245,12 @@ const CenterImageModal = ({ isOpen, onClose, center, onImagesUpdated }) => {
               <div className="bg-gray-50 p-4 rounded-lg">
                 <h4 className="font-medium text-gray-800 mb-2">이미지 관리 안내</h4>
                 <ul className="text-sm text-gray-600 space-y-1">
-                  <li>• 메인 이미지는 센터 목록에서 대표 이미지로 표시됩니다</li>
-                  <li>• 이미지에 마우스를 올리면 메인 설정 및 삭제 버튼이 나타납니다</li>
                   <li>• 권장 이미지 크기: 16:9 비율 (예: 1920x1080px)</li>
                   <li>• 지원 형식: JPG, PNG, WebP (최대 5MB)</li>
                 </ul>
               </div>
             </div>
           )}
-        </div>
-
-        {/* 푸터 */}
-        <div className="flex justify-end gap-3 p-6 border-t border-gray-200">
-          <button
-            onClick={onClose}
-            className="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors duration-200"
-          >
-            닫기
-          </button>
         </div>
       </div>
     </div>

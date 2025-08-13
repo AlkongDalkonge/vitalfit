@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const auth = require('../middlewares/authMiddleware');
 
 const {
   createPTSession,
@@ -17,23 +18,23 @@ const {
 
 // ✅ PT 세션 생성
 // POST /api/pt-sessions
-router.post('/', createPTSession);
+router.post('/', auth, createPTSession);
 
 // ✅ PT 세션 수정
 // PUT /api/pt-sessions/:id
-router.put('/:id', updatePTSession);
+router.put('/:id', auth, updatePTSession);
 
 // ✅ PT 세션 삭제
 // DELETE /api/pt-sessions/:id
-router.delete('/:id', deletePTSession);
+router.delete('/:id', auth, deletePTSession);
 
 // ✅ 월별 PT 세션 조회 (새로 추가)
 // GET /api/pt-sessions/month/:year/:month
-router.get('/month/:year/:month', getPTSessionsByMonth);
+router.get('/month/:year/:month', auth, getPTSessionsByMonth);
 
 // ✅ 멤버별 PT 세션 조회
 // GET /api/pt-sessions/member/:memberId
-router.get('/member/:memberId', getPTSessionsByMember);
+router.get('/member/:memberId', auth, getPTSessionsByMember);
 
 // ✅ 트레이너별 월별 PT 세션 통계 조회 (새로 추가)
 // GET /api/pt-sessions/trainer-stats/:trainerId/:year/:month

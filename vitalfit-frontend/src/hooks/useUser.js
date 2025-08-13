@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { userAPI, centerAPI, teamAPI } from '../utils/api';
+import { userAPI, centerAPI, teamAPI, memberAPI } from '../utils/api';
 
 /**
  * 사용자 관리 관련 상태와 로직을 관리하는 커스텀 훅
@@ -7,8 +7,10 @@ import { userAPI, centerAPI, teamAPI } from '../utils/api';
 export const useUser = () => {
   // 상태
   const [users, setUsers] = useState([]);
+  const [filteredUsers, setFilteredUsers] = useState([]);
   const [centers, setCenters] = useState([]);
   const [teams, setTeams] = useState([]);
+  const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -28,6 +30,7 @@ export const useUser = () => {
       const response = await userAPI.getAllUsers({ limit: 1000, ...filters });
       if (response.success) {
         setUsers(response.data.users);
+        setFilteredUsers(response.data.users);
       }
     } catch (error) {
       console.error('사용자 조회 실패:', error);
@@ -59,9 +62,20 @@ export const useUser = () => {
     }
   };
 
+  const fetchMembers = async () => {
+    try {
+      const response = await memberAPI.getAllMembers();
+      if (response.success) {
+        setMembers(response.data.members);
+      }
+    } catch (error) {
+      console.error('멤버 조회 실패:', error);
+    }
+  };
+
   // 초기 데이터 로드
   const loadInitialData = async () => {
-    await Promise.all([fetchUsers(), fetchCenters(), fetchTeams()]);
+    await Promise.all([fetchUsers(), fetchCenters(), fetchTeams(), fetchMembers()]);
   };
 
   // 필터링 함수 (즉시 적용)
@@ -110,8 +124,18 @@ export const useUser = () => {
   // 검색어 변경
   const handleSearchChange = term => {
     setSearchTerm(term);
-    // 디바운스 없이 즉시 필터링 (실제 프로젝트에서는 디바운스 권장)
-    setTimeout(() => handleFilter(), 300);
+    // 즉시 필터링 (클라이언트 사이드)
+    if (!term) {
+      // 검색어가 없으면 모든 사용자 표시
+      setFilteredUsers(users);
+    } else {
+      // 검색어가 있으면 클라이언트에서 필터링
+      const filtered = users.filter(user =>
+        user.name?.toLowerCase().includes(term.toLowerCase()) ||
+        user.email?.toLowerCase().includes(term.toLowerCase())
+      );
+      setFilteredUsers(filtered);
+    }
   };
 
   // 초기 로드
@@ -122,8 +146,10 @@ export const useUser = () => {
   return {
     // 상태
     users,
+    filteredUsers,
     centers,
     teams,
+    members,
     loading,
     error,
     searchTerm,

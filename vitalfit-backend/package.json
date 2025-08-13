@@ -1,13 +1,15 @@
 {
   "name": "vitalfit-backend",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "src/app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node src/app.js",
     "dev": "nodemon src/app.js",
     "seed": "node -e \"const { seedAllData } = require('./src/utils/seedData.js'); seedAllData().then(() => console.log('✅ 시드데이터 완료')).catch(console.error);\"",
-    "setup": "npm install && npm run seed"
+    "setup": "npm install && npm run seed",
+    "build": "echo 'No build step required for Node.js'",
+    "postinstall": "echo 'Post-install script completed'"
   },
   "keywords": [
     "vitalfit",
