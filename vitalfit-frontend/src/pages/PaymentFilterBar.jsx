@@ -99,6 +99,7 @@ const PaymentFilterBar = ({
       >
         <option value="2025-08">2025년 08월</option>
         <option value="2025-07">2025년 07월</option>
+        <option value="2025-06">2025년 06월</option>
       </select>
     </div>
   );

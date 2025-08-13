@@ -4,7 +4,7 @@ const { Team } = require('../models');
 const getAllTeams = async (req, res) => {
   try {
     const teams = await Team.findAll({
-      attributes: ['id', 'name'],
+      attributes: ['id', 'name', 'center_id'],
       order: [['name', 'ASC']],
     });
 
@@ -28,7 +28,7 @@ const getAllTeams = async (req, res) => {
 const getTeamById = async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     const team = await Team.findByPk(id, {
       attributes: ['id', 'name'],
     });
@@ -59,4 +59,4 @@ const getTeamById = async (req, res) => {
 module.exports = {
   getAllTeams,
   getTeamById,
-}; 
+};

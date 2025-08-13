@@ -3,21 +3,24 @@ console.log('Database configuration loaded');
 
 module.exports = {
   development: {
-    username: process.env.DB_USERNAME || 'postgres',
+    username: process.env.DB_USERNAME || 'aldalkong',
     password: process.env.DB_PASSWORD || 'postgres',
     database: process.env.DB_NAME || 'vitalfit',
     host: process.env.DB_HOST || 'localhost',
     dialect: process.env.DB_DIALECT || 'postgres',
-    logging: false,
+    logging: true,
     use_env_variable: false,
-    // SQLite 설정 추가
-    dialectOptions: {
-      // SQLite 관련 옵션
-      ssl: {
-        require: false,
-        rejectUnauthorized: false,
-      },
-    },
+    dialectOptions: (() => {
+      if (process.env.DB_SSL === 'true') {
+        return {
+          ssl: {
+            require: true,
+            rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false',
+          },
+        };
+      }
+      return {};
+    })(),
   },
   test: {
     username: process.env.DB_USERNAME || 'postgres',
@@ -25,7 +28,7 @@ module.exports = {
     database: process.env.DB_NAME || 'vitalfit',
     host: process.env.DB_HOST || 'localhost',
     dialect: 'postgres',
-    logging: true,
+    logging: false,
   },
   production: {
     username: process.env.DB_USERNAME,

@@ -827,7 +827,7 @@ const seedMembers = async (centers, users) => {
 // 결제 시드 데이터
 const seedPayments = async (centers, users, members) => {
   try {
-    console.log('💳 결제 시드 데이터 생성 중... (7월 결제, 트레이너별 700-1100만원)');
+    console.log('💳 결제 시드 데이터 생성 중... (6월, 7월, 8월 결제, 트레이너별 700-1100만원)');
 
     // 트레이너만 필터링 (관리자 제외)
     const trainers = users.filter(u => u.name !== '관리자');
@@ -843,89 +843,98 @@ const seedPayments = async (centers, users, members) => {
       { sessions: 30, amount: 2500000, free: 4, name: 'PT 30+4회' },
     ];
 
-    trainers.forEach(trainer => {
-      // 각 트레이너별 회원 찾기
-      const trainerMembers = members.filter(m => m.trainer_id === trainer.id);
+    // 6월, 7월, 8월 데이터 생성
+    const months = [
+      { month: 6, days: 30 },
+      { month: 7, days: 31 },
+      { month: 8, days: 31 },
+    ];
 
-      // 트레이너별 목표 매출 (700-1100만원)
-      const targetRevenue = 7000000 + Math.floor(Math.random() * 4000000); // 700-1100만원
-      let currentRevenue = 0;
+    months.forEach(({ month, days }) => {
+      trainers.forEach(trainer => {
+        // 각 트레이너별 회원 찾기
+        const trainerMembers = members.filter(m => m.trainer_id === trainer.id);
 
-      // 회원들에게 랜덤하게 결제 분배
-      const usedMembers = [];
+        // 트레이너별 목표 매출 (700-1100만원)
+        const targetRevenue = 7000000 + Math.floor(Math.random() * 4000000); // 700-1100만원
+        let currentRevenue = 0;
 
-      while (currentRevenue < targetRevenue && usedMembers.length < trainerMembers.length) {
-        // 아직 사용하지 않은 회원 중 랜덤 선택
-        const availableMembers = trainerMembers.filter(m => !usedMembers.includes(m.id));
-        if (availableMembers.length === 0) break;
+        // 회원들에게 랜덤하게 결제 분배
+        const usedMembers = [];
 
-        const selectedMember =
-          availableMembers[Math.floor(Math.random() * availableMembers.length)];
-        usedMembers.push(selectedMember.id);
+        while (currentRevenue < targetRevenue && usedMembers.length < trainerMembers.length) {
+          // 아직 사용하지 않은 회원 중 랜덤 선택
+          const availableMembers = trainerMembers.filter(m => !usedMembers.includes(m.id));
+          if (availableMembers.length === 0) break;
 
-        // 남은 목표 매출에 맞는 패키지 선택
-        const remainingRevenue = targetRevenue - currentRevenue;
-        const suitablePackages = sessionPackages.filter(
-          pkg => pkg.amount <= remainingRevenue * 1.2
-        ); // 20% 여유
+          const selectedMember =
+            availableMembers[Math.floor(Math.random() * availableMembers.length)];
+          usedMembers.push(selectedMember.id);
 
-        if (suitablePackages.length === 0) break;
+          // 남은 목표 매출에 맞는 패키지 선택
+          const remainingRevenue = targetRevenue - currentRevenue;
+          const suitablePackages = sessionPackages.filter(
+            pkg => pkg.amount <= remainingRevenue * 1.2
+          ); // 20% 여유
 
-        const selectedPackage =
-          suitablePackages[Math.floor(Math.random() * suitablePackages.length)];
+          if (suitablePackages.length === 0) break;
 
-        // 7월 내 랜덤 날짜
-        const day = Math.floor(Math.random() * 31) + 1;
-        const paymentDate = `2024-07-${String(day).padStart(2, '0')}`;
+          const selectedPackage =
+            suitablePackages[Math.floor(Math.random() * suitablePackages.length)];
 
-        paymentData.push({
-          member_id: selectedMember.id,
-          trainer_id: trainer.id,
-          center_id: trainer.center_id,
-          payment_amount: selectedPackage.amount,
-          session_count: selectedPackage.sessions,
-          free_session_count: selectedPackage.free,
-          payment_date: paymentDate,
-          payment_method: paymentMethods[Math.floor(Math.random() * paymentMethods.length)],
-          notes: selectedPackage.name + ' 결제',
-        });
+          // 해당 월 내 랜덤 날짜
+          const day = Math.floor(Math.random() * days) + 1;
+          const paymentDate = `2025-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 
-        currentRevenue += selectedPackage.amount;
-      }
+          paymentData.push({
+            member_id: selectedMember.id,
+            trainer_id: trainer.id,
+            center_id: trainer.center_id,
+            payment_amount: selectedPackage.amount,
+            session_count: selectedPackage.sessions,
+            free_session_count: selectedPackage.free,
+            payment_date: paymentDate,
+            payment_method: paymentMethods[Math.floor(Math.random() * paymentMethods.length)],
+            notes: selectedPackage.name + ' 결제',
+          });
 
-      // 목표 매출에 못 미치면 일부 회원에게 추가 결제
-      while (currentRevenue < targetRevenue * 0.9 && usedMembers.length > 0) {
-        const randomMemberId = usedMembers[Math.floor(Math.random() * usedMembers.length)];
-        const selectedMember = trainerMembers.find(m => m.id === randomMemberId);
+          currentRevenue += selectedPackage.amount;
+        }
 
-        const remainingRevenue = targetRevenue - currentRevenue;
-        const suitablePackages = sessionPackages.filter(
-          pkg => pkg.amount <= remainingRevenue * 1.2
-        );
+        // 목표 매출에 못 미치면 일부 회원에게 추가 결제
+        while (currentRevenue < targetRevenue * 0.9 && usedMembers.length > 0) {
+          const randomMemberId = usedMembers[Math.floor(Math.random() * usedMembers.length)];
+          const selectedMember = trainerMembers.find(m => m.id === randomMemberId);
 
-        if (suitablePackages.length === 0) break;
+          const remainingRevenue = targetRevenue - currentRevenue;
+          const suitablePackages = sessionPackages.filter(
+            pkg => pkg.amount <= remainingRevenue * 1.2
+          );
 
-        const selectedPackage =
-          suitablePackages[Math.floor(Math.random() * suitablePackages.length)];
+          if (suitablePackages.length === 0) break;
 
-        // 7월 내 다른 날짜
-        const day = Math.floor(Math.random() * 31) + 1;
-        const paymentDate = `2024-07-${String(day).padStart(2, '0')}`;
+          const selectedPackage =
+            suitablePackages[Math.floor(Math.random() * suitablePackages.length)];
 
-        paymentData.push({
-          member_id: selectedMember.id,
-          trainer_id: trainer.id,
-          center_id: trainer.center_id,
-          payment_amount: selectedPackage.amount,
-          session_count: selectedPackage.sessions,
-          free_session_count: selectedPackage.free,
-          payment_date: paymentDate,
-          payment_method: paymentMethods[Math.floor(Math.random() * paymentMethods.length)],
-          notes: selectedPackage.name + ' 추가결제',
-        });
+          // 해당 월 내 다른 날짜
+          const day = Math.floor(Math.random() * days) + 1;
+          const paymentDate = `2025-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 
-        currentRevenue += selectedPackage.amount;
-      }
+          paymentData.push({
+            member_id: selectedMember.id,
+            trainer_id: trainer.id,
+            center_id: trainer.center_id,
+            payment_amount: selectedPackage.amount,
+            session_count: selectedPackage.sessions,
+            free_session_count: selectedPackage.free,
+            payment_date: paymentDate,
+            payment_method: paymentMethods[Math.floor(Math.random() * paymentMethods.length)],
+            notes: selectedPackage.name + ' 추가결제',
+          });
+
+          currentRevenue += selectedPackage.amount;
+        }
+      });
     });
 
     const payments = await Payment.bulkCreate(paymentData);
@@ -946,164 +955,127 @@ const seedCommissionRates = async (centers, positions) => {
     const commissionRates = await CommissionRate.bulkCreate([
       // === 기본 정책 (전체 지점, 전체 직급 적용) ===
       {
+        min_revenue: 0,
+        max_revenue: 3000000,
+        commission_per_session: 6000,
+        monthly_commission: 0,
+        effective_date: '2024-01-01',
+        center_id: null,
+        position_id: null,
+        is_active: true,
+        description: '기본 정책 - 300만원 미만 구간',
+      },
+      {
         min_revenue: 3000000,
         max_revenue: 4000000,
         commission_per_session: 10000,
         monthly_commission: 0,
-        effective_date: '2024-06-01',
+        effective_date: '2024-01-01',
         center_id: null,
         position_id: null,
         is_active: true,
-        description: '기본 정책 - 300만~400만원 구간',
+        description: '기본 정책 - 300만원 이상 구간',
       },
       {
         min_revenue: 4000000,
         max_revenue: 5000000,
         commission_per_session: 11000,
         monthly_commission: 0,
-        effective_date: '2024-06-01',
+        effective_date: '2024-01-01',
         center_id: null,
         position_id: null,
         is_active: true,
-        description: '기본 정책 - 400만~500만원 구간',
+        description: '기본 정책 - 400만원 이상 구간',
       },
       {
         min_revenue: 5000000,
         max_revenue: 6000000,
         commission_per_session: 12000,
         monthly_commission: 0,
-        effective_date: '2024-06-01',
+        effective_date: '2024-01-01',
         center_id: null,
         position_id: null,
         is_active: true,
-        description: '기본 정책 - 500만~600만원 구간',
+        description: '기본 정책 - 500만원 이상 구간',
       },
       {
         min_revenue: 6000000,
         max_revenue: 7000000,
         commission_per_session: 13000,
         monthly_commission: 300000,
-        effective_date: '2024-06-01',
+        effective_date: '2024-01-01',
         center_id: null,
         position_id: null,
         is_active: true,
-        description: '기본 정책 - 600만~700만원 구간 (월 커미션 시작)',
+        description: '기본 정책 - 600만원 이상 구간',
       },
       {
         min_revenue: 7000000,
         max_revenue: 8000000,
         commission_per_session: 14000,
         monthly_commission: 400000,
-        effective_date: '2024-06-01',
+        effective_date: '2024-01-01',
         center_id: null,
         position_id: null,
         is_active: true,
-        description: '기본 정책 - 700만~800만원 구간',
+        description: '기본 정책 - 700만원 이상 구간',
       },
       {
         min_revenue: 8000000,
         max_revenue: 9000000,
         commission_per_session: 15000,
         monthly_commission: 500000,
-        effective_date: '2024-06-01',
+        effective_date: '2024-01-01',
         center_id: null,
         position_id: null,
         is_active: true,
-        description: '기본 정책 - 800만~900만원 구간',
+        description: '기본 정책 - 800만원 이상 구간',
       },
       {
         min_revenue: 9000000,
         max_revenue: 10000000,
         commission_per_session: 20000,
         monthly_commission: 600000,
-        effective_date: '2024-06-01',
+        effective_date: '2024-01-01',
         center_id: null,
         position_id: null,
         is_active: true,
-        description: '기본 정책 - 900만~1000만원 구간',
+        description: '기본 정책 - 900만원 이상 구간',
       },
       {
         min_revenue: 10000000,
         max_revenue: null,
         commission_per_session: 21000,
         monthly_commission: 700000,
-        effective_date: '2024-06-01',
+        effective_date: '2024-01-01',
         center_id: null,
         position_id: null,
         is_active: true,
         description: '기본 정책 - 1000만원 이상 구간',
       },
 
-      // === 강남센터 특별 정책 ===
+      // === 팀장 특별 정책 (position_id=7) ===
       {
-        min_revenue: 8000000,
-        max_revenue: 9000000,
-        commission_per_session: 16000,
-        monthly_commission: 550000,
-        effective_date: '2024-06-01',
-        center_id: centers.find(c => c.name === '바이탈핏 강남센터').id,
-        position_id: null,
+        min_revenue: 12000000,
+        max_revenue: 15000000,
+        commission_per_session: 25000,
+        monthly_commission: 800000,
+        effective_date: '2024-01-01',
+        center_id: null,
+        position_id: 7, // 팀장
         is_active: true,
-        description: '강남센터 특별 정책 - 800만~900만원 구간 (기본보다 +1000원)',
+        description: '팀장 특별 정책 - 1200만원 이상 구간',
       },
       {
-        min_revenue: 9000000,
+        min_revenue: 15000000,
         max_revenue: null,
-        commission_per_session: 22000,
-        monthly_commission: 750000,
-        effective_date: '2024-06-01',
-        center_id: centers.find(c => c.name === '바이탈핏 강남센터').id,
-        position_id: null,
-        is_active: true,
-        description: '강남센터 특별 정책 - 900만원 이상 구간 (기본보다 +1000원)',
-      },
-
-      // === 시니어 이상 직급 특별 정책 ===
-      {
-        min_revenue: 5000000,
-        max_revenue: 6000000,
-        commission_per_session: 6000,
-        monthly_commission: 0,
-        effective_date: '2024-06-01',
+        commission_per_session: 27000,
+        monthly_commission: 900000,
+        effective_date: '2024-01-01',
         center_id: null,
-        position_id: positions.find(p => p.code === 'senior').id,
+        position_id: 7, // 팀장
         is_active: true,
-        description: '시니어 직급 특별 정책 - 팀원 관리 업무로 인한 개인 매출 감소 보상',
-      },
-      {
-        min_revenue: 5000000,
-        max_revenue: 6000000,
-        commission_per_session: 6000,
-        monthly_commission: 0,
-        effective_date: '2024-06-01',
-        center_id: null,
-        position_id: positions.find(p => p.code === 'team_leader').id,
-        is_active: true,
-        description: '팀장 직급 특별 정책 - 팀원 관리 업무로 인한 개인 매출 감소 보상',
-      },
-
-      // === 연습생/교육생 특별 정책 (낮은 커미션) ===
-      {
-        min_revenue: 3000000,
-        max_revenue: 5000000,
-        commission_per_session: 8000,
-        monthly_commission: 0,
-        effective_date: '2024-06-01',
-        center_id: null,
-        position_id: positions.find(p => p.code === 'trainee').id,
-        is_active: true,
-        description: '연습생 특별 정책 - 교육 기간 중 낮은 커미션율 적용',
-      },
-      {
-        min_revenue: 3000000,
-        max_revenue: 5000000,
-        commission_per_session: 9000,
-        monthly_commission: 0,
-        effective_date: '2024-06-01',
-        center_id: null,
-        position_id: positions.find(p => p.code === 'student').id,
-        is_active: true,
-        description: '교육생 특별 정책 - 교육 기간 중 낮은 커미션율 적용',
+        description: '팀장 특별 정책 - 1500만원 이상 구간',
       },
     ]);
 
@@ -1362,35 +1334,44 @@ const seedPTSessions = async (centers, users, members) => {
     // 동적으로 PT 세션 생성 (각 회원별 0~12개까지 다양하게)
     const ptSessionData = [];
 
-    members.forEach((member, index) => {
-      // 회원별 PT 세션 수 (0~12개 랜덤)
-      const sessionCount = Math.floor(Math.random() * 13); // 0~12
+    // 6월, 7월, 8월 데이터 생성
+    const months = [
+      { month: 6, days: 30 },
+      { month: 7, days: 31 },
+      { month: 8, days: 31 },
+    ];
 
-      for (let i = 0; i < sessionCount; i++) {
-        // 7월 내 랜덤 날짜
-        const day = Math.floor(Math.random() * 31) + 1;
-        const sessionDate = `2024-07-${String(day).padStart(2, '0')}`;
+    months.forEach(({ month, days }) => {
+      members.forEach((member, index) => {
+        // 회원별 PT 세션 수 (0~12개 랜덤)
+        const sessionCount = Math.floor(Math.random() * 13); // 0~12
 
-        // 랜덤 시간 (9시~21시)
-        const startHour = 9 + Math.floor(Math.random() * 12);
-        const startTime = `${String(startHour).padStart(2, '0')}:00:00`;
-        const endTime = `${String(startHour + 1).padStart(2, '0')}:00:00`;
+        for (let i = 0; i < sessionCount; i++) {
+          // 해당 월 내 랜덤 날짜
+          const day = Math.floor(Math.random() * days) + 1;
+          const sessionDate = `2025-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 
-        ptSessionData.push({
-          member_id: member.id,
-          trainer_id: member.trainer_id, // 회원의 담당 트레이너
-          center_id: member.center_id, // 회원의 소속 센터
-          session_date: sessionDate,
-          start_time: startTime,
-          end_time: endTime,
-          session_type: Math.random() < 0.9 ? 'regular' : 'free', // 90% regular, 10% free
-          signature_data:
-            'data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCI+CiAgPHRleHQgeD0iNTAiIHk9IjUwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiPuuUjOyWtOygkTwvdGV4dD4KPC9zdmc+Cg==',
-          signature_time: `${sessionDate}T${endTime.substring(0, 5)}:00Z`,
-          notes: `PT 세션 ${i + 1}회차`,
-          idempotency_key: `pt_session_${member.id}_${i + 1}`,
-        });
-      }
+          // 랜덤 시간 (9시~21시)
+          const startHour = 9 + Math.floor(Math.random() * 12);
+          const startTime = `${String(startHour).padStart(2, '0')}:00:00`;
+          const endTime = `${String(startHour + 1).padStart(2, '0')}:00:00`;
+
+          ptSessionData.push({
+            member_id: member.id,
+            trainer_id: member.trainer_id, // 회원의 담당 트레이너
+            center_id: member.center_id, // 회원의 소속 센터
+            session_date: sessionDate,
+            start_time: startTime,
+            end_time: endTime,
+            session_type: Math.random() < 0.9 ? 'regular' : 'free', // 90% regular, 10% free
+            signature_data:
+              'data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCI+CiAgPHRleHQgeD0iNTAiIHk9IjUwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiPuuUjOyWtOygkTwvdGV4dD4KPC9zdmc+Cg==',
+            signature_time: `${sessionDate}T${endTime.substring(0, 5)}:00Z`,
+            notes: `PT 세션 ${i + 1}회차`,
+            idempotency_key: `pt_session_${member.id}_${month}_${i + 1}`,
+          });
+        }
+      });
     });
 
     const ptSessions = await PTSession.bulkCreate(ptSessionData);

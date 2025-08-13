@@ -173,9 +173,19 @@ const updatePTSession = async (req, res) => {
     // 수정된 데이터를 다시 조회하여 반환
     const updatedPtSession = await PTSession.findByPk(id, {
       attributes: [
-        'id', 'member_id', 'trainer_id', 'center_id', 'session_date', 
-        'start_time', 'end_time', 'session_type', 'signature_data', 
-        'signature_time', 'notes', 'created_at', 'updated_at'
+        'id',
+        'member_id',
+        'trainer_id',
+        'center_id',
+        'session_date',
+        'start_time',
+        'end_time',
+        'session_type',
+        'signature_data',
+        'signature_time',
+        'notes',
+        'created_at',
+        'updated_at',
       ],
       include: [
         {
@@ -228,7 +238,7 @@ const deletePTSession = async (req, res) => {
     // 삭제 전 세션 타입 확인
     const sessionType = ptSession.session_type;
     const memberId = ptSession.member_id;
-    
+
     // 멤버 정보 조회
     const member = await Member.findByPk(memberId);
     if (!member) {
@@ -237,7 +247,7 @@ const deletePTSession = async (req, res) => {
         message: '멤버 정보를 찾을 수 없습니다.',
       });
     }
-    
+
     await ptSession.destroy();
 
     // 멤버의 사용된 세션 수 감소
@@ -269,14 +279,14 @@ const getPTSessionsByMonth = async (req, res) => {
     // 년월 유효성 검증
     const yearNum = parseInt(year);
     const monthNum = parseInt(month);
-    
+
     if (isNaN(yearNum) || yearNum < 1900 || yearNum > 2100) {
       return res.status(400).json({
         success: false,
         message: '유효하지 않은 년도입니다.',
       });
     }
-    
+
     if (isNaN(monthNum) || monthNum < 1 || monthNum > 12) {
       return res.status(400).json({
         success: false,
@@ -296,9 +306,19 @@ const getPTSessionsByMonth = async (req, res) => {
         },
       },
       attributes: [
-        'id', 'member_id', 'trainer_id', 'center_id', 'session_date', 
-        'start_time', 'end_time', 'session_type', 'signature_data', 
-        'signature_time', 'notes', 'created_at', 'updated_at'
+        'id',
+        'member_id',
+        'trainer_id',
+        'center_id',
+        'session_date',
+        'start_time',
+        'end_time',
+        'session_type',
+        'signature_data',
+        'signature_time',
+        'notes',
+        'created_at',
+        'updated_at',
       ],
       include: [
         {
@@ -317,13 +337,17 @@ const getPTSessionsByMonth = async (req, res) => {
           attributes: ['id', 'name'],
         },
       ],
-      order: [['session_date', 'ASC'], ['start_time', 'ASC']],
+      order: [
+        ['session_date', 'ASC'],
+        ['start_time', 'ASC'],
+      ],
     });
 
     // 통계 정보 계산
     const totalSessions = ptSessions.length;
     const completedSessions = ptSessions.filter(session => session.end_time).length;
-    const completionRate = totalSessions > 0 ? Math.round((completedSessions / totalSessions) * 100) : 0;
+    const completionRate =
+      totalSessions > 0 ? Math.round((completedSessions / totalSessions) * 100) : 0;
 
     // 센터별 통계
     const centerStats = {};
@@ -376,6 +400,119 @@ const getPTSessionsByMonth = async (req, res) => {
   }
 };
 
+// 트레이너별 월별 PT 세션 통계 조회 (새로 추가)
+const getTrainerPTSessionStats = async (req, res) => {
+  const { trainerId, year, month } = req.params;
+
+  try {
+    // 파라미터 유효성 검증
+    const trainerIdNum = parseInt(trainerId);
+    const yearNum = parseInt(year);
+    const monthNum = parseInt(month);
+
+    if (isNaN(trainerIdNum) || trainerIdNum <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: '유효하지 않은 트레이너 ID입니다.',
+      });
+    }
+
+    if (isNaN(yearNum) || yearNum < 1900 || yearNum > 2100) {
+      return res.status(400).json({
+        success: false,
+        message: '유효하지 않은 년도입니다.',
+      });
+    }
+
+    if (isNaN(monthNum) || monthNum < 1 || monthNum > 12) {
+      return res.status(400).json({
+        success: false,
+        message: '유효하지 않은 월입니다.',
+      });
+    }
+
+    // 해당 월의 시작일과 종료일 계산
+    const startDate = new Date(yearNum, monthNum - 1, 1);
+    const endDate = new Date(yearNum, monthNum, 0, 23, 59, 59);
+
+    // 트레이너 정보 조회
+    const trainer = await User.findByPk(trainerIdNum, {
+      attributes: ['id', 'name', 'nickname'],
+    });
+
+    if (!trainer) {
+      return res.status(404).json({
+        success: false,
+        message: '존재하지 않는 트레이너입니다.',
+      });
+    }
+
+    // 해당 트레이너의 해당 월 PT 세션 조회
+    const ptSessions = await PTSession.findAll({
+      where: {
+        trainer_id: trainerIdNum,
+        session_date: {
+          [Op.between]: [startDate, endDate],
+        },
+      },
+      attributes: ['id', 'session_date', 'start_time', 'end_time', 'session_type'],
+      order: [
+        ['session_date', 'ASC'],
+        ['start_time', 'ASC'],
+      ],
+    });
+
+    // 수업 시간 계산 (시간 단위)
+    let totalSessionHours = 0;
+    ptSessions.forEach(session => {
+      if (session.start_time && session.end_time) {
+        const startTime = new Date(`2000-01-01T${session.start_time}`);
+        const endTime = new Date(`2000-01-01T${session.end_time}`);
+        const diffMs = endTime - startTime;
+        const diffHours = diffMs / (1000 * 60 * 60);
+        totalSessionHours += diffHours;
+      } else {
+        // end_time이 없는 경우 기본 1시간으로 계산
+        totalSessionHours += 1;
+      }
+    });
+
+    // 통계 정보
+    const totalSessions = ptSessions.length;
+    const completedSessions = ptSessions.filter(session => session.end_time).length;
+    const regularSessions = ptSessions.filter(session => session.session_type === 'regular').length;
+    const freeSessions = ptSessions.filter(session => session.session_type === 'free').length;
+
+    return res.status(200).json({
+      success: true,
+      message: '트레이너별 PT 세션 통계 조회 성공',
+      data: {
+        trainer: {
+          id: trainer.id,
+          name: trainer.name,
+          nickname: trainer.nickname,
+        },
+        year: yearNum,
+        month: monthNum,
+        statistics: {
+          total_sessions: totalSessions,
+          completed_sessions: completedSessions,
+          regular_sessions: regularSessions,
+          free_sessions: freeSessions,
+          total_session_hours: Math.round(totalSessionHours * 100) / 100, // 소수점 2자리까지
+        },
+        pt_sessions: ptSessions,
+      },
+    });
+  } catch (error) {
+    console.error('트레이너별 PT 세션 통계 조회 오류:', error);
+    return res.status(500).json({
+      success: false,
+      message: '트레이너별 PT 세션 통계 조회 중 오류가 발생했습니다.',
+    });
+  }
+};
+
 // 멤버별 PT 세션 조회 (기존 함수 개선)
 const getPTSessionsByMember = async (req, res) => {
   const { memberId } = req.params;
@@ -389,11 +526,11 @@ const getPTSessionsByMember = async (req, res) => {
     if (year && month) {
       const yearNum = parseInt(year);
       const monthNum = parseInt(month);
-      
+
       if (!isNaN(yearNum) && !isNaN(monthNum) && monthNum >= 1 && monthNum <= 12) {
         const startDate = new Date(yearNum, monthNum - 1, 1);
         const endDate = new Date(yearNum, monthNum, 0, 23, 59, 59);
-        
+
         whereClause.session_date = {
           [Op.between]: [startDate, endDate],
         };
@@ -402,7 +539,16 @@ const getPTSessionsByMember = async (req, res) => {
 
     // 멤버 정보 조회
     const member = await Member.findByPk(memberId, {
-      attributes: ['id', 'name', 'phone', 'join_date', 'expire_date', 'total_sessions', 'used_sessions', 'free_sessions'],
+      attributes: [
+        'id',
+        'name',
+        'phone',
+        'join_date',
+        'expire_date',
+        'total_sessions',
+        'used_sessions',
+        'free_sessions',
+      ],
     });
 
     if (!member) {
@@ -415,9 +561,19 @@ const getPTSessionsByMember = async (req, res) => {
     const { count, rows: ptSessions } = await PTSession.findAndCountAll({
       where: whereClause,
       attributes: [
-        'id', 'member_id', 'trainer_id', 'center_id', 'session_date', 
-        'start_time', 'end_time', 'session_type', 'signature_data', 
-        'signature_time', 'notes', 'created_at', 'updated_at'
+        'id',
+        'member_id',
+        'trainer_id',
+        'center_id',
+        'session_date',
+        'start_time',
+        'end_time',
+        'session_type',
+        'signature_data',
+        'signature_time',
+        'notes',
+        'created_at',
+        'updated_at',
       ],
       include: [
         {
@@ -436,7 +592,10 @@ const getPTSessionsByMember = async (req, res) => {
           attributes: ['id', 'name'],
         },
       ],
-      order: [['session_date', 'DESC'], ['start_time', 'ASC']],
+      order: [
+        ['session_date', 'DESC'],
+        ['start_time', 'ASC'],
+      ],
       limit: parseInt(limit),
       offset: parseInt(offset),
     });
@@ -444,7 +603,8 @@ const getPTSessionsByMember = async (req, res) => {
     // 통계 정보 계산
     const totalSessions = count;
     const completedSessions = ptSessions.filter(session => session.end_time).length;
-    const completionRate = totalSessions > 0 ? Math.round((completedSessions / totalSessions) * 100) : 0;
+    const completionRate =
+      totalSessions > 0 ? Math.round((completedSessions / totalSessions) * 100) : 0;
 
     // 전체 PT 세션 수 조회 (월별 필터 없이)
     const allPtSessions = await PTSession.findAll({
@@ -453,8 +613,12 @@ const getPTSessionsByMember = async (req, res) => {
     });
 
     // 실제 사용된 세션 수 계산
-    const actualUsedSessions = allPtSessions.filter(session => session.session_type === 'regular').length;
-    const actualUsedFreeSessions = allPtSessions.filter(session => session.session_type === 'free').length;
+    const actualUsedSessions = allPtSessions.filter(
+      session => session.session_type === 'regular'
+    ).length;
+    const actualUsedFreeSessions = allPtSessions.filter(
+      session => session.session_type === 'free'
+    ).length;
 
     // 잔여 세션 계산
     const remainingSessions = Math.max(0, (member.total_sessions || 0) - actualUsedSessions);
@@ -504,4 +668,5 @@ module.exports = {
   deletePTSession,
   getPTSessionsByMonth,
   getPTSessionsByMember,
+  getTrainerPTSessionStats,
 };

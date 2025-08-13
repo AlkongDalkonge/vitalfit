@@ -199,4 +199,18 @@ export const teamAPI = {
   },
 };
 
+// Payment API
+export const paymentAPI = {
+  getPaymentsByTrainerAndMonth: async (trainerId, year, month) => {
+    return await apiGet('/pt-sessions/payments', {
+      params: { trainer_id: trainerId, year, month },
+    });
+  },
+  getTrainerSalary: async trainerId => {
+    return await apiGet('/pt-sessions/trainer-salary', {
+      params: { trainer_id: trainerId },
+    });
+  },
+};
+
 export default api;

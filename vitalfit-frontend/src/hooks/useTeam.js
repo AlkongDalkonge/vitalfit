@@ -55,14 +55,14 @@ export const useTeam = (centerId = null) => {
       // center_id가 0이거나 없는 경우 팀 이름으로 추정
       let centerId = Number(t.center_id ?? t.centerId ?? t.center?.id ?? 0);
 
-      if (centerId === 0) {
-        // 팀 이름에서 센터 이름 추출하여 매핑
+      // 팀 이름에서 센터 이름 추출하여 매핑
+      if (centerId === 0 || !centerId) {
         if (t.name.includes('강남')) {
           centerId = findCenterIdByName('강남') || 1;
         } else if (t.name.includes('신림')) {
-          centerId = findCenterIdByName('신림') || 2;
+          centerId = findCenterIdByName('신림') || 3;
         } else if (t.name.includes('홍대')) {
-          centerId = findCenterIdByName('홍대') || 3;
+          centerId = findCenterIdByName('홍대') || 2;
         }
       }
 
@@ -84,11 +84,9 @@ export const useTeam = (centerId = null) => {
 
   // centerId 기준 필터링 (centerId 미선택이면 빈 배열 반환)
   const teams = useMemo(() => {
-    console.log('🔍 useTeam 필터링:', { centerId, allTeams });
     if (!centerId) return [];
     const cid = Number(centerId);
     const filtered = allTeams.filter(t => t.center_id === cid);
-    console.log('✅ 필터링 결과:', filtered);
     return filtered;
   }, [allTeams, centerId]);
 
