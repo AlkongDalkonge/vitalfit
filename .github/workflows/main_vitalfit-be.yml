@@ -7,6 +7,9 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'vitalfit-backend/**'
+      - 'github/workflows/main_vitalfit-be.yml'
   workflow_dispatch:
 
 jobs:
