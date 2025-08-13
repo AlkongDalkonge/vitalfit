@@ -32,6 +32,7 @@
     "nodemailer": "^7.0.5",
     "pg": "^8.16.3",
     "pg-hstore": "^2.3.4",
+    "@azure/storage-blob": "^12.18.0",
     "sequelize": "^6.37.7",
     "sqlite3": "^5.1.7",
     "winston": "^3.17.0"
