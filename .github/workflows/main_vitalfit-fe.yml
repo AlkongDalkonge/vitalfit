@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'vitalfit-frontend/**'
+      - 'github/workflows/main_vitalfit-fe.yml'
   pull_request:
     types: [opened, synchronize, reopened, closed]
     branches:

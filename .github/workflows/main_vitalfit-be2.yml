@@ -7,6 +7,9 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'vitalfit-backend/**'
+      - 'github/workflows/main_vitalfit-be2.yml'
   workflow_dispatch:
 
 jobs:
@@ -24,6 +27,7 @@ jobs:
           node-version: '22.x'
 
       - name: npm install, build, and test
+        working-directory: vitalfit-backend
         run: |
           npm install
           npm run build --if-present
@@ -33,7 +37,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: node-app
-          path: .
+          path: vitalfit-backend
 
   deploy:
     runs-on: ubuntu-latest
