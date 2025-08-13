@@ -9,7 +9,7 @@ on:
       - main
     paths:
       - 'vitalfit-backend/**'
-      - 'github/workflows/main_vitalfit-be2.yml'
+      - '.github/workflows/main_vitalfit-be2.yml'
   workflow_dispatch:
 
 jobs:
