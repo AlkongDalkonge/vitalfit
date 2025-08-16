@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import api from '../utils/api';
+import { commissionRateAPI } from '../utils/api';
 
 export const useCommissionRate = (totalRevenue, positionId, centerId) => {
   const [commissionRate, setCommissionRate] = useState(null);
@@ -8,7 +8,7 @@ export const useCommissionRate = (totalRevenue, positionId, centerId) => {
 
   useEffect(() => {
     const fetchCommissionRate = async () => {
-      if (!totalRevenue || !positionId) {
+      if (totalRevenue === null || totalRevenue === undefined || !positionId) {
         setCommissionRate(null);
         return;
       }
@@ -17,21 +17,16 @@ export const useCommissionRate = (totalRevenue, positionId, centerId) => {
       setError(null);
 
       try {
-        const params = new URLSearchParams({
-          totalRevenue: totalRevenue.toString(),
-          positionId: positionId.toString(),
-        });
+        const response = await commissionRateAPI.getCommissionRateByRevenue(
+          totalRevenue,
+          positionId,
+          centerId
+        );
 
-        if (centerId) {
-          params.append('centerId', centerId.toString());
-        }
-
-        const response = await api.get(`/commission-rates/by-revenue?${params}`);
-
-        if (response.data.success) {
-          setCommissionRate(response.data.data);
+        if (response.success) {
+          setCommissionRate(response.data);
         } else {
-          setError(response.data.message || '커미션 정책을 찾을 수 없습니다.');
+          setError(response.message || '커미션 정책을 찾을 수 없습니다.');
         }
       } catch (err) {
         console.error('커미션 정책 조회 오류:', err);

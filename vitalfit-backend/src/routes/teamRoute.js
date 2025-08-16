@@ -10,4 +10,8 @@ router.get('/', teamController.getAllTeams);
 // GET /api/teams/:id
 router.get('/:id', teamController.getTeamById);
 
-module.exports = router; 
+// ✅ 팀별 매출 통계 조회 (새로 추가)
+// GET /api/teams/:teamId/revenue-stats/:year/:month
+router.get('/:teamId/revenue-stats/:year/:month', teamController.getTeamRevenueStats);
+
+module.exports = router;

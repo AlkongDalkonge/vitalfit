@@ -1,7 +1,7 @@
 import axios from 'axios';
 import AuthService from './auth';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
+const API_BASE_URL = 'http://localhost:3001/api';
 
 // axios 인스턴스 생성
 const api = axios.create({
@@ -118,7 +118,7 @@ export const centerAPI = {
       },
     });
   },
-  uploadImage: async (formData) => {
+  uploadImage: async formData => {
     return await apiPost('/centers/images', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
@@ -128,10 +128,10 @@ export const centerAPI = {
   deleteCenterImage: async (centerId, imageId) => {
     return await apiDelete(`/centers/${centerId}/images/${imageId}`);
   },
-  deleteImage: async (imageId) => {
+  deleteImage: async imageId => {
     return await apiDelete(`/centers/images/${imageId}`);
   },
-  setMainImage: async (imageId) => {
+  setMainImage: async imageId => {
     return await apiPut(`/centers/images/${imageId}/main`);
   },
 };
@@ -225,6 +225,9 @@ export const teamAPI = {
   deleteTeam: async id => {
     return await apiDelete(`/teams/${id}`);
   },
+  getTeamRevenueStats: async (teamId, year, month) => {
+    return await apiGet(`/teams/${teamId}/revenue-stats/${year}/${month}`);
+  },
 };
 
 // Payment API
@@ -238,6 +241,49 @@ export const paymentAPI = {
     return await apiGet('/pt-sessions/trainer-salary', {
       params: { trainer_id: trainerId },
     });
+  },
+};
+
+// Bonus API
+export const bonusAPI = {
+  calculateBonus: async (trainerId, year, month) => {
+    return await apiGet(`/bonus/calculate/${trainerId}/${year}/${month}`);
+  },
+};
+
+// Commission Rate API
+export const commissionRateAPI = {
+  getCommissionRateByRevenue: async (totalRevenue, positionId, centerId = null) => {
+    const params = new URLSearchParams({
+      totalRevenue: totalRevenue.toString(),
+      positionId: positionId.toString(),
+    });
+
+    if (centerId) {
+      params.append('centerId', centerId.toString());
+    }
+
+    return await apiGet(`/commission-rates/by-revenue?${params}`);
+  },
+};
+
+// Carryover API
+export const carryoverAPI = {
+  getCarryover: async (trainerId, year, month) => {
+    return await apiGet('/payments/carryover', {
+      params: {
+        trainer_id: trainerId,
+        year: year,
+        month: month,
+      },
+    });
+  },
+};
+
+// PT Session Stats API
+export const ptSessionStatsAPI = {
+  getTrainerStats: async (trainerId, year, month) => {
+    return await apiGet(`/pt-sessions/trainer-stats/${trainerId}/${year}/${month}`);
   },
 };
 

@@ -9,7 +9,7 @@ import CenterPage from './pages/CenterPage';
 import UserPage from './pages/UserPage';
 import MemberPage from './pages/MemberPage';
 import MemberPTSessionPage from './pages/MemberPTSessionPage';
-import PaymentPage from './pages/PaymentPage';
+import SettlementPage from './pages/SettlementPage';
 import NoticePage from './pages/NoticePage';
 import NoticeDetailPage from './pages/NoticeDetailPage';
 import ReportPage from './pages/ReportPage';
@@ -42,7 +42,7 @@ export default function App() {
           <Route path="user" element={<UserPage />} />
           <Route path="member" element={<MemberPage />} />
           <Route path="member/:memberId/pt-sessions" element={<MemberPTSessionPage />} />
-          <Route path="payment" element={<PaymentPage />} />
+          <Route path="payment" element={<SettlementPage />} />
           <Route path="notice" element={<NoticePage />} />
           <Route path="notice/:id" element={<NoticeDetailPage />} />
           <Route path="report" element={<ReportPage />} />
@@ -91,7 +91,7 @@ export default function App() {
             </ProtectedRoute>
           }
         >
-          <Route index element={<PaymentPage />} />
+          <Route index element={<SettlementPage />} />
         </Route>
 
         <Route

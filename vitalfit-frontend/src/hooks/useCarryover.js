@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import api from '../utils/api';
+import { carryoverAPI } from '../utils/api';
 
 export const useCarryover = (trainerId, year, month) => {
   const [carryoverAmount, setCarryoverAmount] = useState(0);
@@ -18,18 +18,12 @@ export const useCarryover = (trainerId, year, month) => {
       setError(null);
 
       try {
-        const response = await api.get('/payments/carryover', {
-          params: {
-            trainer_id: trainerId,
-            year: year,
-            month: month,
-          },
-        });
+        const response = await carryoverAPI.getCarryover(trainerId, year, month);
 
-        if (response.data.success) {
-          setCarryoverAmount(response.data.data.carryover_amount || 0);
+        if (response.success) {
+          setCarryoverAmount(response.data.carryover_amount || 0);
         } else {
-          setError(response.data.message || '이월매출 조회에 실패했습니다.');
+          setError(response.message || '이월매출 조회에 실패했습니다.');
           setCarryoverAmount(0);
         }
       } catch (err) {

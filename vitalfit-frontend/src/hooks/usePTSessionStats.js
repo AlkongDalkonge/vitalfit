@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import api from '../utils/api';
+import { ptSessionStatsAPI } from '../utils/api';
 
 export const usePTSessionStats = (trainerId, year, month) => {
   const [stats, setStats] = useState(null);
@@ -18,12 +18,12 @@ export const usePTSessionStats = (trainerId, year, month) => {
       setError(null);
 
       try {
-        const response = await api.get(`/pt-sessions/trainer-stats/${trainerId}/${year}/${month}`);
+        const response = await ptSessionStatsAPI.getTrainerStats(trainerId, year, month);
 
-        if (response.data.success) {
-          setStats(response.data.data);
+        if (response.success) {
+          setStats(response.data);
         } else {
-          setError(response.data.message || '데이터를 가져오는데 실패했습니다.');
+          setError(response.message || '데이터를 가져오는데 실패했습니다.');
         }
       } catch (err) {
         console.error('PT 세션 통계 조회 오류:', err);
