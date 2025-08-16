@@ -3,6 +3,7 @@ module.exports = {
     browser: true,
     es2021: true,
     jest: true, // 테스트 파일용
+    node: true, // process.env 사용을 위해 필요
   },
   extends: [
     'eslint:recommended',

@@ -1,24 +1,48 @@
 import axios from 'axios';
 import AuthService from './auth';
 
-const API_BASE_URL = 'http://localhost:3001/api';
+// 환경에 따른 API URL 자동 설정
+const getApiBaseUrl = () => {
+  // 환경변수로 직접 지정된 경우 우선 사용
+  if (process.env.REACT_APP_API_URL) {
+    return `${process.env.REACT_APP_API_URL}/api`;
+  }
+
+  // 환경에 따른 자동 설정
+  const environment = process.env.REACT_APP_ENVIRONMENT || 'development';
+
+  switch (environment) {
+    case 'production':
+      return 'https://vitalfit-backend.azurewebsites.net/api'; // Azure 운영 서버
+    case 'development':
+    default:
+      return 'http://localhost:3001/api'; // 로컬 개발 서버
+  }
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 // axios 인스턴스 생성
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000,
+  timeout: Number(process.env.REACT_APP_API_TIMEOUT) || 10000,
 });
 
 // 요청 인터셉터 - 토큰 자동 추가
 api.interceptors.request.use(
   config => {
     const token = AuthService.getAccessToken();
-    console.log('API 요청 인터셉터:', {
-      url: config.url,
-      method: config.method,
-      hasToken: !!token,
-      token: token ? token.substring(0, 20) + '...' : null,
-    });
+
+    // DEBUG 모드일 때만 API 요청 로깅
+    if (process.env.REACT_APP_DEBUG === 'true') {
+      console.log('API 요청 인터셉터:', {
+        url: config.url,
+        method: config.method,
+        hasToken: !!token,
+        token: token ? token.substring(0, 20) + '...' : null,
+      });
+    }
+
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
