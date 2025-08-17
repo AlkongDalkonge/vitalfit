@@ -15,6 +15,13 @@ module.exports = {
     username: process.env.TEST_DB_USERNAME || 'aldalkong',
     password: process.env.TEST_DB_PASSWORD || 'postgres',
     database: process.env.TEST_DB_NAME || 'vitalfit_test',
+    // JWT 설정 추가
+    jwt: {
+      secret: process.env.JWT_SECRET || 'vitalfit-dev-secret',
+      expiresIn: process.env.JWT_EXPIRES_IN || '24h',
+      refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
+      reAuthExpiresIn: process.env.JWT_REAUTH_EXPIRES_IN || '2m',
+    },
   },
 
   // Azure 운영 DB
@@ -28,6 +35,13 @@ module.exports = {
     ssl: {
       require: true,
       rejectUnauthorized: false, // Azure PostgreSQL 연결을 위해 필요
+    },
+    // JWT 설정 추가
+    jwt: {
+      secret: process.env.JWT_SECRET,
+      expiresIn: process.env.JWT_EXPIRES_IN || '24h',
+      refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
+      reAuthExpiresIn: process.env.JWT_REAUTH_EXPIRES_IN || '2m',
     },
   },
 };
