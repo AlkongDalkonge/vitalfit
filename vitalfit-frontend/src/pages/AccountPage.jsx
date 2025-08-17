@@ -6,7 +6,7 @@ import PasswordConfirmModal from '../components/PasswordConfirmModal';
 import PersonalInfoPage from './PersonalInfoPage';
 import MyHistoryPage from './MyHistoryPage';
 import MyWorkPage from './MyWorkPage';
-import PasswordChangeForm from './PasswordChangePage'; // PasswordChangeForm import
+import PasswordChangeForm from './PasswordChangePage';
 import {
   needsSensitiveActionReAuth,
   setReAuthStatus,
@@ -15,15 +15,21 @@ import {
 } from '../utils/reAuthUtils';
 
 const AccountPage = () => {
-  const { user, handleNavigation, showReAuthModal, handleReAuthSuccess, closeReAuthModal } =
-    useAuth();
+  const {
+    user,
+    handleNavigation,
+    showReAuthModal,
+    handleReAuthSuccess,
+    closeReAuthModal,
+    reAuthRequired,
+  } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
   // localStorage에서 저장된 탭을 가져오거나 기본값 사용
   const [activeTab, setActiveTab] = useState(() => getAccountTab());
 
-  // 재인증 상태 관리
+  // 재인증 상태 관리 - AuthContext에서 가져옴
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
 
@@ -38,30 +44,23 @@ const AccountPage = () => {
     { id: 'work', name: '나의업무' },
   ];
 
-  // 재인증 확인
+  // /account 경로 접근 시 재인증 강제
   useEffect(() => {
-    if (user) {
-      const userId = user.uid || user.id;
-      const currentPath = location.pathname;
-      console.log('🔍 AccountPage - 재인증 상태 확인:', {
-        userId,
-        currentPath,
-        needsReAuth: needsSensitiveActionReAuth(userId, currentPath),
-        isAuthenticated,
-      });
-
-      // 재인증 필요 여부 확인
-      if (needsSensitiveActionReAuth(userId, currentPath)) {
-        console.log('🔐 AccountPage - 재인증 필요, 모달 표시');
-        setShowPasswordModal(true);
-        return;
-      }
-
-      // 재인증이 완료된 경우
-      console.log('✅ AccountPage - 재인증 완료, 페이지 로드');
-      setIsAuthenticated(true);
+    if (user && location.pathname === '/account') {
+      console.log('🔐 AccountPage - /account 경로 접근, 재인증 강제');
+      setIsAuthenticated(false);
+      setShowPasswordModal(true);
     }
-  }, [user]);
+  }, [user, location.pathname]);
+
+  // AuthContext의 재인증 상태를 사용하여 isAuthenticated 업데이트
+  useEffect(() => {
+    if (user && !reAuthRequired) {
+      setIsAuthenticated(true);
+    } else if (user && reAuthRequired) {
+      setIsAuthenticated(false);
+    }
+  }, [user, reAuthRequired]);
 
   // 페이지 이동 시 재인증 상태 처리 (비밀번호 변경 페이지로 이동할 때는 제외)
   useEffect(() => {
@@ -90,9 +89,41 @@ const AccountPage = () => {
       setIsAuthenticated(true);
       setShowPasswordModal(false);
 
+      // 재인증 완료 후 원래 작업 실행
+      if (pendingAction && typeof pendingAction === 'function') {
+        console.log('🔄 AccountPage - 원래 작업 실행:', pendingAction);
+        setTimeout(() => {
+          pendingAction();
+          setPendingAction(null);
+        }, 100);
+      } else if (pendingAction) {
+        console.log('⚠️ AccountPage - pendingAction이 함수가 아님:', pendingAction);
+        setPendingAction(null);
+      }
+
       // 토스트 메시지는 PasswordConfirmModal에서만 표시하므로 여기서는 제거
     }
   };
+
+  // 재인증 상태 초기화 (각 저장 작업마다 호출)
+  const resetReAuthStatus = action => {
+    console.log('🔄 AccountPage - 재인증 상태 초기화', action);
+
+    // action이 함수인지 확인
+    if (typeof action === 'function') {
+      setPendingAction(action);
+      setIsAuthenticated(false);
+      setShowPasswordModal(true);
+    } else {
+      console.error('❌ AccountPage - action이 함수가 아님:', action);
+      // action이 함수가 아니면 재인증만 요구
+      setIsAuthenticated(false);
+      setShowPasswordModal(true);
+    }
+  };
+
+  // 재인증 완료 후 원래 작업 계속
+  const [pendingAction, setPendingAction] = useState(null);
 
   // 재인증 모달 닫기
   const handlePasswordModalClose = () => {
@@ -166,15 +197,15 @@ const AccountPage = () => {
 
     switch (activeTab) {
       case 'personal':
-        return <PersonalInfoPage />;
+        return <PersonalInfoPage onReAuthRequired={resetReAuthStatus} />;
       case 'password':
-        return <PasswordChangeForm />;
+        return <PasswordChangeForm onReAuthRequired={resetReAuthStatus} />;
       case 'history':
-        return <MyHistoryPage />;
+        return <MyHistoryPage onReAuthRequired={resetReAuthStatus} />;
       case 'work':
-        return <MyWorkPage />;
+        return <MyWorkPage onReAuthRequired={resetReAuthStatus} />;
       default:
-        return <PersonalInfoPage />;
+        return <PersonalInfoPage onReAuthRequired={resetReAuthStatus} />;
     }
   };
 

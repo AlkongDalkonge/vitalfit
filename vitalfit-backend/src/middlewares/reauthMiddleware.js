@@ -106,7 +106,7 @@ const generateReAuthToken = userId => {
   };
 
   return jwt.sign(payload, secret, {
-    expiresIn: config.jwt.reAuthTokenExpiry,
+    expiresIn: config.jwt.reAuthExpiresIn,
   });
 };
 

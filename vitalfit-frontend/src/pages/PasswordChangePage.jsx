@@ -3,7 +3,7 @@ import { toast } from 'react-toastify';
 import { useAuth } from '../contexts/AuthContext';
 import { getReAuthToken } from '../utils/reAuthUtils';
 
-const PasswordChangeForm = () => {
+const PasswordChangeForm = ({ onReAuthRequired }) => {
   const { user } = useAuth();
 
   const [formData, setFormData] = useState({
@@ -75,7 +75,8 @@ const PasswordChangeForm = () => {
     }
   };
 
-  const handleSubmit = async e => {
+  // 실제 비밀번호 변경 로직을 별도 함수로 분리
+  const performPasswordChange = async e => {
     e.preventDefault();
 
     // 유효성 검사
@@ -175,11 +176,30 @@ const PasswordChangeForm = () => {
         }
       }
     } catch (error) {
-      console.error('비밀번호 변경 오류:', error);
-      setError('비밀번호 변경 중 오류가 발생했습니다.');
+      console.error('비밀번호 변경 중 오류 발생:', error);
+      setError('네트워크 오류가 발생했습니다. 다시 시도해주세요.');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSubmit = async e => {
+    e.preventDefault();
+
+    // 저장할 때마다 재인증 요구
+    if (onReAuthRequired) {
+      onReAuthRequired(async () => {
+        try {
+          await performPasswordChange(e);
+        } catch (error) {
+          console.error('재인증 후 비밀번호 변경 실패:', error);
+        }
+      });
+      return;
+    }
+
+    // 재인증이 필요하지 않은 경우 바로 실행
+    await performPasswordChange(e);
   };
 
   // 사용자 정보가 없으면 로딩 표시

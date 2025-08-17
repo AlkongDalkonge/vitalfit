@@ -35,16 +35,21 @@ module.exports = (sequelize, DataTypes) => {
           len: [10, 20],
         },
       },
+      gender: {
+        type: DataTypes.STRING(10),
+        allowNull: true,
+        validate: {
+          isIn: [['male', 'female']],
+        },
+      },
       terms_accepted: {
         type: DataTypes.BOOLEAN,
         allowNull: false,
         defaultValue: false,
-        comment: '약관 동의 여부',
       },
       terms_accepted_at: {
         type: DataTypes.DATE,
         allowNull: true,
-        comment: '약관 동의 시각',
       },
       position_id: {
         type: DataTypes.INTEGER,
@@ -63,7 +68,7 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
       },
       status: {
-        type: DataTypes.ENUM('active', 'inactive', 'retired'),
+        type: DataTypes.ENUM('active', 'inactive', 'retired', 'pending_verification'),
         allowNull: false,
         defaultValue: 'active',
       },
@@ -84,7 +89,7 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: true,
       },
       license: {
-        type: DataTypes.STRING(200),
+        type: DataTypes.TEXT,
         allowNull: true,
       },
       experience: {
@@ -92,17 +97,16 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: true,
       },
       education: {
-        type: DataTypes.STRING(200),
+        type: DataTypes.TEXT,
         allowNull: true,
       },
       instagram: {
-        type: DataTypes.STRING(100),
+        type: DataTypes.TEXT,
         allowNull: true,
       },
       shift: {
         type: DataTypes.STRING(100),
         allowNull: true,
-        comment: '근무 시간대',
       },
       last_login_at: {
         type: DataTypes.DATE,
@@ -122,6 +126,39 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.BOOLEAN,
         allowNull: false,
         defaultValue: false,
+      },
+      verification_code: {
+        type: DataTypes.STRING(6),
+        allowNull: true,
+      },
+      verification_code_expires_at: {
+        type: DataTypes.DATE,
+        allowNull: true,
+      },
+      email_verified_at: {
+        type: DataTypes.DATE,
+        allowNull: true,
+      },
+      refresh_token: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      // 계좌 관련 필드
+      account_number: {
+        type: DataTypes.STRING(50),
+        allowNull: true,
+      },
+      account_bank: {
+        type: DataTypes.STRING(100),
+        allowNull: true,
+      },
+      account_image_name: {
+        type: DataTypes.STRING(255),
+        allowNull: true,
+      },
+      account_image_url: {
+        type: DataTypes.STRING(255),
+        allowNull: true,
       },
     },
     {

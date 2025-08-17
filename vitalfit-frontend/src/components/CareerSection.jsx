@@ -4,7 +4,6 @@ const CareerSection = ({
   title,
   fieldName,
   data,
-  onContentChange,
   onAddItem,
   onRemoveItem,
   onItemContentChange,
@@ -22,7 +21,6 @@ const CareerSection = ({
           },
         ]
   );
-  const debounceTimeoutRef = useRef(null);
   const inputRefs = useRef([]);
 
   // 초기 데이터 동기화
@@ -42,19 +40,6 @@ const CareerSection = ({
     }
   }, [data.items, fieldName]);
 
-  // 디바운싱으로 부모 컴포넌트 상태 업데이트
-  const updateParentState = useCallback(
-    newItems => {
-      if (debounceTimeoutRef.current) {
-        clearTimeout(debounceTimeoutRef.current);
-      }
-      debounceTimeoutRef.current = setTimeout(() => {
-        onContentChange(fieldName, { items: newItems });
-      }, 300);
-    },
-    [fieldName, onContentChange]
-  );
-
   // 새 항목 추가
   const handleAddItem = useCallback(() => {
     const newItems = [
@@ -67,7 +52,7 @@ const CareerSection = ({
       },
     ];
     setLocalItems(newItems);
-    updateParentState(newItems);
+    onAddItem(fieldName);
 
     // 새로 추가된 input에 포커스
     setTimeout(() => {
@@ -75,7 +60,7 @@ const CareerSection = ({
         inputRefs.current[newItems.length - 1].focus();
       }
     }, 0);
-  }, [localItems, fieldName, updateParentState]);
+  }, [localItems, fieldName, onAddItem]);
 
   // 항목 삭제
   const handleRemoveItem = useCallback(
@@ -83,7 +68,7 @@ const CareerSection = ({
       if (localItems.length > 1) {
         const newItems = localItems.filter((_, i) => i !== index);
         setLocalItems(newItems);
-        updateParentState(newItems);
+        onRemoveItem(fieldName, index);
 
         // 삭제 후 이전 input에 포커스
         setTimeout(() => {
@@ -94,7 +79,7 @@ const CareerSection = ({
         }, 0);
       }
     },
-    [localItems, updateParentState]
+    [localItems, fieldName, onRemoveItem]
   );
 
   // 항목 내용 변경
@@ -103,9 +88,9 @@ const CareerSection = ({
       const newItems = [...localItems];
       newItems[index] = { ...newItems[index], content: value };
       setLocalItems(newItems);
-      updateParentState(newItems);
+      onItemContentChange(fieldName, index, value);
     },
-    [localItems, updateParentState]
+    [localItems, fieldName, onItemContentChange]
   );
 
   // 항목 날짜 변경
@@ -114,9 +99,9 @@ const CareerSection = ({
       const newItems = [...localItems];
       newItems[index] = { ...newItems[index], [dateType]: value };
       setLocalItems(newItems);
-      updateParentState(newItems);
+      onItemDateChange(fieldName, index, dateType, value);
     },
-    [localItems, updateParentState]
+    [localItems, fieldName, onItemDateChange]
   );
 
   // 항목 상태 변경 (학력만)
@@ -126,10 +111,11 @@ const CareerSection = ({
         const newItems = [...localItems];
         newItems[index] = { ...newItems[index], status: value };
         setLocalItems(newItems);
-        updateParentState(newItems);
+        // 상태 변경은 별도 핸들러가 없으므로 onItemContentChange를 사용
+        onItemContentChange(fieldName, index, newItems[index].content);
       }
     },
-    [localItems, fieldName, updateParentState]
+    [localItems, fieldName, onItemContentChange]
   );
 
   // input refs 배열 초기화

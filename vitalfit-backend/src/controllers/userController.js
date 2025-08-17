@@ -182,6 +182,45 @@ const verifyEmail = async (req, res, next) => {
       return res.status(404).json({ success: false, message: '사용자를 찾을 수 없습니다.' });
     }
 
+    // 기존 사용자이고 verification_code가 없는 경우 (이미 가입된 사용자)
+    if (user.status === 'active' && !user.verification_code && !user.email_verified_at) {
+      // 기존 사용자는 이메일 인증 없이 바로 로그인 허용
+      user.email_verified_at = new Date();
+      await user.save();
+
+      // JWT 토큰 생성 (30일)
+      const token = jwt.sign(
+        {
+          userId: user.id,
+          email: user.email,
+          name: user.name,
+        },
+        secret,
+        { expiresIn: '30d' }
+      );
+
+      return res.status(200).json({
+        success: true,
+        message: '기존 사용자 인증이 완료되었습니다. 자동으로 로그인됩니다.',
+        token: token,
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          status: user.status,
+          email_verified_at: user.email_verified_at,
+        },
+      });
+    }
+
+    // 새로운 사용자 또는 인증 코드가 있는 경우
+    if (!user.verification_code) {
+      return res.status(400).json({
+        success: false,
+        message: '인증 코드가 발급되지 않았습니다. 회원가입을 먼저 진행해주세요.',
+      });
+    }
+
     // 인증 코드 확인
     if (user.verification_code !== verificationCode) {
       return res.status(400).json({ success: false, message: '인증 코드가 올바르지 않습니다.' });

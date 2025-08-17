@@ -12,7 +12,7 @@ import InstagramSection from '../components/InstagramSection';
 // API 기본 URL 환경 변수
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
-const MyHistoryPage = () => {
+const MyHistoryPage = ({ onReAuthRequired }) => {
   const { user, refreshUserInfo } = useAuth();
 
   const [loading, setLoading] = useState(true);
@@ -637,8 +637,8 @@ const MyHistoryPage = () => {
     });
   };
 
-  // 저장 핸들러
-  const handleSave = async () => {
+  // 실제 저장 로직을 별도 함수로 분리
+  const performSave = async () => {
     try {
       // 각 필드별로 데이터 직렬화
       const updateData = {
@@ -681,6 +681,24 @@ const MyHistoryPage = () => {
       setLoading(false);
     }
   }, [user]);
+
+  // 저장 핸들러 (재인증 확인 후 실제 저장 실행)
+  const handleSave = async () => {
+    // 저장할 때마다 재인증 요구
+    if (onReAuthRequired) {
+      onReAuthRequired(async () => {
+        try {
+          await performSave();
+        } catch (error) {
+          console.error('재인증 후 저장 실패:', error);
+        }
+      });
+      return;
+    }
+
+    // 재인증이 필요하지 않은 경우 바로 저장
+    await performSave();
+  };
 
   if (loading) {
     return (

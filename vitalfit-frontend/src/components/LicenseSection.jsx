@@ -21,10 +21,10 @@ const LicenseSection = ({
       </div>
 
       <div className="space-y-4">
-        {data.items.map((item, index) => (
+        {(data?.items || []).map((item, index) => (
           <div key={index} className="border rounded-lg p-4 bg-white">
             <div className="flex items-center justify-end mb-3">
-              {data.items.length > 1 && (
+              {(data?.items || []).length > 1 && (
                 <button
                   type="button"
                   onClick={() => onRemoveItem(index)}
@@ -57,8 +57,12 @@ const LicenseSection = ({
                     value={item.licenseName || ''}
                     onChange={e => onContentChange(index, 'licenseName', e.target.value)}
                     placeholder="자격증 이름을 입력하세요"
+                    maxLength={50}
                     className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                   />
+                  <div className="text-xs text-gray-500 mt-1 text-right">
+                    {item.licenseName?.length || 0}/50
+                  </div>
                 </div>
 
                 {/* 발급기관 */}
@@ -68,8 +72,12 @@ const LicenseSection = ({
                     value={item.issuingOrganization || ''}
                     onChange={e => onContentChange(index, 'issuingOrganization', e.target.value)}
                     placeholder="발급기관을 입력하세요"
+                    maxLength={50}
                     className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-blue-500 focus:border-blue-500 text-sm"
                   />
+                  <div className="text-xs text-gray-500 mt-1 text-right">
+                    {item.issuingOrganization?.length || 0}/50
+                  </div>
                 </div>
 
                 {/* 발급일자 */}

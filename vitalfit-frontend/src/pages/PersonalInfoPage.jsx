@@ -50,6 +50,7 @@ const PersonalInfoPage = () => {
   const [accountBank, setAccountBank] = useState('');
   const [accountImage, setAccountImage] = useState('');
   const [accountImageFile, setAccountImageFile] = useState(null);
+  const [showAccountInfo, setShowAccountInfo] = useState(false);
 
   // 센터 선택에 따라 팀 필터링
   const filterTeamsByCenter = centerId => {

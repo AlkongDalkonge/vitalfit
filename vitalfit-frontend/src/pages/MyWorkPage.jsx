@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { userAPI } from '../utils/api';
 import { useNavigate } from 'react-router-dom';
 
-const MyWorkPage = () => {
+const MyWorkPage = ({ onReAuthRequired }) => {
   const { user, refreshUserInfo } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -186,8 +186,8 @@ const MyWorkPage = () => {
     }));
   };
 
-  // 쉬는 날 신청 제출
-  const handleLeaveRequestSubmit = async e => {
+  // 실제 휴가 신청 로직을 별도 함수로 분리
+  const performLeaveRequest = async e => {
     e.preventDefault();
 
     if (!leaveRequestForm.startDate || !leaveRequestForm.reason.trim()) {
@@ -251,6 +251,26 @@ const MyWorkPage = () => {
       console.error('휴가 신청 실패:', error);
       toast.error('휴가 신청에 실패했습니다.');
     }
+  };
+
+  // 쉬는 날 신청 제출
+  const handleLeaveRequestSubmit = async e => {
+    e.preventDefault();
+
+    // 신청할 때마다 재인증 요구
+    if (onReAuthRequired) {
+      onReAuthRequired(async () => {
+        try {
+          await performLeaveRequest(e);
+        } catch (error) {
+          console.error('재인증 후 휴가 신청 실패:', error);
+        }
+      });
+      return;
+    }
+
+    // 재인증이 필요하지 않은 경우 바로 실행
+    await performLeaveRequest(e);
   };
 
   // 휴가 신청 메일 발송

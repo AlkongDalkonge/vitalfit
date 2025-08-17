@@ -109,7 +109,7 @@ const ImageUploadField = ({
                 })}
                 <img
                   src={
-                    data.image_url.startsWith('http')
+                    data.image_url.startsWith('http') || data.image_url.startsWith('data:')
                       ? data.image_url
                       : `${API_BASE_URL}${data.image_url}`
                   }

@@ -149,6 +149,8 @@ export const AuthProvider = ({ children }) => {
     };
   }, []); // 빈 의존성 배열 유지 (한 번만 실행)
 
+  // 경로 변경 감지 제거 - AccountPage에서 처리
+
   // 재인증 필요 여부 확인
   const checkReAuthRequired = userId => {
     if (userId && needsReAuth(userId)) {

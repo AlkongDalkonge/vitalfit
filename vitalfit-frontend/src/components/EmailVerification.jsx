@@ -22,8 +22,6 @@ export default function EmailVerification() {
 
   // 회원가입 후 전달받은 데이터 설정
   useEffect(() => {
-    console.log('📍 EmailVerification 컴포넌트 마운트, location.state:', location.state);
-
     if (location.state) {
       setEmail(location.state.email || '');
       setMessage(location.state.message || '');
@@ -76,7 +74,6 @@ export default function EmailVerification() {
     if (pastedData.length === 6 && /^\d{6}$/.test(pastedData)) {
       const digits = pastedData.split('');
       setVerificationCode(digits);
-      console.log('✅ 6자리 코드 붙여넣기 성공:', digits);
 
       // 마지막 입력 필드에 포커스
       const lastInput = document.querySelector(`input[data-index="5"]`);
@@ -289,9 +286,6 @@ export default function EmailVerification() {
                   </div>
                   <p className="text-xs text-gray-500 text-center mb-2">
                     이메일로 발송된 6자리 인증 코드를 입력해주세요.
-                  </p>
-                  <p className="text-xs text-cyan-600 text-center">
-                    💡 팁: 6자리 코드를 복사해서 아무 입력 필드에 붙여넣으면 자동으로 입력됩니다!
                   </p>
                 </div>
                 <button

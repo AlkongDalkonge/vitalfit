@@ -56,9 +56,6 @@ const PasswordConfirmModal = ({ isOpen, onClose, onSuccess, pagePath = null }) =
         pagePath,
       });
 
-      // 서버 연결 테스트
-      console.log('🌐 서버 연결 테스트 시작...');
-
       // 먼저 간단한 연결 테스트
       try {
         const testResponse = await fetch('http://localhost:3001/api/users/me', {
@@ -68,9 +65,7 @@ const PasswordConfirmModal = ({ isOpen, onClose, onSuccess, pagePath = null }) =
           },
           credentials: 'include',
         });
-        console.log('🔍 서버 연결 테스트 결과:', testResponse.status);
       } catch (testError) {
-        console.error('❌ 서버 연결 테스트 실패:', testError);
         setError('서버에 연결할 수 없습니다. 백엔드 서버가 실행 중인지 확인해주세요.');
         return;
       }
@@ -94,7 +89,6 @@ const PasswordConfirmModal = ({ isOpen, onClose, onSuccess, pagePath = null }) =
 
       if (response.ok) {
         const result = await response.json();
-        console.log('✅ 재인증 성공:', result);
 
         // 재인증 토큰 저장 (페이지 경로 포함)
         if (result.reAuthToken && user) {
@@ -202,7 +196,7 @@ const PasswordConfirmModal = ({ isOpen, onClose, onSuccess, pagePath = null }) =
                 className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700 transition-colors"
                 onClick={() => setShowPassword(!showPassword)}
               >
-                {showPassword ? '😵‍💫' : '🥺'}
+                {showPassword ? '★' : '☆'}
               </button>
             </div>
           </div>
