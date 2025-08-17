@@ -62,6 +62,8 @@ export const ROUTES = {
   NOTICE: '/notice',
   REPORT: '/report',
   ACCOUNT: '/account',
+  PERSONAL_INFO: '/account/personal-info',
+  DELETE_ACCOUNT: '/account/delete-account',
 };
 
 export const MENU_CONFIG = [
@@ -73,3 +75,11 @@ export const MENU_CONFIG = [
   { name: '분석리포트', path: ROUTES.REPORT },
   { name: '내계정', path: ROUTES.ACCOUNT },
 ];
+
+// 민감한 작업이 필요한 페이지들
+export const SENSITIVE_ROUTES = [ROUTES.PERSONAL_INFO, ROUTES.DELETE_ACCOUNT];
+
+// 특정 경로가 민감한 작업인지 확인하는 함수
+export const isSensitiveRoute = pathname => {
+  return SENSITIVE_ROUTES.includes(pathname);
+};

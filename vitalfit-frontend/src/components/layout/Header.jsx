@@ -3,17 +3,18 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
-// 백엔드 서버 URL
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
-
 export default function Header({ activeMenu = null, userInfo }) {
   const { getMenuIcon } = useIcons();
-  const { getFormattedDate } = useDate();
+  const { getFormattedDate, getDayOfWeek } = useDate(); // 요일 함수 추가
   const { logout, user } = useAuth();
   const navigate = useNavigate();
 
   const IconComponent = activeMenu ? getMenuIcon(activeMenu) : null;
 
+  // 현재 사용자 정보
+  const currentUser = userInfo || user;
+
+  // 로그아웃 처리
   const handleLogout = async () => {
     try {
       await logout();
@@ -24,11 +25,16 @@ export default function Header({ activeMenu = null, userInfo }) {
     }
   };
 
-  // 사용자 정보 (props로 받은 userInfo가 있으면 사용, 없으면 AuthContext의 user 사용)
-  const currentUser = userInfo || user;
+  // 내 계정 페이지로 이동
+  const handleAccountClick = () => {
+    navigate('/account');
+  };
 
-  // 프로필 이미지 URL 생성
-  const profileImageUrl = currentUser?.profile_image_url ? `${API_BASE_URL}${currentUser.profile_image_url}` : "https://placehold.co/32x32";
+  const textStyle = 'text-base font-semibold text-gray-800 cursor-pointer select-none';
+
+  // 날짜 + 요일
+  const today = getFormattedDate(); // YYYY-MM-DD
+  const dayOfWeek = getDayOfWeek(); // ex: 월요일, Tuesday 등
 
   return (
     <header className="h-20 bg-white flex justify-between items-center px-8 border-b border-gray-100">
@@ -44,26 +50,67 @@ export default function Header({ activeMenu = null, userInfo }) {
           <span>반갑습니다, {currentUser?.name || '관리자'}님!</span>
         )}
       </div>
+
       <div className="flex items-center gap-16">
-        <span className="text-sm text-gray-500 font-medium">{getFormattedDate()}</span>
-        <div className="flex items-center gap-8">
-          <img
-            src={profileImageUrl}
-            alt="profile"
-            className="w-10 h-10 rounded-full border-2 border-gray-200 object-cover"
-            onError={(e) => {
-              e.target.src = "https://placehold.co/32x32";
+        {/* 날짜 + 요일 표시 */}
+        <span className="text-lg font-medium text-gray-500">
+          {today} ({dayOfWeek})
+        </span>
+
+        <div className="flex items-center gap-4 font-semibold text-gray-800 select-none">
+          {/* 프로필 이미지 - 클릭 가능 */}
+          <div
+            onClick={handleAccountClick}
+            className="cursor-pointer hover:opacity-80 transition-opacity"
+            role="button"
+            tabIndex={0}
+            onKeyPress={e => {
+              if (e.key === 'Enter') handleAccountClick();
             }}
-          />
-          <span className="text-base font-semibold text-gray-800">
-            {currentUser?.name || '관리자'}
+          >
+            {currentUser?.profile_image_url ? (
+              <img
+                src={
+                  currentUser.profile_image_url.startsWith('http')
+                    ? currentUser.profile_image_url
+                    : `http://localhost:3001${currentUser.profile_image_url}`
+                }
+                alt="profile"
+                className="w-10 h-10 rounded-full border-2 border-gray-200 object-cover"
+              />
+            ) : (
+              <img
+                src="/img/profileDefault.png"
+                alt="기본 프로필"
+                className="w-10 h-10 rounded-full border-2 border-gray-200 object-cover"
+              />
+            )}
+          </div>
+
+          {/* 사용자 이름 - 클릭 가능 */}
+          <span
+            onClick={handleAccountClick}
+            className={`${textStyle} hover:text-blue-600 transition-colors`}
+            role="button"
+            tabIndex={0}
+            onKeyPress={e => {
+              if (e.key === 'Enter') handleAccountClick();
+            }}
+          >
+            {currentUser?.name || '관리자'}님
           </span>
-          <button
+          <span className="text-gray-400 select-none">|</span>
+          <span
             onClick={handleLogout}
-            className="text-sm text-gray-500 hover:text-red-500 transition-colors mr-4"
+            className={`${textStyle} hover:text-red-500`}
+            role="button"
+            tabIndex={0}
+            onKeyPress={e => {
+              if (e.key === 'Enter') handleLogout();
+            }}
           >
             로그아웃
-          </button>
+          </span>
         </div>
       </div>
     </header>

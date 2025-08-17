@@ -1,9 +1,17 @@
 import { Navigate, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
 const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, user, handleNavigation } = useAuth();
   const location = useLocation();
+
+  // 페이지 이동 시 재인증 상태 처리
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      handleNavigation(user.id);
+    }
+  }, [location.pathname, isAuthenticated, user, handleNavigation]);
 
   // 로딩 중일 때는 로딩 화면 표시
   if (loading) {

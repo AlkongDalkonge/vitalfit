@@ -28,7 +28,7 @@ const api = axios.create({
   timeout: Number(process.env.REACT_APP_API_TIMEOUT) || 10000,
 });
 
-// 요청 인터셉터 - 토큰 자동 추가
+// 요청 인터셉터 - 토큰 자동 추가 및 재인증 토큰 포함
 api.interceptors.request.use(
   config => {
     const token = AuthService.getAccessToken();
@@ -45,6 +45,34 @@ api.interceptors.request.use(
 
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+
+      // 민감 작업에 대한 재인증 토큰이 필요한 경우 자동으로 포함
+      const sensitiveEndpoints = [
+        '/users/change-password',
+        '/users/me', // 계정 정보 변경
+        '/users/deactivate-account',
+      ];
+
+      const isSensitiveEndpoint = sensitiveEndpoints.some(endpoint =>
+        config.url?.includes(endpoint)
+      );
+
+      if (isSensitiveEndpoint) {
+        // 현재 사용자 ID를 가져와서 재인증 토큰 확인
+        try {
+          const user = JSON.parse(localStorage.getItem('user') || '{}');
+          if (user.id) {
+            const { getReAuthToken } = require('./reAuthUtils');
+            const reAuthToken = getReAuthToken(user.id);
+            if (reAuthToken) {
+              config.headers['x-reauth-token'] = reAuthToken;
+              console.log('🔐 민감 작업 재인증 토큰 자동 포함');
+            }
+          }
+        } catch (error) {
+          console.log('재인증 토큰 가져오기 실패:', error);
+        }
+      }
     }
     return config;
   },
@@ -53,7 +81,7 @@ api.interceptors.request.use(
   }
 );
 
-// 응답 인터셉터 - 토큰 만료 시 자동 갱신
+// 응답 인터셉터 - 토큰 만료 시 자동 갱신 (refresh token 없이 처리)
 api.interceptors.response.use(
   response => {
     return response;
@@ -66,17 +94,23 @@ api.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        // Refresh Token으로 새로운 Access Token 발급
-        await AuthService.refreshAccessToken();
+        console.log('🔄 401 에러 감지 - 토큰 갱신 시도');
 
-        // 새로운 토큰으로 원래 요청 재시도
-        const newToken = AuthService.getAccessToken();
-        originalRequest.headers.Authorization = `Bearer ${newToken}`;
+        // 무음 갱신 시도
+        const newAccessToken = await AuthService.silentRefresh();
 
-        return api(originalRequest);
+        if (newAccessToken) {
+          console.log('✅ 토큰 갱신 성공 - 원래 요청 재시도');
+          // 새로운 토큰으로 원래 요청 재시도
+          originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+          return api(originalRequest);
+        } else {
+          throw new Error('토큰 갱신 실패');
+        }
       } catch (refreshError) {
-        // Refresh Token도 만료된 경우 로그아웃 처리
-        console.error('토큰 갱신 실패:', refreshError);
+        console.error('❌ 토큰 갱신 실패:', refreshError);
+
+        // 토큰 갱신 실패 시 로그아웃 처리
         AuthService.removeAccessToken();
         AuthService.removeRefreshToken();
         localStorage.removeItem('rememberMe');
@@ -179,6 +213,38 @@ export const userAPI = {
   },
   signUp: async data => {
     return await apiPost('/auth/signup', data);
+  },
+  getPositions: async () => {
+    return await apiGet('/users/positions');
+  },
+  // 내 계정 정보 업데이트
+  updateMyAccount: async data => {
+    return await apiPut('/users/me', data);
+  },
+  // 계좌 정보 업데이트
+  updateAccountInfo: async data => {
+    return await apiPut('/users/account', data);
+  },
+  // 프로필 이미지 업로드
+  uploadProfileImage: async (userId, formData, onProgress) => {
+    return await api.post('/users/profile-image', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+      onUploadProgress: onProgress,
+    });
+  },
+  // 프로필 이미지 삭제
+  deleteProfileImage: async () => {
+    return await apiDelete('/users/profile-image');
+  },
+  // 추가 이미지 업로드 (자격증, 경력, 학력, 인스타그램)
+  uploadAdditionalImage: async formData => {
+    return await api.post('/users/upload-additional-image', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
   },
 };
 

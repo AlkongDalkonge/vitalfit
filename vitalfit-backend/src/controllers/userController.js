@@ -4,8 +4,21 @@ const jwt = require('jsonwebtoken');
 const Joi = require('joi');
 const { createHash, validateForeignKey } = require('../utils/userUtils');
 const { createUpload, deleteFile, createFilePath } = require('../utils/uploadUtils');
-const { sendPasswordResetEmail } = require('../utils/emailService');
-const secret = process.env.JWT_SECRET || 'vitalfit-secret-key-2025';
+const {
+  sendPasswordResetEmail,
+  generateSecureTempPassword,
+  sendVerificationEmail,
+} = require('../utils/emailService');
+const config = require('../config/config');
+const { generateReAuthToken } = require('../middlewares/reauthMiddleware');
+const secret = config.jwt.secret;
+const { Op } = require('sequelize'); // Op 추가
+const crypto = require('crypto'); // crypto 추가
+
+// 이메일 인증 토큰 스키마
+const emailVerificationSchema = Joi.object({
+  token: Joi.string().required(),
+});
 
 const signUpSchema = Joi.object({
   name: Joi.string().min(2).max(20).required().messages({
@@ -55,57 +68,161 @@ const signUpSchema = Joi.object({
   profile_image_url: Joi.string().optional(),
 });
 
-// ✅ 회원가입
+// ✅ 회원가입 (이메일 인증 필요, JWT 발급 안함)
 const signUp = async (req, res, next) => {
   try {
     const { error, value } = signUpSchema.validate(req.body);
     if (error) return res.status(400).json({ success: false, message: error.message });
 
     const { email, password, center_id, position_id, team_id, terms_accepted } = value;
-    const existing = await User.findOne({ where: { email } });
-    if (existing)
+
+    // 탈퇴한 사용자의 이메일인지 확인
+    const existingUser = await User.findOne({ where: { email } });
+    if (existingUser && existingUser.status === 'active') {
       return res.status(400).json({ success: false, message: '이미 가입된 이메일입니다.' });
+    }
 
-    await validateForeignKey(Center, center_id, '센터');
-    await validateForeignKey(Position, position_id, '직책');
-    if (team_id) await validateForeignKey(Team, team_id, '팀');
+    // 탈퇴한 사용자라면 기존 계정을 재활성화
+    if (existingUser && existingUser.status === 'inactive') {
+      // 기존 계정 정보 업데이트
+      existingUser.name = value.name;
+      existingUser.password = await createHash(password);
+      existingUser.phone = value.phone;
+      existingUser.position_id = value.position_id;
+      existingUser.center_id = value.center_id;
+      existingUser.team_id = value.team_id;
+      existingUser.nickname = value.nickname || null;
+      existingUser.license = value.license || null;
+      existingUser.experience = value.experience || null;
+      existingUser.education = value.education || null;
+      existingUser.instagram = value.instagram || null;
+      existingUser.shift = value.shift || null;
+      existingUser.terms_accepted = value.terms_accepted;
+      existingUser.terms_accepted_at = new Date();
+      existingUser.status = 'pending_verification'; // 이메일 인증 대기 상태
+      existingUser.join_date = new Date();
+      existingUser.leave_date = null; // 탈퇴일 초기화
 
-    value.password = await createHash(password);
-    if (terms_accepted) value.terms_accepted_at = new Date();
-    value.join_date = new Date();
+      if (req.file) {
+        existingUser.profile_image_name = req.body.profile_image_name;
+        existingUser.profile_image_url = req.body.profile_image_url;
+      }
 
-    // 회원가입 시 초기값 설정
-    value.status = 'active';
-    value.email_verified = false;
-    value.login_attempts = 0;
-    value.is_locked = false;
+      await existingUser.save();
+
+      // 6자리 인증 코드 생성 (새 사용자와 동일하게)
+      const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+      // 인증 코드를 사용자 정보에 저장
+      existingUser.verification_code = verificationCode;
+      existingUser.verification_code_expires_at = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24시간 유효
+      await existingUser.save();
+
+      // 이메일 인증 메일 발송
+      await sendVerificationEmail(existingUser.email, existingUser.name, verificationCode);
+
+      return res.status(200).json({
+        success: true,
+        message: '기존 계정이 재활성화되었습니다. 이메일 인증을 완료해주세요.',
+        requiresEmailVerification: true,
+      });
+    }
+
+    // 새 사용자 생성
+    const hashedPassword = await createHash(password);
+    const userData = {
+      ...value,
+      password: hashedPassword,
+      status: 'inactive', // 이메일 인증 대기 상태 (inactive로 설정)
+      join_date: new Date(),
+    };
 
     if (req.file) {
-      // processFile 미들웨어가 이미 req.body에 설정해줌
-      value.profile_image_name = req.body.profile_image_name;
-      value.profile_image_url = req.body.profile_image_url;
+      userData.profile_image_name = req.body.profile_image_name;
+      userData.profile_image_url = req.body.profile_image_url;
     }
 
-    const user = await User.create(value);
-    const token = jwt.sign({ uid: user.id }, secret, { expiresIn: '1h' });
+    const newUser = await User.create(userData);
 
-    // 관리자에게 새 회원가입 알림 (선택사항)
-    try {
-      await sendNewUserNotification(user);
-    } catch (notificationError) {
-      console.error('관리자 알림 전송 실패:', notificationError);
-      // 알림 실패해도 회원가입은 성공으로 처리
-    }
+    // 6자리 인증 코드 생성
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // 인증 코드를 사용자 정보에 저장
+    newUser.verification_code = verificationCode;
+    newUser.verification_code_expires_at = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24시간 유효
+    await newUser.save();
+
+    // 이메일 인증 메일 발송
+    await sendVerificationEmail(newUser.email, newUser.name, verificationCode);
 
     return res.status(201).json({
       success: true,
-      message: '회원가입 완료',
-      token,
+      message: '회원가입이 완료되었습니다. 이메일 인증을 완료해주세요.',
+      requiresEmailVerification: true,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ✅ 이메일 인증 완료
+const verifyEmail = async (req, res, next) => {
+  try {
+    const { email, verificationCode } = req.body;
+
+    if (!email || !verificationCode) {
+      return res.status(400).json({
+        success: false,
+        message: '이메일과 인증 코드를 모두 입력해주세요.',
+      });
+    }
+
+    const user = await User.findOne({ where: { email } });
+    if (!user) {
+      return res.status(404).json({ success: false, message: '사용자를 찾을 수 없습니다.' });
+    }
+
+    // 인증 코드 확인
+    if (user.verification_code !== verificationCode) {
+      return res.status(400).json({ success: false, message: '인증 코드가 올바르지 않습니다.' });
+    }
+
+    // 인증 코드 만료 확인
+    if (user.verification_code_expires_at < new Date()) {
+      return res.status(400).json({
+        success: false,
+        message: '인증 코드가 만료되었습니다. 다시 인증 코드를 발송해주세요.',
+      });
+    }
+
+    // 이메일 인증 완료
+    user.status = 'active';
+    user.email_verified_at = new Date();
+    user.verification_code = null;
+    user.verification_code_expires_at = null;
+    await user.save();
+
+    // JWT 토큰 생성 (30일)
+    const token = jwt.sign(
+      {
+        userId: user.id,
+        email: user.email,
+        name: user.name,
+      },
+      secret,
+      { expiresIn: '30d' }
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: '이메일 인증이 완료되었습니다. 자동으로 로그인됩니다.',
+      token: token,
       user: {
         id: user.id,
         name: user.name,
         email: user.email,
-        profile_image_url: user.profile_image_url,
+        status: user.status,
+        email_verified_at: user.email_verified_at,
       },
     });
   } catch (err) {
@@ -113,43 +230,10 @@ const signUp = async (req, res, next) => {
   }
 };
 
-// 관리자에게 새 회원가입 알림 전송
-const sendNewUserNotification = async user => {
-  try {
-    // Position과 Center 정보 가져오기
-    const position = await Position.findByPk(user.position_id);
-    const center = await Center.findByPk(user.center_id);
-
-    const notificationData = {
-      type: 'new_user_registration',
-      user: {
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        position: position ? position.name : '알 수 없음',
-        center: center ? center.name : '알 수 없음',
-        join_date: user.join_date,
-      },
-      timestamp: new Date(),
-    };
-
-    // 여기에 실제 알림 로직 구현 (이메일, 웹훅 등)
-    console.log('새 회원가입 알림:', notificationData);
-
-    // TODO: 실제 알림 구현
-    // - 관리자 이메일로 알림
-    // - 웹 대시보드에 알림 표시
-    // - 슬랙/디스코드 웹훅 등
-  } catch (error) {
-    console.error('알림 전송 중 오류:', error);
-    throw error;
-  }
-};
-
-// ✅ 로그인
+// ✅ 로그인 (바로 JWT 토큰 발급)
 const signIn = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, rememberMe = false } = req.body;
     if (!email || !password)
       return res.status(400).json({
         success: false,
@@ -174,34 +258,73 @@ const signIn = async (req, res, next) => {
         message: '계정이 잠겼습니다. 관리자에게 문의해주세요.',
       });
 
+    // 이메일 인증이 완료되지 않은 사용자는 로그인 차단
+    if (user.status === 'inactive' && !user.email_verified_at) {
+      return res.status(403).json({
+        success: false,
+        message: '이메일 인증을 완료해주세요.',
+        code: 'EMAIL_NOT_VERIFIED',
+      });
+    }
+
+    // 탈퇴된 사용자는 로그인 차단 (email_verified_at이 있지만 status가 inactive인 경우)
+    if (user.status === 'inactive' && user.email_verified_at) {
+      return res.status(403).json({
+        success: false,
+        message: '탈퇴된 계정입니다. 회원가입을 다시 진행해주세요.',
+        code: 'ACCOUNT_DEACTIVATED',
+      });
+    }
+
     user.login_attempts = 0;
     user.last_login_at = new Date();
     await user.save();
 
-    // Access Token과 Refresh Token 생성
-    const accessToken = jwt.sign({ uid: user.id }, secret, { expiresIn: '1h' });
-    const refreshToken = jwt.sign({ uid: user.id }, secret, { expiresIn: '7d' });
+    // Access Token 생성 (Remember Me에 따라 다른 만료 시간)
+    const accessTokenExpiry = rememberMe ? '7d' : '24h';
+    const accessToken = jwt.sign(
+      {
+        uid: user.id,
+        type: 'access',
+        rememberMe,
+      },
+      secret,
+      { expiresIn: accessTokenExpiry }
+    );
+
+    // Refresh Token 생성 (30일)
+    const refreshToken = jwt.sign(
+      {
+        uid: user.id,
+        type: 'refresh',
+        rememberMe,
+      },
+      secret,
+      { expiresIn: '30d' }
+    );
+
+    // Refresh Token을 사용자 테이블에 저장
+    user.refresh_token = refreshToken;
+    await user.save();
 
     return res.status(200).json({
       success: true,
-      data: {
-        accessToken: accessToken,
-        refreshToken: refreshToken,
-        user: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          profile_image_url: user.profile_image_url,
-        },
-      },
       message: '로그인 성공!',
+      token: accessToken,
+      refreshToken: refreshToken,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        profile_image_url: user.profile_image_url,
+      },
     });
   } catch (err) {
     next(err);
   }
 };
 
-// ✅ 토큰 갱신
+// 🔄 Access Token 갱신 (Refresh Token 사용)
 const refreshAccessToken = async (req, res, next) => {
   try {
     const { refreshToken } = req.body;
@@ -213,9 +336,23 @@ const refreshAccessToken = async (req, res, next) => {
       });
     }
 
-    // Refresh token 검증
+    // Refresh Token 검증
     const decoded = jwt.verify(refreshToken, secret);
-    const user = await User.findByPk(decoded.uid);
+
+    if (decoded.type !== 'refresh') {
+      return res.status(401).json({
+        success: false,
+        message: '유효하지 않은 refresh token입니다.',
+      });
+    }
+
+    // 사용자 확인
+    const user = await User.findOne({
+      where: {
+        id: decoded.uid,
+        refresh_token: refreshToken,
+      },
+    });
 
     if (!user) {
       return res.status(401).json({
@@ -224,30 +361,52 @@ const refreshAccessToken = async (req, res, next) => {
       });
     }
 
-    // 새로운 access token과 refresh token 발급
-    const newAccessToken = jwt.sign({ uid: user.id }, secret, { expiresIn: '1h' });
-    const newRefreshToken = jwt.sign({ uid: user.id }, secret, { expiresIn: '7d' });
+    // 사용자 상태 확인
+    if (user.status === 'inactive') {
+      return res.status(403).json({
+        success: false,
+        message: '탈퇴된 계정입니다.',
+        code: 'ACCOUNT_DEACTIVATED',
+      });
+    }
+
+    // 새로운 Access Token 생성
+    const accessTokenExpiry = decoded.rememberMe ? '7d' : '24h';
+    const newAccessToken = jwt.sign(
+      {
+        uid: user.id,
+        type: 'access',
+        rememberMe: decoded.rememberMe,
+      },
+      secret,
+      { expiresIn: accessTokenExpiry }
+    );
 
     return res.status(200).json({
       success: true,
-      message: '토큰이 성공적으로 갱신되었습니다.',
-      data: {
-        accessToken: newAccessToken,
-        refreshToken: newRefreshToken,
-        user: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          nickname: user.nickname,
-        },
+      message: '토큰이 갱신되었습니다.',
+      accessToken: newAccessToken,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        profile_image_url: user.profile_image_url,
       },
     });
-  } catch (error) {
-    console.error('토큰 갱신 실패:', error);
-    return res.status(401).json({
-      success: false,
-      message: '유효하지 않은 refresh token입니다.',
-    });
+  } catch (err) {
+    if (err.name === 'JsonWebTokenError') {
+      return res.status(401).json({
+        success: false,
+        message: '유효하지 않은 refresh token입니다.',
+      });
+    }
+    if (err.name === 'TokenExpiredError') {
+      return res.status(401).json({
+        success: false,
+        message: 'Refresh token이 만료되었습니다. 다시 로그인해주세요.',
+      });
+    }
+    next(err);
   }
 };
 
@@ -264,6 +423,16 @@ const getMyAccount = async (req, res, next) => {
     });
     if (!user)
       return res.status(404).json({ success: false, message: '사용자를 찾을 수 없습니다.' });
+
+    // 탈퇴된 사용자는 접근 차단
+    if (user.status === 'inactive') {
+      return res.status(403).json({
+        success: false,
+        message: '탈퇴된 계정입니다. 다시 로그인해주세요.',
+        code: 'ACCOUNT_DEACTIVATED',
+      });
+    }
+
     return res.status(200).json({ success: true, user });
   } catch (err) {
     next(err);
@@ -274,6 +443,68 @@ const getMyAccount = async (req, res, next) => {
 const updateMyAccount = async (req, res, next) => {
   try {
     const updates = req.body;
+
+    // shift 데이터 검증
+    if (updates.shift) {
+      try {
+        const parsedShift = JSON.parse(updates.shift);
+        if (!parsedShift || typeof parsedShift !== 'object') {
+          return res.status(400).json({
+            success: false,
+            message: '근무 일정 데이터 형식이 올바르지 않습니다.',
+          });
+        }
+
+        // 압축된 형식 (s, d, t) 또는 일반 형식 (schedules) 모두 지원
+        let schedules;
+        if (parsedShift.schedules && Array.isArray(parsedShift.schedules)) {
+          // 일반 형식
+          schedules = parsedShift.schedules;
+        } else if (parsedShift.s && Array.isArray(parsedShift.s)) {
+          // 압축된 형식
+          schedules = parsedShift.s;
+        } else {
+          return res.status(400).json({
+            success: false,
+            message: '근무 일정 스케줄 데이터가 올바르지 않습니다.',
+          });
+        }
+
+        // 각 스케줄 검증
+        for (let i = 0; i < schedules.length; i++) {
+          const schedule = schedules[i];
+          // 압축된 형식 (d, t.s, t.e) 또는 일반 형식 (days, time.start, time.end) 모두 지원
+          const days = schedule.days || schedule.d;
+          const time = schedule.time || schedule.t;
+
+          if (!days || !Array.isArray(days) || !time) {
+            return res.status(400).json({
+              success: false,
+              message: `스케줄 ${i + 1}의 데이터 형식이 올바르지 않습니다.`,
+            });
+          }
+
+          // 시간 검증
+          const startTime = time.start || time.s;
+          const endTime = time.end || time.e;
+          if (!startTime || !endTime) {
+            return res.status(400).json({
+              success: false,
+              message: `스케줄 ${i + 1}의 시간 데이터가 올바르지 않습니다.`,
+            });
+          }
+        }
+
+        console.log('✅ shift 데이터 검증 통과:', parsedShift);
+      } catch (parseError) {
+        console.error('shift 데이터 파싱 실패:', parseError);
+        return res.status(400).json({
+          success: false,
+          message: '근무 일정 데이터를 파싱할 수 없습니다.',
+        });
+      }
+    }
+
     if (updates.center_id) await validateForeignKey(Center, updates.center_id, '센터');
     if (updates.position_id) await validateForeignKey(Position, updates.position_id, '직책');
     if (updates.team_id) await validateForeignKey(Team, updates.team_id, '팀');
@@ -282,21 +513,92 @@ const updateMyAccount = async (req, res, next) => {
     if (!user)
       return res.status(404).json({ success: false, message: '사용자를 찾을 수 없습니다.' });
 
-    // 새 파일이 업로드된 경우 기존 파일 삭제
-    if (req.file && user.profile_image_url) {
-      const oldFilePath = createFilePath('profiles', user.profile_image_url.split('/').pop());
-      deleteFile(oldFilePath);
-    }
-
     if (req.file) {
       // processFile 미들웨어가 이미 req.body에 설정해줌
       updates.profile_image_name = req.body.profile_image_name;
       updates.profile_image_url = req.body.profile_image_url;
     }
 
+    // enum 필드들이 빈 문자열이면 null로 변환
+    if (updates.gender === '') {
+      updates.gender = null;
+    }
+
+    // ❌ 보안: status 필드는 사용자가 직접 변경할 수 없음
+    if (updates.status !== undefined) {
+      delete updates.status;
+      console.warn(`[SECURITY] User ${req.user.uid} attempted to change status field`);
+    }
+
+    // 날짜 필드 처리: 빈 문자열이거나 "Invalid date"면 null로 변환
+    if (updates.join_date === '' || updates.join_date === 'Invalid date') {
+      updates.join_date = null;
+    }
+    if (updates.leave_date === '' || updates.leave_date === 'Invalid date') {
+      updates.leave_date = null;
+    }
+
+    console.log('업데이트할 데이터:', updates);
+
     await user.update(updates);
-    return res.status(200).json({ success: true, message: '내 정보가 수정되었습니다.', user });
+
+    // 업데이트된 사용자 정보 조회
+    const updatedUser = await User.findByPk(req.user.uid, {
+      include: [
+        { model: Position, as: 'position' },
+        { model: Center, as: 'center' },
+        { model: Team, as: 'team' },
+      ],
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: '내 정보가 수정되었습니다.',
+      user: updatedUser,
+    });
   } catch (err) {
+    console.error('updateMyAccount 에러:', err);
+    next(err);
+  }
+};
+
+// 계좌 정보 업데이트
+const updateAccountInfo = async (req, res, next) => {
+  try {
+    const { account_number, account_bank, account_image_name, account_image_url } = req.body;
+
+    if (!account_number) {
+      return res.status(400).json({
+        success: false,
+        message: '계좌번호를 입력해주세요.',
+      });
+    }
+
+    const user = await User.findByPk(req.user.uid);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: '사용자를 찾을 수 없습니다.',
+      });
+    }
+
+    // 계좌 정보 업데이트
+    const updateData = { account_number };
+    if (account_bank) updateData.account_bank = account_bank;
+    if (account_image_name) updateData.account_image_name = account_image_name;
+    if (account_image_url) updateData.account_image_url = account_image_url;
+
+    await user.update(updateData);
+
+    return res.status(200).json({
+      success: true,
+      message: '계좌 정보가 업데이트되었습니다.',
+      account_number: account_number,
+      account_image_name: account_image_name,
+      account_image_url: account_image_url,
+    });
+  } catch (err) {
+    console.error('updateAccountInfo 에러:', err);
     next(err);
   }
 };
@@ -306,7 +608,7 @@ const logout = async (req, res) => {
   res.status(200).json({ success: true, message: '로그아웃되었습니다.' });
 };
 
-// 비밀번호 초기화
+// 비밀번호 재설정 토큰 발송
 const resetPassword = async (req, res, next) => {
   try {
     const { email } = req.body;
@@ -326,21 +628,46 @@ const resetPassword = async (req, res, next) => {
       });
     }
 
-    // 임시 비밀번호 생성 (8자리 영숫자)
-    const tempPassword = Math.random().toString(36).slice(-8);
-    user.password = await createHash(tempPassword);
+    // 탈퇴한 계정인지 확인
+    if (user.status === 'inactive') {
+      return res.status(403).json({
+        success: false,
+        message: '탈퇴된 계정입니다. 회원가입을 다시 진행해주세요.',
+        code: 'ACCOUNT_DEACTIVATED',
+      });
+    }
+
+    // 기존 재설정 토큰이 있으면 만료 시간 확인
+    if (user.verification_code && user.verification_code_expires_at > new Date()) {
+      return res.status(400).json({
+        success: false,
+        message: '이미 재설정 토큰이 발송되었습니다. 이메일을 확인해주세요.',
+      });
+    }
+
+    // 안전한 재설정 토큰 생성 (32자리 랜덤 문자열)
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetTokenExpiresAt = new Date(Date.now() + 30 * 60 * 1000); // 30분 유효
+
+    // 재설정 토큰을 기존 verification_code 필드에 저장
+    user.verification_code = resetToken;
+    user.verification_code_expires_at = resetTokenExpiresAt;
     await user.save();
 
-    // 이메일 발송
-    const emailResult = await sendPasswordResetEmail(email, user.name, tempPassword);
+    // 이메일로 재설정 링크 발송
+    const emailResult = await sendPasswordResetEmail(email, user.name, resetToken);
 
     if (emailResult.success) {
       return res.status(200).json({
         success: true,
-        message: '임시 비밀번호가 이메일로 발송되었습니다. 이메일을 확인해주세요.',
+        message: '비밀번호 재설정 링크가 이메일로 발송되었습니다. 이메일을 확인해주세요.',
       });
     } else {
-      // 이메일 발송 실패 시 비밀번호를 원래대로 되돌림
+      // 이메일 발송 실패 시 토큰 제거
+      user.verification_code = null;
+      user.verification_code_expires_at = null;
+      await user.save();
+
       console.error('이메일 발송 실패:', emailResult.error);
       return res.status(500).json({
         success: false,
@@ -348,8 +675,133 @@ const resetPassword = async (req, res, next) => {
       });
     }
   } catch (err) {
-    console.error('비밀번호 재설정 오류:', err);
+    console.error('비밀번호 재설정 토큰 발송 오류:', err);
     next(err);
+  }
+};
+
+// 비밀번호 재설정 토큰 검증 및 새 비밀번호 설정
+const confirmPasswordReset = async (req, res, next) => {
+  try {
+    const { token, newPassword } = req.body;
+
+    if (!token || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: '토큰과 새 비밀번호를 모두 입력해주세요.',
+      });
+    }
+
+    // 새 비밀번호 유효성 검사
+    if (newPassword.length < 8) {
+      return res.status(400).json({
+        success: false,
+        message: '비밀번호는 최소 8자 이상이어야 합니다.',
+      });
+    }
+
+    // 토큰으로 사용자 찾기 (기존 verification_code 필드 사용)
+    const user = await User.findOne({
+      where: {
+        verification_code: token,
+        verification_code_expires_at: { [Op.gt]: new Date() }, // 만료되지 않은 토큰
+      },
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: '유효하지 않거나 만료된 토큰입니다.',
+      });
+    }
+
+    // 새 비밀번호 해시화
+    const hashedNewPassword = await createHash(newPassword);
+
+    // 비밀번호 업데이트 및 토큰 제거
+    user.password = hashedNewPassword;
+    user.verification_code = null;
+    user.verification_code_expires_at = null;
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: '비밀번호가 성공적으로 재설정되었습니다.',
+    });
+  } catch (err) {
+    console.error('비밀번호 재설정 확인 오류:', err);
+    next(err);
+  }
+};
+
+// ✅ 비밀번호 변경
+const changePassword = async (req, res, next) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const userId = req.user.uid;
+
+    // 현재 사용자 정보 조회
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: '사용자를 찾을 수 없습니다.' });
+    }
+
+    // 현재 비밀번호 확인
+    const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password);
+    if (!isCurrentPasswordValid) {
+      return res
+        .status(400)
+        .json({ success: false, message: '현재 비밀번호가 일치하지 않습니다.' });
+    }
+
+    // 새 비밀번호가 현재 비밀번호와 같은지 확인
+    if (currentPassword === newPassword) {
+      return res
+        .status(400)
+        .json({ success: false, message: '새 비밀번호는 현재 비밀번호와 달라야 합니다.' });
+    }
+
+    // 새 비밀번호 해시화
+    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+
+    // 비밀번호 업데이트
+    await user.update({ password: hashedNewPassword });
+
+    res.json({ success: true, message: '비밀번호가 성공적으로 변경되었습니다.' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ✅ 비밀번호 확인 (재인증용) - 재인증 토큰 발급
+const verifyPassword = async (req, res, next) => {
+  try {
+    const { password } = req.body;
+    const userId = req.user.uid;
+
+    // 현재 사용자 정보 조회
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: '사용자를 찾을 수 없습니다.' });
+    }
+
+    // 비밀번호 확인
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(400).json({ success: false, message: '비밀번호가 일치하지 않습니다.' });
+    }
+
+    // 재인증 성공 시 재인증 토큰 발급 (2분 유효)
+    const reAuthToken = generateReAuthToken(userId);
+
+    res.json({
+      success: true,
+      message: '비밀번호 확인이 완료되었습니다.',
+      reAuthToken,
+      expiresIn: '2m',
+    });
+  } catch (error) {
+    next(error);
   }
 };
 
@@ -376,6 +828,150 @@ const deleteProfileImage = async (req, res, next) => {
   }
 };
 
+// 프로필 이미지만 업로드
+const uploadProfileImage = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: '프로필 이미지 파일이 필요합니다.',
+      });
+    }
+
+    const user = await User.findByPk(req.user.uid);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: '사용자를 찾을 수 없습니다.',
+      });
+    }
+
+    // 기존 프로필 이미지가 있으면 파일 삭제
+    if (user.profile_image_url) {
+      const oldFilePath = createFilePath('profiles', user.profile_image_url.split('/').pop());
+      deleteFile(oldFilePath);
+    }
+
+    // 새 프로필 이미지 정보 업데이트
+    await user.update({
+      profile_image_name: req.body.profile_image_name,
+      profile_image_url: req.body.profile_image_url,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: '프로필 이미지가 업로드되었습니다.',
+      data: {
+        profile_image_name: user.profile_image_name,
+        profile_image_url: user.profile_image_url,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// 추가 이미지 업로드 (자격증, 경력, 학력, 인스타그램)
+const uploadAdditionalImage = async (req, res, next) => {
+  try {
+    console.log('🔍 uploadAdditionalImage 시작');
+    console.log('📝 req.body:', req.body);
+    console.log('📁 req.file:', req.file);
+    console.log('👤 req.user:', req.user);
+
+    const { field } = req.body; // 'license', 'experience', 'education', 'instagram', 'account'
+
+    if (!field) {
+      console.log('❌ field가 없음');
+      return res.status(400).json({
+        success: false,
+        message: '이미지 타입을 지정해주세요.',
+      });
+    }
+
+    // account 필드는 별도 처리
+    if (field === 'account') {
+      return res.status(200).json({
+        success: true,
+        message: '계좌 이미지가 업로드되었습니다.',
+        data: {
+          image_name: req.file.filename,
+          image_url: `/uploads/additional_images/${req.file.filename}`,
+          uploaded_at: new Date().toISOString(),
+        },
+      });
+    }
+
+    if (!req.file) {
+      console.log('❌ req.file이 없음');
+      return res.status(400).json({
+        success: false,
+        message: '업로드할 이미지가 없습니다.',
+      });
+    }
+
+    // 현재 사용자 정보 가져오기
+    console.log('🔍 사용자 정보 조회 시작, uid:', req.user.uid);
+    const user = await User.findByPk(req.user.uid);
+    console.log('👤 사용자 정보 조회 결과:', user ? '사용자 발견' : '사용자 없음');
+
+    if (!user) {
+      console.log('❌ 사용자를 찾을 수 없음');
+      return res.status(404).json({
+        success: false,
+        message: '사용자를 찾을 수 없습니다.',
+      });
+    }
+
+    // 이미지 정보 (센터 이미지와 동일한 방식)
+    const imageName = req.file.filename;
+    const imageUrl = `/uploads/additional_images/${imageName}`;
+
+    // 기존 이미지가 있으면 파일 삭제 (센터 이미지와 동일한 방식)
+    if (user[field]) {
+      try {
+        const existingData = JSON.parse(user[field]);
+        if (existingData.image_url) {
+          const oldFilePath = createFilePath(
+            'additional_images',
+            existingData.image_url.split('/').pop()
+          );
+          deleteFile(oldFilePath);
+        }
+      } catch (error) {
+        console.log(`${field} 필드 파싱 실패, 기존 파일 삭제 건너뜀:`, error.message);
+      }
+    }
+
+    // 새 이미지 정보를 간단한 구조로 저장 (센터 이미지와 유사)
+    const newImageData = {
+      image_name: imageName,
+      image_url: imageUrl,
+      uploaded_at: new Date().toISOString(),
+    };
+
+    // 데이터베이스에 저장
+    await user.update({
+      [field]: JSON.stringify(newImageData),
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: '이미지가 업로드되었습니다.',
+      data: {
+        image_name: imageName,
+        image_url: imageUrl,
+        uploaded_at: newImageData.uploaded_at,
+      },
+    });
+  } catch (err) {
+    console.error('❌ 추가 이미지 업로드 오류:', err);
+    console.error('❌ 에러 스택:', err.stack);
+    console.error('❌ 에러 메시지:', err.message);
+    next(err);
+  }
+};
+
 // 회원 탈퇴
 const deactivateAccount = async (req, res, next) => {
   try {
@@ -385,8 +981,13 @@ const deactivateAccount = async (req, res, next) => {
 
     // 프로필 이미지가 있으면 파일도 함께 삭제
     if (user.profile_image_url) {
-      const filePath = createFilePath('profiles', user.profile_image_url.split('/').pop());
-      deleteFile(filePath);
+      try {
+        const filePath = createFilePath('profiles', user.profile_image_url.split('/').pop());
+        deleteFile(filePath);
+      } catch (fileError) {
+        console.error('프로필 이미지 파일 삭제 실패:', fileError);
+        // 파일 삭제 실패해도 계정 탈퇴는 계속 진행
+      }
     }
 
     user.status = 'inactive';
@@ -648,19 +1249,130 @@ const getCenters = async (req, res, next) => {
   }
 };
 
+// ✅ 이메일 중복확인
+const checkEmailDuplicate = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: '이메일 주소를 입력해주세요.',
+      });
+    }
+
+    // 이메일 형식 검증
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        message: '올바른 이메일 형식을 입력해주세요.',
+      });
+    }
+
+    // 기존 사용자 확인
+    const existingUser = await User.findOne({ where: { email } });
+
+    if (existingUser && existingUser.status === 'active') {
+      // 활성 상태의 사용자가 있으면 사용 불가
+      return res.status(200).json({
+        success: true,
+        available: false,
+        message: '이미 사용 중인 이메일입니다.',
+      });
+    } else if (existingUser && existingUser.status === 'inactive') {
+      // 탈퇴한 사용자의 이메일이면 재사용 가능
+      return res.status(200).json({
+        success: true,
+        available: true,
+        message: '사용 가능한 이메일입니다. (기존 계정 재활성화)',
+      });
+    } else {
+      // 새로운 이메일이면 사용 가능
+      return res.status(200).json({
+        success: true,
+        available: true,
+        message: '사용 가능한 이메일입니다.',
+      });
+    }
+  } catch (err) {
+    console.error('이메일 중복확인 오류:', err);
+    next(err);
+  }
+};
+
+// ✅ 이메일 인증 코드 발송
+const sendVerification = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: '이메일 주소를 입력해주세요.',
+      });
+    }
+
+    const user = await User.findOne({ where: { email } });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: '해당 이메일 사용자를 찾을 수 없습니다.',
+      });
+    }
+
+    // 이미 이메일 인증이 완료된 사용자인지 확인
+    if (user.status === 'active' && user.email_verified_at) {
+      return res.status(400).json({
+        success: false,
+        message: '이미 이메일 인증이 완료된 계정입니다.',
+      });
+    }
+
+    // 6자리 인증 코드 생성
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // 인증 코드를 사용자 정보에 저장
+    user.verification_code = verificationCode;
+    user.verification_code_expires_at = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24시간 유효
+    await user.save();
+
+    // 이메일 인증 코드 메일 발송
+    await sendVerificationEmail(user.email, user.name, verificationCode);
+
+    return res.status(200).json({
+      success: true,
+      message: '인증 코드가 이메일로 발송되었습니다.',
+      requiresEmailVerification: true,
+    });
+  } catch (err) {
+    console.error('인증 코드 발송 오류:', err);
+    next(err);
+  }
+};
+
 module.exports = {
   signUp,
+  verifyEmail,
   signIn,
   getMe: getMyAccount, // getMe를 getMyAccount로 별칭
   getMyAccount,
   updateMyAccount,
+  updateAccountInfo,
   logout,
   resetPassword,
+  confirmPasswordReset, // 새로 추가된 함수
+  changePassword,
   deleteProfileImage,
+  uploadProfileImage, // 새로 추가된 함수
+  uploadAdditionalImage, // 새로 추가된 함수
   deactivateAccount,
   getAllUsers,
   getUserById,
   getPositions,
   getCenters,
-  refreshAccessToken,
+  sendVerification, // 새로 추가된 함수
+  checkEmailDuplicate, // 새로 추가된 함수
+  verifyPassword, // 새로 추가된 함수
+  refreshAccessToken, // 새로 추가된 함수
 };

@@ -21,6 +21,7 @@
   "license": "MIT",
   "description": "VitalFit PT 관리 시스템 백엔드 API",
   "dependencies": {
+    "@azure/storage-blob": "^12.18.0",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.1",
@@ -32,7 +33,6 @@
     "nodemailer": "^7.0.5",
     "pg": "^8.16.3",
     "pg-hstore": "^2.3.4",
-    "@azure/storage-blob": "^12.18.0",
     "sequelize": "^6.37.7",
     "sqlite3": "^5.1.7",
     "winston": "^3.17.0"

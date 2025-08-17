@@ -3,7 +3,10 @@ import Layout from './components/layout/Layout';
 import SignIn from './components/signIn';
 import SignUp from './components/signUp';
 import ResetPassword from './components/resetPassword';
+import EmailVerification from './components/EmailVerification';
 import ProtectedRoute from './components/ProtectedRoute';
+import TokenRefreshNotification from './components/TokenRefreshNotification';
+
 import DashboardPage from './pages/DashboardPage';
 import CenterPage from './pages/CenterPage';
 import UserPage from './pages/UserPage';
@@ -21,12 +24,14 @@ import 'react-toastify/dist/ReactToastify.css';
 export default function App() {
   return (
     <BrowserRouter>
+      <TokenRefreshNotification />
       <Routes>
         {/* 레이아웃 없이 독립적으로 보여질 페이지들 */}
         <Route path="/" element={<SignIn />} />
         <Route path="/login" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/verify-email" element={<EmailVerification />} />
 
         {/* 레이아웃이 적용될 페이지들 - ProtectedRoute로 보호 */}
         <Route

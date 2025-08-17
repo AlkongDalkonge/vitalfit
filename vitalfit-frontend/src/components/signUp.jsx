@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import WebcamCapture from './WebcamCapture';
 
 export default function SignUp() {
   const [formData, setFormData] = useState({
@@ -24,30 +25,57 @@ export default function SignUp() {
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [modalContent, setModalContent] = useState('');
   const [modalTitle, setModalTitle] = useState('');
+  const [showWebcam, setShowWebcam] = useState(false);
   const fileInputRef = useRef(null);
 
   // 드롭다운 상태 추가
   const [showPositionDropdown, setShowPositionDropdown] = useState(false);
   const [showCenterDropdown, setShowCenterDropdown] = useState(false);
+  const [dropdownDirection, setDropdownDirection] = useState('down');
+  const dropdownRef = useRef(null);
+
+  // 비밀번호 표시/숨김 상태 추가
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [emailChecked, setEmailChecked] = useState(false);
+  const [checkingEmail, setCheckingEmail] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState({
+    length: false,
+    uppercase: false,
+    lowercase: false,
+    number: false,
+    special: false,
+  });
+  const [passwordMatch, setPasswordMatch] = useState(null);
 
   const navigate = useNavigate();
 
   // 드롭다운 토글 함수들
   const togglePositionDropdown = () => {
     console.log('직책 드롭다운 토글:', !showPositionDropdown);
+    // 센터 드롭다운을 먼저 닫고 직책 드롭다운 토글
+    setShowCenterDropdown(false);
     setShowPositionDropdown(!showPositionDropdown);
-    setShowCenterDropdown(false); // 다른 드롭다운 닫기
   };
 
   const toggleCenterDropdown = () => {
     console.log('센터 드롭다운 토글:', !showCenterDropdown);
+    // 직책 드롭다운을 먼저 닫고 센터 드롭다운 토글
+    setShowPositionDropdown(false);
     setShowCenterDropdown(!showCenterDropdown);
-    setShowPositionDropdown(false); // 다른 드롭다운 닫기
   };
+
+  // 드롭다운 방향 결정 및 겹침 방지
+  useEffect(() => {
+    if (showPositionDropdown && dropdownRef.current) {
+      // 항상 위쪽으로 표시
+      setDropdownDirection('up');
+    }
+  }, [showPositionDropdown]);
 
   // 외부 클릭 시 드롭다운 닫기
   useEffect(() => {
-    const handleClickOutside = (event) => {
+    const handleClickOutside = event => {
       if (!event.target.closest('.dropdown-container')) {
         setShowPositionDropdown(false);
         setShowCenterDropdown(false);
@@ -100,6 +128,144 @@ export default function SignUp() {
     }
   };
 
+  // 이메일 중복확인 함수
+  const checkEmailDuplicate = async () => {
+    if (!formData.email) {
+      toast.error('이메일을 먼저 입력해주세요.');
+      return;
+    }
+
+    // 이메일 형식 검증
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      toast.error('올바른 이메일 형식을 입력해주세요.');
+      return;
+    }
+
+    setCheckingEmail(true);
+    try {
+      const response = await fetch('/api/users/check-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: formData.email }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        if (data.available) {
+          toast.success('사용 가능한 이메일입니다.');
+          setEmailChecked(true);
+        } else {
+          toast.error('이미 사용 중인 이메일입니다.');
+          setEmailChecked(false);
+        }
+      } else {
+        toast.error(data.message || '이메일 중복확인 중 오류가 발생했습니다.');
+        setEmailChecked(false);
+      }
+    } catch (error) {
+      console.error('이메일 중복확인 오류:', error);
+      toast.error('이메일 중복확인 중 오류가 발생했습니다.');
+      setEmailChecked(false);
+    } finally {
+      setCheckingEmail(false);
+    }
+  };
+
+  // 이메일 변경 시 중복확인 상태 초기화
+  const handleEmailChange = e => {
+    setFormData({ ...formData, email: e.target.value });
+    setEmailChecked(false);
+  };
+
+  // 비밀번호 강도 검증 함수
+  const validatePasswordStrength = password => {
+    const strength = {
+      length: password.length >= 8,
+      uppercase: /[A-Z]/.test(password),
+      lowercase: /[a-z]/.test(password),
+      number: /[0-9]/.test(password),
+      special: /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password),
+    };
+    setPasswordStrength(strength);
+    return strength;
+  };
+
+  // 비밀번호 변경 시 강도 검증
+  const handlePasswordChange = e => {
+    const newPassword = e.target.value;
+    setFormData({ ...formData, password: newPassword });
+    validatePasswordStrength(newPassword);
+
+    // 비밀번호 확인 필드가 채워져 있으면 일치 여부 확인 (시각적 표시만)
+    if (formData.confirmPassword) {
+      const isMatch = newPassword === formData.confirmPassword;
+      setPasswordMatch(isMatch);
+    } else {
+      // 비밀번호 확인 필드가 비어있으면 일치 상태 초기화
+      setPasswordMatch(null);
+    }
+  };
+
+  // 비밀번호 확인 변경 시 일치 여부 확인
+  const handleConfirmPasswordChange = e => {
+    const newConfirmPassword = e.target.value;
+    setFormData({ ...formData, confirmPassword: newConfirmPassword });
+
+    // 입력 중에는 시각적 표시만, 토스트는 표시하지 않음
+    if (formData.password) {
+      const isMatch = formData.password === newConfirmPassword;
+      setPasswordMatch(isMatch);
+    } else {
+      setPasswordMatch(null);
+    }
+  };
+
+  // 비밀번호 확인 필드에서 포커스가 벗어날 때 토스트 표시
+  const handleConfirmPasswordBlur = () => {
+    if (formData.password && formData.confirmPassword) {
+      const isMatch = formData.password === formData.confirmPassword;
+
+      // 이전 상태와 다를 때만 토스트 표시
+      if (passwordMatch !== isMatch) {
+        setPasswordMatch(isMatch);
+
+        if (isMatch) {
+          toast.success('비밀번호가 일치합니다!', {
+            position: 'top-center',
+            autoClose: 3000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+          });
+        } else {
+          toast.error('비밀번호가 일치하지 않습니다.', {
+            position: 'top-center',
+            autoClose: 3000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+          });
+        }
+      }
+    }
+  };
+
+  // 비밀번호 일치 여부 확인 및 토스트 표시 (이 함수는 이제 사용하지 않음)
+  const checkPasswordMatch = (password, confirmPassword) => {
+    if (password && confirmPassword) {
+      const isMatch = password === confirmPassword;
+      setPasswordMatch(isMatch);
+    } else {
+      setPasswordMatch(null);
+    }
+  };
+
   const handleChange = e => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({
@@ -110,29 +276,42 @@ export default function SignUp() {
 
   const handleImageChange = e => {
     const file = e.target.files[0];
-    if (file) {
-      // 파일 크기 검증 (5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        setError('이미지 파일 크기는 5MB 이하여야 합니다.');
-        return;
-      }
+    if (!file) return;
 
-      // 파일 타입 검증
-      if (!file.type.startsWith('image/')) {
-        setError('이미지 파일만 업로드 가능합니다.');
-        return;
-      }
-
-      setProfileImage(file);
-      setError('');
-
-      // 이미지 미리보기 생성
-      const reader = new FileReader();
-      reader.onload = e => {
-        setImagePreview(e.target.result);
-      };
-      reader.readAsDataURL(file);
+    // 파일 크기 검증 (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setError('이미지 파일 크기는 5MB 이하여야 합니다.');
+      return;
     }
+
+    // 파일 타입 검증
+    if (!file.type.startsWith('image/')) {
+      setError('이미지 파일만 업로드 가능합니다.');
+      return;
+    }
+
+    setProfileImage(file);
+    setError('');
+
+    // 이미지 미리보기 생성
+    const reader = new FileReader();
+    reader.onload = e => {
+      setImagePreview(e.target.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // 웹캠으로 촬영한 이미지 처리
+  const handleWebcamCapture = file => {
+    setProfileImage(file);
+    setError('');
+
+    // 이미지 미리보기 생성
+    const reader = new FileReader();
+    reader.onload = e => {
+      setImagePreview(e.target.result);
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleImageRemove = () => {
@@ -215,6 +394,13 @@ export default function SignUp() {
       return;
     }
 
+    // 이메일 중복확인 확인
+    if (!emailChecked) {
+      setError('이메일 중복확인을 완료해주세요.');
+      setLoading(false);
+      return;
+    }
+
     try {
       const formDataToSend = new FormData();
 
@@ -266,8 +452,23 @@ export default function SignUp() {
       console.log('응답 데이터:', data);
 
       if (response.ok) {
-        toast.success('회원가입이 완료되었습니다! 로그인 페이지로 이동합니다.');
-        navigate('/login');
+        // 계정 재활성화인지 새 회원가입인지 확인
+        if (data.message === '계정이 재활성화되었습니다.') {
+          toast.success('기존 계정이 재활성화되었습니다! 로그인 페이지로 이동합니다.');
+          navigate('/login');
+        } else if (data.requiresEmailVerification) {
+          // 이메일 인증이 필요한 경우
+          toast.success('회원가입을 위해 이메일 인증을 완료해주세요.');
+          navigate('/verify-email', {
+            state: {
+              email: formData.email,
+              message: '회원가입을 위해 이메일로 발송된 인증 코드를 입력해주세요.',
+            },
+          });
+        } else {
+          toast.success('회원가입이 완료되었습니다! 로그인 페이지로 이동합니다.');
+          navigate('/login');
+        }
       } else {
         setError(data.message || '회원가입 중 오류가 발생했습니다.');
       }
@@ -287,7 +488,11 @@ export default function SignUp() {
       {/* 왼쪽 박스 섹션 */}
       <div className="flex w-1/2 justify-end items-center">
         <div className="w-[550px] h-[706px] bg-white/20 backdrop-blur-sm rounded-l-3xl shadow-2xl border border-white/30 overflow-hidden">
-          <img src="/img/main.jpg" alt="Main Image" className="w-full h-full object-cover" />
+          <img
+            src="/img/infovitalfit.png"
+            alt="VitalFit Info"
+            className="w-full h-full object-cover"
+          />
         </div>
       </div>
 
@@ -327,19 +532,11 @@ export default function SignUp() {
                     </div>
                   ) : (
                     <div className="w-20 h-20 rounded-full bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center">
-                      <svg
-                        className="w-6 h-6 text-gray-400"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                        />
-                      </svg>
+                      <img
+                        src="/img/profileDefault.png"
+                        alt="기본 프로필"
+                        className="w-full h-full rounded-full object-cover"
+                      />
                     </div>
                   )}
 
@@ -350,7 +547,14 @@ export default function SignUp() {
                       onClick={() => fileInputRef.current?.click()}
                       className="px-3 py-1 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 transition-colors text-xs"
                     >
-                      {imagePreview ? '변경' : '선택'}
+                      {imagePreview ? '변경' : '사진등록'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowWebcam(true)}
+                      className="px-3 py-1 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors text-xs"
+                    >
+                      📸 웹캠등록
                     </button>
                     {imagePreview && (
                       <button
@@ -394,15 +598,34 @@ export default function SignUp() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   이메일 주소 <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  placeholder="이메일을 입력하세요"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-colors"
-                  required
-                />
+                <div className="flex space-x-2">
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleEmailChange}
+                    placeholder="이메일을 입력하세요"
+                    className={`flex-1 px-4 py-3 border rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-colors ${
+                      emailChecked ? 'border-green-500 bg-green-50' : 'border-gray-300'
+                    }`}
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={checkEmailDuplicate}
+                    disabled={checkingEmail || !formData.email}
+                    className={`px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
+                      emailChecked
+                        ? 'bg-green-500 text-white hover:bg-green-600'
+                        : 'bg-cyan-500 text-white hover:bg-cyan-600 disabled:bg-gray-300 disabled:cursor-not-allowed'
+                    }`}
+                  >
+                    {checkingEmail ? '확인중...' : emailChecked ? '확인완료' : '중복확인'}
+                  </button>
+                </div>
+                {emailChecked && (
+                  <p className="mt-1 text-sm text-green-600">✓ 사용 가능한 이메일입니다.</p>
+                )}
               </div>
 
               <div>
@@ -424,31 +647,129 @@ export default function SignUp() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   비밀번호 <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  placeholder="비밀번호를 입력하세요 (최소 8자)"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-colors"
-                  required
-                  minLength={8}
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    name="password"
+                    value={formData.password}
+                    onChange={handlePasswordChange}
+                    placeholder="비밀번호를 입력하세요 (최소 8자)"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-colors pr-10"
+                    required
+                    minLength={8}
+                  />
+                  <button
+                    type="button"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700 transition-colors"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? '★' : '☆'}
+                  </button>
+                </div>
+
+                {/* 비밀번호 강도 표시 */}
+                <div className="mt-2 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <div
+                        className={`w-2 h-2 rounded-full ${passwordStrength.length ? 'bg-green-500' : 'bg-gray-300'}`}
+                      ></div>
+                      <span
+                        className={`text-xs ${passwordStrength.length ? 'text-green-600' : 'text-gray-500'}`}
+                      >
+                        최소 8자 이상
+                      </span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div
+                        className={`w-2 h-2 rounded-full ${passwordStrength.uppercase ? 'bg-green-500' : 'bg-gray-300'}`}
+                      ></div>
+                      <span
+                        className={`text-xs ${passwordStrength.uppercase ? 'text-green-600' : 'text-gray-500'}`}
+                      >
+                        대문자 포함
+                      </span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div
+                        className={`w-2 h-2 rounded-full ${passwordStrength.lowercase ? 'bg-green-500' : 'bg-gray-300'}`}
+                      ></div>
+                      <span
+                        className={`text-xs ${passwordStrength.lowercase ? 'text-green-600' : 'text-gray-500'}`}
+                      >
+                        소문자 포함
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <div
+                        className={`w-2 h-2 rounded-full ${passwordStrength.number ? 'bg-green-500' : 'bg-gray-300'}`}
+                      ></div>
+                      <span
+                        className={`text-xs ${passwordStrength.number ? 'text-green-600' : 'text-gray-500'}`}
+                      >
+                        숫자 포함
+                      </span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div
+                        className={`w-2 h-2 rounded-full ${passwordStrength.special ? 'bg-green-500' : 'bg-gray-300'}`}
+                      ></div>
+                      <span
+                        className={`text-xs ${passwordStrength.special ? 'text-green-600' : 'text-gray-500'}`}
+                      >
+                        특수문자 포함
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   비밀번호 확인 <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="password"
-                  name="confirmPassword"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  placeholder="비밀번호를 다시 입력하세요"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-colors"
-                  required
-                />
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    name="confirmPassword"
+                    value={formData.confirmPassword}
+                    onChange={handleConfirmPasswordChange}
+                    onBlur={handleConfirmPasswordBlur}
+                    placeholder="비밀번호를 다시 입력하세요"
+                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-colors pr-10 ${
+                      passwordMatch === true
+                        ? 'border-green-500 bg-green-50'
+                        : passwordMatch === false
+                          ? 'border-red-500 bg-red-50'
+                          : 'border-gray-300'
+                    }`}
+                    required
+                  />
+                  <button
+                    type="button"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700 transition-colors"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    {showConfirmPassword ? '★' : '☆'}
+                  </button>
+                </div>
+                {/* 비밀번호 일치 여부 표시 */}
+                {formData.password && formData.confirmPassword && (
+                  <div className="mt-2 flex items-center space-x-2">
+                    <div
+                      className={`w-2 h-2 rounded-full ${
+                        passwordMatch ? 'bg-green-500' : 'bg-red-500'
+                      }`}
+                    ></div>
+                    <span
+                      className={`text-xs ${passwordMatch ? 'text-green-600' : 'text-red-600'}`}
+                    >
+                      {passwordMatch ? '비밀번호가 일치합니다' : '비밀번호가 일치하지 않습니다'}
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* 직책 선택 */}
@@ -456,73 +777,75 @@ export default function SignUp() {
                 <label className="block text-sm font-medium text-gray-700 mb-3">
                   직책 <span className="text-red-500">*</span>
                 </label>
-                <button
-                  type="button"
-                  onClick={togglePositionDropdown}
-                  disabled={loading}
-                  className={`w-full h-12 rounded-[10px] outline outline-1 outline-offset-[-0.50px] outline-stone-300 px-3 text-sm font-['Nunito'] focus:outline-cyan-500 bg-white flex items-center justify-between ${
-                    !formData.position_id ? 'text-neutral-400' : 'text-neutral-900'
-                  }`}
-                >
-                  <span>
-                    {formData.position_id
-                      ? positions.find(p => p.id === parseInt(formData.position_id))?.name
-                      : '직책을 선택하세요'}
-                  </span>
-                  <svg
-                    width="16"
-                    height="8"
-                    viewBox="0 0 16 8"
-                    fill="none"
-                    className={`transition-transform duration-200 ${showPositionDropdown ? 'rotate-180' : ''}`}
+                <div className="relative" ref={dropdownRef}>
+                  <button
+                    type="button"
+                    onClick={togglePositionDropdown}
+                    disabled={loading}
+                    className={`w-full h-12 rounded-[10px] outline outline-1 outline-offset-[-0.50px] outline-stone-300 px-3 text-sm font-['Nunito'] focus:outline-cyan-500 bg-white flex items-center justify-between ${
+                      !formData.position_id ? 'text-neutral-400' : 'text-neutral-900'
+                    }`}
                   >
-                    <path
-                      d="M1 1L8 7L15 1"
-                      stroke="#1F2937"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </button>
+                    <span>
+                      {formData.position_id
+                        ? positions.find(p => p.id === parseInt(formData.position_id))?.name
+                        : '직책을 선택하세요'}
+                    </span>
+                    <svg
+                      width="16"
+                      height="8"
+                      viewBox="0 0 16 8"
+                      fill="none"
+                      className={`transition-transform duration-200 ${showPositionDropdown ? 'rotate-180' : ''}`}
+                    >
+                      <path
+                        d="M1 1L8 7L15 1"
+                        stroke="#1F2937"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </button>
 
-                {/* 커스텀 드롭다운 */}
-                {showPositionDropdown && (
-                  <div className="absolute bottom-full left-0 right-0 mb-1 bg-white border border-stone-300 rounded-[10px] shadow-lg z-[9999]">
-                    <div className="py-1">
-                      {positions.map(position => (
-                        <button
-                          key={position.id}
-                          type="button"
-                          onClick={() => {
-                            handleChange({ target: { name: 'position_id', value: position.id } });
-                            togglePositionDropdown();
-                          }}
-                          className="w-full px-3 py-2 text-left text-sm font-['Nunito'] hover:bg-gray-50 transition-colors duration-200"
-                        >
-                          {position.name}
-                        </button>
-                      ))}
+                  {/* 커스텀 드롭다운 */}
+                  {showPositionDropdown && (
+                    <div className="absolute left-0 right-0 bg-white border border-stone-300 rounded-[10px] shadow-lg z-[99999] bottom-full mb-1">
+                      <div className="py-1 max-h-40 overflow-y-auto">
+                        {positions.map(position => (
+                          <button
+                            key={position.id}
+                            type="button"
+                            onClick={() => {
+                              handleChange({ target: { name: 'position_id', value: position.id } });
+                              togglePositionDropdown();
+                            }}
+                            className="w-full px-3 py-2 text-left text-sm font-['Nunito'] hover:bg-gray-50 transition-colors duration-200"
+                          >
+                            {position.name}
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {/* 숨겨진 select (폼 제출용) */}
-                <select
-                  name="position_id"
-                  value={formData.position_id}
-                  onChange={handleChange}
-                  required
-                  className="hidden"
-                  disabled={loading}
-                >
-                  <option value="">직책을 선택하세요</option>
-                  {positions.map(position => (
-                    <option key={position.id} value={position.id}>
-                      {position.name}
-                    </option>
-                  ))}
-                </select>
+                  {/* 숨겨진 select (폼 제출용) */}
+                  <select
+                    name="position_id"
+                    value={formData.position_id}
+                    onChange={handleChange}
+                    required
+                    className="hidden"
+                    disabled={loading}
+                  >
+                    <option value="">직책을 선택하세요</option>
+                    {positions.map(position => (
+                      <option key={position.id} value={position.id}>
+                        {position.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               {/* 센터 선택 */}
@@ -663,7 +986,7 @@ export default function SignUp() {
                 >
                   <div className="w-full h-full bg-white rounded-[9px] flex items-center justify-center">
                     <div className="PrimaryButton justify-start bg-gradient-to-r from-cyan-500 to-indigo-600 bg-clip-text text-transparent text-sm font-normal font-['Nunito'] leading-normal">
-                      Sign In
+                      로그인
                     </div>
                   </div>
                 </button>
@@ -703,6 +1026,11 @@ export default function SignUp() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* 웹캠 모달 */}
+      {showWebcam && (
+        <WebcamCapture onCapture={handleWebcamCapture} onClose={() => setShowWebcam(false)} />
       )}
     </div>
   );
