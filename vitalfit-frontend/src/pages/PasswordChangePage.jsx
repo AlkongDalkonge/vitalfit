@@ -113,13 +113,6 @@ const PasswordChangeForm = ({ onReAuthRequired }) => {
       const userId = user?.id || user?.uid;
       const reAuthToken = getReAuthToken(userId, '/account');
 
-      console.log('🔍 사용자 정보 확인:', {
-        userId,
-        hasAccessToken: !!accessToken,
-        hasReAuthToken: !!reAuthToken,
-        userObject: user,
-      });
-
       if (!accessToken && !reAuthToken) {
         setError('인증이 필요합니다. 다시 로그인해주세요.');
         return;
@@ -127,18 +120,6 @@ const PasswordChangeForm = ({ onReAuthRequired }) => {
 
       // 사용할 토큰 결정 (재인증 토큰이 있으면 우선 사용)
       const tokenToUse = reAuthToken || accessToken;
-
-      console.log('토큰 확인:', {
-        hasAccessToken: !!accessToken,
-        hasReAuthToken: !!reAuthToken,
-        usingToken: reAuthToken ? '재인증 토큰' : '액세스 토큰',
-        userId,
-      });
-      console.log('요청 데이터:', {
-        currentPassword: formData.currentPassword,
-        newPassword: formData.newPassword,
-      });
-      console.log('요청 URL:', 'http://localhost:3001/api/users/change-password');
 
       const response = await fetch('http://localhost:3001/api/users/change-password', {
         method: 'PUT',
@@ -154,16 +135,12 @@ const PasswordChangeForm = ({ onReAuthRequired }) => {
         }),
       });
 
-      console.log('응답 상태:', response.status);
-      console.log('응답 헤더:', response.headers);
-
       if (response.ok) {
         toast.success('비밀번호가 성공적으로 변경되었습니다.');
         setFormData({ currentPassword: '', newPassword: '', confirmPassword: '' });
 
         // 비밀번호 변경 성공 후 재인증 상태 초기화 (보안상 필요)
         // 이 부분은 백엔드에서 토큰을 무효화하는 경우를 대비한 처리
-        console.log('✅ 비밀번호 변경 성공 - 재인증 상태 초기화 권장');
       } else {
         const errorData = await response.json();
         console.error('API 오류:', errorData);
@@ -219,8 +196,8 @@ const PasswordChangeForm = ({ onReAuthRequired }) => {
     <div className="w-full bg-white flex items-center justify-center">
       <div className="max-w-md w-full">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-gray-800 mb-1">암호설정</h1>
-          <p className="text-gray-600 mb-0">안전한 비밀번호로 변경하세요</p>
+          <h1 className="text-3xl font-bold text-gray-800">암호설정</h1>
+          <p className="text-gray-600">안전한 비밀번호로 변경하세요</p>
         </div>
 
         <div className="bg-white rounded-lg p-6">

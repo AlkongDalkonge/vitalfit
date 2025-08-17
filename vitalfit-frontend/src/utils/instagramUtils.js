@@ -26,12 +26,9 @@ export const fetchInstagramThumbnail = async url => {
 
     for (let i = 0; i < proxyServers.length; i++) {
       try {
-        console.log(`프록시 서버 ${i + 1} 시도 중...`);
-
         const response = await fetch(proxyServers[i]);
 
         if (!response.ok) {
-          console.log(`프록시 서버 ${i + 1} 실패: ${response.status}`);
           continue;
         }
 
@@ -42,7 +39,6 @@ export const fetchInstagramThumbnail = async url => {
             const instagramData = JSON.parse(data.contents);
 
             if (instagramData.thumbnail_url) {
-              console.log('썸네일 성공적으로 가져옴:', instagramData.thumbnail_url);
               return {
                 success: true,
                 thumbnail: instagramData.thumbnail_url,
@@ -51,32 +47,26 @@ export const fetchInstagramThumbnail = async url => {
                 url: url,
               };
             } else {
-              console.log('썸네일 URL이 없음');
               return { success: false, error: '썸네일을 찾을 수 없습니다.' };
             }
           } catch (parseError) {
-            console.error(`프록시 서버 ${i + 1} JSON 파싱 실패:`, parseError);
             continue;
           }
         }
 
-        console.log(`프록시 서버 ${i + 1}에서 데이터 없음`);
         continue;
       } catch (error) {
-        console.error(`프록시 서버 ${i + 1} 에러:`, error);
         continue;
       }
     }
 
     // 모든 프록시 서버 실패 시 대안 방법 시도
-    console.log('모든 프록시 서버 실패, 대안 방법 시도...');
 
     try {
       // 인스타그램 게시물 ID를 추출하여 직접 썸네일 생성 시도
       const postIdMatch = url.match(/instagram\.com\/p\/([^/?]+)/);
       if (postIdMatch) {
         const postId = postIdMatch[1];
-        console.log('게시물 ID 추출:', postId);
 
         // 방법 1: 인스타그램 임베드 URL (실제로 작동)
         const fallbackThumbnail = `https://www.instagram.com/p/${postId}/embed/captioned/`;

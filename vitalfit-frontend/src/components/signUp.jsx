@@ -52,14 +52,12 @@ export default function SignUp() {
 
   // 드롭다운 토글 함수들
   const togglePositionDropdown = () => {
-    console.log('직책 드롭다운 토글:', !showPositionDropdown);
     // 센터 드롭다운을 먼저 닫고 직책 드롭다운 토글
     setShowCenterDropdown(false);
     setShowPositionDropdown(!showPositionDropdown);
   };
 
   const toggleCenterDropdown = () => {
-    console.log('센터 드롭다운 토글:', !showCenterDropdown);
     // 직책 드롭다운을 먼저 닫고 센터 드롭다운 토글
     setShowPositionDropdown(false);
     setShowCenterDropdown(!showCenterDropdown);
@@ -96,35 +94,25 @@ export default function SignUp() {
 
   const loadPositions = async () => {
     try {
-      console.log('포지션 데이터 로드 시작...');
       const response = await fetch('/api/users/positions');
-      console.log('포지션 응답 상태:', response.status);
       if (response.ok) {
         const data = await response.json();
-        console.log('포지션 데이터:', data);
         setPositions(data.data);
-      } else {
-        console.error('포지션 응답 오류:', response.status, response.statusText);
       }
     } catch (error) {
-      console.error('포지션 데이터 로드 실패:', error);
+      console.error('포지션 로딩 중 오류 발생:', error);
     }
   };
 
   const loadCenters = async () => {
     try {
-      console.log('센터 데이터 로드 시작...');
       const response = await fetch('/api/users/centers');
-      console.log('센터 응답 상태:', response.status);
       if (response.ok) {
         const data = await response.json();
-        console.log('센터 데이터:', data);
         setCenters(data.data);
-      } else {
-        console.error('센터 응답 오류:', response.status, response.statusText);
       }
     } catch (error) {
-      console.error('센터 데이터 로드 실패:', error);
+      console.error('센터 로딩 중 오류 발생:', error);
     }
   };
 
@@ -167,7 +155,6 @@ export default function SignUp() {
         setEmailChecked(false);
       }
     } catch (error) {
-      console.error('이메일 중복확인 오류:', error);
       toast.error('이메일 중복확인 중 오류가 발생했습니다.');
       setEmailChecked(false);
     } finally {
@@ -330,7 +317,6 @@ export default function SignUp() {
       setModalContent(content);
       setShowTermsModal(true);
     } catch (error) {
-      console.error('약관 로드 실패:', error);
       setError('약관을 불러오는데 실패했습니다.');
     }
   };
@@ -343,7 +329,6 @@ export default function SignUp() {
       setModalContent(content);
       setShowPrivacyModal(true);
     } catch (error) {
-      console.error('개인정보처리방침 로드 실패:', error);
       setError('개인정보처리방침을 불러오는데 실패했습니다.');
     }
   };
@@ -420,25 +405,13 @@ export default function SignUp() {
         formDataToSend.append('profile_image_url', profileImage);
       }
 
-      console.log('전송할 데이터:', {
-        email: formData.email,
-        name: formData.name,
-        phone: formData.phone,
-        position_id: formData.position_id,
-        center_id: formData.center_id,
-        hasImage: !!profileImage,
-      });
-
       const response = await fetch('/api/users/signup', {
         method: 'POST',
         body: formDataToSend,
       });
 
-      console.log('응답 상태:', response.status);
-
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('응답 에러 텍스트:', errorText);
         try {
           const errorData = JSON.parse(errorText);
           setError(errorData.message || '회원가입 중 오류가 발생했습니다.');
@@ -449,7 +422,6 @@ export default function SignUp() {
       }
 
       const data = await response.json();
-      console.log('응답 데이터:', data);
 
       if (response.ok) {
         // 계정 재활성화인지 새 회원가입인지 확인
@@ -473,7 +445,6 @@ export default function SignUp() {
         setError(data.message || '회원가입 중 오류가 발생했습니다.');
       }
     } catch (err) {
-      console.error('회원가입 오류:', err);
       setError('회원가입 중 오류가 발생했습니다. 네트워크 연결을 확인해주세요.');
     } finally {
       setLoading(false);

@@ -60,9 +60,6 @@ const LicenseSection = ({
                     maxLength={50}
                     className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                   />
-                  <div className="text-xs text-gray-500 mt-1 text-right">
-                    {item.licenseName?.length || 0}/50
-                  </div>
                 </div>
 
                 {/* 발급기관 */}
@@ -75,9 +72,6 @@ const LicenseSection = ({
                     maxLength={50}
                     className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-blue-500 focus:border-blue-500 text-sm"
                   />
-                  <div className="text-xs text-gray-500 mt-1 text-right">
-                    {item.issuingOrganization?.length || 0}/50
-                  </div>
                 </div>
 
                 {/* 발급일자 */}

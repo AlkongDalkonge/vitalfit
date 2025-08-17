@@ -118,7 +118,10 @@ const MyHistoryPage = ({ onReAuthRequired }) => {
         // 자격증, 인스타그램은 이미지 + 내용 구조
         if (fieldName === 'license') {
           return {
-            items: parsed.items || [
+            items: (parsed.items || []).map(item => ({
+              ...item,
+              image_url: item.image_url || '',
+            })) || [
               {
                 image_name: '',
                 image_url: '',
@@ -175,43 +178,16 @@ const MyHistoryPage = ({ onReAuthRequired }) => {
 
   // 자격증, 경력, 학력, 인스타그램 데이터 직렬화 함수
   const serializeAdditionalData = (data, fieldName) => {
-    // 데이터베이스 제한 확인
-    const maxLengths = {
-      license: 200,
-      experience: 200,
-      education: 200,
-      instagram: 200, // 100 → 200으로 변경
-    };
-
-    const maxLength = maxLengths[fieldName] || 200;
-
+    // TEXT 타입이므로 제한 없음
     if (fieldName === 'experience' || fieldName === 'education') {
       // 경력, 학력은 items 구조
-      const jsonData = {
+      return JSON.stringify({
         items: data.items || [],
-      };
-
-      const jsonString = JSON.stringify(jsonData);
-
-      if (jsonString.length <= maxLength) {
-        return jsonString;
-      } else {
-        // 제한을 초과하면 내용만 저장
-        const contentOnlyData = {
-          items:
-            data.items?.map(item => ({
-              startDate: '',
-              endDate: '',
-              content: item.content || '',
-              status: fieldName === 'education' ? item.status || '' : undefined,
-            })) || [],
-        };
-        return JSON.stringify(contentOnlyData);
-      }
+      });
     } else {
       // 자격증, 인스타그램은 이미지 + 내용 구조
       if (fieldName === 'license') {
-        const jsonData = {
+        return JSON.stringify({
           items: (data.items || []).map(item => ({
             image_name: item.image_name || '',
             image_url: item.image_url || '',
@@ -220,51 +196,17 @@ const MyHistoryPage = ({ onReAuthRequired }) => {
             issuingOrganization: item.issuingOrganization || '',
             issueDate: item.issueDate || '',
           })),
-        };
-        const jsonString = JSON.stringify(jsonData);
-
-        if (jsonString.length <= maxLength) {
-          return jsonString;
-        } else {
-          // 제한을 초과하면 이미지만 저장
-          const imageOnlyData = {
-            items: (data.items || []).map(item => ({
-              image_name: item.image_name || '',
-              image_url: item.image_url || '',
-              uploaded_at: item.uploaded_at || '',
-              licenseName: '',
-              issuingOrganization: '',
-              issueDate: '',
-            })),
-          };
-          return JSON.stringify(imageOnlyData);
-        }
+        });
       } else {
         // 인스타그램은 단일 구조
-        const jsonData = {
+        return JSON.stringify({
           image_name: data.image_name || '',
           image_url: data.image_url || '',
           uploaded_at: data.uploaded_at || '',
           accountName: data.accountName || '',
           instagramLink: data.instagramLink || '',
           description: data.description || '',
-        };
-        const jsonString = JSON.stringify(jsonData);
-
-        if (jsonString.length <= maxLength) {
-          return jsonString;
-        } else {
-          // 제한을 초과하면 이미지만 저장
-          const imageOnlyData = {
-            image_name: data.image_name || '',
-            image_url: data.image_url || '',
-            uploaded_at: data.uploaded_at || '',
-            accountName: '',
-            instagramLink: '',
-            description: '',
-          };
-          return JSON.stringify(imageOnlyData);
-        }
+        });
       }
     }
   };
@@ -330,6 +272,11 @@ const MyHistoryPage = ({ onReAuthRequired }) => {
 
       if (result.success) {
         // 업로드 성공 시 로컬 이미지를 서버 URL로 교체
+        // 이미지 URL을 절대 경로로 변환 (API_BASE_URL 제거)
+        const absoluteImageUrl = result.data.image_url.startsWith('http')
+          ? result.data.image_url
+          : result.data.image_url;
+
         setFormData(prev => ({
           ...prev,
           [`${fieldName}Data`]: {
@@ -341,7 +288,7 @@ const MyHistoryPage = ({ onReAuthRequired }) => {
                       ? {
                           ...item,
                           image_name: result.data.image_name,
-                          image_url: result.data.image_url,
+                          image_url: absoluteImageUrl,
                           uploaded_at: result.data.uploaded_at,
                           isLocal: false,
                         }
@@ -350,12 +297,13 @@ const MyHistoryPage = ({ onReAuthRequired }) => {
                 : prev[`${fieldName}Data`].items,
             ...(fieldName !== 'license' && {
               image_name: result.data.image_name,
-              image_url: result.data.image_url,
+              image_url: absoluteImageUrl,
               uploaded_at: result.data.uploaded_at,
               isLocal: false,
             }),
           },
         }));
+
         toast.success('이미지가 추가되었습니다.');
       } else {
         // 업로드 실패 시 로컬 이미지 제거
@@ -651,11 +599,6 @@ const MyHistoryPage = ({ onReAuthRequired }) => {
       // 사용자 정보 업데이트
       await userAPI.updateMyAccount(updateData);
 
-      // 사용자 정보 새로고침
-      if (refreshUserInfo) {
-        refreshUserInfo();
-      }
-
       toast.success('저장되었습니다.');
     } catch (error) {
       console.error('저장 실패:', error);
@@ -712,25 +655,24 @@ const MyHistoryPage = ({ onReAuthRequired }) => {
     <div className="w-full bg-white">
       <div className="w-full">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">나의 이력</h1>
+          <h1 className="text-3xl font-bold text-gray-800">나의 이력</h1>
           <p className="text-gray-600">
             경력, 학력, 자격증, 인스타그램 등 나의 성장 기록을 관리하세요
           </p>
         </div>
 
         <div className="space-y-4">
-          {/* 인스타그램 섹션 */}
-          <InstagramSection
-            title="인스타그램"
-            fieldName="instagram"
-            data={formData.instagramData}
+          {/* 자격증 섹션 */}
+          <LicenseSection
+            title="자격증"
+            fieldName="license"
+            data={formData.licenseData}
             onImageUpload={handleAdditionalImageUpload}
             onImageDelete={handleAdditionalImageDelete}
             onImageExpand={openImageModal}
-            onContentChange={handleInstagramContentChange}
-            onInstagramLink={openInstagramLink}
-            fetchInstagramThumbnail={fetchInstagramThumbnail}
-            maxLength={200}
+            onContentChange={handleLicenseContentChange}
+            onAddItem={handleAddLicenseItem}
+            onRemoveItem={handleRemoveLicenseItem}
           />
 
           {/* 경력 섹션 */}
@@ -757,17 +699,18 @@ const MyHistoryPage = ({ onReAuthRequired }) => {
             onItemDateChange={handleItemDateChange}
           />
 
-          {/* 자격증 섹션 */}
-          <LicenseSection
-            title="자격증"
-            fieldName="license"
-            data={formData.licenseData}
+          {/* 인스타그램 섹션 */}
+          <InstagramSection
+            title="인스타그램"
+            fieldName="instagram"
+            data={formData.instagramData}
             onImageUpload={handleAdditionalImageUpload}
             onImageDelete={handleAdditionalImageDelete}
             onImageExpand={openImageModal}
-            onContentChange={handleLicenseContentChange}
-            onAddItem={handleAddLicenseItem}
-            onRemoveItem={handleRemoveLicenseItem}
+            onContentChange={handleInstagramContentChange}
+            onInstagramLink={openInstagramLink}
+            fetchInstagramThumbnail={fetchInstagramThumbnail}
+            maxLength={200}
           />
         </div>
 

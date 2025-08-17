@@ -111,16 +111,20 @@ const PasswordConfirmModal = ({ isOpen, onClose, onSuccess, pagePath = null }) =
               setPageReAuthStatus(userId, result.reAuthToken, pagePath);
               console.log('✅ 재인증 토큰 저장됨, userId:', userId, 'pagePath:', pagePath);
             }
-          } else {
-            console.error('❌ 사용자 ID를 찾을 수 없어 토큰 저장 실패, user:', user);
           }
-        } else {
-          console.error('❌ 재인증 토큰 또는 사용자 정보 없음:', { result, user });
         }
 
         // 재인증 성공 시 콜백 실행
         if (onSuccess) {
-          onSuccess(result);
+          console.log('✅ PasswordConfirmModal - onSuccess 콜백 실행:', onSuccess);
+          try {
+            onSuccess(result);
+            console.log('✅ onSuccess 콜백 실행 완료');
+          } catch (error) {
+            console.error('❌ onSuccess 콜백 실행 실패:', error);
+          }
+        } else {
+          console.log('⚠️ PasswordConfirmModal - onSuccess 콜백이 없음');
         }
 
         // 토스트 메시지는 한 번만 표시
@@ -128,28 +132,24 @@ const PasswordConfirmModal = ({ isOpen, onClose, onSuccess, pagePath = null }) =
           // 페이지별로 다른 메시지 표시
           let message = '재인증이 완료되었습니다.';
           if (pagePath === '/account') {
-            message = '보안 확인이 완료되었습니다. 계정 정보에 접근할 수 있습니다.';
+            message = '본인 확인 되었습니다.';
           } else if (pagePath === '/account/password-change') {
-            message = '보안 확인이 완료되었습니다. 비밀번호를 변경할 수 있습니다.';
+            message = '본인 확인 되었습니다.';
           }
           toast.success(message);
           setHasShownToast(true);
         }
 
-        onClose();
+        // onSuccess 콜백이 완료된 후 모달 닫기 (비동기 처리 고려)
+        setTimeout(() => {
+          console.log('🔒 PasswordConfirmModal - 모달 닫기');
+          onClose();
+        }, 100);
       } else {
         const errorData = await response.json();
-        console.error('❌ 재인증 실패:', errorData);
         setError(errorData.message || '비밀번호가 일치하지 않습니다.');
       }
     } catch (error) {
-      console.error('❌ 재인증 오류:', error);
-      console.error('❌ 오류 상세 정보:', {
-        name: error.name,
-        message: error.message,
-        stack: error.stack,
-      });
-
       // 더 구체적인 에러 메시지 제공
       if (error.name === 'TypeError' && error.message.includes('fetch')) {
         setError('서버에 연결할 수 없습니다. 백엔드 서버가 실행 중인지 확인해주세요.');

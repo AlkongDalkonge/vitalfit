@@ -54,12 +54,9 @@ const PersonalInfoPage = () => {
 
   // 센터 선택에 따라 팀 필터링
   const filterTeamsByCenter = centerId => {
-    console.log('🔍 filterTeamsByCenter 호출됨:', centerId);
-
     if (!centerId) {
       // 센터가 선택되지 않은 경우 모든 팀 표시
       setTeams(allTeams);
-      console.log('센터 미선택: 모든 팀 표시됨');
       return;
     }
 
@@ -71,28 +68,16 @@ const PersonalInfoPage = () => {
       return teamCenterId === selectedCenterId;
     });
 
-    console.log('센터별 팀 필터링:', {
-      centerId: centerId,
-      totalTeams: allTeams.length,
-      filteredTeams: filteredTeams.length,
-      filteredTeamNames: filteredTeams.map(t => t.name),
-      allTeamCenterIds: allTeams.map(t => ({ id: t.id, name: t.name, center_id: t.center_id })),
-    });
-
     setTeams(filteredTeams);
 
     // 현재 선택된 팀이 필터링된 팀 목록에 없으면 팀 선택 초기화
     if (formData.team_id && !filteredTeams.find(team => team.id == formData.team_id)) {
       setFormData(prev => ({ ...prev, team_id: '' }));
-      console.log('현재 선택된 팀이 해당 센터에 속하지 않아 팀 선택 초기화됨');
     }
   };
 
   useEffect(() => {
     if (user) {
-      console.log('=== 사용자 정보 설정 시작 ===');
-      console.log('받은 user 객체:', user);
-
       const newFormData = {
         name: user.name || '',
         email: user.email || '',
@@ -104,7 +89,6 @@ const PersonalInfoPage = () => {
         center_id: user.center_id || '',
       };
 
-      console.log('설정할 formData:', newFormData);
       setFormData(newFormData);
 
       // 센터가 선택된 경우 팀 필터링 적용
@@ -135,25 +119,16 @@ const PersonalInfoPage = () => {
         setPreviewImage('/img/profileDefault.png');
       }
       setLoading(false);
-    } else {
-      console.log('사용자 정보가 없습니다.');
     }
   }, [user]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        console.log('=== 외부 데이터 로딩 시작 ===');
-
         // 팀 데이터 로드
         setTeamsLoading(true);
         const teamsRes = await teamAPI.getAllTeams();
         const teamsData = teamsRes.data?.teams || teamsRes.teams || [];
-        console.log('팀 데이터 로드 완료:', teamsData.length);
-        console.log(
-          '팀 데이터 상세:',
-          teamsData.map(t => ({ id: t.id, name: t.name, center_id: t.center_id }))
-        );
 
         setAllTeams(teamsData);
         setTeams(teamsData);
@@ -164,11 +139,6 @@ const PersonalInfoPage = () => {
         const centersRes = await fetch('http://localhost:3001/api/users/centers');
         const centersData = await centersRes.json();
         const centersList = centersData?.data || [];
-        console.log('센터 데이터 로드 완료:', centersList.length);
-        console.log(
-          '센터 데이터 상세:',
-          centersList.map(c => ({ id: c.id, name: c.name }))
-        );
 
         setCenters(centersList);
         setCentersLoading(false);
@@ -178,19 +148,15 @@ const PersonalInfoPage = () => {
         const positionsRes = await fetch('http://localhost:3001/api/positions');
         const positionsData = await positionsRes.json();
         const positionsList = positionsData.data || positionsData || [];
-        console.log('직책 데이터 로드 완료:', positionsList.length);
 
         setPositions(positionsList);
         setPositionsLoading(false);
-
-        console.log('=== 모든 데이터 로딩 완료 ===');
 
         // 데이터 로딩 완료 후 센터별 팀 필터링 적용
         if (formData.center_id) {
           filterTeamsByCenter(formData.center_id);
         }
       } catch (err) {
-        console.error('데이터 로딩 실패:', err);
         setTeamsLoading(false);
         setCentersLoading(false);
         setPositionsLoading(false);
@@ -262,7 +228,6 @@ const PersonalInfoPage = () => {
       }
       toast.success('프로필 이미지가 업로드되었습니다.');
     } catch (error) {
-      console.error('사진 업로드 실패:', error);
       toast.error(
         `이미지 업로드에 실패했습니다: ${error.response?.data?.message || error.message}`
       );
@@ -307,7 +272,6 @@ const PersonalInfoPage = () => {
       }
       toast.success('웹캠으로 촬영한 프로필 이미지가 업로드되었습니다.');
     } catch (error) {
-      console.error('웹캠 이미지 업로드 실패:', error);
       toast.error(
         `이미지 업로드에 실패했습니다: ${error.response?.data?.message || error.message}`
       );
@@ -326,7 +290,6 @@ const PersonalInfoPage = () => {
         refreshUserInfo();
       }
     } catch (error) {
-      console.error('프로필 이미지 삭제 실패:', error);
       toast.error(
         `프로필 이미지 삭제에 실패했습니다: ${error.response?.data?.message || error.message}`
       );
@@ -335,104 +298,51 @@ const PersonalInfoPage = () => {
 
   const handleSave = async () => {
     try {
-      console.log('=== 저장 시작 ===');
-      console.log('현재 formData:', formData);
-      console.log('현재 gender 값:', formData.gender);
-      console.log('gender 타입:', typeof formData.gender);
-      console.log('gender가 빈 문자열인가?', formData.gender === '');
-      console.log('gender가 null인가?', formData.gender === null);
-      console.log('gender가 undefined인가?', formData.gender === undefined);
-
       // 성별 필드 상태 확인
       const genderSelect = document.querySelector('select[name="gender"]');
-      if (genderSelect) {
-        console.log('✅ 성별 select 요소 찾음:', genderSelect);
-        console.log('✅ 성별 select 값:', genderSelect.value);
-        console.log(
-          '✅ 성별 select 선택된 옵션:',
-          genderSelect.options[genderSelect.selectedIndex]?.text
-        );
-      } else {
-        console.log('❌ 성별 select 요소를 찾을 수 없음');
-      }
 
       // 성별 데이터 전처리
       let processedFormData = { ...formData };
       if (processedFormData.gender === '') {
         processedFormData.gender = null;
-        console.log('✅ 성별 빈 문자열을 null로 변환');
       }
 
       // 계좌번호는 별도로 처리하지 않음 (계좌 정보는 별도 API로 저장)
-      console.log('ℹ️ 계좌번호는 별도로 처리됨');
-
       const cleanFormData = Object.fromEntries(
         Object.entries(processedFormData).filter(([key, value]) => {
           // gender는 null도 허용 (선택하지 않은 상태)
           if (key === 'gender') {
-            console.log('✅ gender 필터링 통과:', value);
             return true;
           }
           // 다른 필드는 빈 값이 아닐 때만 포함
           const shouldInclude = value !== '' && value !== null && value !== undefined;
-          console.log(`${key} 필드:`, value, '포함 여부:', shouldInclude);
           return shouldInclude;
         })
       );
 
-      console.log('=== 정리된 데이터 ===');
-      console.log('cleanFormData:', cleanFormData);
-      console.log('gender 포함 여부:', 'gender' in cleanFormData);
-      console.log('gender 값:', cleanFormData.gender);
-      console.log('gender 타입:', typeof cleanFormData.gender);
-      console.log('API 호출 시작...');
-
       const response = await userAPI.updateMyAccount(cleanFormData);
-
-      console.log('=== API 응답 ===');
-      console.log('전체 응답:', response);
-      console.log('response.data:', response.data);
-      console.log('response.data.user:', response.data?.user);
 
       // 계좌 정보가 있으면 별도로 저장 (계좌번호 또는 이미지 중 하나라도 있으면)
       if (accountNumber.trim() || accountImageFile) {
         try {
-          console.log('=== 계좌 정보 저장 시작 ===');
-          console.log('계좌번호:', accountNumber);
-          console.log('은행명:', accountBank);
-          console.log('이미지 파일:', accountImageFile);
-
           let accountImageUrl = null;
           let accountImageName = null;
 
           // 계좌 이미지가 있으면 먼저 업로드
           if (accountImageFile) {
-            console.log('🖼️ 이미지 업로드 시작:', accountImageFile);
             const formData = new FormData();
             formData.append('additional_image_url', accountImageFile);
             formData.append('field', 'account');
 
-            console.log('📤 FormData 내용:', {
-              field: 'account',
-              file: accountImageFile.name,
-              size: accountImageFile.size,
-            });
-
             const uploadResponse = await userAPI.uploadAdditionalImage(formData);
-            console.log('📥 이미지 업로드 응답:', uploadResponse.data);
 
             if (uploadResponse.data.success) {
               accountImageUrl = uploadResponse.data.data.image_url;
               accountImageName = uploadResponse.data.data.image_name;
-              console.log('✅ 이미지 업로드 성공:', { accountImageUrl, accountImageName });
 
               // 로컬 이미지 URL을 서버 URL로 교체
               setAccountImage(accountImageUrl);
-            } else {
-              console.error('❌ 이미지 업로드 실패:', uploadResponse.data);
             }
-          } else {
-            console.log('ℹ️ 업로드할 이미지 파일이 없음');
           }
 
           // 계좌 정보 업데이트 (이미지가 없어도 계좌번호만이라도 저장)
@@ -442,25 +352,18 @@ const PersonalInfoPage = () => {
             account_image_name: accountImageName,
             account_image_url: accountImageUrl,
           };
-          console.log('📝 계좌 정보 저장 데이터:', accountData);
 
           await userAPI.updateAccountInfo(accountData);
-          console.log('✅ 계좌 정보 업데이트 완료');
 
           // 계좌 정보 저장 성공 후 상태 초기화
           setAccountImageFile(null);
         } catch (uploadError) {
-          console.error('계좌 정보 저장 실패:', uploadError);
           toast.warning('개인정보는 저장되었지만 계좌 정보 저장에 실패했습니다.');
         }
       }
 
       if (response.data && response.data.user) {
         const updatedUser = response.data.user;
-        console.log('=== 업데이트된 사용자 정보 ===');
-        console.log('updatedUser:', updatedUser);
-        console.log('updatedUser.gender:', updatedUser.gender);
-        console.log('updatedUser.gender 타입:', typeof updatedUser.gender);
 
         setFormData(prev => {
           const newFormData = {
@@ -474,8 +377,6 @@ const PersonalInfoPage = () => {
             team_id: updatedUser.team_id || prev.team_id,
             center_id: updatedUser.center_id || prev.center_id,
           };
-          console.log('✅ 새로운 formData:', newFormData);
-          console.log('✅ 새로운 gender 값:', newFormData.gender);
           return newFormData;
         });
 
@@ -493,19 +394,12 @@ const PersonalInfoPage = () => {
 
       if (refreshUserInfo && typeof refreshUserInfo === 'function') {
         try {
-          console.log('refreshUserInfo 호출 시작...');
           await refreshUserInfo();
-          console.log('✅ refreshUserInfo 완료');
         } catch (error) {
-          console.error('❌ refreshUserInfo 호출 실패:', error);
+          // Silently handle refresh error
         }
       }
     } catch (err) {
-      console.error('=== 업데이트 실패 ===');
-      console.error('에러 객체:', err);
-      console.error('에러 메시지:', err.message);
-      console.error('에러 응답:', err.response);
-      console.error('에러 응답 데이터:', err.response?.data);
       let errorMessage = '업데이트에 실패했습니다.';
       if (err.response?.data?.message) {
         errorMessage = err.response.data.message;
@@ -539,10 +433,7 @@ const PersonalInfoPage = () => {
 
   // 계좌 정보 관련 함수들
   const handleAccountImageChange = file => {
-    console.log('🔄 handleAccountImageChange 호출됨:', file);
-
     if (!file) {
-      console.log('🗑️ 이미지 삭제 - 상태 초기화');
       setAccountImageFile(null);
       setAccountImage('');
       return;
@@ -602,11 +493,9 @@ const PersonalInfoPage = () => {
           setShowAccountInfo(false);
         }
       } catch (uploadError) {
-        console.error('이미지 업로드 실패:', uploadError);
         toast.error('통장사본 업로드에 실패했습니다.');
       }
     } catch (error) {
-      console.error('계좌 정보 저장 실패:', error);
       toast.error('계좌 정보 저장에 실패했습니다.');
     }
   };
@@ -621,6 +510,12 @@ const PersonalInfoPage = () => {
 
   return (
     <div className="w-full bg-white">
+      {/* 페이지 제목 */}
+      <div className="text-center">
+        <h1 className="text-3xl font-bold text-gray-800">개인정보</h1>
+        <p className="text-gray-600">프로필 사진과 기본 정보를 관리하세요</p>
+      </div>
+
       {/* 프로필 사진 섹션 - 맨 위 중앙 */}
       <section className="w-full flex flex-col items-center gap-5 mb-7">
         <div className="flex items-center gap-7">

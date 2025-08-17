@@ -108,7 +108,7 @@ api.interceptors.response.use(
           throw new Error('토큰 갱신 실패');
         }
       } catch (refreshError) {
-        console.error('❌ 토큰 갱신 실패:', refreshError);
+        console.error('토큰 갱신 실패:', refreshError);
 
         // 토큰 갱신 실패 시 로그아웃 처리
         AuthService.removeAccessToken();
@@ -201,6 +201,10 @@ export const userAPI = {
   },
   getUser: async id => {
     return await apiGet(`/users/${id}`);
+  },
+  // 내 계정 정보 조회
+  getMe: async () => {
+    return await apiGet('/users/me');
   },
   createUser: async data => {
     return await apiPost('/users', data);

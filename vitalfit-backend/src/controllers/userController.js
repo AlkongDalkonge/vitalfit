@@ -966,33 +966,104 @@ const uploadAdditionalImage = async (req, res, next) => {
     const imageName = req.file.filename;
     const imageUrl = `/uploads/additional_images/${imageName}`;
 
-    // 기존 이미지가 있으면 파일 삭제 (센터 이미지와 동일한 방식)
+    // 기존 데이터 가져오기
+    let existingData = {};
     if (user[field]) {
       try {
-        const existingData = JSON.parse(user[field]);
-        if (existingData.image_url) {
+        existingData = JSON.parse(user[field]);
+        console.log('✅ 기존 데이터:', existingData);
+      } catch (error) {
+        console.log(`${field} 필드 파싱 실패, 새로 시작:`, error.message);
+      }
+    }
+
+    // 새 데이터 구조 생성
+    let newData;
+
+    if (field === 'license') {
+      // 자격증의 경우 items 배열 구조 유지
+      if (existingData.items && existingData.items.length > 0) {
+        // 기존 items가 있으면 첫 번째 항목의 이미지만 업데이트
+        newData = {
+          ...existingData,
+          items: existingData.items.map((item, index) =>
+            index === 0
+              ? {
+                  ...item,
+                  image_name: imageName,
+                  image_url: imageUrl,
+                  uploaded_at: new Date().toISOString(),
+                }
+              : item
+          ),
+        };
+      } else {
+        // 기존 items가 없으면 새로 생성
+        newData = {
+          items: [
+            {
+              image_name: imageName,
+              image_url: imageUrl,
+              uploaded_at: new Date().toISOString(),
+              licenseName: '',
+              issuingOrganization: '',
+              issueDate: '',
+            },
+          ],
+        };
+      }
+
+      // 기존 이미지가 있으면 파일 삭제
+      if (existingData.items && existingData.items[0] && existingData.items[0].image_url) {
+        try {
+          const oldFilePath = createFilePath(
+            'additional_images',
+            existingData.items[0].image_url.split('/').pop()
+          );
+          deleteFile(oldFilePath);
+          console.log('🗑️ 기존 이미지 파일 삭제됨');
+        } catch (error) {
+          console.log('기존 파일 삭제 실패:', error.message);
+        }
+      }
+    } else if (field === 'experience' || field === 'education') {
+      // 경력, 학력은 items 구조이지만 이미지는 별도로 관리하지 않음
+      // (현재 구조상 이미지 업로드가 불가능하므로 에러 처리)
+      return res.status(400).json({
+        success: false,
+        message: '경력/학력에는 이미지를 업로드할 수 없습니다.',
+      });
+    } else {
+      // 인스타그램 등 단일 구조
+      // 기존 이미지가 있으면 파일 삭제
+      if (existingData.image_url) {
+        try {
           const oldFilePath = createFilePath(
             'additional_images',
             existingData.image_url.split('/').pop()
           );
           deleteFile(oldFilePath);
+        } catch (error) {
+          console.log('기존 파일 삭제 실패:', error.message);
         }
-      } catch (error) {
-        console.log(`${field} 필드 파싱 실패, 기존 파일 삭제 건너뜀:`, error.message);
       }
+
+      newData = {
+        ...existingData,
+        image_name: imageName,
+        image_url: imageUrl,
+        uploaded_at: new Date().toISOString(),
+      };
     }
 
-    // 새 이미지 정보를 간단한 구조로 저장 (센터 이미지와 유사)
-    const newImageData = {
-      image_name: imageName,
-      image_url: imageUrl,
-      uploaded_at: new Date().toISOString(),
-    };
+    console.log('💾 저장할 데이터:', newData);
 
     // 데이터베이스에 저장
     await user.update({
-      [field]: JSON.stringify(newImageData),
+      [field]: JSON.stringify(newData),
     });
+
+    console.log('✅ 데이터베이스 저장 완료');
 
     return res.status(200).json({
       success: true,

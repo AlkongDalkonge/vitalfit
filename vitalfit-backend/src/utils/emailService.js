@@ -469,9 +469,18 @@ const createLeaveResponseEmail = (request, action) => {
 // 휴가 신청 이메일 발송 함수
 const sendLeaveRequestEmail = async (request, adminEmail) => {
   try {
-    // 개발 환경에서는 실제 이메일 발송 대신 콘솔에 출력
+    // 환경 변수 디버깅
+    console.log('🔧 이메일 발송 환경 변수 확인:');
+    console.log('  - NODE_ENV:', process.env.NODE_ENV);
+    console.log('  - EMAIL_PASSWORD 존재:', !!process.env.EMAIL_PASSWORD);
+    console.log(
+      '  - EMAIL_PASSWORD 길이:',
+      process.env.EMAIL_PASSWORD ? process.env.EMAIL_PASSWORD.length : 0
+    );
+
+    // 개발 환경에서도 실제 이메일 발송 (EMAIL_PASSWORD가 있으면)
     if (process.env.NODE_ENV === 'development' && !process.env.EMAIL_PASSWORD) {
-      console.log('📧 === 휴가 신청 이메일 (개발 모드) ===');
+      console.log('📧 === 휴가 신청 이메일 (개발 모드 - 콘솔 출력) ===');
       console.log('📧 발송자: vitalfit.dev@gmail.com');
       console.log('📧 수신자:', adminEmail);
       console.log('📧 제목: [VitalFit] 새로운 휴가 신청 알림');
