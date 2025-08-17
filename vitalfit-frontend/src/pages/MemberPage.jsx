@@ -78,12 +78,10 @@ const MemberPage = () => {
   const filterMembersImmediate = async (centerId, trainerName) => {
     try {
       const filters = buildImmediateFilters(centerId, trainerName);
-
       // 상태 필터 추가
       if (statusFilter && statusFilter !== '전체선택') {
         filters.status = statusFilter;
       }
-
       await fetchMembers(filters);
 
       // 검색어가 있으면 검색 필터링도 적용
@@ -114,7 +112,6 @@ const MemberPage = () => {
     }
     filterMembersImmediate(centerFilter, trainerFilter);
   };
-
   // 기타 핸들러들
   const handleRegisterMember = () => {
     setIsCreateModalOpen(true);

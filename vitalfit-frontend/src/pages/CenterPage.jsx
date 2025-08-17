@@ -105,12 +105,10 @@ const CenterPage = () => {
     try {
       const currentImages = centerImages[centerId] || [];
       const currentImageCount = currentImages.length;
-
       const uploadPromises = newImages.map(async (imageData, index) => {
         const formData = new FormData();
         formData.append('image', imageData.file);
         formData.append('center_id', centerId);
-
         const isMain = currentImageCount === 0 && index === 0;
         formData.append('is_main', isMain ? 'true' : 'false');
 
@@ -166,7 +164,6 @@ const CenterPage = () => {
   const handleSetMainImage = async (centerId, imageId) => {
     try {
       await centerAPI.setMainImage(imageId);
-
       // 이미지 목록 업데이트
       setCenterImages(prev => ({
         ...prev,
@@ -215,6 +212,8 @@ const CenterPage = () => {
       prevCenters.map(center => (center.id === updatedCenter.id ? updatedCenter : center))
     );
   };
+
+
 
   // 로딩 상태
   if (loading) {
@@ -557,7 +556,6 @@ const CenterPage = () => {
                             </svg>
                           </button>
                         </div>
-
                         {imageLoading[center.id] ? (
                           <div className="text-center py-8">
                             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>

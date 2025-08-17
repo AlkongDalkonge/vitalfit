@@ -29,11 +29,66 @@ DB_USER=your_username
 DB_PASSWORD=your_password
 ```
 
-<<<<<<< Updated upstream
 ## ⚠️ 주의사항
 
 ### gender 필드 관련 문제 해결
-=======
+
+## API 엔드포인트
+
+### 센터 관리 API
+
+#### 센터 등록
+- **POST** `/api/centers`
+- **설명**: 새로운 센터를 등록합니다.
+- **요청 본문**:
+  ```json
+  {
+    "name": "센터명 (필수)",
+    "address": "주소 (필수)",
+    "phone": "전화번호 (필수)",
+    "description": "센터 설명 (선택)",
+    "weekday_hours": "평일 운영시간 (선택)",
+    "saturday_hours": "토요일 운영시간 (선택)",
+    "sunday_hours": "일요일 운영시간 (선택)",
+    "holiday_hours": "공휴일 운영시간 (선택)",
+    "has_parking": true/false,
+    "parking_fee": "주차요금 (선택)",
+    "parking_info": "주차정보 (선택)",
+    "directions": "오시는 길 (선택)",
+    "status": "active/inactive/closed"
+  }
+  ```
+- **응답**:
+  ```json
+  {
+    "success": true,
+    "message": "센터 등록 성공",
+    "data": {
+      "id": 1,
+      "name": "센터명",
+      "address": "주소",
+      "phone": "전화번호",
+      // ... 기타 필드들
+    }
+  }
+  ```
+
+#### 센터 목록 조회
+- **GET** `/api/centers`
+- **설명**: 모든 활성 센터 목록을 조회합니다.
+
+#### 센터 상세 조회
+- **GET** `/api/centers/:id`
+- **설명**: 특정 센터의 상세 정보를 조회합니다.
+
+#### 센터 수정
+- **PUT** `/api/centers/:id`
+- **설명**: 센터 정보를 수정합니다.
+
+#### 센터 삭제
+- **DELETE** `/api/centers/:id`
+- **설명**: 센터를 삭제합니다.
+
 ## API 엔드포인트
 
 ### 센터 관리 API
@@ -98,7 +153,6 @@ DB_PASSWORD=your_password
 - PostgreSQL
 - JWT (인증)
 - Joi (유효성 검사)
->>>>>>> Stashed changes
 
 만약 다음과 같은 에러가 발생한다면:
 
