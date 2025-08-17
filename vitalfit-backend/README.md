@@ -29,10 +29,11 @@ DB_USER=your_username
 DB_PASSWORD=your_password
 ```
 
+<<<<<<< Updated upstream
 ## ⚠️ 주의사항
 
 ### gender 필드 관련 문제 해결
-
+=======
 ## API 엔드포인트
 
 ### 센터 관리 API
@@ -97,6 +98,7 @@ DB_PASSWORD=your_password
 - PostgreSQL
 - JWT (인증)
 - Joi (유효성 검사)
+>>>>>>> Stashed changes
 
 만약 다음과 같은 에러가 발생한다면:
 
