@@ -100,7 +100,7 @@ export default function SignIn() {
 
       // replace를 사용하여 히스토리에서 로그인 페이지를 대체 (뒤로 가기 방지)
       console.log('📍 대시보드로 이동 (replace):', '/dashboard');
-              navigate('/', { replace: true });
+      navigate('/', { replace: true });
     }
   }, [authLoading, isAuthenticated, user, navigate]);
 

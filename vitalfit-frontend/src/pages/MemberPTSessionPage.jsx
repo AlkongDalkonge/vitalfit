@@ -19,7 +19,7 @@ const MemberPTSessionPage = () => {
   const pathname = window.location.pathname;
   const pathMatch = pathname.match(/\/member\/(\d+)\/pt-sessions/);
   const extractedMemberId = pathMatch ? pathMatch[1] : memberId;
-  
+
   console.log('🔍 MemberPTSessionPage - extractedMemberId:', extractedMemberId);
 
   // 커스텀 훅 사용

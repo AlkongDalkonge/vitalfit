@@ -37,4 +37,4 @@ router.put('/:id', auth, updatePayment);
 // 결제 삭제
 router.delete('/:id', auth, deletePayment);
 
-module.exports = router; 
+module.exports = router;

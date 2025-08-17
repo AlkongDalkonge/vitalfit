@@ -125,7 +125,7 @@ const MemberPage = () => {
   };
 
   const handleViewPTSessions = memberId => {
-            navigate(`/member/${memberId}/pt-sessions`);
+    navigate(`/member/${memberId}/pt-sessions`);
   };
 
   if (loading) {

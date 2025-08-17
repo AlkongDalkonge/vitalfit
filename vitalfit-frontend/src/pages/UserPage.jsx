@@ -1,10 +1,6 @@
 import React, { useState } from 'react';
 import { useUser } from '../utils/hooks';
-import {
-  getUserStatusText,
-  getUserStatusColor,
-  formatPhoneNumber,
-} from '../utils/userUtils';
+import { getUserStatusText, getUserStatusColor, formatPhoneNumber } from '../utils/userUtils';
 import UserDetailModal from '../components/UserDetailModal';
 
 const UserPage = () => {
@@ -34,7 +30,7 @@ const UserPage = () => {
   } = useUser();
 
   // 사용자가 담당하는 member 수 계산
-  const getUserMemberCount = (userId) => {
+  const getUserMemberCount = userId => {
     console.log('Members data:', members);
     console.log('Looking for trainerId:', userId);
     const userMembers = members.filter(member => {
@@ -67,9 +63,9 @@ const UserPage = () => {
   };
 
   // Position 기반 역할 색상 반환
-  const getPositionColor = (positionName) => {
+  const getPositionColor = positionName => {
     if (!positionName) return 'text-gray-600 bg-gray-50';
-    
+
     const name = positionName.toLowerCase();
     if (name.includes('관리자') || name.includes('admin')) {
       return 'text-purple-600 bg-purple-50';
@@ -439,11 +435,7 @@ const UserPage = () => {
       </div>
 
       {/* 유저 상세 정보 모달 */}
-      <UserDetailModal
-        user={selectedUser}
-        isOpen={isModalOpen}
-        onClose={handleCloseModal}
-      />
+      <UserDetailModal user={selectedUser} isOpen={isModalOpen} onClose={handleCloseModal} />
     </div>
   );
 };

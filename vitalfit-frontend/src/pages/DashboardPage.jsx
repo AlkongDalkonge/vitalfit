@@ -107,7 +107,7 @@ const DashboardPage = () => {
     return {
       recentUsers,
       recentMembers,
-      recentNotices
+      recentNotices,
     };
   };
 
@@ -164,16 +164,20 @@ const DashboardPage = () => {
         <div className="mb-12">
           <div className="flex justify-between items-start">
             <div>
-              <h1 className="text-4xl font-bold mb-3 text-white drop-shadow-lg">안녕하세요, 관리자님!</h1>
-              <p className="text-white text-xl drop-shadow-md">오늘의 비탈핏 센터 현황을 확인해보세요.</p>
+              <h1 className="text-4xl font-bold mb-3 text-white drop-shadow-lg">
+                안녕하세요, 관리자님!
+              </h1>
+              <p className="text-white text-xl drop-shadow-md">
+                오늘의 비탈핏 센터 현황을 확인해보세요.
+              </p>
             </div>
             <div className="flex items-center gap-6">
               <div className="flex items-center gap-2">
                 <FaCalendarAlt className="text-gray-400 drop-shadow-sm" />
                 <span className="text-gray-400 drop-shadow-sm font-medium">
-                  {new Date().toLocaleDateString('ko-KR', { 
-                    month: 'long', 
-                    day: 'numeric' 
+                  {new Date().toLocaleDateString('ko-KR', {
+                    month: 'long',
+                    day: 'numeric',
                   })}
                 </span>
               </div>
@@ -240,7 +244,7 @@ const DashboardPage = () => {
               <span className="text-sm text-gray-500">실시간 업데이트</span>
             </div>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* 새로 생성된 유저 */}
             <div className="space-y-3">
@@ -250,11 +254,16 @@ const DashboardPage = () => {
               </div>
               <div className="space-y-2">
                 {recentActivities.recentUsers?.slice(0, 3).map((user, index) => (
-                  <div key={user.id || index} className="p-3 rounded-lg bg-blue-50 border border-blue-100 hover:bg-blue-100 transition-colors">
+                  <div
+                    key={user.id || index}
+                    className="p-3 rounded-lg bg-blue-50 border border-blue-100 hover:bg-blue-100 transition-colors"
+                  >
                     <div className="flex justify-between items-center">
                       <div>
                         <p className="text-sm font-medium text-gray-800">{user.name}</p>
-                        <p className="text-xs text-gray-500">{user.position?.name || '직책 미정'}</p>
+                        <p className="text-xs text-gray-500">
+                          {user.position?.name || '직책 미정'}
+                        </p>
                       </div>
                       <span className="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded-full">
                         {new Date(user.createdAt).toLocaleDateString('ko-KR')}
@@ -279,11 +288,16 @@ const DashboardPage = () => {
               </div>
               <div className="space-y-2">
                 {recentActivities.recentMembers?.slice(0, 3).map((member, index) => (
-                  <div key={member.id || index} className="p-3 rounded-lg bg-green-50 border border-green-100 hover:bg-green-100 transition-colors">
+                  <div
+                    key={member.id || index}
+                    className="p-3 rounded-lg bg-green-50 border border-green-100 hover:bg-green-100 transition-colors"
+                  >
                     <div className="flex justify-between items-center">
                       <div>
                         <p className="text-sm font-medium text-gray-800">{member.name}</p>
-                        <p className="text-xs text-gray-500">{member.center?.name || '센터 미정'}</p>
+                        <p className="text-xs text-gray-500">
+                          {member.center?.name || '센터 미정'}
+                        </p>
                       </div>
                       <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded-full">
                         {new Date(member.createdAt).toLocaleDateString('ko-KR')}
@@ -291,7 +305,8 @@ const DashboardPage = () => {
                     </div>
                   </div>
                 ))}
-                {(!recentActivities.recentMembers || recentActivities.recentMembers.length === 0) && (
+                {(!recentActivities.recentMembers ||
+                  recentActivities.recentMembers.length === 0) && (
                   <div className="p-4 rounded-lg bg-gray-50 border border-gray-200 text-center">
                     <p className="text-sm text-gray-500 mb-1">새로운 회원이 없습니다</p>
                     <p className="text-xs text-gray-400">오늘 생성된 회원이 없습니다</p>
@@ -308,7 +323,10 @@ const DashboardPage = () => {
               </div>
               <div className="space-y-2">
                 {recentActivities.recentNotices?.slice(0, 3).map((notice, index) => (
-                  <div key={notice.id || index} className="p-3 rounded-lg bg-orange-50 border border-orange-100 hover:bg-orange-100 transition-colors">
+                  <div
+                    key={notice.id || index}
+                    className="p-3 rounded-lg bg-orange-50 border border-orange-100 hover:bg-orange-100 transition-colors"
+                  >
                     <div className="flex justify-between items-center">
                       <div>
                         <p className="text-sm font-medium text-gray-800 truncate">{notice.title}</p>
@@ -320,7 +338,8 @@ const DashboardPage = () => {
                     </div>
                   </div>
                 ))}
-                {(!recentActivities.recentNotices || recentActivities.recentNotices.length === 0) && (
+                {(!recentActivities.recentNotices ||
+                  recentActivities.recentNotices.length === 0) && (
                   <div className="p-4 rounded-lg bg-gray-50 border border-gray-200 text-center">
                     <p className="text-sm text-gray-500 mb-1">최근 공지가 없습니다</p>
                     <p className="text-xs text-gray-400">오늘 생성된 공지가 없습니다</p>
@@ -343,7 +362,10 @@ const DashboardPage = () => {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {dashboardData.center_stats.map((center, index) => (
-                <div key={center.id} className="p-6 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 hover:shadow-lg transition-all duration-300">
+                <div
+                  key={center.id}
+                  className="p-6 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 hover:shadow-lg transition-all duration-300"
+                >
                   <div className="flex items-center gap-3 mb-4">
                     <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
                     <h3 className="font-bold text-gray-800 text-lg">{center.name}</h3>
@@ -382,7 +404,10 @@ const DashboardPage = () => {
               {dashboardData.position_stats
                 .filter(position => position.total_users > 0)
                 .map((position, index) => (
-                  <div key={position.id} className="p-6 rounded-xl bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-200 hover:shadow-lg transition-all duration-300">
+                  <div
+                    key={position.id}
+                    className="p-6 rounded-xl bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-200 hover:shadow-lg transition-all duration-300"
+                  >
                     <div className="flex items-center gap-3 mb-4">
                       <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
                       <h3 className="font-bold text-gray-800 text-lg">{position.name}</h3>

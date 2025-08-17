@@ -41,7 +41,14 @@ function App() {
           <Route path="/email-verification-page" element={<EmailVerificationPage />} />
 
           {/* 보호된 라우트 */}
-          <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <Layout />
+              </ProtectedRoute>
+            }
+          >
             <Route index element={<DashboardPage />} />
             <Route path="centers" element={<CenterPage />} />
             <Route path="users" element={<UserPage />} />

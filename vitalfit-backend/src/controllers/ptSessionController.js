@@ -518,6 +518,17 @@ const getPTSessionsByMember = async (req, res) => {
   const { memberId } = req.params;
   const { page = 1, limit = 10, year, month } = req.query;
 
+      console.log('🔍 PT 세션 조회 요청:', {
+      memberId,
+      page,
+      limit,
+      year,
+      month,
+      headers: req.headers,
+      user: req.user,
+      authorization: req.headers.authorization ? '토큰 있음' : '토큰 없음'
+    });
+
   try {
     const offset = (page - 1) * limit;
     const whereClause = { member_id: memberId };
