@@ -19,22 +19,22 @@ const CenterCreateModal = ({ isOpen, onClose, onCreate }) => {
     parking_fee: '',
     parking_info: '',
     directions: '',
-    status: 'active'
+    status: 'active',
   });
 
   // 입력 변경 핸들러
-  const handleInputChange = (e) => {
+  const handleInputChange = e => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: type === 'checkbox' ? checked : value,
     }));
-    
+
     // 에러 메시지 초기화
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
-        [name]: ''
+        [name]: '',
       }));
     }
   };
@@ -62,7 +62,7 @@ const CenterCreateModal = ({ isOpen, onClose, onCreate }) => {
   };
 
   // 폼 제출 핸들러
-  const handleSubmit = async (e) => {
+  const handleSubmit = async e => {
     e.preventDefault();
 
     if (!validateForm()) {
@@ -86,7 +86,7 @@ const CenterCreateModal = ({ isOpen, onClose, onCreate }) => {
         parking_fee: formData.parking_fee.trim() || null,
         parking_info: formData.parking_info.trim() || null,
         directions: formData.directions.trim() || null,
-        status: formData.status
+        status: formData.status,
       };
 
       const response = await centerAPI.createCenter(apiData);
@@ -125,7 +125,7 @@ const CenterCreateModal = ({ isOpen, onClose, onCreate }) => {
       parking_fee: '',
       parking_info: '',
       directions: '',
-      status: 'active'
+      status: 'active',
     });
     setErrors({});
   };
@@ -259,9 +259,13 @@ const CenterCreateModal = ({ isOpen, onClose, onCreate }) => {
                   className={`w-72 h-12 rounded-[10px] outline outline-1 outline-offset-[-0.50px] outline-stone-300 px-3 text-sm font-['Nunito'] focus:outline-cyan-500 bg-white flex items-center justify-between text-neutral-900`}
                 >
                   <span>
-                    {formData.status === 'active' ? '활성' : 
-                     formData.status === 'inactive' ? '비활성' : 
-                     formData.status === 'closed' ? '폐점' : '활성'}
+                    {formData.status === 'active'
+                      ? '활성'
+                      : formData.status === 'inactive'
+                        ? '비활성'
+                        : formData.status === 'closed'
+                          ? '폐점'
+                          : '활성'}
                   </span>
                   <svg
                     width="16"
@@ -537,4 +541,4 @@ const CenterCreateModal = ({ isOpen, onClose, onCreate }) => {
   );
 };
 
-export default CenterCreateModal; 
+export default CenterCreateModal;

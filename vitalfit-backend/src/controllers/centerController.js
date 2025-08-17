@@ -164,7 +164,7 @@ const createCenter = async (req, res, next) => {
       parking_fee,
       parking_info,
       directions,
-      status = 'active'
+      status = 'active',
     } = req.body;
 
     // 필수 필드 검증
@@ -177,7 +177,7 @@ const createCenter = async (req, res, next) => {
 
     // 센터명 중복 검사
     const existingCenter = await Center.findOne({
-      where: { name: name.trim() }
+      where: { name: name.trim() },
     });
 
     if (existingCenter) {
@@ -201,7 +201,7 @@ const createCenter = async (req, res, next) => {
       parking_fee: parking_fee?.trim() || null,
       parking_info: parking_info?.trim() || null,
       directions: directions?.trim() || null,
-      status: status
+      status: status,
     });
 
     // 생성된 센터 정보 조회 (이미지 포함)
@@ -316,7 +316,7 @@ const uploadCenterImage = async (req, res, next) => {
 
     // 해당 센터의 기존 이미지 개수 확인
     const existingImages = await CenterImage.count({ where: { center_id: center_id } });
-    
+
     // 메인 이미지로 설정하는 경우 기존 메인 이미지 해제
     if (is_main === 'true' || is_main === true) {
       await CenterImage.update({ is_main: false }, { where: { center_id: center_id } });

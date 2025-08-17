@@ -119,8 +119,6 @@ class AuthService {
     return now.getTime() > expiryDate.getTime() - bufferTime;
   }
 
-
-
   // 자동 갱신 타이머 설정
   static setupAutoRefresh(token, rememberMe) {
     // 기존 타이머 정리

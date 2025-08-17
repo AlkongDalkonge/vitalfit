@@ -8,8 +8,6 @@ import { getStatusText } from '../utils/memberUtils';
 const PayPage = () => {
   const navigate = useNavigate();
 
-
-
   // 커스텀 훅 사용
   const {
     members,
@@ -100,8 +98,6 @@ const PayPage = () => {
     console.log('이동할 경로:', `/payment-history/${memberId}`);
     navigate(`/payment-history/${memberId}`);
   };
-
-
 
   if (loading) {
     return (
@@ -381,10 +377,7 @@ const PayPage = () => {
                         >
                           {member.remaining_sessions || 0}
                         </div>
-                        <div
-                          data-layer="상태"
-                          className="flex-[1] min-w-[90px] justify-start"
-                        >
+                        <div data-layer="상태" className="flex-[1] min-w-[90px] justify-start">
                           <span className="text-neutral-600 text-sm font-normal font-['Nunito'] leading-normal">
                             {getStatusText(member.status)}
                           </span>
@@ -407,12 +400,8 @@ const PayPage = () => {
                 </div>
               </div>
             </div>
-
-
           </div>
         </div>
-
-
 
         {/* 멤버 수정 모달 */}
         <MemberEditModal
@@ -433,4 +422,4 @@ const PayPage = () => {
   );
 };
 
-export default PayPage; 
+export default PayPage;

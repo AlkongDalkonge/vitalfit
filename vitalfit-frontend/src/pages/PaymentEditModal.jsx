@@ -50,10 +50,10 @@ const PaymentEditModal = ({ isOpen, onClose, onUpdate, paymentId, memberId }) =>
   const loadData = async () => {
     try {
       setLoading(true);
-      
+
       // 결제 정보 로드
       const paymentResponse = await paymentAPI.getPayment(paymentId);
-      
+
       if (paymentResponse.success) {
         const payment = paymentResponse.data;
         console.log('로드된 결제 데이터:', payment);
@@ -255,7 +255,9 @@ const PaymentEditModal = ({ isOpen, onClose, onUpdate, paymentId, memberId }) =>
                   required
                 />
               </div>
-              {errors.payment_date && <p className="text-red-500 text-xs mt-1">{errors.payment_date}</p>}
+              {errors.payment_date && (
+                <p className="text-red-500 text-xs mt-1">{errors.payment_date}</p>
+              )}
             </div>
           </div>
 
@@ -276,7 +278,8 @@ const PaymentEditModal = ({ isOpen, onClose, onUpdate, paymentId, memberId }) =>
                 >
                   <span>
                     {formData.payment_method
-                      ? paymentMethods.find(p => p.value === formData.payment_method)?.label || '결제 방법을 선택하세요'
+                      ? paymentMethods.find(p => p.value === formData.payment_method)?.label ||
+                        '결제 방법을 선택하세요'
                       : '결제 방법을 선택하세요'}
                   </span>
                   <svg
@@ -334,7 +337,9 @@ const PaymentEditModal = ({ isOpen, onClose, onUpdate, paymentId, memberId }) =>
                   ))}
                 </select>
               </div>
-              {errors.payment_method && <p className="text-red-500 text-xs mt-1">{errors.payment_method}</p>}
+              {errors.payment_method && (
+                <p className="text-red-500 text-xs mt-1">{errors.payment_method}</p>
+              )}
             </div>
           </div>
 
@@ -357,7 +362,9 @@ const PaymentEditModal = ({ isOpen, onClose, onUpdate, paymentId, memberId }) =>
                   required
                 />
               </div>
-              {errors.session_count && <p className="text-red-500 text-xs mt-1">{errors.session_count}</p>}
+              {errors.session_count && (
+                <p className="text-red-500 text-xs mt-1">{errors.session_count}</p>
+              )}
             </div>
           </div>
 
@@ -379,7 +386,9 @@ const PaymentEditModal = ({ isOpen, onClose, onUpdate, paymentId, memberId }) =>
                   min="0"
                 />
               </div>
-              {errors.free_session_count && <p className="text-red-500 text-xs mt-1">{errors.free_session_count}</p>}
+              {errors.free_session_count && (
+                <p className="text-red-500 text-xs mt-1">{errors.free_session_count}</p>
+              )}
             </div>
           </div>
 
@@ -402,7 +411,9 @@ const PaymentEditModal = ({ isOpen, onClose, onUpdate, paymentId, memberId }) =>
                   required
                 />
               </div>
-              {errors.payment_amount && <p className="text-red-500 text-xs mt-1">{errors.payment_amount}</p>}
+              {errors.payment_amount && (
+                <p className="text-red-500 text-xs mt-1">{errors.payment_amount}</p>
+              )}
             </div>
           </div>
 
@@ -460,4 +471,4 @@ const PaymentEditModal = ({ isOpen, onClose, onUpdate, paymentId, memberId }) =>
   );
 };
 
-export default PaymentEditModal; 
+export default PaymentEditModal;

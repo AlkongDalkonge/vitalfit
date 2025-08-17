@@ -441,7 +441,7 @@ const getTrainerSalary = async (req, res) => {
     }
 
     const { Position } = require('../models');
-    
+
     // 트레이너 정보와 직급 정보를 함께 조회
     const trainer = await User.findByPk(trainerId, {
       include: [

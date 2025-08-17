@@ -20,7 +20,7 @@ const CenterEditModal = ({ isOpen, onClose, onUpdate, center }) => {
     parking_fee: '',
     parking_info: '',
     directions: '',
-    status: 'active'
+    status: 'active',
   });
 
   // 센터 데이터가 변경될 때 폼 초기화
@@ -39,24 +39,24 @@ const CenterEditModal = ({ isOpen, onClose, onUpdate, center }) => {
         parking_fee: center.parking_fee || '',
         parking_info: center.parking_info || '',
         directions: center.directions || '',
-        status: center.status || 'active'
+        status: center.status || 'active',
       });
     }
   }, [center]);
 
   // 입력 변경 핸들러
-  const handleInputChange = (e) => {
+  const handleInputChange = e => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: type === 'checkbox' ? checked : value,
     }));
-    
+
     // 에러 메시지 초기화
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
-        [name]: ''
+        [name]: '',
       }));
     }
   };
@@ -84,7 +84,7 @@ const CenterEditModal = ({ isOpen, onClose, onUpdate, center }) => {
   };
 
   // 폼 제출 핸들러
-  const handleSubmit = async (e) => {
+  const handleSubmit = async e => {
     e.preventDefault();
 
     if (!validateForm()) {
@@ -108,7 +108,7 @@ const CenterEditModal = ({ isOpen, onClose, onUpdate, center }) => {
         parking_fee: formData.parking_fee.trim() || null,
         parking_info: formData.parking_info.trim() || null,
         directions: formData.directions.trim() || null,
-        status: formData.status
+        status: formData.status,
       };
 
       const response = await centerAPI.updateCenter(center.id, apiData);
@@ -121,8 +121,8 @@ const CenterEditModal = ({ isOpen, onClose, onUpdate, center }) => {
       }
     } catch (error) {
       console.error('센터 수정 오류:', error);
-      setErrors({ 
-        submit: error.response?.data?.message || '센터 수정 중 오류가 발생했습니다.' 
+      setErrors({
+        submit: error.response?.data?.message || '센터 수정 중 오류가 발생했습니다.',
       });
     } finally {
       setLoading(false);
@@ -144,7 +144,7 @@ const CenterEditModal = ({ isOpen, onClose, onUpdate, center }) => {
       parking_fee: '',
       parking_info: '',
       directions: '',
-      status: 'active'
+      status: 'active',
     });
     setErrors({});
   };
@@ -312,10 +312,12 @@ const CenterEditModal = ({ isOpen, onClose, onUpdate, center }) => {
                   type="time"
                   name="weekday_start"
                   value={formData.weekday_start || '06:00'}
-                  onChange={(e) => {
+                  onChange={e => {
                     const startTime = e.target.value;
                     const endTime = formData.weekday_end || '24:00';
-                    handleInputChange({ target: { name: 'weekday_hours', value: `${startTime}-${endTime}` } });
+                    handleInputChange({
+                      target: { name: 'weekday_hours', value: `${startTime}-${endTime}` },
+                    });
                     handleInputChange({ target: { name: 'weekday_start', value: startTime } });
                   }}
                   className="w-36 h-12 rounded-[10px] outline outline-1 outline-offset-[-0.50px] outline-stone-300 px-3 text-sm font-['Nunito'] focus:outline-cyan-500"
@@ -328,18 +330,18 @@ const CenterEditModal = ({ isOpen, onClose, onUpdate, center }) => {
           {/* 평일 종료 시간 */}
           <div className="w-36 left-[200px] top-[305px] absolute inline-flex flex-col justify-start items-start gap-[5px]">
             <div className="w-36 flex flex-col justify-start items-start gap-2">
-              <div className="justify-start text-neutral-900 text-sm font-normal font-['Nunito'] leading-normal">
-                
-              </div>
+              <div className="justify-start text-neutral-900 text-sm font-normal font-['Nunito'] leading-normal"></div>
               <div className="relative w-36 h-12 mt-6">
                 <input
                   type="time"
                   name="weekday_end"
                   value={formData.weekday_end || '24:00'}
-                  onChange={(e) => {
+                  onChange={e => {
                     const endTime = e.target.value;
                     const startTime = formData.weekday_start || '06:00';
-                    handleInputChange({ target: { name: 'weekday_hours', value: `${startTime}-${endTime}` } });
+                    handleInputChange({
+                      target: { name: 'weekday_hours', value: `${startTime}-${endTime}` },
+                    });
                     handleInputChange({ target: { name: 'weekday_end', value: endTime } });
                   }}
                   className="w-36 h-12 rounded-[10px] outline outline-1 outline-offset-[-0.50px] outline-stone-300 px-3 text-sm font-['Nunito'] focus:outline-cyan-500"
@@ -360,10 +362,12 @@ const CenterEditModal = ({ isOpen, onClose, onUpdate, center }) => {
                   type="time"
                   name="saturday_start"
                   value={formData.saturday_start || '06:00'}
-                  onChange={(e) => {
+                  onChange={e => {
                     const startTime = e.target.value;
                     const endTime = formData.saturday_end || '22:00';
-                    handleInputChange({ target: { name: 'saturday_hours', value: `${startTime}-${endTime}` } });
+                    handleInputChange({
+                      target: { name: 'saturday_hours', value: `${startTime}-${endTime}` },
+                    });
                     handleInputChange({ target: { name: 'saturday_start', value: startTime } });
                   }}
                   className="w-36 h-12 rounded-[10px] outline outline-1 outline-offset-[-0.50px] outline-stone-300 px-3 text-sm font-['Nunito'] focus:outline-cyan-500"
@@ -376,18 +380,18 @@ const CenterEditModal = ({ isOpen, onClose, onUpdate, center }) => {
           {/* 토요일 종료 시간 */}
           <div className="w-36 left-[520px] top-[305px] absolute inline-flex flex-col justify-start items-start gap-[5px]">
             <div className="w-36 flex flex-col justify-start items-start gap-2">
-              <div className="justify-start text-neutral-900 text-sm font-normal font-['Nunito'] leading-normal">
-                
-              </div>
+              <div className="justify-start text-neutral-900 text-sm font-normal font-['Nunito'] leading-normal"></div>
               <div className="relative w-36 h-12 mt-6">
                 <input
                   type="time"
                   name="saturday_end"
                   value={formData.saturday_end || '22:00'}
-                  onChange={(e) => {
+                  onChange={e => {
                     const endTime = e.target.value;
                     const startTime = formData.saturday_start || '06:00';
-                    handleInputChange({ target: { name: 'saturday_hours', value: `${startTime}-${endTime}` } });
+                    handleInputChange({
+                      target: { name: 'saturday_hours', value: `${startTime}-${endTime}` },
+                    });
                     handleInputChange({ target: { name: 'saturday_end', value: endTime } });
                   }}
                   className="w-36 h-12 rounded-[10px] outline outline-1 outline-offset-[-0.50px] outline-stone-300 px-3 text-sm font-['Nunito'] focus:outline-cyan-500"
@@ -408,10 +412,12 @@ const CenterEditModal = ({ isOpen, onClose, onUpdate, center }) => {
                   type="time"
                   name="sunday_start"
                   value={formData.sunday_start || '08:00'}
-                  onChange={(e) => {
+                  onChange={e => {
                     const startTime = e.target.value;
                     const endTime = formData.sunday_end || '20:00';
-                    handleInputChange({ target: { name: 'sunday_hours', value: `${startTime}-${endTime}` } });
+                    handleInputChange({
+                      target: { name: 'sunday_hours', value: `${startTime}-${endTime}` },
+                    });
                     handleInputChange({ target: { name: 'sunday_start', value: startTime } });
                   }}
                   className="w-36 h-12 rounded-[10px] outline outline-1 outline-offset-[-0.50px] outline-stone-300 px-3 text-sm font-['Nunito'] focus:outline-cyan-500"
@@ -424,18 +430,18 @@ const CenterEditModal = ({ isOpen, onClose, onUpdate, center }) => {
           {/* 일요일 종료 시간 */}
           <div className="w-36 left-[200px] top-[411px] absolute inline-flex flex-col justify-start items-start gap-[5px]">
             <div className="w-36 flex flex-col justify-start items-start gap-2">
-              <div className="justify-start text-neutral-900 text-sm font-normal font-['Nunito'] leading-normal">
-                
-              </div>
+              <div className="justify-start text-neutral-900 text-sm font-normal font-['Nunito'] leading-normal"></div>
               <div className="relative w-36 h-12 mt-6">
                 <input
                   type="time"
                   name="sunday_end"
                   value={formData.sunday_end || '20:00'}
-                  onChange={(e) => {
+                  onChange={e => {
                     const endTime = e.target.value;
                     const startTime = formData.sunday_start || '08:00';
-                    handleInputChange({ target: { name: 'sunday_hours', value: `${startTime}-${endTime}` } });
+                    handleInputChange({
+                      target: { name: 'sunday_hours', value: `${startTime}-${endTime}` },
+                    });
                     handleInputChange({ target: { name: 'sunday_end', value: endTime } });
                   }}
                   className="w-36 h-12 rounded-[10px] outline outline-1 outline-offset-[-0.50px] outline-stone-300 px-3 text-sm font-['Nunito'] focus:outline-cyan-500"
@@ -456,10 +462,12 @@ const CenterEditModal = ({ isOpen, onClose, onUpdate, center }) => {
                   type="time"
                   name="holiday_start"
                   value={formData.holiday_start || '08:00'}
-                  onChange={(e) => {
+                  onChange={e => {
                     const startTime = e.target.value;
                     const endTime = formData.holiday_end || '18:00';
-                    handleInputChange({ target: { name: 'holiday_hours', value: `${startTime}-${endTime}` } });
+                    handleInputChange({
+                      target: { name: 'holiday_hours', value: `${startTime}-${endTime}` },
+                    });
                     handleInputChange({ target: { name: 'holiday_start', value: startTime } });
                   }}
                   className="w-36 h-12 rounded-[10px] outline outline-1 outline-offset-[-0.50px] outline-stone-300 px-3 text-sm font-['Nunito'] leading-normal focus:outline-cyan-500"
@@ -472,18 +480,18 @@ const CenterEditModal = ({ isOpen, onClose, onUpdate, center }) => {
           {/* 공휴일 종료 시간 */}
           <div className="w-36 left-[520px] top-[411px] absolute inline-flex flex-col justify-start items-start gap-[5px]">
             <div className="w-36 flex flex-col justify-start items-start gap-2">
-              <div className="justify-start text-neutral-900 text-sm font-normal font-['Nunito'] leading-normal">
-                
-              </div>
+              <div className="justify-start text-neutral-900 text-sm font-normal font-['Nunito'] leading-normal"></div>
               <div className="relative w-36 h-12 mt-6">
                 <input
                   type="time"
                   name="holiday_end"
                   value={formData.holiday_end || '18:00'}
-                  onChange={(e) => {
+                  onChange={e => {
                     const endTime = e.target.value;
                     const startTime = formData.holiday_start || '08:00';
-                    handleInputChange({ target: { name: 'holiday_hours', value: `${startTime}-${endTime}` } });
+                    handleInputChange({
+                      target: { name: 'holiday_hours', value: `${startTime}-${endTime}` },
+                    });
                     handleInputChange({ target: { name: 'holiday_end', value: endTime } });
                   }}
                   className="w-36 h-12 rounded-[10px] outline outline-1 outline-offset-[-0.50px] outline-stone-300 px-3 text-sm font-['Nunito'] focus:outline-cyan-500"
@@ -531,8 +539,6 @@ const CenterEditModal = ({ isOpen, onClose, onUpdate, center }) => {
             </div>
           </div>
 
-
-
           {/* 오시는 길 */}
           <div className="w-[620px] left-[50px] top-[820px] absolute inline-flex flex-col justify-start items-start gap-[5px]">
             <div className="w-[620px] flex flex-col justify-start items-start gap-2">
@@ -567,9 +573,13 @@ const CenterEditModal = ({ isOpen, onClose, onUpdate, center }) => {
                   className={`w-72 h-12 rounded-[10px] outline outline-1 outline-offset-[-0.50px] outline-stone-300 px-3 text-sm font-['Nunito'] focus:outline-cyan-500 bg-white flex items-center justify-between text-neutral-900`}
                 >
                   <span>
-                    {formData.status === 'active' ? '활성' :
-                     formData.status === 'inactive' ? '비활성' :
-                     formData.status === 'closed' ? '폐점' : '활성'}
+                    {formData.status === 'active'
+                      ? '활성'
+                      : formData.status === 'inactive'
+                        ? '비활성'
+                        : formData.status === 'closed'
+                          ? '폐점'
+                          : '활성'}
                   </span>
                   <svg
                     width="16"
@@ -659,11 +669,9 @@ const CenterEditModal = ({ isOpen, onClose, onUpdate, center }) => {
             </button>
           </div>
         </form>
-
-
       </div>
     </div>
   );
 };
 
-export default CenterEditModal; 
+export default CenterEditModal;

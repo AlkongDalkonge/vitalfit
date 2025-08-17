@@ -257,15 +257,15 @@ const getAllPayments = async (req, res) => {
     const { member_id, trainer_id, center_id, limit = 100, offset = 0 } = req.query;
 
     const whereClause = {};
-    
+
     if (member_id) {
       whereClause.member_id = member_id;
     }
-    
+
     if (trainer_id) {
       whereClause.trainer_id = trainer_id;
     }
-    
+
     if (center_id) {
       whereClause.center_id = center_id;
     }
@@ -319,4 +319,4 @@ module.exports = {
   updatePayment,
   deletePayment,
   getAllPayments,
-}; 
+};

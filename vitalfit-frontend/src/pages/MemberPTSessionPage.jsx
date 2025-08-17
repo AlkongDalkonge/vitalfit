@@ -65,7 +65,7 @@ const MemberPTSessionPage = () => {
 
   // 드롭다운 외부 클릭 시 닫기
   useEffect(() => {
-    const handleClickOutside = (event) => {
+    const handleClickOutside = event => {
       if (yearDropdownRef.current && !yearDropdownRef.current.contains(event.target)) {
         setShowYearDropdown(false);
       }
@@ -139,7 +139,9 @@ const MemberPTSessionPage = () => {
             {/* 보너스 잔여 세션 정보 */}
             {member && (
               <div className="text-center">
-                <div className="text-2xl font-bold text-black">{member.remaining_free_sessions || 0}</div>
+                <div className="text-2xl font-bold text-black">
+                  {member.remaining_free_sessions || 0}
+                </div>
                 <div className="text-sm text-gray-600">보너스 잔여 PT</div>
               </div>
             )}
@@ -150,7 +152,9 @@ const MemberPTSessionPage = () => {
             {/* 누적 PT 정보 */}
             {member && (
               <div className="text-center">
-                <div className="text-2xl font-bold">{(member.actual_used_sessions || 0) + (member.actual_used_free_sessions || 0)}</div>
+                <div className="text-2xl font-bold">
+                  {(member.actual_used_sessions || 0) + (member.actual_used_free_sessions || 0)}
+                </div>
                 <div className="text-sm text-gray-600">누적 PT</div>
               </div>
             )}

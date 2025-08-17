@@ -78,12 +78,12 @@ const MemberPage = () => {
   const filterMembersImmediate = async (centerId, trainerName) => {
     try {
       const filters = buildImmediateFilters(centerId, trainerName);
-      
+
       // 상태 필터 추가
       if (statusFilter && statusFilter !== '전체선택') {
         filters.status = statusFilter;
       }
-      
+
       await fetchMembers(filters);
 
       // 검색어가 있으면 검색 필터링도 적용
@@ -114,8 +114,6 @@ const MemberPage = () => {
     }
     filterMembersImmediate(centerFilter, trainerFilter);
   };
-
-
 
   // 기타 핸들러들
   const handleRegisterMember = () => {
@@ -307,7 +305,9 @@ const MemberPage = () => {
                       statusFilter ? 'text-neutral-900' : 'text-neutral-400'
                     }`}
                   >
-                    {statusFilter ? statusOptions.find(s => s.value === statusFilter)?.label || statusFilter : '상태'}
+                    {statusFilter
+                      ? statusOptions.find(s => s.value === statusFilter)?.label || statusFilter
+                      : '상태'}
                   </div>
                   <svg
                     className="w-3 h-3 text-neutral-400"
@@ -334,15 +334,16 @@ const MemberPage = () => {
                       >
                         전체선택
                       </button>
-                      {statusOptions && statusOptions.map(status => (
-                        <button
-                          key={status.value}
-                          onClick={() => onStatusFilterChange(status.value)}
-                          className="w-full px-3 py-1.5 text-left text-xs text-neutral-600 hover:bg-sky-50"
-                        >
-                          {status.label}
-                        </button>
-                      ))}
+                      {statusOptions &&
+                        statusOptions.map(status => (
+                          <button
+                            key={status.value}
+                            onClick={() => onStatusFilterChange(status.value)}
+                            className="w-full px-3 py-1.5 text-left text-xs text-neutral-600 hover:bg-sky-50"
+                          >
+                            {status.label}
+                          </button>
+                        ))}
                     </div>
                   </div>
                 )}

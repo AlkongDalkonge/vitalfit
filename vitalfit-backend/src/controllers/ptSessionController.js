@@ -123,10 +123,10 @@ const createPTSession = async (req, res) => {
     if (session_type === 'regular') {
       await member.increment('used_sessions');
     } else if (session_type === 'free') {
-          // 보너스 세션은 free_sessions에서 차감 (보너스 세션의 총 개수에서 사용된 개수를 빼는 개념)
-    // free_sessions는 보너스 세션의 총 개수이므로, 실제로는 별도 필드가 필요하지만
-    // 현재 모델 구조에서는 free_sessions를 총 개수로 사용하고 있으므로
-    // 보너스 세션 사용 시 free_sessions를 감소시킴
+      // 보너스 세션은 free_sessions에서 차감 (보너스 세션의 총 개수에서 사용된 개수를 빼는 개념)
+      // free_sessions는 보너스 세션의 총 개수이므로, 실제로는 별도 필드가 필요하지만
+      // 현재 모델 구조에서는 free_sessions를 총 개수로 사용하고 있으므로
+      // 보너스 세션 사용 시 free_sessions를 감소시킴
       await member.decrement('free_sessions');
     }
 

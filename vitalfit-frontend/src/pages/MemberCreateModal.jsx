@@ -396,7 +396,8 @@ const MemberCreateModal = ({ isOpen, onClose, onCreate }) => {
                 >
                   <span>
                     {formData.status
-                      ? statusOptions.find(s => s.value === formData.status)?.label || '상태를 선택하세요'
+                      ? statusOptions.find(s => s.value === formData.status)?.label ||
+                        '상태를 선택하세요'
                       : '상태를 선택하세요'}
                   </span>
                   <svg

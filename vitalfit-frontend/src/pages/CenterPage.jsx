@@ -59,7 +59,7 @@ const CenterPage = () => {
   };
 
   // 이미지 관리 토글
-  const toggleImageManagement = async (centerId) => {
+  const toggleImageManagement = async centerId => {
     if (imageManagementOpen === centerId) {
       setImageManagementOpen(null);
     } else {
@@ -72,7 +72,7 @@ const CenterPage = () => {
   };
 
   // 센터 이미지 로드
-  const loadCenterImages = async (centerId) => {
+  const loadCenterImages = async centerId => {
     setImageLoading(prev => ({ ...prev, [centerId]: true }));
     try {
       const result = await centerAPI.getCenterById(centerId);
@@ -85,7 +85,7 @@ const CenterPage = () => {
             image_url: img.image_url,
             isMain: img.is_main,
             name: img.image_name || 'center-image',
-          }))
+          })),
         }));
       } else {
         setCenterImages(prev => ({ ...prev, [centerId]: [] }));
@@ -105,12 +105,12 @@ const CenterPage = () => {
     try {
       const currentImages = centerImages[centerId] || [];
       const currentImageCount = currentImages.length;
-      
+
       const uploadPromises = newImages.map(async (imageData, index) => {
         const formData = new FormData();
         formData.append('image', imageData.file);
         formData.append('center_id', centerId);
-        
+
         const isMain = currentImageCount === 0 && index === 0;
         formData.append('is_main', isMain ? 'true' : 'false');
 
@@ -128,7 +128,7 @@ const CenterPage = () => {
       const uploadedImages = await Promise.all(uploadPromises);
       setCenterImages(prev => ({
         ...prev,
-        [centerId]: [...(prev[centerId] || []), ...uploadedImages]
+        [centerId]: [...(prev[centerId] || []), ...uploadedImages],
       }));
 
       // 센터 데이터 새로고침
@@ -148,10 +148,10 @@ const CenterPage = () => {
 
     try {
       await centerAPI.deleteImage(imageId);
-      
+
       setCenterImages(prev => ({
         ...prev,
-        [centerId]: prev[centerId].filter(img => img.id !== imageId)
+        [centerId]: prev[centerId].filter(img => img.id !== imageId),
       }));
 
       // 센터 데이터 새로고침
@@ -166,14 +166,14 @@ const CenterPage = () => {
   const handleSetMainImage = async (centerId, imageId) => {
     try {
       await centerAPI.setMainImage(imageId);
-      
+
       // 이미지 목록 업데이트
       setCenterImages(prev => ({
         ...prev,
         [centerId]: prev[centerId].map(img => ({
           ...img,
-          isMain: img.id === imageId
-        }))
+          isMain: img.id === imageId,
+        })),
       }));
 
       // 센터 데이터 새로고침
@@ -199,26 +199,22 @@ const CenterPage = () => {
   };
 
   // 센터 등록 후 데이터 새로고침
-  const handleCenterCreated = (newCenter) => {
+  const handleCenterCreated = newCenter => {
     setCenters(prevCenters => [...prevCenters, newCenter]);
   };
 
   // 센터 수정 모달 열기
-  const handleEditCenter = (center) => {
+  const handleEditCenter = center => {
     setSelectedCenterForEdit(center);
     setEditModalOpen(true);
   };
 
   // 센터 수정 후 데이터 새로고침
-  const handleCenterUpdated = (updatedCenter) => {
+  const handleCenterUpdated = updatedCenter => {
     setCenters(prevCenters =>
-      prevCenters.map(center =>
-        center.id === updatedCenter.id ? updatedCenter : center
-      )
+      prevCenters.map(center => (center.id === updatedCenter.id ? updatedCenter : center))
     );
   };
-
-
 
   // 로딩 상태
   if (loading) {
@@ -382,7 +378,9 @@ const CenterPage = () => {
                         <h4 className="font-semibold text-gray-800 mb-3">센터 이미지</h4>
 
                         {/* 메인 이미지 (큰 크기) */}
-                        {center.images && center.images.length > 0 && center.images.find(img => img.is_main) ? (
+                        {center.images &&
+                        center.images.length > 0 &&
+                        center.images.find(img => img.is_main) ? (
                           <div className="mb-4">
                             <div className="relative">
                               <img
@@ -544,12 +542,22 @@ const CenterPage = () => {
                             onClick={() => toggleImageManagement(center.id)}
                             className="text-gray-500 hover:text-gray-700"
                           >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            <svg
+                              className="w-5 h-5"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M6 18L18 6M6 6l12 12"
+                              />
                             </svg>
                           </button>
                         </div>
-                        
+
                         {imageLoading[center.id] ? (
                           <div className="text-center py-8">
                             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
@@ -561,7 +569,7 @@ const CenterPage = () => {
                             <div>
                               <h5 className="font-medium text-gray-700 mb-2">새 이미지 추가</h5>
                               <ImageUploader
-                                onImageUpload={(newImages) => handleImageUpload(center.id, newImages)}
+                                onImageUpload={newImages => handleImageUpload(center.id, newImages)}
                                 currentImages={centerImages[center.id] || []}
                                 maxImages={10}
                                 isMainImageRequired={false}
@@ -586,13 +594,15 @@ const CenterPage = () => {
                                           }}
                                         />
                                       </div>
-                                      
+
                                       {/* 이미지 오버레이 (호버 시 표시) */}
                                       <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-200 flex items-center justify-center">
                                         <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex gap-2">
                                           {!image.isMain && (
                                             <button
-                                              onClick={() => handleSetMainImage(center.id, image.id)}
+                                              onClick={() =>
+                                                handleSetMainImage(center.id, image.id)
+                                              }
                                               className="px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
                                             >
                                               메인
@@ -606,7 +616,7 @@ const CenterPage = () => {
                                           </button>
                                         </div>
                                       </div>
-                                      
+
                                       {/* 메인 이미지 표시 */}
                                       {image.isMain && (
                                         <div className="absolute top-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded">

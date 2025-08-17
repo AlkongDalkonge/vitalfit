@@ -7,17 +7,17 @@ import PaymentEditModal from './PaymentEditModal';
 const PaymentHistoryPage = () => {
   const { memberId } = useParams();
   const navigate = useNavigate();
-  
+
   console.log('PaymentHistoryPage 렌더링됨, memberId:', memberId);
-  
+
   const [member, setMember] = useState(null);
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
+
   // 결제 등록 모달 상태
   const [isPaymentCreateModalOpen, setIsPaymentCreateModalOpen] = useState(false);
-  
+
   // 결제 수정 모달 상태
   const [isPaymentEditModalOpen, setIsPaymentEditModalOpen] = useState(false);
   const [selectedPaymentId, setSelectedPaymentId] = useState(null);
@@ -37,10 +37,10 @@ const PaymentHistoryPage = () => {
       // 멤버 정보와 결제 내역을 동시에 로드
       console.log('API 호출 시작 - memberId:', memberId);
       console.log('호출할 API:', `/members/${memberId}/payments`);
-      
+
       const [memberResponse, paymentsResponse] = await Promise.all([
         memberAPI.getMember(memberId),
-        apiGet(`/members/${memberId}/payments`)
+        apiGet(`/members/${memberId}/payments`),
       ]);
 
       console.log('멤버 응답:', memberResponse);
@@ -67,33 +67,33 @@ const PaymentHistoryPage = () => {
     }
   };
 
-  const formatDate = (dateString) => {
+  const formatDate = dateString => {
     if (!dateString) return '-';
     const date = new Date(dateString);
     return date.toLocaleDateString('ko-KR');
   };
 
-  const formatCurrency = (amount) => {
+  const formatCurrency = amount => {
     if (!amount) return '0원';
     return new Intl.NumberFormat('ko-KR').format(amount) + '원';
   };
 
-  const getPaymentMethodText = (method) => {
+  const getPaymentMethodText = method => {
     const methods = {
-      'cash': '현금',
-      'card': '카드',
-      'transfer': '계좌이체',
-      'mobile': '모바일결제'
+      cash: '현금',
+      card: '카드',
+      transfer: '계좌이체',
+      mobile: '모바일결제',
     };
     return methods[method] || method;
   };
 
-  const getStatusText = (status) => {
+  const getStatusText = status => {
     const statuses = {
-      'active': '활성',
-      'inactive': '비활성',
-      'pending': '대기',
-      'cancelled': '취소'
+      active: '활성',
+      inactive: '비활성',
+      pending: '대기',
+      cancelled: '취소',
     };
     return statuses[status] || status;
   };
@@ -107,7 +107,7 @@ const PaymentHistoryPage = () => {
     setIsPaymentCreateModalOpen(false);
   };
 
-  const handleCreatePayment = (newPayment) => {
+  const handleCreatePayment = newPayment => {
     // 결제 생성 후 데이터 새로고침
     console.log('새 결제 생성:', newPayment);
     setIsPaymentCreateModalOpen(false);
@@ -115,7 +115,7 @@ const PaymentHistoryPage = () => {
   };
 
   // 결제 수정 관련 핸들러들
-  const handleEditPayment = (paymentId) => {
+  const handleEditPayment = paymentId => {
     setSelectedPaymentId(paymentId);
     setIsPaymentEditModalOpen(true);
   };
@@ -125,7 +125,7 @@ const PaymentHistoryPage = () => {
     setSelectedPaymentId(null);
   };
 
-  const handleUpdatePayment = (updatedPayment) => {
+  const handleUpdatePayment = updatedPayment => {
     console.log('결제가 수정되었습니다:', updatedPayment);
     loadData(); // 데이터 새로고침
   };
@@ -241,7 +241,7 @@ const PaymentHistoryPage = () => {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {payments.map((payment, index) => (
                     <tr key={payment.id} className="hover:bg-gray-50">
-                      <td 
+                      <td
                         className="px-6 py-4 whitespace-nowrap text-sm text-blue-600 font-medium cursor-pointer hover:text-blue-800 hover:underline"
                         onClick={() => handleEditPayment(payment.id)}
                         title="클릭하여 결제 수정"
@@ -302,9 +302,7 @@ const PaymentHistoryPage = () => {
               </div>
               <div className="bg-orange-50 p-4 rounded-lg">
                 <p className="text-sm text-orange-600 font-medium">결제 횟수</p>
-                <p className="text-xl font-bold text-orange-900">
-                  {payments.length}회
-                </p>
+                <p className="text-xl font-bold text-orange-900">{payments.length}회</p>
               </div>
             </div>
           </div>
@@ -341,4 +339,4 @@ const PaymentHistoryPage = () => {
   );
 };
 
-export default PaymentHistoryPage; 
+export default PaymentHistoryPage;

@@ -246,7 +246,8 @@ const MemberEditModal = ({ isOpen, onClose, member, onUpdate }) => {
                   <span>
                     {formData.trainer_id
                       ? filteredTrainers.find(t => t.id === parseInt(formData.trainer_id))?.name +
-                        (filteredTrainers.find(t => t.id === parseInt(formData.trainer_id))?.nickname
+                        (filteredTrainers.find(t => t.id === parseInt(formData.trainer_id))
+                          ?.nickname
                           ? ` (${filteredTrainers.find(t => t.id === parseInt(formData.trainer_id))?.nickname})`
                           : '')
                       : formData.center_id
@@ -377,7 +378,8 @@ const MemberEditModal = ({ isOpen, onClose, member, onUpdate }) => {
                 >
                   <span>
                     {formData.status
-                      ? statusOptions.find(s => s.value === formData.status)?.label || '상태를 선택하세요'
+                      ? statusOptions.find(s => s.value === formData.status)?.label ||
+                        '상태를 선택하세요'
                       : '상태를 선택하세요'}
                   </span>
                   <svg

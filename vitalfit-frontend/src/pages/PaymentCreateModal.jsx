@@ -68,8 +68,6 @@ const PaymentCreateModal = ({ isOpen, onClose, onCreate, memberId }) => {
     }
   };
 
-
-
   // 입력값 변경 핸들러
   const handleInputChange = e => {
     const { name, value } = e.target;
@@ -216,11 +214,6 @@ const PaymentCreateModal = ({ isOpen, onClose, onCreate, memberId }) => {
         </button>
 
         <form onSubmit={handleSubmit}>
-
-
-
-
-
           {/* 결제 날짜 */}
           <div className="w-72 left-[50px] top-[93px] absolute inline-flex flex-col justify-start items-start gap-[5px]">
             <div className="w-72 flex flex-col justify-start items-start gap-2">
@@ -238,7 +231,9 @@ const PaymentCreateModal = ({ isOpen, onClose, onCreate, memberId }) => {
                   required
                 />
               </div>
-              {errors.payment_date && <p className="text-red-500 text-xs mt-1">{errors.payment_date}</p>}
+              {errors.payment_date && (
+                <p className="text-red-500 text-xs mt-1">{errors.payment_date}</p>
+              )}
             </div>
           </div>
 
@@ -259,7 +254,8 @@ const PaymentCreateModal = ({ isOpen, onClose, onCreate, memberId }) => {
                 >
                   <span>
                     {formData.payment_method
-                      ? paymentMethods.find(p => p.value === formData.payment_method)?.label || '결제 방법을 선택하세요'
+                      ? paymentMethods.find(p => p.value === formData.payment_method)?.label ||
+                        '결제 방법을 선택하세요'
                       : '결제 방법을 선택하세요'}
                   </span>
                   <svg
@@ -317,7 +313,9 @@ const PaymentCreateModal = ({ isOpen, onClose, onCreate, memberId }) => {
                   ))}
                 </select>
               </div>
-              {errors.payment_method && <p className="text-red-500 text-xs mt-1">{errors.payment_method}</p>}
+              {errors.payment_method && (
+                <p className="text-red-500 text-xs mt-1">{errors.payment_method}</p>
+              )}
             </div>
           </div>
 
@@ -340,7 +338,9 @@ const PaymentCreateModal = ({ isOpen, onClose, onCreate, memberId }) => {
                   required
                 />
               </div>
-              {errors.session_count && <p className="text-red-500 text-xs mt-1">{errors.session_count}</p>}
+              {errors.session_count && (
+                <p className="text-red-500 text-xs mt-1">{errors.session_count}</p>
+              )}
             </div>
           </div>
 
@@ -362,7 +362,9 @@ const PaymentCreateModal = ({ isOpen, onClose, onCreate, memberId }) => {
                   min="0"
                 />
               </div>
-              {errors.free_session_count && <p className="text-red-500 text-xs mt-1">{errors.free_session_count}</p>}
+              {errors.free_session_count && (
+                <p className="text-red-500 text-xs mt-1">{errors.free_session_count}</p>
+              )}
             </div>
           </div>
 
@@ -385,7 +387,9 @@ const PaymentCreateModal = ({ isOpen, onClose, onCreate, memberId }) => {
                   required
                 />
               </div>
-              {errors.payment_amount && <p className="text-red-500 text-xs mt-1">{errors.payment_amount}</p>}
+              {errors.payment_amount && (
+                <p className="text-red-500 text-xs mt-1">{errors.payment_amount}</p>
+              )}
             </div>
           </div>
 
@@ -432,4 +436,4 @@ const PaymentCreateModal = ({ isOpen, onClose, onCreate, memberId }) => {
   );
 };
 
-export default PaymentCreateModal; 
+export default PaymentCreateModal;
