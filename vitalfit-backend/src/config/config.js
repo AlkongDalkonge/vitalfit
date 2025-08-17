@@ -22,7 +22,7 @@ module.exports = {
     port: Number(process.env.TEST_DB_PORT) || 5432,
     username: process.env.TEST_DB_USERNAME || 'aldalkong',
     password: process.env.TEST_DB_PASSWORD || 'postgres',
-    database: process.env.TEST_DB_NAME || 'vitalfit',
+    database: process.env.TEST_DB_NAME || 'vitalfit_test',
   },
 
   // Azure 운영 DB
