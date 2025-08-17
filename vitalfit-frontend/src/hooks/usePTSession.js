@@ -24,6 +24,7 @@ export const usePTSession = memberId => {
   // 데이터 가져오기
   const fetchMemberPTSessions = async () => {
     try {
+      console.log('🔍 PT 세션 조회 시작:', { memberId, currentYear, currentMonth });
       setLoading(true);
       setError(null);
 
@@ -32,6 +33,8 @@ export const usePTSession = memberId => {
         month: currentMonth,
       });
 
+      console.log('✅ PT 세션 조회 응답:', response);
+
       if (response.success) {
         setMember(response.data.member);
         setPtSessions(response.data.pt_sessions);
@@ -39,6 +42,7 @@ export const usePTSession = memberId => {
         setError(response.message);
       }
     } catch (err) {
+      console.error('❌ PT 세션 조회 오류:', err);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -107,8 +111,11 @@ export const usePTSession = memberId => {
 
   // 데이터 로드 useEffect
   useEffect(() => {
-    if (memberId) {
+    console.log('🔄 useEffect 실행:', { memberId, currentYear, currentMonth });
+    if (memberId && memberId !== 'undefined') {
       fetchMemberPTSessions();
+    } else {
+      console.log('⚠️ memberId가 유효하지 않음:', memberId);
     }
   }, [memberId, currentYear, currentMonth]);
 

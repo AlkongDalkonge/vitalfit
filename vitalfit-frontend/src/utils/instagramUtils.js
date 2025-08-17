@@ -73,7 +73,7 @@ export const fetchInstagramThumbnail = async url => {
 
     try {
       // 인스타그램 게시물 ID를 추출하여 직접 썸네일 생성 시도
-      const postIdMatch = url.match(/instagram\.com\/p\/([^\/\?]+)/);
+      const postIdMatch = url.match(/instagram\.com\/p\/([^/?]+)/);
       if (postIdMatch) {
         const postId = postIdMatch[1];
         console.log('게시물 ID 추출:', postId);

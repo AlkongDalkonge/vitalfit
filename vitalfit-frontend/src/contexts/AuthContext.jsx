@@ -257,6 +257,9 @@ export const AuthProvider = ({ children }) => {
 
       console.log('🔐 AuthContext login 응답 데이터:', response);
       console.log('🔐 response.data:', response.data);
+      console.log('🔐 response.data.data:', response.data.data);
+      console.log('🔐 response.data.data?.token:', response.data.data?.token);
+      console.log('🔐 response.data.data?.user:', response.data.data?.user);
 
       // Axios 응답에서 실제 데이터는 response.data에 있음
       if (response.data && response.data.token && response.data.user) {

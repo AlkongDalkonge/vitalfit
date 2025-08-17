@@ -24,7 +24,7 @@ export const useNavigation = () => {
   // 로고 클릭 시 대시보드로 이동
   const handleLogoClick = () => {
     setActiveMenu(null); // 대시보드로 이동 시 메뉴 활성화 해제
-    navigate('/dashboard');
+    navigate('/');
   };
 
   // 실제 로그인한 사용자 정보 사용

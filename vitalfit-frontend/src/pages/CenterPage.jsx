@@ -213,8 +213,6 @@ const CenterPage = () => {
     );
   };
 
-
-
   // 로딩 상태
   if (loading) {
     return (
@@ -255,14 +253,8 @@ const CenterPage = () => {
 
   return (
     <div className="max-w-7xl mx-auto">
-      <div className="flex justify-between items-center mb-6">
+      <div className="mb-6">
         <h1 className="text-3xl font-bold text-gray-800">지점 관리</h1>
-        <button
-          onClick={() => setCreateModalOpen(true)}
-          className="px-6 py-3 bg-gradient-to-br from-blue-400 to-blue-600 text-white text-sm rounded-lg hover:from-blue-500 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl"
-        >
-          센터 등록
-        </button>
       </div>
 
       {/* 센터별 통계 */}
@@ -642,6 +634,16 @@ const CenterPage = () => {
             ))}
           </div>
         )}
+      </div>
+
+      {/* 센터 등록 버튼 */}
+      <div className="flex justify-start mt-6">
+        <button
+          onClick={() => setCreateModalOpen(true)}
+          className="px-6 py-3 bg-gradient-to-br from-blue-400 to-blue-600 text-white text-sm rounded-lg hover:from-blue-500 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+        >
+          센터 등록
+        </button>
       </div>
 
       {/* 센터 등록 모달 */}

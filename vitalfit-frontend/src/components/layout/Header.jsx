@@ -30,7 +30,7 @@ export default function Header({ activeMenu = null, userInfo }) {
     navigate('/account');
   };
 
-  const textStyle = 'text-base font-semibold text-gray-800 cursor-pointer select-none';
+  const textStyle = 'text-sm font-semibold text-gray-800 cursor-pointer select-none';
 
   // 날짜 + 요일
   const today = getFormattedDate(); // YYYY-MM-DD
@@ -47,13 +47,13 @@ export default function Header({ activeMenu = null, userInfo }) {
             {activeMenu}
           </>
         ) : (
-          <span>반갑습니다, {currentUser?.name || '관리자'}님!</span>
+          <span></span>
         )}
       </div>
 
       <div className="flex items-center gap-16">
         {/* 날짜 + 요일 표시 */}
-        <span className="text-lg font-medium text-gray-500">
+        <span className="text-sm font-medium text-gray-500">
           {today} ({dayOfWeek})
         </span>
 
@@ -80,7 +80,7 @@ export default function Header({ activeMenu = null, userInfo }) {
               />
             ) : (
               <img
-                src="/img/profileDefault.png"
+                src="/img/profileDefault.svg"
                 alt="기본 프로필"
                 className="w-10 h-10 rounded-full border-2 border-gray-200 object-cover"
               />
@@ -99,7 +99,6 @@ export default function Header({ activeMenu = null, userInfo }) {
           >
             {currentUser?.name || '관리자'}님
           </span>
-          <span className="text-gray-400 select-none">|</span>
           <span
             onClick={handleLogout}
             className={`${textStyle} hover:text-red-500`}

@@ -1,12 +1,17 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useUser } from '../utils/hooks';
 import {
   getUserStatusText,
   getUserStatusColor,
   formatPhoneNumber,
 } from '../utils/userUtils';
+import UserDetailModal from '../components/UserDetailModal';
 
 const UserPage = () => {
+  // 모달 상태 관리
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   // 커스텀 훅 사용
   const {
     users,
@@ -48,7 +53,17 @@ const UserPage = () => {
 
   // 사용자 상세보기 핸들러
   const handleViewUser = userId => {
-    // TODO: 사용자 상세 정보 모달 또는 페이지로 이동
+    const user = users.find(u => u.id === userId);
+    if (user) {
+      setSelectedUser(user);
+      setIsModalOpen(true);
+    }
+  };
+
+  // 모달 닫기 핸들러
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedUser(null);
   };
 
   // Position 기반 역할 색상 반환
@@ -422,6 +437,13 @@ const UserPage = () => {
           </div>
         </div>
       </div>
+
+      {/* 유저 상세 정보 모달 */}
+      <UserDetailModal
+        user={selectedUser}
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+      />
     </div>
   );
 };

@@ -181,7 +181,7 @@ export default function EmailVerification() {
 
           // 대시보드로 이동
           setTimeout(() => {
-            navigate('/dashboard');
+            navigate('/');
           }, 2000);
         } else {
           // 토큰이 없으면 로그인 페이지로 이동

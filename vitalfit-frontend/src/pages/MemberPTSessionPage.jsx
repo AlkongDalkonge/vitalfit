@@ -11,6 +11,17 @@ const MemberPTSessionPage = () => {
   const yearDropdownRef = useRef(null);
   const monthDropdownRef = useRef(null);
 
+  console.log('🔍 MemberPTSessionPage - memberId:', memberId);
+  console.log('🔍 MemberPTSessionPage - useParams():', useParams());
+  console.log('🔍 MemberPTSessionPage - window.location.pathname:', window.location.pathname);
+
+  // URL에서 memberId를 직접 추출하는 임시 방법
+  const pathname = window.location.pathname;
+  const pathMatch = pathname.match(/\/member\/(\d+)\/pt-sessions/);
+  const extractedMemberId = pathMatch ? pathMatch[1] : memberId;
+  
+  console.log('🔍 MemberPTSessionPage - extractedMemberId:', extractedMemberId);
+
   // 커스텀 훅 사용
   const {
     member,
@@ -31,7 +42,7 @@ const MemberPTSessionPage = () => {
     getMonthOptions,
     setIsCreateModalOpen,
     fetchMemberPTSessions,
-  } = usePTSession(memberId);
+  } = usePTSession(extractedMemberId);
 
   const {
     showYearDropdown,

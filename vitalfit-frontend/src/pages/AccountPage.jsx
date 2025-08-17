@@ -118,7 +118,7 @@ const AccountPage = () => {
         () => {
           console.log('⏰ AccountPage - 5분 경과, 보안을 위해 대시보드로 이동');
           toast.info('보안을 위해 대시보드로 이동합니다.');
-          navigate('/dashboard');
+          navigate('/');
         },
         5 * 60 * 1000
       ); // 5분

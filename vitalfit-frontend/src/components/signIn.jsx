@@ -100,7 +100,7 @@ export default function SignIn() {
 
       // replace를 사용하여 히스토리에서 로그인 페이지를 대체 (뒤로 가기 방지)
       console.log('📍 대시보드로 이동 (replace):', '/dashboard');
-      navigate('/dashboard', { replace: true });
+              navigate('/', { replace: true });
     }
   }, [authLoading, isAuthenticated, user, navigate]);
 
@@ -170,7 +170,7 @@ export default function SignIn() {
 
         // 즉시 대시보드로 이동 (상태 변경 문제 방지)
         console.log('📍 로그인 성공 후 즉시 대시보드로 이동');
-        navigate('/dashboard', { replace: true });
+        navigate('/', { replace: true });
       } else {
         console.log('❌ 로그인 실패:', result.message);
         setError(result.message || '로그인에 실패했습니다.');

@@ -300,7 +300,10 @@ export const ptSessionAPI = {
     return await apiDelete(`/pt-sessions/${id}`);
   },
   getSessionsByMember: async (memberId, params = {}) => {
-    return await apiGet(`/pt-sessions/member/${memberId}`, { params });
+    console.log('🚀 PT 세션 API 호출:', { memberId, params });
+    const result = await apiGet(`/pt-sessions/member/${memberId}`, { params });
+    console.log('📡 PT 세션 API 응답:', result);
+    return result;
   },
   createSession: async data => {
     return await apiPost('/pt-sessions', data);
