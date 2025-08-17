@@ -7,6 +7,14 @@ const common = {
 };
 
 module.exports = {
+  // JWT 설정
+  jwt: {
+    secret: process.env.JWT_SECRET,
+    expiresIn: process.env.JWT_EXPIRES_IN || '24h',
+    refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
+    reAuthExpiresIn: process.env.JWT_REAUTH_EXPIRES_IN || '5m',
+  },
+
   // 로컬 테스트 DB
   development: {
     ...common,
@@ -14,14 +22,7 @@ module.exports = {
     port: Number(process.env.TEST_DB_PORT) || 5432,
     username: process.env.TEST_DB_USERNAME || 'aldalkong',
     password: process.env.TEST_DB_PASSWORD || 'postgres',
-    database: process.env.TEST_DB_NAME || 'vitalfit_test',
-    // JWT 설정 추가
-    jwt: {
-      secret: process.env.JWT_SECRET || 'vitalfit-dev-secret',
-      expiresIn: process.env.JWT_EXPIRES_IN || '24h',
-      refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
-      reAuthExpiresIn: process.env.JWT_REAUTH_EXPIRES_IN || '2m',
-    },
+    database: process.env.TEST_DB_NAME || 'vitalfit',
   },
 
   // Azure 운영 DB
@@ -35,13 +36,6 @@ module.exports = {
     ssl: {
       require: true,
       rejectUnauthorized: false, // Azure PostgreSQL 연결을 위해 필요
-    },
-    // JWT 설정 추가
-    jwt: {
-      secret: process.env.JWT_SECRET,
-      expiresIn: process.env.JWT_EXPIRES_IN || '24h',
-      refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
-      reAuthExpiresIn: process.env.JWT_REAUTH_EXPIRES_IN || '2m',
     },
   },
 };
