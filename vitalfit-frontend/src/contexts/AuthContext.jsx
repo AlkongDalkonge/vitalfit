@@ -191,6 +191,9 @@ export const AuthProvider = ({ children }) => {
       if (userInfo) {
         setUser(userInfo);
 
+        // localStorage도 함께 업데이트
+        localStorage.setItem('user', JSON.stringify(userInfo));
+
         // 재인증 필요 여부 확인
         checkReAuthRequired(userInfo.id);
 

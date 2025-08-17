@@ -88,13 +88,29 @@ const MyHistoryPage = ({ onReAuthRequired }) => {
             },
           ],
         };
+      } else if (fieldName === 'license') {
+        return {
+          items: [
+            {
+              image_name: '',
+              image_url: '',
+              uploaded_at: '',
+              isLocal: false,
+              licenseName: '',
+              issuingOrganization: '',
+              issueDate: '',
+            },
+          ],
+        };
       } else {
         return {
           image_name: '',
           image_url: '',
           uploaded_at: '',
           isLocal: false,
-          content: '',
+          accountName: '',
+          instagramLink: '',
+          description: '',
         };
       }
     }
@@ -232,32 +248,37 @@ const MyHistoryPage = ({ onReAuthRequired }) => {
       const reader = new FileReader();
       reader.onload = e => {
         const previewUrl = e.target.result;
-        setFormData(prev => ({
-          ...prev,
-          [`${fieldName}Data`]: {
-            ...prev[`${fieldName}Data`],
-            items:
-              fieldName === 'license'
-                ? prev[`${fieldName}Data`].items.map((item, index) =>
-                    index === itemIndex
-                      ? {
-                          ...item,
-                          image_name: file.name,
-                          image_url: previewUrl,
-                          uploaded_at: new Date().toISOString(),
-                          isLocal: true,
-                        }
-                      : item
-                  )
-                : prev[`${fieldName}Data`].items,
-            ...(fieldName !== 'license' && {
-              image_name: file.name,
-              image_url: previewUrl,
-              uploaded_at: new Date().toISOString(),
-              isLocal: true,
-            }),
-          },
-        }));
+        setFormData(prev => {
+          const currentData = prev[`${fieldName}Data`] || {};
+          const currentItems = Array.isArray(currentData.items) ? currentData.items : [];
+
+          return {
+            ...prev,
+            [`${fieldName}Data`]: {
+              ...currentData,
+              items:
+                fieldName === 'license'
+                  ? currentItems.map((item, index) =>
+                      index === itemIndex
+                        ? {
+                            ...item,
+                            image_name: file.name,
+                            image_url: previewUrl,
+                            uploaded_at: new Date().toISOString(),
+                            isLocal: true,
+                          }
+                        : item
+                    )
+                  : currentItems,
+              ...(fieldName !== 'license' && {
+                image_name: file.name,
+                image_url: previewUrl,
+                uploaded_at: new Date().toISOString(),
+                isLocal: true,
+              }),
+            },
+          };
+        });
       };
       reader.readAsDataURL(file);
 
@@ -277,32 +298,37 @@ const MyHistoryPage = ({ onReAuthRequired }) => {
           ? result.data.image_url
           : result.data.image_url;
 
-        setFormData(prev => ({
-          ...prev,
-          [`${fieldName}Data`]: {
-            ...prev[`${fieldName}Data`],
-            items:
-              fieldName === 'license'
-                ? prev[`${fieldName}Data`].items.map((item, index) =>
-                    index === itemIndex
-                      ? {
-                          ...item,
-                          image_name: result.data.image_name,
-                          image_url: absoluteImageUrl,
-                          uploaded_at: result.data.uploaded_at,
-                          isLocal: false,
-                        }
-                      : item
-                  )
-                : prev[`${fieldName}Data`].items,
-            ...(fieldName !== 'license' && {
-              image_name: result.data.image_name,
-              image_url: absoluteImageUrl,
-              uploaded_at: result.data.uploaded_at,
-              isLocal: false,
-            }),
-          },
-        }));
+        setFormData(prev => {
+          const currentData = prev[`${fieldName}Data`] || {};
+          const currentItems = Array.isArray(currentData.items) ? currentData.items : [];
+
+          return {
+            ...prev,
+            [`${fieldName}Data`]: {
+              ...currentData,
+              items:
+                fieldName === 'license'
+                  ? currentItems.map((item, index) =>
+                      index === itemIndex
+                        ? {
+                            ...item,
+                            image_name: result.data.image_name,
+                            image_url: absoluteImageUrl,
+                            uploaded_at: result.data.uploaded_at,
+                            isLocal: false,
+                          }
+                        : item
+                    )
+                  : currentItems,
+              ...(fieldName !== 'license' && {
+                image_name: result.data.image_name,
+                image_url: absoluteImageUrl,
+                uploaded_at: result.data.uploaded_at,
+                isLocal: false,
+              }),
+            },
+          };
+        });
 
         toast.success('이미지가 추가되었습니다.');
       } else {
@@ -455,49 +481,62 @@ const MyHistoryPage = ({ onReAuthRequired }) => {
 
   // 자격증 항목 추가 핸들러
   const handleAddLicenseItem = () => {
-    setFormData(prev => ({
-      ...prev,
-      licenseData: {
-        ...prev.licenseData,
-        items: [
-          ...prev.licenseData.items,
-          {
-            image_name: '',
-            image_url: '',
-            uploaded_at: '',
-            isLocal: false,
-            licenseName: '',
-            issuingOrganization: '',
-            issueDate: '',
-            additionalInfo: '',
-          },
-        ],
-      },
-    }));
+    setFormData(prev => {
+      const currentLicenseData = prev.licenseData || {};
+      const currentItems = Array.isArray(currentLicenseData.items) ? currentLicenseData.items : [];
+
+      return {
+        ...prev,
+        licenseData: {
+          ...currentLicenseData,
+          items: [
+            ...currentItems,
+            {
+              image_name: '',
+              image_url: '',
+              uploaded_at: '',
+              isLocal: false,
+              licenseName: '',
+              issuingOrganization: '',
+              issueDate: '',
+              additionalInfo: '',
+            },
+          ],
+        },
+      };
+    });
   };
 
   // 자격증 항목 삭제 핸들러
   const handleRemoveLicenseItem = index => {
-    setFormData(prev => ({
-      ...prev,
-      licenseData: {
-        ...prev.licenseData,
-        items: prev.licenseData.items.filter((_, i) => i !== index),
-      },
-    }));
+    setFormData(prev => {
+      const currentLicenseData = prev.licenseData || {};
+      const currentItems = Array.isArray(currentLicenseData.items) ? currentLicenseData.items : [];
+
+      return {
+        ...prev,
+        licenseData: {
+          ...currentLicenseData,
+          items: currentItems.filter((_, i) => i !== index),
+        },
+      };
+    });
   };
 
   // 자격증 항목 내용 변경 핸들러
   const handleLicenseContentChange = (index, field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      licenseData: {
-        ...prev.licenseData,
-        items: prev.licenseData.items.map((item, i) =>
-          i === index ? { ...item, [field]: value } : item
-        ),
-      },
-    }));
+    setFormData(prev => {
+      const currentLicenseData = prev.licenseData || {};
+      const currentItems = Array.isArray(currentLicenseData.items) ? currentLicenseData.items : [];
+
+      return {
+        ...prev,
+        licenseData: {
+          ...currentLicenseData,
+          items: currentItems.map((item, i) => (i === index ? { ...item, [field]: value } : item)),
+        },
+      };
+    });
   };
 
   // 인스타그램 항목 내용 변경 핸들러
@@ -609,18 +648,72 @@ const MyHistoryPage = ({ onReAuthRequired }) => {
   // 사용자 정보 로드
   useEffect(() => {
     if (user) {
-      setFormData(prev => ({
-        ...prev,
-        license: user.license || '',
-        experience: user.experience || '',
-        education: user.education || '',
-        instagram: user.instagram || '',
-        // 추가 데이터 파싱
-        licenseData: parseAdditionalData(user.license, 'license'),
-        experienceData: parseAdditionalData(user.experience, 'experience'),
-        educationData: parseAdditionalData(user.education, 'education'),
-        instagramData: parseAdditionalData(user.instagram, 'instagram'),
-      }));
+      try {
+        setFormData(prev => ({
+          ...prev,
+          license: user.license || '',
+          experience: user.experience || '',
+          education: user.education || '',
+          instagram: user.instagram || '',
+          // 추가 데이터 파싱 (안전하게 처리)
+          licenseData: parseAdditionalData(user.license, 'license'),
+          experienceData: parseAdditionalData(user.experience, 'experience'),
+          educationData: parseAdditionalData(user.education, 'education'),
+          instagramData: parseAdditionalData(user.instagram, 'instagram'),
+        }));
+      } catch (error) {
+        console.error('사용자 데이터 파싱 오류:', error);
+        // 오류 발생 시 기본값으로 설정
+        setFormData(prev => ({
+          ...prev,
+          license: user.license || '',
+          experience: user.experience || '',
+          education: user.education || '',
+          instagram: user.instagram || '',
+          licenseData: {
+            items: [
+              {
+                image_name: '',
+                image_url: '',
+                uploaded_at: '',
+                isLocal: false,
+                licenseName: '',
+                issuingOrganization: '',
+                issueDate: '',
+              },
+            ],
+          },
+          experienceData: {
+            items: [
+              {
+                startDate: '',
+                endDate: '',
+                content: '',
+                status: '',
+              },
+            ],
+          },
+          educationData: {
+            items: [
+              {
+                startDate: '',
+                endDate: '',
+                content: '',
+                status: '',
+              },
+            ],
+          },
+          instagramData: {
+            image_name: '',
+            image_url: '',
+            uploaded_at: '',
+            isLocal: false,
+            accountName: '',
+            instagramLink: '',
+            description: '',
+          },
+        }));
+      }
       setLoading(false);
     }
   }, [user]);

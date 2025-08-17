@@ -22,6 +22,7 @@ const PersonalInfoPage = () => {
   const [positionsLoading, setPositionsLoading] = useState(true);
   const [previewImage, setPreviewImage] = useState('');
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [forceUpdate, setForceUpdate] = useState(0);
 
   // 이미지 확대 모달 상태
   const [imageModal, setImageModal] = useState({
@@ -168,6 +169,25 @@ const PersonalInfoPage = () => {
     }
   }, [user]);
 
+  // 강제 업데이트 시 상태 동기화
+  useEffect(() => {
+    console.log('🔄 강제 업데이트 트리거됨, forceUpdate:', forceUpdate);
+    if (user) {
+      console.log('🔄 사용자 정보로 상태 재동기화');
+      setFormData(prev => ({
+        ...prev,
+        name: user.name || '',
+        email: user.email || '',
+        phone: user.phone || '',
+        gender: user.gender || '',
+        nickname: user.nickname || '',
+        position_id: user.position_id || '',
+        team_id: user.team_id || '',
+        center_id: user.center_id || '',
+      }));
+    }
+  }, [forceUpdate, user]);
+
   const handleInputChange = e => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -297,15 +317,21 @@ const PersonalInfoPage = () => {
   };
 
   const handleSave = async () => {
+    console.log('🚀 저장 시작!');
+    console.log('📝 현재 폼 데이터:', formData);
+
     try {
       // 성별 필드 상태 확인
       const genderSelect = document.querySelector('select[name="gender"]');
+      console.log('🔍 성별 선택 요소:', genderSelect);
 
       // 성별 데이터 전처리
       let processedFormData = { ...formData };
       if (processedFormData.gender === '') {
         processedFormData.gender = null;
       }
+
+      console.log('🔧 전처리된 폼 데이터:', processedFormData);
 
       // 계좌번호는 별도로 처리하지 않음 (계좌 정보는 별도 API로 저장)
       const cleanFormData = Object.fromEntries(
@@ -320,7 +346,15 @@ const PersonalInfoPage = () => {
         })
       );
 
+      console.log('🧹 정리된 폼 데이터:', cleanFormData);
+
+      console.log('📤 전송할 데이터:', cleanFormData);
       const response = await userAPI.updateMyAccount(cleanFormData);
+      console.log('📥 API 응답 전체:', response);
+      console.log('📥 API 응답 데이터:', response.data);
+      console.log('📥 response.data.user:', response.data?.user);
+      console.log('📥 response.data.success:', response.data?.success);
+      console.log('📥 response.data.message:', response.data?.message);
 
       // 계좌 정보가 있으면 별도로 저장 (계좌번호 또는 이미지 중 하나라도 있으면)
       if (accountNumber.trim() || accountImageFile) {
@@ -362,10 +396,17 @@ const PersonalInfoPage = () => {
         }
       }
 
-      if (response.data && response.data.user) {
-        const updatedUser = response.data.user;
+      // API 응답 구조 확인 및 안전한 처리
+      const responseData = response.data || response;
+      const updatedUser = responseData.user || responseData;
 
+      console.log('📋 처리된 사용자 정보:', updatedUser);
+
+      if (updatedUser) {
+        // 즉시 폼 데이터 업데이트
+        console.log('🔄 폼 데이터 업데이트 시작');
         setFormData(prev => {
+          console.log('📋 이전 폼 데이터:', prev);
           const newFormData = {
             ...prev,
             name: updatedUser.name || prev.name,
@@ -377,9 +418,12 @@ const PersonalInfoPage = () => {
             team_id: updatedUser.team_id || prev.team_id,
             center_id: updatedUser.center_id || prev.center_id,
           };
+          console.log('✨ 새로 설정할 폼 데이터:', newFormData);
           return newFormData;
         });
+        console.log('✅ 폼 데이터 업데이트 완료');
 
+        // 프로필 이미지 업데이트
         if (updatedUser.profile_image_url) {
           const imageUrl = updatedUser.profile_image_url.startsWith('http')
             ? updatedUser.profile_image_url
@@ -388,17 +432,36 @@ const PersonalInfoPage = () => {
         } else {
           setPreviewImage('/img/profileDefault.png');
         }
+
+        // AuthContext의 사용자 정보도 즉시 업데이트
+        if (refreshUserInfo && typeof refreshUserInfo === 'function') {
+          try {
+            await refreshUserInfo();
+
+            // 추가로 현재 컴포넌트의 상태도 강제 업데이트
+            setTimeout(() => {
+              setFormData(prev => ({
+                ...prev,
+                name: updatedUser.name || prev.name,
+                email: updatedUser.email || prev.email,
+                phone: updatedUser.phone || prev.phone,
+                gender: updatedUser.gender !== undefined ? updatedUser.gender : prev.gender,
+                nickname: updatedUser.nickname || prev.nickname,
+                position_id: updatedUser.position_id || prev.position_id,
+                team_id: updatedUser.team_id || prev.team_id,
+                center_id: updatedUser.center_id || prev.center_id,
+              }));
+
+              // 강제 리렌더링
+              setForceUpdate(prev => prev + 1);
+            }, 100);
+          } catch (error) {
+            console.error('사용자 정보 새로고침 실패:', error);
+          }
+        }
       }
 
       toast.success('개인정보가 업데이트되었습니다.');
-
-      if (refreshUserInfo && typeof refreshUserInfo === 'function') {
-        try {
-          await refreshUserInfo();
-        } catch (error) {
-          // Silently handle refresh error
-        }
-      }
     } catch (err) {
       let errorMessage = '업데이트에 실패했습니다.';
       if (err.response?.data?.message) {

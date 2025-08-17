@@ -1071,7 +1071,7 @@ const uploadAdditionalImage = async (req, res, next) => {
       data: {
         image_name: imageName,
         image_url: imageUrl,
-        uploaded_at: newImageData.uploaded_at,
+        uploaded_at: new Date().toISOString(),
       },
     });
   } catch (err) {
