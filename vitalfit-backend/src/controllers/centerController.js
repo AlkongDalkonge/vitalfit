@@ -148,6 +148,84 @@ const getCenterById = async (req, res, next) => {
   }
 };
 
+// ✅ 센터 등록
+const createCenter = async (req, res, next) => {
+  try {
+    const {
+      name,
+      address,
+      phone,
+      description,
+      weekday_hours,
+      saturday_hours,
+      sunday_hours,
+      holiday_hours,
+      has_parking = false,
+      parking_fee,
+      parking_info,
+      directions,
+      status = 'active'
+    } = req.body;
+
+    // 필수 필드 검증
+    if (!name || !address || !phone) {
+      return res.status(400).json({
+        success: false,
+        message: '센터명, 주소, 전화번호는 필수 입력 항목입니다.',
+      });
+    }
+
+    // 센터명 중복 검사
+    const existingCenter = await Center.findOne({
+      where: { name: name.trim() }
+    });
+
+    if (existingCenter) {
+      return res.status(409).json({
+        success: false,
+        message: '이미 존재하는 센터명입니다.',
+      });
+    }
+
+    // 센터 생성
+    const newCenter = await Center.create({
+      name: name.trim(),
+      address: address.trim(),
+      phone: phone.trim(),
+      description: description?.trim() || null,
+      weekday_hours: weekday_hours?.trim() || null,
+      saturday_hours: saturday_hours?.trim() || null,
+      sunday_hours: sunday_hours?.trim() || null,
+      holiday_hours: holiday_hours?.trim() || null,
+      has_parking: has_parking === 'true' || has_parking === true,
+      parking_fee: parking_fee?.trim() || null,
+      parking_info: parking_info?.trim() || null,
+      directions: directions?.trim() || null,
+      status: status
+    });
+
+    // 생성된 센터 정보 조회 (이미지 포함)
+    const createdCenter = await Center.findByPk(newCenter.id, {
+      include: [
+        {
+          model: CenterImage,
+          as: 'images',
+          attributes: ['id', 'image_url', 'is_main'],
+          required: false,
+        },
+      ],
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: '센터 등록 성공',
+      data: createdCenter,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 // ✅ 센터 검색 (이름, 주소로 검색)
 const searchCenters = async (req, res, next) => {
   try {
@@ -434,6 +512,7 @@ const setMainImage = async (req, res, next) => {
 module.exports = {
   getAllCenters,
   getCenterById,
+  createCenter,
   searchCenters,
   updateCenter,
   deleteCenter,

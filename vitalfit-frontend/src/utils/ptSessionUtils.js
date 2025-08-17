@@ -8,7 +8,7 @@ export const getSessionTypeText = type => {
     case 'regular':
       return '일반';
     case 'free':
-      return '무료';
+      return '보너스';
     default:
       return '알 수 없음';
   }

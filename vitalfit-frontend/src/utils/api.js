@@ -93,6 +93,21 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
+      // 토큰 갱신 요청 자체가 401인 경우는 무한 루프 방지
+      if (originalRequest.url === '/users/refresh') {
+        console.log('토큰 갱신 실패 - 로그아웃 처리');
+        AuthService.removeAccessToken();
+        AuthService.removeRefreshToken();
+        localStorage.removeItem('rememberMe');
+
+        // 로그인 페이지로 리다이렉트
+        if (window.location.pathname !== '/login' && window.location.pathname !== '/') {
+          window.location.href = '/login';
+        }
+
+        return Promise.reject(error);
+      }
+
       try {
         console.log('🔄 401 에러 감지 - 토큰 갱신 시도');
 
@@ -116,7 +131,7 @@ api.interceptors.response.use(
         localStorage.removeItem('rememberMe');
 
         // 로그인 페이지로 리다이렉트
-        if (window.location.pathname !== '/login') {
+        if (window.location.pathname !== '/login' && window.location.pathname !== '/') {
           window.location.href = '/login';
         }
 
@@ -322,6 +337,25 @@ export const teamAPI = {
 
 // Payment API
 export const paymentAPI = {
+  getAllPayments: async (params = {}) => {
+    // 멤버별 결제 조회는 새로운 엔드포인트 사용
+    if (params.member_id) {
+      return await apiGet(`/members/${params.member_id}/payments`);
+    }
+    return await apiGet('/payments', { params });
+  },
+  getPayment: async id => {
+    return await apiGet(`/payments/${id}`);
+  },
+  createPayment: async data => {
+    return await apiPost('/payments', data);
+  },
+  updatePayment: async (id, data) => {
+    return await apiPut(`/payments/${id}`, data);
+  },
+  deletePayment: async id => {
+    return await apiDelete(`/payments/${id}`);
+  },
   getPaymentsByTrainerAndMonth: async (trainerId, year, month) => {
     return await apiGet('/pt-sessions/payments', {
       params: { trainer_id: trainerId, year, month },

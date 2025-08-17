@@ -13,6 +13,9 @@ import UserPage from './pages/UserPage';
 import MemberPage from './pages/MemberPage';
 import MemberPTSessionPage from './pages/MemberPTSessionPage';
 import SettlementPage from './pages/SettlementPage';
+import PayPage from './pages/PayPage';
+import PaymentPage from './pages/PaymentPage';
+import PaymentHistoryPage from './pages/PaymentHistoryPage';
 import NoticePage from './pages/NoticePage';
 import NoticeDetailPage from './pages/NoticeDetailPage';
 import ReportPage from './pages/ReportPage';
@@ -47,7 +50,8 @@ export default function App() {
           <Route path="user" element={<UserPage />} />
           <Route path="member" element={<MemberPage />} />
           <Route path="member/:memberId/pt-sessions" element={<MemberPTSessionPage />} />
-          <Route path="payment" element={<SettlementPage />} />
+          <Route path="pay" element={<PayPage />} />
+          <Route path="payment" element={<PaymentPage />} />
           <Route path="notice" element={<NoticePage />} />
           <Route path="notice/:id" element={<NoticeDetailPage />} />
           <Route path="report" element={<ReportPage />} />
@@ -86,6 +90,28 @@ export default function App() {
         >
           <Route index element={<MemberPage />} />
           <Route path=":memberId/pt-sessions" element={<MemberPTSessionPage />} />
+        </Route>
+
+        <Route
+          path="/pay/*"
+          element={
+            <ProtectedRoute>
+              <Layout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<PayPage />} />
+        </Route>
+
+        <Route
+          path="/payment-history/*"
+          element={
+            <ProtectedRoute>
+              <Layout />
+            </ProtectedRoute>
+          }
+        >
+          <Route path=":memberId" element={<PaymentHistoryPage />} />
         </Route>
 
         <Route

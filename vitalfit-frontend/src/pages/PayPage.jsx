@@ -3,14 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import MemberEditModal from './MemberEditModal';
 import MemberCreateModal from './MemberCreateModal';
 import { useMember, useFilters } from '../utils/hooks';
-import { getStatusText, statusOptions } from '../utils/memberUtils';
+import { getStatusText } from '../utils/memberUtils';
 
-const MemberPage = () => {
+const PayPage = () => {
   const navigate = useNavigate();
 
-  // 상태 필터 관련 상태
-  const [statusFilter, setStatusFilter] = useState('');
-  const [showStatusDropdown, setShowStatusDropdown] = useState(false);
+
 
   // 커스텀 훅 사용
   const {
@@ -58,32 +56,10 @@ const MemberPage = () => {
     loadData();
   }, []);
 
-  // 드롭다운 외부 클릭 시 닫기
-  useEffect(() => {
-    const handleClickOutside = event => {
-      if (!event.target.closest('.dropdown-container')) {
-        setShowCenterDropdown(false);
-        setShowTrainerDropdown(false);
-        setShowStatusDropdown(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
-
   // 즉시 필터링 적용 함수
   const filterMembersImmediate = async (centerId, trainerName) => {
     try {
       const filters = buildImmediateFilters(centerId, trainerName);
-      
-      // 상태 필터 추가
-      if (statusFilter && statusFilter !== '전체선택') {
-        filters.status = statusFilter;
-      }
-      
       await fetchMembers(filters);
 
       // 검색어가 있으면 검색 필터링도 적용
@@ -107,16 +83,6 @@ const MemberPage = () => {
     handleTrainerFilterChange(value, filterMembersImmediate);
   };
 
-  const onStatusFilterChange = value => {
-    setStatusFilter(value);
-    if (value === '전체선택') {
-      setStatusFilter('');
-    }
-    filterMembersImmediate(centerFilter, trainerFilter);
-  };
-
-
-
   // 기타 핸들러들
   const handleRegisterMember = () => {
     setIsCreateModalOpen(true);
@@ -129,9 +95,13 @@ const MemberPage = () => {
     }
   };
 
-  const handleViewPTSessions = memberId => {
-    navigate(`/member/${memberId}/pt-sessions`);
+  const handleViewPaymentHistory = memberId => {
+    console.log('결제내역 조회 클릭됨, memberId:', memberId);
+    console.log('이동할 경로:', `/payment-history/${memberId}`);
+    navigate(`/payment-history/${memberId}`);
   };
+
+
 
   if (loading) {
     return (
@@ -146,10 +116,10 @@ const MemberPage = () => {
       <div className="flex flex-col gap-6 flex-1 pb-0">
         {/* 최상단 제목 */}
         <div
-          data-layer="모든 고객"
+          data-layer="PT 결제"
           className="text-black text-3xl font-extrabold font-['Nunito'] bg-white rounded-lg p-4"
         >
-          모든 고객
+          PT 결제
         </div>
 
         {/* 필터 및 총건수 섹션 */}
@@ -287,68 +257,6 @@ const MemberPage = () => {
               </div>
             </div>
 
-            {/* 상태 필터 */}
-            <div
-              data-layer="Input Field"
-              data-property-1="Small"
-              className="w-[120px] h-[30px] flex flex-col justify-start items-start dropdown-container relative z-50"
-            >
-              <div
-                data-layer="Rectangle 3"
-                className="w-[120px] h-[30px] bg-sky-50 rounded-[8px] border border-gray-200 relative"
-              >
-                <button
-                  onClick={() => setShowStatusDropdown(!showStatusDropdown)}
-                  className="w-full h-full flex justify-between items-center px-3"
-                >
-                  <div
-                    data-layer="Placeholder"
-                    className={`Placeholder justify-start text-xs font-normal font-['Nunito'] leading-normal ${
-                      statusFilter ? 'text-neutral-900' : 'text-neutral-400'
-                    }`}
-                  >
-                    {statusFilter ? statusOptions.find(s => s.value === statusFilter)?.label || statusFilter : '상태'}
-                  </div>
-                  <svg
-                    className="w-3 h-3 text-neutral-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                </button>
-
-                {/* 드롭다운 메뉴 */}
-                {showStatusDropdown && (
-                  <div className="absolute top-full left-0 w-[120px] bg-white border border-gray-200 rounded-[8px] shadow-lg z-50 mt-1">
-                    <div className="py-1">
-                      <button
-                        onClick={() => onStatusFilterChange('전체선택')}
-                        className="w-full px-3 py-1.5 text-left text-xs text-neutral-600 hover:bg-sky-50"
-                      >
-                        전체선택
-                      </button>
-                      {statusOptions && statusOptions.map(status => (
-                        <button
-                          key={status.value}
-                          onClick={() => onStatusFilterChange(status.value)}
-                          className="w-full px-3 py-1.5 text-left text-xs text-neutral-600 hover:bg-sky-50"
-                        >
-                          {status.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
             {/* 총건수 */}
             <div
               data-layer="Frame 40"
@@ -424,10 +332,10 @@ const MemberPage = () => {
                       상태
                     </div>
                     <div
-                      data-layer="PT 기록"
+                      data-layer="결제 내역"
                       className="flex-[1] min-w-[90px] justify-start text-neutral-800 text-sm font-semibold font-['Nunito'] leading-normal"
                     >
-                      PT 기록
+                      결제 내역
                     </div>
 
                     {/* 우측 여유 */}
@@ -475,13 +383,15 @@ const MemberPage = () => {
                         </div>
                         <div
                           data-layer="상태"
-                          className="flex-[1] min-w-[90px] justify-start text-neutral-600 text-sm font-normal font-['Nunito'] leading-normal"
+                          className="flex-[1] min-w-[90px] justify-start"
                         >
-                          {getStatusText(member.status)}
+                          <span className="text-neutral-600 text-sm font-normal font-['Nunito'] leading-normal">
+                            {getStatusText(member.status)}
+                          </span>
                         </div>
-                        <div data-layer="PT 기록" className="flex-[1] min-w-[90px] justify-start">
+                        <div data-layer="결제 내역" className="flex-[1] min-w-[90px] justify-start">
                           <button
-                            onClick={() => handleViewPTSessions(member.id)}
+                            onClick={() => handleViewPaymentHistory(member.id)}
                             className="text-cyan-600 text-sm font-normal font-['Nunito'] leading-normal hover:text-cyan-800 hover:underline cursor-pointer transition-colors duration-200"
                           >
                             조회
@@ -498,24 +408,11 @@ const MemberPage = () => {
               </div>
             </div>
 
-            {/* 고객 등록 버튼 */}
-            <div className="flex justify-start mt-16 mb-0">
-              <button
-                onClick={handleRegisterMember}
-                data-layer="Button"
-                data-property-1="Default"
-                className="Button w-52 h-11 p-2.5 bg-gradient-to-br from-blue-400 to-blue-600 rounded-[10px] inline-flex justify-center items-center gap-2.5 hover:from-blue-500 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/15 before:via-transparent before:to-transparent before:pointer-events-none"
-              >
-                <div
-                  data-layer="Primary Button"
-                  className="PrimaryButton justify-start text-white text-sm font-normal font-['Nunito'] leading-normal"
-                >
-                  고객 등록
-                </div>
-              </button>
-            </div>
+
           </div>
         </div>
+
+
 
         {/* 멤버 수정 모달 */}
         <MemberEditModal
@@ -536,4 +433,4 @@ const MemberPage = () => {
   );
 };
 
-export default MemberPage;
+export default PayPage; 

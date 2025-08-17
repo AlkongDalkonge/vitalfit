@@ -9,7 +9,9 @@ import CenterPage from '../pages/CenterPage';
 import UserPage from '../pages/UserPage';
 import MemberPage from '../pages/MemberPage';
 import MemberPTSessionPage from '../pages/MemberPTSessionPage';
+import PayPage from '../pages/PayPage';
 import PaymentPage from '../pages/PaymentPage';
+import PaymentHistoryPage from '../pages/PaymentHistoryPage';
 import NoticePage from '../pages/NoticePage';
 import NoticeDetailPage from '../pages/NoticeDetailPage';
 import ReportPage from '../pages/ReportPage';
@@ -29,7 +31,9 @@ const AppRouter = () => {
       <Route path="/user" element={<UserPage />} />
       <Route path="/member" element={<MemberPage />} />
       <Route path="/member/:memberId/pt-sessions" element={<MemberPTSessionPage />} />
+      <Route path="/pay" element={<PayPage />} />
       <Route path="/payment" element={<PaymentPage />} />
+      <Route path="/payment-history/:memberId" element={<PaymentHistoryPage />} />
       {/* 공지사항 목록 */}
       <Route path="/notice" element={<NoticePage />} />
       <Route path="/notice/:id" element={<NoticeDetailPage />} />

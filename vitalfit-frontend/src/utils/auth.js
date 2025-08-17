@@ -1,4 +1,5 @@
 import api from './api';
+import axios from 'axios';
 
 class AuthService {
   // Access Token 관리 (Remember Me에 따라 다른 저장소 사용)
@@ -117,6 +118,8 @@ class AuthService {
     const bufferTime = 5 * 60 * 1000; // 5분
     return now.getTime() > expiryDate.getTime() - bufferTime;
   }
+
+
 
   // 자동 갱신 타이머 설정
   static setupAutoRefresh(token, rememberMe) {

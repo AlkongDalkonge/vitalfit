@@ -14,9 +14,6 @@ export const useMemberForm = (initialData = null, isOpen = false) => {
     trainer_id: '',
     join_date: new Date().toISOString().split('T')[0], // 오늘 날짜를 기본값으로 설정
     expire_date: '',
-    total_sessions: '',
-    used_sessions: '',
-    free_sessions: '',
     memo: '',
     status: 'active',
   };
@@ -37,16 +34,13 @@ export const useMemberForm = (initialData = null, isOpen = false) => {
           name: initialData.name || '',
           phone: initialData.phone || '',
           center_id: initialData.center_id || '',
-          trainer_id: initialData.trainer_id || '',
+          trainer_id: initialData.trainer_id || initialData.trainer?.id || '',
           join_date: initialData.join_date
             ? new Date(initialData.join_date).toISOString().split('T')[0]
             : '',
           expire_date: initialData.expire_date
             ? new Date(initialData.expire_date).toISOString().split('T')[0]
             : '',
-          total_sessions: initialData.total_sessions || '',
-          used_sessions: initialData.used_sessions || '',
-          free_sessions: initialData.free_sessions || '',
           memo: initialData.memo || '',
           status: initialData.status || 'active',
         });
@@ -124,6 +118,10 @@ export const useMemberForm = (initialData = null, isOpen = false) => {
       newErrors.trainer_id = '트레이너를 선택해주세요';
     }
 
+    if (!formData.status) {
+      newErrors.status = '상태를 선택해주세요';
+    }
+
     // 가입일 검증 (수정 시에는 선택사항이지만, 있으면 유효성 검사)
     if (formData.join_date && formData.join_date.trim() !== '') {
       const joinDate = new Date(formData.join_date);
@@ -139,16 +137,6 @@ export const useMemberForm = (initialData = null, isOpen = false) => {
 
       if (expireDate <= joinDate) {
         newErrors.expire_date = '만료일은 가입일보다 늦어야 합니다';
-      }
-    }
-
-    // 세션 수 검증
-    if (formData.total_sessions && formData.used_sessions) {
-      const total = parseInt(formData.total_sessions);
-      const used = parseInt(formData.used_sessions);
-
-      if (used > total) {
-        newErrors.used_sessions = '사용 세션은 총 세션 수보다 클 수 없습니다';
       }
     }
 

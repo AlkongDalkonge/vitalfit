@@ -548,6 +548,50 @@ const getMembersByName = async (req, res) => {
   }
 };
 
+// 멤버 개별 조회
+const getMember = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const member = await Member.findByPk(id, {
+      include: [
+        {
+          model: Center,
+          as: 'center',
+          attributes: ['id', 'name', 'address'],
+        },
+        {
+          model: User,
+          as: 'trainer',
+          attributes: ['id', 'name', 'email', 'nickname'],
+        },
+      ],
+    });
+
+    if (!member) {
+      return res.status(404).json({
+        success: false,
+        message: '존재하지 않는 멤버입니다.',
+      });
+    }
+
+    res.json({
+      success: true,
+      message: '멤버 정보를 성공적으로 조회했습니다.',
+      data: {
+        member,
+      },
+    });
+  } catch (error) {
+    console.error('멤버 조회 오류:', error);
+    res.status(500).json({
+      success: false,
+      message: '멤버 조회 중 오류가 발생했습니다.',
+      error: error.message,
+    });
+  }
+};
+
 // 센터와 유저 더미데이터 생성 (테스트용)
 const createDummyCenterAndUser = async (req, res) => {
   try {
@@ -598,6 +642,7 @@ module.exports = {
   createMember,
   updateMember,
   getAllMembers,
+  getMember,
   getMembersByCenter,
   getMembersByTrainer,
   getMembersByName,
