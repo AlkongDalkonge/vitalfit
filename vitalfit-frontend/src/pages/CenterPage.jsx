@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { centerAPI, memberAPI } from '../utils/api';
-import CenterImageModal from '../components/CenterImageModal';
+import ImageUploader from '../components/ImageUploader';
+import CenterCreateModal from './CenterCreateModal';
+import CenterEditModal from './CenterEditModal';
 import { useUser } from '../utils/hooks';
 
 // API 기본 URL 환경 변수
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+const API_BASE_URL = 'http://localhost:3001';
 
 const CenterPage = () => {
   const [expandedCenter, setExpandedCenter] = useState(null);
@@ -13,9 +15,18 @@ const CenterPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // 이미지 모달 상태
-  const [imageModalOpen, setImageModalOpen] = useState(false);
-  const [selectedCenter, setSelectedCenter] = useState(null);
+  // 이미지 관리 상태 (센터 ID별로 관리)
+  const [imageManagementOpen, setImageManagementOpen] = useState(null);
+  const [centerImages, setCenterImages] = useState({});
+  const [imageLoading, setImageLoading] = useState({});
+  const [imageUploading, setImageUploading] = useState({});
+
+  // 센터 등록 모달 상태
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+
+  // 센터 수정 모달 상태
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [selectedCenterForEdit, setSelectedCenterForEdit] = useState(null);
 
   // 유저 데이터 가져오기
   const { users: allUsers } = useUser();
@@ -47,16 +58,127 @@ const CenterPage = () => {
     setExpandedCenter(expandedCenter === centerId ? null : centerId);
   };
 
-  // 이미지 관리 모달 열기
-  const handleImageManagement = center => {
-    setSelectedCenter(center);
-    setImageModalOpen(true);
+  // 이미지 관리 토글
+  const toggleImageManagement = async centerId => {
+    if (imageManagementOpen === centerId) {
+      setImageManagementOpen(null);
+    } else {
+      setImageManagementOpen(centerId);
+      // 이미지 관리가 열릴 때 해당 센터의 이미지 로드
+      if (!centerImages[centerId]) {
+        await loadCenterImages(centerId);
+      }
+    }
   };
 
-  // 이미지 관리 모달 닫기
-  const handleImageModalClose = () => {
-    setImageModalOpen(false);
-    setSelectedCenter(null);
+  // 센터 이미지 로드
+  const loadCenterImages = async centerId => {
+    setImageLoading(prev => ({ ...prev, [centerId]: true }));
+    try {
+      const result = await centerAPI.getCenterById(centerId);
+      if (result.success && result.data.images) {
+        setCenterImages(prev => ({
+          ...prev,
+          [centerId]: result.data.images.map(img => ({
+            id: img.id,
+            url: img.image_url,
+            image_url: img.image_url,
+            isMain: img.is_main,
+            name: img.image_name || 'center-image',
+          })),
+        }));
+      } else {
+        setCenterImages(prev => ({ ...prev, [centerId]: [] }));
+      }
+    } catch (error) {
+      console.error('센터 이미지 로드 실패:', error);
+      alert('이미지를 불러오는데 실패했습니다.');
+    } finally {
+      setImageLoading(prev => ({ ...prev, [centerId]: false }));
+    }
+  };
+
+  // 새 이미지 업로드
+  const handleImageUpload = async (centerId, newImages) => {
+    setImageUploading(prev => ({ ...prev, [centerId]: true }));
+
+    try {
+      const currentImages = centerImages[centerId] || [];
+      const currentImageCount = currentImages.length;
+      const uploadPromises = newImages.map(async (imageData, index) => {
+        const formData = new FormData();
+        formData.append('image', imageData.file);
+        formData.append('center_id', centerId);
+        const isMain = currentImageCount === 0 && index === 0;
+        formData.append('is_main', isMain ? 'true' : 'false');
+
+        const result = await centerAPI.uploadImage(formData);
+
+        return {
+          id: result.data.id,
+          url: result.data.image_url,
+          image_url: result.data.image_url,
+          isMain: result.data.is_main,
+          name: imageData.name,
+        };
+      });
+
+      const uploadedImages = await Promise.all(uploadPromises);
+      setCenterImages(prev => ({
+        ...prev,
+        [centerId]: [...(prev[centerId] || []), ...uploadedImages],
+      }));
+
+      // 센터 데이터 새로고침
+      handleImagesUpdated();
+    } catch (error) {
+      console.error('이미지 업로드 실패:', error);
+      alert(error.message || '이미지 업로드에 실패했습니다.');
+    } finally {
+      setImageUploading(prev => ({ ...prev, [centerId]: false }));
+    }
+  };
+
+  // 이미지 삭제
+  const handleRemoveImage = async (centerId, imageId) => {
+    const confirmDelete = window.confirm('이 이미지를 삭제하시겠습니까?');
+    if (!confirmDelete) return;
+
+    try {
+      await centerAPI.deleteImage(imageId);
+
+      setCenterImages(prev => ({
+        ...prev,
+        [centerId]: prev[centerId].filter(img => img.id !== imageId),
+      }));
+
+      // 센터 데이터 새로고침
+      handleImagesUpdated();
+    } catch (error) {
+      console.error('이미지 삭제 실패:', error);
+      alert('이미지 삭제에 실패했습니다.');
+    }
+  };
+
+  // 메인 이미지 설정
+  const handleSetMainImage = async (centerId, imageId) => {
+    try {
+      await centerAPI.setMainImage(imageId);
+      // 이미지 목록 업데이트
+      setCenterImages(prev => ({
+        ...prev,
+        [centerId]: prev[centerId].map(img => ({
+          ...img,
+          isMain: img.id === imageId,
+        })),
+      }));
+
+      // 센터 데이터 새로고침
+      handleImagesUpdated();
+    } catch (error) {
+      console.error('메인 이미지 설정 실패:', error);
+      alert('메인 이미지 설정에 실패했습니다.');
+    }
   };
 
   // 이미지 업데이트 후 센터 데이터 새로고침
@@ -73,21 +195,22 @@ const CenterPage = () => {
     fetchCenters();
   };
 
-  // 센터 상태 변경
-  const handleStatusChange = async (centerId, newStatus) => {
-    try {
-      await centerAPI.updateCenter(centerId, { status: newStatus });
+  // 센터 등록 후 데이터 새로고침
+  const handleCenterCreated = newCenter => {
+    setCenters(prevCenters => [...prevCenters, newCenter]);
+  };
 
-      // 로컬 상태 업데이트
-      setCenters(prevCenters =>
-        prevCenters.map(center =>
-          center.id === centerId ? { ...center, status: newStatus } : center
-        )
-      );
-    } catch (err) {
-      console.error('센터 상태 변경 실패:', err);
-      alert('상태 변경에 실패했습니다.');
-    }
+  // 센터 수정 모달 열기
+  const handleEditCenter = center => {
+    setSelectedCenterForEdit(center);
+    setEditModalOpen(true);
+  };
+
+  // 센터 수정 후 데이터 새로고침
+  const handleCenterUpdated = updatedCenter => {
+    setCenters(prevCenters =>
+      prevCenters.map(center => (center.id === updatedCenter.id ? updatedCenter : center))
+    );
   };
 
   // 로딩 상태
@@ -130,7 +253,9 @@ const CenterPage = () => {
 
   return (
     <div className="max-w-7xl mx-auto">
-      <h1 className="text-3xl font-bold text-gray-800 mb-6">지점 관리</h1>
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold text-gray-800">지점 관리</h1>
+      </div>
 
       {/* 센터별 통계 */}
       <div className="mb-6 pl-[30px] flex justify-center">
@@ -202,32 +327,21 @@ const CenterPage = () => {
                 >
                   <span className="font-medium text-gray-800">{center.name}</span>
                   <div className="flex items-center gap-3">
-                    <button
-                      onClick={e => {
-                        e.stopPropagation();
-                        const nextStatus =
-                          center.status === 'active'
-                            ? 'inactive'
-                            : center.status === 'inactive'
-                              ? 'closed'
-                              : 'active';
-                        handleStatusChange(center.id, nextStatus);
-                      }}
-                      className={`px-2 py-1 rounded-full text-xs font-medium cursor-pointer hover:opacity-80 transition-opacity ${
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs font-medium ${
                         center.status === 'active'
                           ? 'bg-green-100 text-green-800'
                           : center.status === 'inactive'
                             ? 'bg-yellow-100 text-yellow-800'
                             : 'bg-red-100 text-red-800'
                       }`}
-                      title="클릭하여 상태 변경"
                     >
                       {center.status === 'active'
                         ? '운영중'
                         : center.status === 'inactive'
                           ? '일시중단'
                           : '폐점'}
-                    </button>
+                    </span>
                     <svg
                       className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${
                         expandedCenter === center.id ? 'rotate-180' : ''
@@ -251,61 +365,71 @@ const CenterPage = () => {
                   <div className="px-6 py-6 border-t border-gray-200">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 px-6">
                       {/* 좌측: 센터 이미지 */}
-                      {center.images && center.images.length > 0 && (
-                        <div>
-                          <h4 className="font-semibold text-gray-800 mb-3">센터 이미지</h4>
+                      <div>
+                        <h4 className="font-semibold text-gray-800 mb-3">센터 이미지</h4>
 
-                          {/* 메인 이미지 (큰 크기) */}
-                          {center.images.find(img => img.is_main) && (
-                            <div className="mb-4">
-                              <div className="relative">
-                                <img
-                                  src={`${API_BASE_URL}${center.images.find(img => img.is_main).image_url}`}
-                                  alt={`${center.name} 메인 이미지`}
-                                  className="w-full h-64 md:h-80 object-cover rounded-lg shadow-md"
-                                  onError={e => {
-                                    e.target.src = '/logo.png';
-                                  }}
-                                />
-                              </div>
+                        {/* 메인 이미지 (큰 크기) */}
+                        {center.images &&
+                        center.images.length > 0 &&
+                        center.images.find(img => img.is_main) ? (
+                          <div className="mb-4">
+                            <div className="relative">
+                              <img
+                                src={`${API_BASE_URL}${center.images.find(img => img.is_main).image_url}`}
+                                alt={`${center.name} 메인 이미지`}
+                                className="w-full h-64 md:h-80 object-cover rounded-lg shadow-md"
+                                onError={e => {
+                                  e.target.src = '/img/2center4.jpg';
+                                }}
+                              />
                             </div>
-                          )}
+                          </div>
+                        ) : (
+                          <div className="mb-4">
+                            <div className="relative">
+                              <img
+                                src="/img/2center4.jpg"
+                                alt={`${center.name} 기본 이미지`}
+                                className="w-full h-64 md:h-80 object-cover rounded-lg shadow-md"
+                              />
+                            </div>
+                          </div>
+                        )}
 
-                          {/* 나머지 이미지들 (작은 크기, 클릭 시 확대) */}
-                          {center.images.filter(img => !img.is_main).length > 0 && (
-                            <div>
-                              <div className="grid grid-cols-3 md:grid-cols-4 gap-3">
-                                {center.images
-                                  .filter(img => !img.is_main)
-                                  .map((image, index) => (
-                                    <div
-                                      key={image.id || index}
-                                      className="aspect-square bg-gray-200 rounded-lg overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-200"
-                                      onClick={() => {
-                                        // 이미지 클릭 시 새 창에서 크게 보기
-                                        const imgUrl = `${API_BASE_URL}${image.image_url}`;
-                                        window.open(
-                                          imgUrl,
-                                          '_blank',
-                                          'width=800,height=600,scrollbars=yes,resizable=yes'
-                                        );
+                        {/* 나머지 이미지들 (작은 크기, 클릭 시 확대) */}
+                        {center.images && center.images.filter(img => !img.is_main).length > 0 && (
+                          <div>
+                            <div className="grid grid-cols-3 md:grid-cols-4 gap-3">
+                              {center.images
+                                .filter(img => !img.is_main)
+                                .map((image, index) => (
+                                  <div
+                                    key={image.id || index}
+                                    className="aspect-square bg-gray-200 rounded-lg overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-200"
+                                    onClick={() => {
+                                      // 이미지 클릭 시 새 창에서 크게 보기
+                                      const imgUrl = `${API_BASE_URL}${image.image_url}`;
+                                      window.open(
+                                        imgUrl,
+                                        '_blank',
+                                        'width=800,height=600,scrollbars=yes,resizable=yes'
+                                      );
+                                    }}
+                                  >
+                                    <img
+                                      src={`${API_BASE_URL}${image.image_url}`}
+                                      alt={`${center.name} 이미지 ${index + 1}`}
+                                      className="w-full h-full object-cover hover:scale-110 transition-transform duration-200"
+                                      onError={e => {
+                                        e.target.src = '/img/2center4.jpg';
                                       }}
-                                    >
-                                      <img
-                                        src={`${API_BASE_URL}${image.image_url}`}
-                                        alt={`${center.name} 이미지 ${index + 1}`}
-                                        className="w-full h-full object-cover hover:scale-110 transition-transform duration-200"
-                                        onError={e => {
-                                          e.target.src = '/logo.png';
-                                        }}
-                                      />
-                                    </div>
-                                  ))}
-                              </div>
+                                    />
+                                  </div>
+                                ))}
                             </div>
-                          )}
-                        </div>
-                      )}
+                          </div>
+                        )}
+                      </div>
 
                       {/* 우측: 센터 정보 */}
                       <div className="space-y-6">
@@ -386,13 +510,124 @@ const CenterPage = () => {
                     <div className="flex justify-end items-center mt-6 pt-4 border-t border-gray-200">
                       <div className="flex gap-3">
                         <button
-                          onClick={() => handleImageManagement(center)}
+                          onClick={() => handleEditCenter(center)}
+                          className="px-4 py-2 text-blue-600 border border-blue-300 rounded-lg hover:bg-blue-50 transition-colors duration-200"
+                        >
+                          수정
+                        </button>
+                        <button
+                          onClick={() => toggleImageManagement(center.id)}
                           className="px-4 py-2 text-purple-600 border border-purple-300 rounded-lg hover:bg-purple-50 transition-colors duration-200"
                         >
                           이미지
                         </button>
                       </div>
                     </div>
+
+                    {/* 이미지 관리 섹션 */}
+                    {imageManagementOpen === center.id && (
+                      <div className="mt-6 pt-6 border-t border-gray-200">
+                        <div className="flex justify-between items-center mb-4">
+                          <h4 className="font-semibold text-gray-800">이미지 관리</h4>
+                          <button
+                            onClick={() => toggleImageManagement(center.id)}
+                            className="text-gray-500 hover:text-gray-700"
+                          >
+                            <svg
+                              className="w-5 h-5"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M6 18L18 6M6 6l12 12"
+                              />
+                            </svg>
+                          </button>
+                        </div>
+                        {imageLoading[center.id] ? (
+                          <div className="text-center py-8">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
+                            <p className="mt-2 text-gray-600">이미지를 불러오는 중...</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-4">
+                            {/* 이미지 업로드 */}
+                            <div>
+                              <h5 className="font-medium text-gray-700 mb-2">새 이미지 추가</h5>
+                              <ImageUploader
+                                onImageUpload={newImages => handleImageUpload(center.id, newImages)}
+                                currentImages={centerImages[center.id] || []}
+                                maxImages={10}
+                                isMainImageRequired={false}
+                                disabled={imageUploading[center.id] || false}
+                              />
+                            </div>
+
+                            {/* 기존 이미지 목록 */}
+                            {centerImages[center.id] && centerImages[center.id].length > 0 && (
+                              <div>
+                                <h5 className="font-medium text-gray-700 mb-2">등록된 이미지</h5>
+                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                                  {centerImages[center.id].map((image, index) => (
+                                    <div key={image.id} className="relative group">
+                                      <div className="aspect-square bg-gray-200 rounded-lg overflow-hidden">
+                                        <img
+                                          src={`${API_BASE_URL}${image.image_url}`}
+                                          alt={`${center.name} 이미지 ${index + 1}`}
+                                          className="w-full h-full object-cover"
+                                          onError={e => {
+                                            e.target.src = '/img/2center4.jpg';
+                                          }}
+                                        />
+                                      </div>
+
+                                      {/* 이미지 오버레이 (호버 시 표시) */}
+                                      <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-200 flex items-center justify-center">
+                                        <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex gap-2">
+                                          {!image.isMain && (
+                                            <button
+                                              onClick={() =>
+                                                handleSetMainImage(center.id, image.id)
+                                              }
+                                              className="px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
+                                            >
+                                              메인
+                                            </button>
+                                          )}
+                                          <button
+                                            onClick={() => handleRemoveImage(center.id, image.id)}
+                                            className="px-2 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700"
+                                          >
+                                            삭제
+                                          </button>
+                                        </div>
+                                      </div>
+
+                                      {/* 메인 이미지 표시 */}
+                                      {image.isMain && (
+                                        <div className="absolute top-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded">
+                                          메인
+                                        </div>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {(!centerImages[center.id] || centerImages[center.id].length === 0) && (
+                              <div className="text-center py-8 text-gray-500">
+                                등록된 이미지가 없습니다.
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -401,12 +636,29 @@ const CenterPage = () => {
         )}
       </div>
 
-      {/* 이미지 관리 모달 */}
-      <CenterImageModal
-        isOpen={imageModalOpen}
-        onClose={handleImageModalClose}
-        center={selectedCenter}
-        onImagesUpdated={handleImagesUpdated}
+      {/* 센터 등록 버튼 */}
+      <div className="flex justify-start mt-6">
+        <button
+          onClick={() => setCreateModalOpen(true)}
+          className="px-6 py-3 bg-gradient-to-br from-blue-400 to-blue-600 text-white text-sm rounded-lg hover:from-blue-500 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+        >
+          센터 등록
+        </button>
+      </div>
+
+      {/* 센터 등록 모달 */}
+      <CenterCreateModal
+        isOpen={createModalOpen}
+        onClose={() => setCreateModalOpen(false)}
+        onCreate={handleCenterCreated}
+      />
+
+      {/* 센터 수정 모달 */}
+      <CenterEditModal
+        isOpen={editModalOpen}
+        onClose={() => setEditModalOpen(false)}
+        onUpdate={handleCenterUpdated}
+        center={selectedCenterForEdit}
       />
     </div>
   );

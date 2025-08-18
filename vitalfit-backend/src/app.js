@@ -17,6 +17,7 @@ const bonusRouter = require('./routes/bonusRoute');
 const commissionRateRouter = require('./routes/commissionRateRoute');
 const jobRunRouter = require('./routes/jobRunRoute');
 const settlementRouter = require('./routes/settlementRoute');
+const emailRouter = require('./routes/emailRoute');
 
 const { sequelize } = require('./models');
 const errorHandler = require('./middlewares/errorHandler');
@@ -33,7 +34,12 @@ app.use('/uploads', express.static('public/uploads'));
 // origin: "*" + credentials: true 는 사실 브라우저에서 보안 정책 때문에 같이 쓰면 안 되는 조합임.
 // 만약 인증 쿠키(credential)를 쓸 거면, origin을 특정 도메인으로 제한하는 게 좋아.
 // 당장은 문제 없지만 배포할 땐 이 점 고려해줘!
-app.use(cors({ origin: '*', credentials: true }));
+app.use(
+  cors({
+    origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
+    credentials: true,
+  })
+);
 app.use(morgan('dev'));
 
 // 라우터 등록
@@ -50,6 +56,7 @@ app.use('/api/bonus', bonusRouter);
 app.use('/api/commission-rates', commissionRateRouter);
 app.use('/api/job-runs', jobRunRouter);
 app.use('/api/settlements', settlementRouter);
+app.use('/api/email', emailRouter);
 
 // 404 처리
 app.use((req, res) => {
@@ -66,8 +73,8 @@ app.use(errorHandler);
 const PORT = process.env.SERVER_PORT || 3001;
 
 sequelize
+  .sync({ force: false, alter: true })
   // .sync({ force: true })
-  .sync({ force: false })
   .then(async () => {
     console.log('1️⃣ DB 테이블 생성 완료!');
 

@@ -10,16 +10,26 @@ const config = require(__dirname + '/../config/config.js')[env];
 const db = {};
 
 let sequelize;
-if (config.use_env_variable) {
+if (config && config.use_env_variable) {
   sequelize = new Sequelize(process.env[config.use_env_variable], config);
-} else if (config.dialect === 'sqlite') {
+} else if (config && config.dialect === 'sqlite') {
   sequelize = new Sequelize({
     dialect: 'sqlite',
     storage: config.storage,
-    logging: config.logging
+    logging: config.logging,
+  });
+} else if (config) {
+  sequelize = new Sequelize(config.database, config.username, config.password, {
+    host: config.host,
+    port: config.port,
+    dialect: config.dialect,
+    logging: config.logging,
+    timezone: config.timezone,
+    ssl: config.ssl,
   });
 } else {
-  sequelize = new Sequelize(config.database, config.username, config.password, config);
+  console.error('Database configuration not found for environment:', env);
+  process.exit(1);
 }
 
 fs.readdirSync(__dirname)

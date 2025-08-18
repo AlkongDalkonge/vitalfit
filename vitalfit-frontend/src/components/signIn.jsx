@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-toastify';
@@ -7,42 +7,113 @@ export default function SignIn() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
-  const [saveAccount, setSaveAccount] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const { login, isAuthenticated, loading: authLoading } = useAuth();
+  // 에러 상태 변경 시 토스티로 표시
+  useEffect(() => {
+    if (error) {
+      showToastOnce('error', error, 'error');
+      // 에러 토스티 표시 후 에러 상태 초기화 (중복 토스티 방지)
+      const timer = setTimeout(() => {
+        setError('');
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
+
+  // 비밀번호 표시/숨김 상태 추가
+  const [showPassword, setShowPassword] = useState(false);
+
+  // 중복 토스티 방지를 위한 토스티 ID 관리
+  const [toastIds, setToastIds] = useState({
+    loginInfo: null,
+    loginSuccess: null,
+    error: null,
+  });
+
+  const { login, isAuthenticated, loading: authLoading, user } = useAuth();
   const navigate = useNavigate();
 
-  // 페이지 로드 시 저장된 이메일 불러오기
+  // 중복 토스티 방지 헬퍼 함수
+  const showToastOnce = useCallback(
+    (type, message, toastKey) => {
+      // 기존 토스티가 있다면 제거
+      if (toastIds[toastKey]) {
+        toast.dismiss(toastIds[toastKey]);
+      }
+
+      // 새 토스티 표시하고 ID 저장
+      const toastId = toast[type](message, {
+        toastId: toastKey, // 동일한 키로 중복 방지
+        autoClose: type === 'error' ? 5000 : 3000,
+      });
+
+      setToastIds(prev => ({
+        ...prev,
+        [toastKey]: toastId,
+      }));
+
+      return toastId;
+    },
+    [toastIds]
+  );
+
+  // 페이지 로드 시 저장된 이메일과 Remember Me 설정 불러오기
   useEffect(() => {
     const savedEmail = localStorage.getItem('savedEmail');
     const savedRememberMe = localStorage.getItem('rememberMe');
-    const savedSaveAccount = localStorage.getItem('saveAccount');
-    
-    if (savedEmail) {
+
+    if (savedEmail && savedRememberMe === 'true') {
       setEmail(savedEmail);
-      setSaveAccount(true);
-    }
-    
-    if (savedRememberMe === 'true') {
       setRememberMe(true);
-    }
-    
-    if (savedSaveAccount === 'true') {
-      setSaveAccount(true);
+    } else if (savedEmail) {
+      setEmail(savedEmail);
+      setRememberMe(false);
     }
   }, []);
 
-  // 로그인된 상태에서 로그인 페이지 접속 시 대시보드로 리다이렉트
+  // 컴포넌트 언마운트 시 모든 토스티 정리
   useEffect(() => {
-    if (!authLoading && isAuthenticated) {
-      toast.info('로그인중...');
-      setTimeout(() => {
-        navigate('/dashboard');
-      }, 1000);
+    return () => {
+      Object.values(toastIds).forEach(id => {
+        if (id) {
+          toast.dismiss(id);
+        }
+      });
+    };
+  }, [toastIds]);
+
+  // 로그인된 상태에서 로그인 페이지 접속 시 대시보드로 리다이렉트 (뒤로 가기 방지)
+  useEffect(() => {
+    console.log(
+      '🔍 signIn useEffect 실행 - authLoading:',
+      authLoading,
+      'isAuthenticated:',
+      isAuthenticated,
+      'user:',
+      user
+    );
+
+    if (!authLoading && isAuthenticated && user) {
+      console.log('🚀 로그인 성공! 대시보드로 리다이렉트 시작');
+
+      // replace를 사용하여 히스토리에서 로그인 페이지를 대체 (뒤로 가기 방지)
+      console.log('📍 대시보드로 이동 (replace):', '/dashboard');
+      navigate('/', { replace: true });
     }
-  }, [authLoading, isAuthenticated, navigate]);
+  }, [authLoading, isAuthenticated, user, navigate]);
+
+  // 로그인 성공 후 상태 변경 방지
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      // 로그인 성공 시 이 컴포넌트의 상태를 정리
+      setEmail('');
+      setPassword('');
+      setError('');
+      setLoading(false);
+    }
+  }, [isAuthenticated, user]);
 
   // 인증 상태 확인 중일 때 로딩 화면 표시
   if (authLoading) {
@@ -74,31 +145,38 @@ export default function SignIn() {
 
   const loginSubmit = async e => {
     e.preventDefault();
-    console.log('로그인 요청:', { email, password });
+    console.log('🔐 로그인 요청 시작:', { email, password, rememberMe });
     setLoading(true);
     setError('');
 
     try {
-      const result = await login(email, password);
+      // AuthContext의 login 함수 직접 호출
+      console.log('🔐 AuthContext login 호출 시작');
+      const result = await login(email, password, rememberMe);
+      console.log('🔐 AuthContext login 결과:', result);
 
       if (result.success) {
-        console.log('로그인 성공');
-        
-        // 계정 저장 설정
-        if (saveAccount) {
+        console.log('✅ 로그인 성공!');
+        showToastOnce('success', '로그인되었습니다.', 'loginSuccess');
+
+        // 이메일 저장 설정 (Remember Me가 체크된 경우에만)
+        if (rememberMe) {
           localStorage.setItem('savedEmail', email);
-          localStorage.setItem('saveAccount', 'true');
+          console.log('💾 이메일 저장됨 (Remember Me):', email);
         } else {
           localStorage.removeItem('savedEmail');
-          localStorage.removeItem('saveAccount');
+          console.log('🗑️ 이메일 저장 제거됨');
         }
-        
-        toast.success('로그인되었습니다.');
-        navigate('/dashboard');
+
+        // 즉시 대시보드로 이동 (상태 변경 문제 방지)
+        console.log('📍 로그인 성공 후 즉시 대시보드로 이동');
+        navigate('/', { replace: true });
       } else {
+        console.log('❌ 로그인 실패:', result.message);
         setError(result.message || '로그인에 실패했습니다.');
       }
     } catch (err) {
+      console.error('❌ 로그인 중 오류 발생:', err);
       setError('로그인 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
@@ -115,12 +193,17 @@ export default function SignIn() {
     navigate('/signup');
   };
 
+  // 로그인 화면
   return (
     <div className="min-h-screen flex bg-gradient-to-br from-cyan-500 to-indigo-800">
       {/* 왼쪽 박스 섹션 */}
       <div className="flex w-1/2 justify-end items-center">
         <div className="w-[550px] h-[706px] bg-white/20 backdrop-blur-sm rounded-l-3xl shadow-2xl border border-white/30 overflow-hidden">
-          <img src="/img/main.jpg" alt="Main Image" className="w-full h-full object-cover" />
+          <img
+            src="/img/infovitalfit.png"
+            alt="VitalFit Info"
+            className="w-full h-full object-cover"
+          />
         </div>
       </div>
 
@@ -150,14 +233,23 @@ export default function SignIn() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">비밀번호</label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  placeholder="Enter password"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-colors"
-                  required
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    placeholder="Enter password"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-colors pr-10"
+                    required
+                  />
+                  <button
+                    type="button"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700 transition-colors"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? '★' : '☆'}
+                  </button>
+                </div>
               </div>
 
               <div className="flex items-center justify-between">
@@ -168,7 +260,7 @@ export default function SignIn() {
                     onChange={e => setRememberMe(e.target.checked)}
                     className="h-4 w-4 text-cyan-600 focus:ring-cyan-500 border-gray-300 rounded"
                   />
-                  <label className="ml-2 block text-sm text-gray-700">자동 로그인</label>
+                  <label className="ml-2 block text-sm text-gray-700">자동 로그인 유지</label>
                 </div>
                 <button
                   type="button"
@@ -177,16 +269,6 @@ export default function SignIn() {
                 >
                   비밀번호 재설정
                 </button>
-              </div>
-
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={saveAccount}
-                  onChange={e => setSaveAccount(e.target.checked)}
-                  className="h-4 w-4 text-cyan-600 focus:ring-cyan-500 border-gray-300 rounded"
-                />
-                <label className="ml-2 block text-sm text-gray-700">Remember me</label>
               </div>
 
               <button
@@ -208,7 +290,7 @@ export default function SignIn() {
                 >
                   <div className="w-full h-full bg-white rounded-[9px] flex items-center justify-center">
                     <div className="PrimaryButton justify-start bg-gradient-to-r from-cyan-500 to-indigo-600 bg-clip-text text-transparent text-sm font-normal font-['Nunito'] leading-normal">
-                      Sign Up
+                      회원가입
                     </div>
                   </div>
                 </button>

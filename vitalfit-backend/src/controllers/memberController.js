@@ -135,13 +135,16 @@ const updateMember = async (req, res) => {
   try {
     const { id } = req.params;
     const updateData = { ...value };
-    
+
     // 빈 문자열을 null로 변환
     if (updateData.expire_date === '') updateData.expire_date = null;
     if (updateData.memo === '') updateData.memo = null;
-    if (updateData.total_sessions === '' || updateData.total_sessions === null) updateData.total_sessions = 0;
-    if (updateData.used_sessions === '' || updateData.used_sessions === null) updateData.used_sessions = 0;
-    if (updateData.free_sessions === '' || updateData.free_sessions === null) updateData.free_sessions = 0;
+    if (updateData.total_sessions === '' || updateData.total_sessions === null)
+      updateData.total_sessions = 0;
+    if (updateData.used_sessions === '' || updateData.used_sessions === null)
+      updateData.used_sessions = 0;
+    if (updateData.free_sessions === '' || updateData.free_sessions === null)
+      updateData.free_sessions = 0;
 
     const member = await Member.findByPk(id);
     if (!member) {
@@ -257,20 +260,20 @@ const getAllMembers = async (req, res) => {
 
     // 각 멤버의 잔여 세션 계산
     const membersWithRemainingSessions = await Promise.all(
-      members.map(async (member) => {
+      members.map(async member => {
         // 해당 멤버의 실제 사용된 세션 수 조회
         const usedSessions = await PTSession.count({
-          where: { 
+          where: {
             member_id: member.id,
-            session_type: 'regular'
-          }
+            session_type: 'regular',
+          },
         });
 
         const usedFreeSessions = await PTSession.count({
-          where: { 
+          where: {
             member_id: member.id,
-            session_type: 'free'
-          }
+            session_type: 'free',
+          },
         });
 
         // 잔여 세션 계산
@@ -288,10 +291,18 @@ const getAllMembers = async (req, res) => {
     );
 
     // 통계 정보 계산
-    const activeMembers = membersWithRemainingSessions.filter(member => member.status === 'active').length;
-    const inactiveMembers = membersWithRemainingSessions.filter(member => member.status === 'inactive').length;
-    const expiredMembers = membersWithRemainingSessions.filter(member => member.status === 'expired').length;
-    const withdrawnMembers = membersWithRemainingSessions.filter(member => member.status === 'withdrawn').length;
+    const activeMembers = membersWithRemainingSessions.filter(
+      member => member.status === 'active'
+    ).length;
+    const inactiveMembers = membersWithRemainingSessions.filter(
+      member => member.status === 'inactive'
+    ).length;
+    const expiredMembers = membersWithRemainingSessions.filter(
+      member => member.status === 'expired'
+    ).length;
+    const withdrawnMembers = membersWithRemainingSessions.filter(
+      member => member.status === 'withdrawn'
+    ).length;
 
     // 센터별 통계
     const centerStats = {};
@@ -548,6 +559,50 @@ const getMembersByName = async (req, res) => {
   }
 };
 
+// 멤버 개별 조회
+const getMember = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const member = await Member.findByPk(id, {
+      include: [
+        {
+          model: Center,
+          as: 'center',
+          attributes: ['id', 'name', 'address'],
+        },
+        {
+          model: User,
+          as: 'trainer',
+          attributes: ['id', 'name', 'email', 'nickname'],
+        },
+      ],
+    });
+
+    if (!member) {
+      return res.status(404).json({
+        success: false,
+        message: '존재하지 않는 멤버입니다.',
+      });
+    }
+
+    res.json({
+      success: true,
+      message: '멤버 정보를 성공적으로 조회했습니다.',
+      data: {
+        member,
+      },
+    });
+  } catch (error) {
+    console.error('멤버 조회 오류:', error);
+    res.status(500).json({
+      success: false,
+      message: '멤버 조회 중 오류가 발생했습니다.',
+      error: error.message,
+    });
+  }
+};
+
 // 센터와 유저 더미데이터 생성 (테스트용)
 const createDummyCenterAndUser = async (req, res) => {
   try {
@@ -598,6 +653,7 @@ module.exports = {
   createMember,
   updateMember,
   getAllMembers,
+  getMember,
   getMembersByCenter,
   getMembersByTrainer,
   getMembersByName,

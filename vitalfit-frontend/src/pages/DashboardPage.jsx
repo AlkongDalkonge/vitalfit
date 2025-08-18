@@ -136,29 +136,26 @@ const DashboardPage = () => {
 
   // 최근 활동 데이터 포맷팅
   const formatRecentActivities = () => {
-    if (!dashboardData?.recent_activities) return [];
+    const recentUsers = dashboardData?.recent_users || [];
+    const recentMembers = dashboardData?.recent_members || [];
+    const recentNotices = dashboardData?.recent_notices || [];
 
-    return dashboardData.recent_activities.map(activity => ({
-      id: activity.id,
-      message: activity.message,
-      time: new Date(activity.time).toLocaleString('ko-KR', {
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      }),
-      type: activity.type,
-    }));
+    return {
+      recentUsers,
+      recentMembers,
+      recentNotices,
+    };
   };
 
   // 인증 로딩 중이거나 데이터 로딩 중인 경우
   if (authLoading || loading) {
     return (
-      <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-800 mb-8">대시보드</h1>
-        <div className="flex justify-center items-center h-64">
-          <div className="text-gray-500">
-            {authLoading ? '인증 상태를 확인하는 중...' : '데이터를 불러오는 중...'}
+      <div className="min-h-screen bg-gradient-to-br from-[#5e5dfa] from-0% via-[#a4e6ef] via-20% to-white to-30%">
+        <div className="max-w-6xl mx-auto pt-8">
+          <div className="flex justify-center items-center h-64">
+            <div className="text-white text-lg font-semibold">
+              {authLoading ? '인증 상태를 확인하는 중...' : '데이터를 불러오는 중...'}
+            </div>
           </div>
         </div>
       </div>
@@ -168,25 +165,26 @@ const DashboardPage = () => {
   // 에러가 있는 경우
   if (error) {
     return (
-      <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-800 mb-8">대시보드</h1>
-        <div className="flex flex-col justify-center items-center h-64">
-          <div className="text-red-500 mb-4">{error}</div>
-          {error.includes('로그인이 필요') || error.includes('인증이 만료') ? (
-            <button
-              onClick={() => (window.location.href = '/login')}
-              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-            >
-              로그인하기
-            </button>
-          ) : (
-            <button
-              onClick={() => window.location.reload()}
-              className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
-            >
-              다시 시도
-            </button>
-          )}
+      <div className="min-h-screen bg-gradient-to-br from-[#5e5dfa] from-0% via-[#a4e6ef] via-20% to-white to-30%">
+        <div className="max-w-6xl mx-auto pt-8">
+          <div className="flex flex-col justify-center items-center h-64">
+            <div className="text-white mb-4 text-lg">{error}</div>
+            {error.includes('로그인이 필요') || error.includes('인증이 만료') ? (
+              <button
+                onClick={() => (window.location.href = '/login')}
+                className="px-4 py-2 bg-white text-blue-600 rounded-lg hover:bg-gray-100 transition-colors font-semibold"
+              >
+                로그인하기
+              </button>
+            ) : (
+              <button
+                onClick={() => window.location.reload()}
+                className="px-4 py-2 bg-white text-gray-600 rounded-lg hover:bg-gray-100 transition-colors font-semibold"
+              >
+                다시 시도
+              </button>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -196,150 +194,299 @@ const DashboardPage = () => {
   const recentActivities = formatRecentActivities();
 
   return (
-    <div className="max-w-6xl mx-auto">
-      <h1 className="text-3xl font-bold text-gray-800 mb-8">대시보드</h1>
+    <div className="min-h-screen bg-gradient-to-br from-[#5e5dfa] from-0% via-[#a4e6ef] via-20% to-white to-30%">
+      <div className="max-w-7xl mx-auto pt-8">
+        {/* 대시보드 헤더 영역 - 그라데이션 배경에 직접 표시 */}
+        <div className="mb-12">
+          <div className="flex justify-between items-start">
+            <div>
+              <h1 className="text-4xl font-bold mb-3 text-white drop-shadow-lg">
+                안녕하세요, 관리자님!
+              </h1>
+              <p className="text-white text-xl drop-shadow-md">
+                오늘의 비탈핏 센터 현황을 확인해보세요.
+              </p>
+            </div>
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-2">
+                <FaCalendarAlt className="text-gray-400 drop-shadow-sm" />
+                <span className="text-gray-400 drop-shadow-sm font-medium">
+                  {new Date().toLocaleDateString('ko-KR', {
+                    month: 'long',
+                    day: 'numeric',
+                  })}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <FaBell className="text-gray-400 drop-shadow-sm" />
+                <span className="text-gray-400 drop-shadow-sm font-medium">08:00 - 18:00</span>
+              </div>
+              <div className="relative">
+                <FaBell className="text-gray-400 text-xl cursor-pointer hover:text-gray-500 transition-colors drop-shadow-sm" />
+                <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></div>
+              </div>
+            </div>
+          </div>
+        </div>
 
-      {/* 통계 카드 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
-        {stats.map((stat, index) => {
-          const IconComponent = stat.icon;
-          return (
-            <div
-              key={index}
-              className="bg-white rounded-xl p-4 shadow-sm hover:-translate-y-0.5 hover:shadow-md transition-all duration-200"
-            >
-              <div className="m-3">
-                <div className="flex items-center gap-3 mb-2">
+        {/* 통계 카드 - 헤더 아래에 배치 */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-12">
+          {stats.map((stat, index) => {
+            const IconComponent = stat.icon;
+            return (
+              <div
+                key={index}
+                className="bg-white rounded-xl p-6 shadow-lg hover:-translate-y-1 hover:shadow-xl transition-all duration-300 border border-gray-100"
+              >
+                <div className="flex flex-col items-start mb-4">
                   <div
-                    className="w-8 h-8 rounded-lg flex items-center justify-center"
+                    className="w-8 h-8 rounded-lg flex items-center justify-center shadow-md mb-2"
                     style={{ backgroundColor: stat.color }}
                   >
                     <IconComponent size={20} color="white" />
                   </div>
-                  <div className="flex-1">
-                    <span className="text-sm text-gray-500 font-medium">{stat.title}</span>
-                  </div>
+                  <span className="text-sm text-gray-600 font-medium">{stat.title}</span>
                 </div>
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-end">
                   <div className="text-2xl font-bold text-gray-800">{stat.value}</div>
-                  <div className="flex items-center">
+                  <div className="flex items-center gap-2">
                     <span
-                      className={`text-sm font-semibold px-2 py-1 rounded-md ${
+                      className={`text-sm font-semibold px-3 py-1 rounded-full ${
                         stat.changeType === 'increase'
-                          ? 'text-green-600 bg-green-100'
-                          : 'text-red-600 bg-red-100'
+                          ? 'text-green-600 bg-green-50'
+                          : 'text-red-600 bg-red-50'
                       }`}
                     >
                       {stat.change}
                     </span>
+                    {stat.changeType === 'increase' ? (
+                      <span className="text-green-500">↗️</span>
+                    ) : (
+                      <span className="text-red-500">↘️</span>
+                    )}
                   </div>
                 </div>
               </div>
+            );
+          })}
+        </div>
+
+        {/* 최근 활동 */}
+        <div className="bg-white rounded-xl p-6 mb-8 shadow-lg border border-gray-100">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-semibold text-gray-800 m-0">최근 활동</h2>
+            <div className="flex items-center gap-2">
+              <FaBell className="text-gray-400" />
+              <span className="text-sm text-gray-500">실시간 업데이트</span>
             </div>
-          );
-        })}
-      </div>
+          </div>
 
-      {/* 최근 활동 */}
-      <div className="bg-white rounded-xl p-6 mb-6 shadow-sm">
-        <div className="flex justify-between items-center mb-5">
-          <h2 className="text-xl font-semibold text-gray-800 m-0">최근 활동</h2>
-          <FaBell size={16} color="#6b7280" />
-        </div>
-        <div className="flex flex-col gap-3">
-          {recentActivities.map(activity => (
-            <div
-              key={activity.id}
-              className="p-4 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors duration-200"
-            >
-              <div className="flex justify-between items-center">
-                <p className="text-sm text-gray-700 m-0 flex-1">{activity.message}</p>
-                <span className="text-xs text-gray-400 ml-4">{activity.time}</span>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* 새로 생성된 유저 */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                <h3 className="font-semibold text-gray-800">새로운 직원</h3>
               </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* 센터별 통계 */}
-      {dashboardData?.center_stats && dashboardData.center_stats.length > 0 && (
-        <div className="bg-white rounded-xl p-6 mb-6 shadow-sm">
-          <div className="flex justify-between items-center mb-5">
-            <h2 className="text-xl font-semibold text-gray-800 m-0">센터별 현황</h2>
-            <FaBuilding size={16} color="#6b7280" />
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {dashboardData.center_stats.map((center, index) => (
-              <div key={center.id} className="p-4 rounded-lg bg-gray-50">
-                <h3 className="font-semibold text-gray-800 mb-2">{center.name}</h3>
-                <div className="space-y-1 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">직원:</span>
-                    <span className="font-medium">
-                      {center.active_users}/{center.total_users}명
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">회원:</span>
-                    <span className="font-medium">
-                      {center.active_members}/{center.total_members}명
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* 직급별 통계 */}
-      {dashboardData?.position_stats && dashboardData.position_stats.length > 0 && (
-        <div className="bg-white rounded-xl p-6 mb-6 shadow-sm">
-          <div className="flex justify-between items-center mb-5">
-            <h2 className="text-xl font-semibold text-gray-800 m-0">직급별 현황</h2>
-            <FaUsers size={16} color="#6b7280" />
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {dashboardData.position_stats
-              .filter(position => position.total_users > 0)
-              .map((position, index) => (
-                <div key={position.id} className="p-4 rounded-lg bg-gray-50">
-                  <h3 className="font-semibold text-gray-800 mb-2">{position.name}</h3>
-                  <div className="text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">활성:</span>
-                      <span className="font-medium">{position.active_users}명</span>
+              <div className="space-y-2">
+                {recentActivities.recentUsers?.slice(0, 3).map((user, index) => (
+                  <div
+                    key={user.id || index}
+                    className="p-3 rounded-lg bg-blue-50 border border-blue-100 hover:bg-blue-100 transition-colors"
+                  >
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <p className="text-sm font-medium text-gray-800">{user.name}</p>
+                        <p className="text-xs text-gray-500">
+                          {user.position?.name || '직책 미정'}
+                        </p>
+                      </div>
+                      <span className="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded-full">
+                        {new Date(user.createdAt).toLocaleDateString('ko-KR')}
+                      </span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">전체:</span>
-                      <span className="font-medium">{position.total_users}명</span>
+                  </div>
+                ))}
+                {(!recentActivities.recentUsers || recentActivities.recentUsers.length === 0) && (
+                  <div className="p-4 rounded-lg bg-gray-50 border border-gray-200 text-center">
+                    <p className="text-sm text-gray-500 mb-1">새로운 직원이 없습니다</p>
+                    <p className="text-xs text-gray-400">오늘 생성된 직원이 없습니다</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* 새로 생성된 멤버 */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                <h3 className="font-semibold text-gray-800">새로운 회원</h3>
+              </div>
+              <div className="space-y-2">
+                {recentActivities.recentMembers?.slice(0, 3).map((member, index) => (
+                  <div
+                    key={member.id || index}
+                    className="p-3 rounded-lg bg-green-50 border border-green-100 hover:bg-green-100 transition-colors"
+                  >
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <p className="text-sm font-medium text-gray-800">{member.name}</p>
+                        <p className="text-xs text-gray-500">
+                          {member.center?.name || '센터 미정'}
+                        </p>
+                      </div>
+                      <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded-full">
+                        {new Date(member.createdAt).toLocaleDateString('ko-KR')}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+                {(!recentActivities.recentMembers ||
+                  recentActivities.recentMembers.length === 0) && (
+                  <div className="p-4 rounded-lg bg-gray-50 border border-gray-200 text-center">
+                    <p className="text-sm text-gray-500 mb-1">새로운 회원이 없습니다</p>
+                    <p className="text-xs text-gray-400">오늘 생성된 회원이 없습니다</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* 알림/공지 */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+                <h3 className="font-semibold text-gray-800">최근 공지</h3>
+              </div>
+              <div className="space-y-2">
+                {recentActivities.recentNotices?.slice(0, 3).map((notice, index) => (
+                  <div
+                    key={notice.id || index}
+                    className="p-3 rounded-lg bg-orange-50 border border-orange-100 hover:bg-orange-100 transition-colors"
+                  >
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <p className="text-sm font-medium text-gray-800 truncate">{notice.title}</p>
+                        <p className="text-xs text-gray-500">{notice.author?.name || '관리자'}</p>
+                      </div>
+                      <span className="text-xs text-orange-600 bg-orange-100 px-2 py-1 rounded-full">
+                        {new Date(notice.createdAt).toLocaleDateString('ko-KR')}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+                {(!recentActivities.recentNotices ||
+                  recentActivities.recentNotices.length === 0) && (
+                  <div className="p-4 rounded-lg bg-gray-50 border border-gray-200 text-center">
+                    <p className="text-sm text-gray-500 mb-1">최근 공지가 없습니다</p>
+                    <p className="text-xs text-gray-400">오늘 생성된 공지가 없습니다</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 센터별 통계 */}
+        {dashboardData?.center_stats && dashboardData.center_stats.length > 0 && (
+          <div className="bg-white rounded-xl p-6 mb-6 shadow-lg border border-gray-100">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-semibold text-gray-800 m-0">센터별 현황</h2>
+              <div className="flex items-center gap-2">
+                <FaBuilding className="text-gray-400" />
+                <span className="text-sm text-gray-500">전체 센터</span>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {dashboardData.center_stats.map((center, index) => (
+                <div
+                  key={center.id}
+                  className="p-6 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 hover:shadow-lg transition-all duration-300"
+                >
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                    <h3 className="font-bold text-gray-800 text-lg">{center.name}</h3>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center p-3 bg-white rounded-lg border border-blue-100">
+                      <span className="text-gray-600 font-medium">직원</span>
+                      <span className="font-bold text-blue-600">
+                        {center.active_users}/{center.total_users}명
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center p-3 bg-white rounded-lg border border-green-100">
+                      <span className="text-gray-600 font-medium">회원</span>
+                      <span className="font-bold text-green-600">
+                        {center.active_members}/{center.total_members}명
+                      </span>
                     </div>
                   </div>
                 </div>
               ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* 빠른 액션 */}
-      <div className="bg-white rounded-xl p-6 shadow-sm">
-        <div className="flex justify-between items-center mb-5">
-          <h2 className="text-xl font-semibold text-gray-800 m-0">빠른 액션</h2>
-          <FaCalendarAlt size={16} color="#6b7280" />
-        </div>
-        <div className="flex gap-3 flex-wrap">
-          <button className="px-5 py-3 rounded-lg text-sm font-medium bg-cyan-500 text-white border-none cursor-pointer transition-all duration-200 hover:bg-cyan-600 hover:-translate-y-0.5">
-            새 직원 등록
-          </button>
-          <button className="px-5 py-3 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 border border-gray-200 cursor-pointer transition-all duration-200 hover:bg-gray-200 hover:-translate-y-0.5">
-            지점 추가
-          </button>
-          <button className="px-5 py-3 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 border border-gray-200 cursor-pointer transition-all duration-200 hover:bg-gray-200 hover:-translate-y-0.5">
-            매출 리포트
-          </button>
-          <button className="px-5 py-3 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 border border-gray-200 cursor-pointer transition-all duration-200 hover:bg-gray-200 hover:-translate-y-0.5">
-            공지사항 작성
-          </button>
+        {/* 직급별 통계 */}
+        {dashboardData?.position_stats && dashboardData.position_stats.length > 0 && (
+          <div className="bg-white rounded-xl p-6 mb-6 shadow-lg border border-gray-100">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-semibold text-gray-800 m-0">직급별 현황</h2>
+              <div className="flex items-center gap-2">
+                <FaUsers className="text-gray-400" />
+                <span className="text-sm text-gray-500">전체 직원</span>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {dashboardData.position_stats
+                .filter(position => position.total_users > 0)
+                .map((position, index) => (
+                  <div
+                    key={position.id}
+                    className="p-6 rounded-xl bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-200 hover:shadow-lg transition-all duration-300"
+                  >
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                      <h3 className="font-bold text-gray-800 text-lg">{position.name}</h3>
+                    </div>
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center p-3 bg-white rounded-lg border border-purple-100">
+                        <span className="text-gray-600 font-medium">활성</span>
+                        <span className="font-bold text-purple-600">{position.active_users}명</span>
+                      </div>
+                      <div className="flex justify-between items-center p-3 bg-white rounded-lg border border-pink-100">
+                        <span className="text-gray-600 font-medium">전체</span>
+                        <span className="font-bold text-pink-600">{position.total_users}명</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          </div>
+        )}
+
+        {/* 빠른 액션 */}
+        <div className="bg-white rounded-xl p-6 shadow-lg border border-gray-100 mb-8">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-semibold text-gray-800 m-0">빠른 액션</h2>
+            <div className="flex items-center gap-2">
+              <FaCalendarAlt className="text-gray-400" />
+              <span className="text-sm text-gray-500">즉시 실행</span>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <button className="px-6 py-4 rounded-xl text-sm font-bold bg-gradient-to-r from-blue-500 to-blue-600 text-white border-none cursor-pointer transition-all duration-300 hover:from-blue-600 hover:to-blue-700 hover:-translate-y-1 hover:shadow-lg shadow-md">
+              새 직원 등록
+            </button>
+            <button className="px-6 py-4 rounded-xl text-sm font-bold bg-gradient-to-r from-green-500 to-green-600 text-white border-none cursor-pointer transition-all duration-300 hover:from-green-600 hover:to-green-700 hover:-translate-y-1 hover:shadow-lg shadow-md">
+              지점 추가
+            </button>
+            <button className="px-6 py-4 rounded-xl text-sm font-bold bg-gradient-to-r from-purple-500 to-purple-600 text-white border-none cursor-pointer transition-all duration-300 hover:from-purple-600 hover:to-purple-700 hover:-translate-y-1 hover:shadow-lg shadow-md">
+              매출 리포트
+            </button>
+            <button className="px-6 py-4 rounded-xl text-sm font-bold bg-gradient-to-r from-orange-500 to-orange-600 text-white border-none cursor-pointer transition-all duration-300 hover:from-orange-600 hover:to-orange-700 hover:-translate-y-1 hover:shadow-lg shadow-md">
+              공지사항 작성
+            </button>
+          </div>
         </div>
       </div>
 

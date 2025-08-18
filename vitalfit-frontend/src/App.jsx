@@ -3,132 +3,76 @@ import Layout from './components/layout/Layout';
 import SignIn from './components/signIn';
 import SignUp from './components/signUp';
 import ResetPassword from './components/resetPassword';
+import EmailVerification from './components/EmailVerification';
 import ProtectedRoute from './components/ProtectedRoute';
+import TokenRefreshNotification from './components/TokenRefreshNotification';
+
 import DashboardPage from './pages/DashboardPage';
 import CenterPage from './pages/CenterPage';
 import UserPage from './pages/UserPage';
 import MemberPage from './pages/MemberPage';
 import MemberPTSessionPage from './pages/MemberPTSessionPage';
+import UserPTSessionPage from './pages/UserPTSessionPage';
 import SettlementPage from './pages/SettlementPage';
+import PayPage from './pages/PayPage';
+import PaymentHistoryPage from './pages/PaymentHistoryPage';
+import PersonalInfoPage from './pages/PersonalInfoPage';
+import AccountPage from './pages/AccountPage';
 import NoticePage from './pages/NoticePage';
 import NoticeDetailPage from './pages/NoticeDetailPage';
+import MyWorkPage from './pages/MyWorkPage';
+import MyHistoryPage from './pages/MyHistoryPage';
 import ReportPage from './pages/ReportPage';
-import AccountPage from './pages/AccountPage';
+import PasswordChangePage from './pages/PasswordChangePage';
+import EmailVerificationPage from './pages/EmailVerificationPage';
 
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { AuthProvider } from './contexts/AuthContext';
 
-export default function App() {
+function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* 레이아웃 없이 독립적으로 보여질 페이지들 */}
-        <Route path="/" element={<SignIn />} />
-        <Route path="/login" element={<SignIn />} />
-        <Route path="/signup" element={<SignUp />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
+    <AuthProvider>
+      <BrowserRouter>
+        <TokenRefreshNotification />
+        <Routes>
+          {/* 공개 라우트 */}
+          <Route path="/login" element={<SignIn />} />
+          <Route path="/signup" element={<SignUp />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/email-verification" element={<EmailVerification />} />
+          <Route path="/email-verification-page" element={<EmailVerificationPage />} />
 
-        {/* 레이아웃이 적용될 페이지들 - ProtectedRoute로 보호 */}
-        <Route
-          path="/dashboard/*"
-          element={
-            <ProtectedRoute>
-              <Layout />
-            </ProtectedRoute>
-          }
-        >
-          <Route index element={<DashboardPage />} />
-          <Route path="center" element={<CenterPage />} />
-          <Route path="user" element={<UserPage />} />
-          <Route path="member" element={<MemberPage />} />
-          <Route path="member/:memberId/pt-sessions" element={<MemberPTSessionPage />} />
-          <Route path="payment" element={<SettlementPage />} />
-          <Route path="notice" element={<NoticePage />} />
-          <Route path="notice/:id" element={<NoticeDetailPage />} />
-          <Route path="report" element={<ReportPage />} />
-          <Route path="account" element={<AccountPage />} />
-        </Route>
-
-        <Route
-          path="/center/*"
-          element={
-            <ProtectedRoute>
-              <Layout />
-            </ProtectedRoute>
-          }
-        >
-          <Route index element={<CenterPage />} />
-        </Route>
-
-        <Route
-          path="/user/*"
-          element={
-            <ProtectedRoute>
-              <Layout />
-            </ProtectedRoute>
-          }
-        >
-          <Route index element={<UserPage />} />
-        </Route>
-
-        <Route
-          path="/member/*"
-          element={
-            <ProtectedRoute>
-              <Layout />
-            </ProtectedRoute>
-          }
-        >
-          <Route index element={<MemberPage />} />
-          <Route path=":memberId/pt-sessions" element={<MemberPTSessionPage />} />
-        </Route>
-
-        <Route
-          path="/payment/*"
-          element={
-            <ProtectedRoute>
-              <Layout />
-            </ProtectedRoute>
-          }
-        >
-          <Route index element={<SettlementPage />} />
-        </Route>
-
-        <Route
-          path="/notice/*"
-          element={
-            <ProtectedRoute>
-              <Layout />
-            </ProtectedRoute>
-          }
-        >
-          <Route index element={<NoticePage />} />
-          <Route path=":id" element={<NoticeDetailPage />} />
-        </Route>
-
-        <Route
-          path="/report/*"
-          element={
-            <ProtectedRoute>
-              <Layout />
-            </ProtectedRoute>
-          }
-        >
-          <Route index element={<ReportPage />} />
-        </Route>
-
-        <Route
-          path="/account/*"
-          element={
-            <ProtectedRoute>
-              <Layout />
-            </ProtectedRoute>
-          }
-        >
-          <Route index element={<AccountPage />} />
-        </Route>
-      </Routes>
-      <ToastContainer position="top-center" autoClose={3000} />
-    </BrowserRouter>
+          {/* 보호된 라우트 */}
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <Layout />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<DashboardPage />} />
+            <Route path="centers" element={<CenterPage />} />
+            <Route path="users" element={<UserPage />} />
+            <Route path="user/:userId/pt-sessions" element={<UserPTSessionPage />} />
+            <Route path="members" element={<MemberPage />} />
+            <Route path="member/:id/pt-sessions" element={<MemberPTSessionPage />} />
+            <Route path="settlement" element={<SettlementPage />} />
+            <Route path="pay" element={<PayPage />} />
+            <Route path="payment-history" element={<PaymentHistoryPage />} />
+            <Route path="payment-history/:memberId" element={<PaymentHistoryPage />} />
+            <Route path="personal-info" element={<PersonalInfoPage />} />
+            <Route path="account" element={<AccountPage />} />
+            <Route path="notices" element={<NoticePage />} />
+            <Route path="notices/:id" element={<NoticeDetailPage />} />
+            <Route path="my-work" element={<MyWorkPage />} />
+            <Route path="my-history" element={<MyHistoryPage />} />
+            <Route path="report" element={<ReportPage />} />
+            <Route path="password-change" element={<PasswordChangePage />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }
+
+export default App;

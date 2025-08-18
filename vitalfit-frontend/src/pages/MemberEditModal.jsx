@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { memberAPI } from '../utils/api';
 import { useMemberForm } from '../utils/hooks';
+import { statusOptions } from '../utils/memberUtils';
 
 const MemberEditModal = ({ isOpen, onClose, member, onUpdate }) => {
   // 커스텀 훅 사용
@@ -33,9 +34,6 @@ const MemberEditModal = ({ isOpen, onClose, member, onUpdate }) => {
         ...formData,
         expire_date: formData.expire_date || null,
         memo: formData.memo || null,
-        total_sessions: formData.total_sessions || null,
-        used_sessions: formData.used_sessions || null,
-        free_sessions: formData.free_sessions || null,
       };
 
       const response = await memberAPI.updateMember(member.id, cleanedData);
@@ -67,12 +65,13 @@ const MemberEditModal = ({ isOpen, onClose, member, onUpdate }) => {
   // 드롭다운 상태
   const [showCenterDropdown, setShowCenterDropdown] = useState(false);
   const [showTrainerDropdown, setShowTrainerDropdown] = useState(false);
+  const [showStatusDropdown, setShowStatusDropdown] = useState(false);
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="w-[750px] h-[680px] bg-white rounded-[20px] relative overflow-hidden">
+      <div className="w-[750px] h-[720px] bg-white rounded-[20px] relative overflow-hidden">
         {/* 로딩 오버레이 */}
         {loading && (
           <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center z-10">
@@ -247,7 +246,8 @@ const MemberEditModal = ({ isOpen, onClose, member, onUpdate }) => {
                   <span>
                     {formData.trainer_id
                       ? filteredTrainers.find(t => t.id === parseInt(formData.trainer_id))?.name +
-                        (filteredTrainers.find(t => t.id === parseInt(formData.trainer_id))?.nickname
+                        (filteredTrainers.find(t => t.id === parseInt(formData.trainer_id))
+                          ?.nickname
                           ? ` (${filteredTrainers.find(t => t.id === parseInt(formData.trainer_id))?.nickname})`
                           : '')
                       : formData.center_id
@@ -361,47 +361,85 @@ const MemberEditModal = ({ isOpen, onClose, member, onUpdate }) => {
             </div>
           </div>
 
-          {/* PT 세션 수 */}
+          {/* 상태 */}
           <div className="w-72 left-[50px] top-[411px] absolute inline-flex flex-col justify-start items-start gap-[5px]">
             <div className="w-72 flex flex-col justify-start items-start gap-2">
               <div className="justify-start text-neutral-900 text-sm font-normal font-['Nunito'] leading-normal">
-                PT 세션 수
+                상태 <span className="text-red-500">*</span>
               </div>
-              <div className="relative w-72 h-12">
-                <input
-                  type="number"
-                  name="total_sessions"
-                  value={formData.total_sessions}
-                  onChange={handleInputChange}
-                  className="w-72 h-12 rounded-[10px] outline outline-1 outline-offset-[-0.50px] outline-stone-300 px-3 text-sm font-['Nunito'] focus:outline-cyan-500 placeholder:text-neutral-400"
-                  placeholder="PT 세션 수를 입력하세요"
+              <div className="relative w-72">
+                <button
+                  type="button"
+                  onClick={() => setShowStatusDropdown(!showStatusDropdown)}
                   disabled={loading}
-                  min="0"
-                />
-              </div>
-              {errors.total_sessions && <p className="text-red-500 text-xs mt-1">{errors.total_sessions}</p>}
-            </div>
-          </div>
+                  className={`w-72 h-12 rounded-[10px] outline outline-1 outline-offset-[-0.50px] outline-stone-300 px-3 text-sm font-['Nunito'] focus:outline-cyan-500 bg-white flex items-center justify-between ${
+                    !formData.status ? 'text-neutral-400' : 'text-neutral-900'
+                  }`}
+                >
+                  <span>
+                    {formData.status
+                      ? statusOptions.find(s => s.value === formData.status)?.label ||
+                        '상태를 선택하세요'
+                      : '상태를 선택하세요'}
+                  </span>
+                  <svg
+                    width="16"
+                    height="8"
+                    viewBox="0 0 16 8"
+                    fill="none"
+                    className={`transition-transform duration-200 ${showStatusDropdown ? 'rotate-180' : ''}`}
+                  >
+                    <path
+                      d="M1 1L8 7L15 1"
+                      stroke="#1F2937"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </button>
 
-          {/* 무료 세션 수 */}
-          <div className="w-72 left-[370px] top-[411px] absolute inline-flex flex-col justify-start items-start gap-[5px]">
-            <div className="w-72 flex flex-col justify-start items-start gap-2">
-              <div className="justify-start text-neutral-900 text-sm font-normal font-['Nunito'] leading-normal">
-                무료 세션 수
-              </div>
-              <div className="relative w-72 h-12">
-                <input
-                  type="number"
-                  name="free_sessions"
-                  value={formData.free_sessions}
+                {/* 커스텀 드롭다운 */}
+                {showStatusDropdown && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-stone-300 rounded-[10px] shadow-lg z-10">
+                    <div className="py-1">
+                      {statusOptions.map(status => (
+                        <button
+                          key={status.value}
+                          type="button"
+                          onClick={() => {
+                            handleInputChange({
+                              target: { name: 'status', value: status.value },
+                            });
+                            setShowStatusDropdown(false);
+                          }}
+                          className="w-full px-3 py-2 text-left text-sm font-['Nunito'] hover:bg-gray-50 transition-colors duration-200"
+                        >
+                          {status.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 숨겨진 select (폼 제출용) */}
+                <select
+                  name="status"
+                  value={formData.status}
                   onChange={handleInputChange}
-                  className="w-72 h-12 rounded-[10px] outline outline-1 outline-offset-[-0.50px] outline-stone-300 px-3 text-sm font-['Nunito'] focus:outline-cyan-500 placeholder:text-neutral-400"
-                  placeholder="무료 세션 수를 입력하세요"
+                  required
+                  className="hidden"
                   disabled={loading}
-                  min="0"
-                />
+                >
+                  <option value="">상태를 선택하세요</option>
+                  {statusOptions.map(status => (
+                    <option key={status.value} value={status.value}>
+                      {status.label}
+                    </option>
+                  ))}
+                </select>
               </div>
-              {errors.free_sessions && <p className="text-red-500 text-xs mt-1">{errors.free_sessions}</p>}
+              {errors.status && <p className="text-red-500 text-xs mt-1">{errors.status}</p>}
             </div>
           </div>
 
