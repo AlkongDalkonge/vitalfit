@@ -414,7 +414,16 @@ const refreshAccessToken = async (req, res, next) => {
 const getMyAccount = async (req, res, next) => {
   try {
     const user = await User.findByPk(req.user.uid, {
-      attributes: { exclude: ['password'] },
+      attributes: [
+        'id',
+        'name',
+        'email',
+        'profile_image_url',
+        'position_id',
+        'center_id',
+        'team_id',
+        'nickname',
+      ],
       include: [
         { model: Position, as: 'position', attributes: ['name'] },
         { model: Center, as: 'center', attributes: ['name'] },

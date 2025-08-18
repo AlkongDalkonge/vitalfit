@@ -478,6 +478,60 @@ const getTrainerSalary = async (req, res) => {
   }
 };
 
+// 이월 매출 조회
+const getCarryover = async (req, res) => {
+  try {
+    const trainerId = parseInt(req.query.trainer_id, 10);
+    const year = parseInt(req.query.year, 10);
+    const month = parseInt(req.query.month, 10);
+
+    if (!trainerId || !year || !month) {
+      return res.status(400).json({
+        success: false,
+        message: 'trainer_id, year, month 파라미터가 필요합니다.',
+      });
+    }
+
+    const { MonthlySettlement } = require('../models');
+
+    // 이전 달 계산
+    let prevYear = year;
+    let prevMonth = month - 1;
+
+    if (prevMonth === 0) {
+      prevMonth = 12;
+      prevYear = year - 1;
+    }
+
+    // 이전 달 정산 데이터 조회
+    const prevSettlement = await MonthlySettlement.findOne({
+      where: {
+        user_id: trainerId,
+        settlement_year: prevYear,
+        settlement_month: prevMonth,
+      },
+    });
+
+    const carryoverAmount = prevSettlement?.remaining_amount || 0;
+
+    return res.json({
+      success: true,
+      data: {
+        trainer_id: trainerId,
+        year: year,
+        month: month,
+        carryover_amount: carryoverAmount,
+      },
+    });
+  } catch (err) {
+    console.error('이월 매출 조회 실패:', err);
+    return res.status(500).json({
+      success: false,
+      message: '이월 매출 조회 중 오류가 발생했습니다.',
+    });
+  }
+};
+
 module.exports = {
   createPayment,
   getPayment,
@@ -487,4 +541,5 @@ module.exports = {
   getMemberPayments,
   getPaymentsByTrainerAndMonth,
   getTrainerSalary,
+  getCarryover,
 };

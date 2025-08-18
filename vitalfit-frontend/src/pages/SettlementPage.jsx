@@ -20,7 +20,7 @@ import SettlementPDFModal from './SettlementPDFModal';
 import { preparePDFData } from '../utils/pdfUtils';
 
 const SettlementPage = () => {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const location = useLocation();
   const [selectedCenter, setSelectedCenter] = useState(null);
   const [selectedTeam, setSelectedTeam] = useState(null);
@@ -42,11 +42,12 @@ const SettlementPage = () => {
   const { teams } = useTeam(selectedCenter);
   const { users: trainers } = useUserByTeam(selectedTeam);
 
-  // URL state에서 전달받은 값들 처리
+  // URL state에서 전달받은 값들 처리 및 정산 데이터 로드
   useEffect(() => {
     if (location.state) {
       console.log('📍 location.state 변경됨:', location.state);
 
+      // 상태 업데이트
       if (location.state.selectedMonth) {
         setSelectedMonth(location.state.selectedMonth);
       }
@@ -59,57 +60,64 @@ const SettlementPage = () => {
       if (location.state.selectedTeam) {
         setSelectedTeam(location.state.selectedTeam);
       }
+
       // 트레이너 정보가 있으면 팀 정보도 설정
       if (location.state.trainerInfo) {
         console.log('트레이너 정보:', location.state.trainerInfo);
       }
-    }
-  }, [location.state]);
 
-  // location.state에서 전달받은 값들이 설정된 후 정산 데이터 로드
-  useEffect(() => {
-    if (location.state && location.state.selectedTrainer && location.state.selectedMonth) {
-      console.log('🚀 location.state 기반 정산 데이터 로드 시작');
-      const [year, month] = location.state.selectedMonth.split('-').map(Number);
-      const targetUserId = parseInt(location.state.selectedTrainer);
+      // 정산 데이터 즉시 로드 (location.state 값 직접 사용)
+      if (location.state.selectedTrainer && location.state.selectedMonth) {
+        console.log('🚀 location.state 기반 정산 데이터 로드 시작');
+        const [year, month] = location.state.selectedMonth.split('-').map(Number);
+        const targetUserId = parseInt(location.state.selectedTrainer);
 
-      // position_id가 11 이상인 사용자는 정산 데이터를 로드하지 않음
-      if (user?.position_id >= 11) {
-        console.log('승인자 권한이므로 정산 데이터 로드하지 않음:', {
-          position_id: user?.position_id,
-        });
-        setMonthlySettlement(null);
-        return;
-      }
-
-      // 정산 데이터 로드
-      const loadSettlementFromLocationState = async () => {
-        try {
-          console.log('정산 데이터 로드 시작 (location.state):', { targetUserId, year, month });
-          const response = await settlementAPI.getSettlements({
-            user_id: targetUserId,
-            year: year,
-            month: month,
+        // position_id가 11 이상인 사용자는 정산 데이터를 로드하지 않음
+        if (user?.position_id >= 11) {
+          console.log('승인자 권한이므로 정산 데이터 로드하지 않음:', {
+            position_id: user?.position_id,
           });
+          setMonthlySettlement(null);
+          return;
+        }
 
-          console.log('정산 데이터 응답 (location.state):', response);
+        // 정산 데이터 로드
+        const loadSettlementFromLocationState = async () => {
+          try {
+            console.log('정산 데이터 로드 시작 (location.state):', { targetUserId, year, month });
+            const response = await settlementAPI.getSettlements({
+              user_id: targetUserId,
+              year: year,
+              month: month,
+            });
 
-          if (response.success && response.data.length > 0) {
-            console.log('정산 데이터 설정 (location.state):', response.data[0]);
-            setMonthlySettlement(response.data[0]);
-          } else {
-            console.log('정산 데이터 없음 (location.state)');
+            console.log('정산 데이터 응답 (location.state):', response);
+
+            if (response.success && response.data.length > 0) {
+              console.log('정산 데이터 설정 (location.state):', response.data[0]);
+              setMonthlySettlement(response.data[0]);
+            } else {
+              console.log('정산 데이터 없음 (location.state)');
+              setMonthlySettlement(null);
+            }
+          } catch (error) {
+            console.error('정산 데이터 로드 오류 (location.state):', error);
             setMonthlySettlement(null);
           }
-        } catch (error) {
-          console.error('정산 데이터 로드 오류 (location.state):', error);
-          setMonthlySettlement(null);
-        }
-      };
+        };
 
-      loadSettlementFromLocationState();
+        loadSettlementFromLocationState();
+      }
     }
   }, [location.state, user?.position_id]);
+
+  // location.state가 없을 때만 selectedTrainer/selectedMonth 변경 감지
+  useEffect(() => {
+    if (selectedTrainer && selectedMonth && !location.state) {
+      console.log('🔄 selectedTrainer/selectedMonth 변경으로 정산 데이터 다시 로드');
+      loadMonthlySettlement();
+    }
+  }, [selectedTrainer, selectedMonth, location.state]);
 
   // 트레이너가 선택되면 해당 트레이너의 팀을 자동으로 설정
   useEffect(() => {
@@ -420,6 +428,18 @@ const SettlementPage = () => {
     }
   };
 
+  // 인증 로딩 중일 때 로딩 표시
+  if (loading) {
+    return (
+      <div className="p-6 space-y-8 max-w-[1200px] mx-auto bg-white rounded-xl shadow">
+        <div className="text-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-2 text-gray-600">사용자 정보를 불러오는 중...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 space-y-8 max-w-[1200px] mx-auto bg-white rounded-xl shadow">
       {/* 필터 영역 */}
@@ -458,7 +478,7 @@ const SettlementPage = () => {
 
       {/* 정산 승인 섹션 */}
 
-      {monthlySettlement && user?.position_id < 11 && (
+      {monthlySettlement && (user?.position_id || 7) < 11 && (
         <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6 mb-6">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-lg font-semibold text-gray-900">정산 승인</h3>
