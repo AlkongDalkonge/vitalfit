@@ -1033,9 +1033,9 @@ const getAllUsers = async (req, res, next) => {
       if (role === 'admin') {
         positionIds = [12]; // 관리자 position_id
       } else if (role === 'trainer') {
-        positionIds = [3, 4, 5]; // 트레이너 관련 position_id들
+        positionIds = [3, 4, 5, 7]; // 트레이너 관련 position_id들 (팀장 포함)
       } else if (role === 'staff') {
-        positionIds = [1, 2, 6, 7, 8, 9, 10, 11]; // 기타 직원 position_id들
+        positionIds = [1, 2, 6, 8, 9, 10, 11]; // 기타 직원 position_id들 (팀장 제외)
       }
       if (positionIds.length > 0) {
         whereClause.position_id = { [require('sequelize').Op.in]: positionIds };
@@ -1098,7 +1098,7 @@ const getAllUsers = async (req, res, next) => {
     // 통계 정보 계산
     const activeUsers = users.filter(user => user.status === 'active').length;
     const inactiveUsers = users.filter(user => user.status === 'inactive').length;
-    const trainerUsers = users.filter(user => [3, 4, 5].includes(user.position_id)).length;
+    const trainerUsers = users.filter(user => [3, 4, 5, 7].includes(user.position_id)).length;
     const adminUsers = users.filter(user => user.position_id === 12).length;
 
     // 센터별 통계
@@ -1110,7 +1110,7 @@ const getAllUsers = async (req, res, next) => {
       }
       centerStats[centerName].total++;
       centerStats[centerName][user.status]++;
-      if ([3, 4, 5].includes(user.position_id)) centerStats[centerName].trainers++;
+      if ([3, 4, 5, 7].includes(user.position_id)) centerStats[centerName].trainers++;
       if (user.position_id === 12) centerStats[centerName].admins++;
     });
 
@@ -1123,7 +1123,7 @@ const getAllUsers = async (req, res, next) => {
       }
       teamStats[teamName].total++;
       teamStats[teamName][user.status]++;
-      if ([3, 4, 5].includes(user.position_id)) teamStats[teamName].trainers++;
+      if ([3, 4, 5, 7].includes(user.position_id)) teamStats[teamName].trainers++;
       if (user.position_id === 12) teamStats[teamName].admins++;
     });
 

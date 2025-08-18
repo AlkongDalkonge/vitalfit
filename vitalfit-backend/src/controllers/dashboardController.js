@@ -6,15 +6,179 @@ const getDashboardStats = async (req, res) => {
   try {
     console.log('대시보드 통계 조회 시작');
 
-    // 기본 통계만 먼저 테스트
-    const totalUsers = await User.count();
-    console.log('총 사용자 수:', totalUsers);
+    // 기본 통계를 병렬로 조회 (성능 최적화)
+    const [
+      totalUsers,
+      totalCenters,
+      currentMonthPayments,
+      currentMonthSessions,
+      completedSessions,
+      centers,
+      recentUsers,
+      recentMembers,
+      recentNotices,
+    ] = await Promise.all([
+      User.count(),
+      Center.count(),
+      // 이번달 매출 계산
+      (async () => {
+        const currentDate = new Date();
+        const currentMonth = currentDate.getMonth();
+        const currentYear = currentDate.getFullYear();
+        const startOfMonth = new Date(currentYear, currentMonth, 1);
+        const endOfMonth = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59);
 
-    const totalCenters = await Center.count();
+        const payments = await Payment.findAll({
+          where: {
+            payment_date: {
+              [Op.between]: [startOfMonth, endOfMonth],
+            },
+          },
+        });
+
+        return payments.reduce((sum, payment) => sum + (payment.amount || 0), 0);
+      })(),
+      // 이번달 PT 세션 수
+      (async () => {
+        const currentDate = new Date();
+        const currentMonth = currentDate.getMonth();
+        const currentYear = currentDate.getFullYear();
+        const startOfMonth = new Date(currentYear, currentMonth, 1);
+        const endOfMonth = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59);
+
+        return await PTSession.count({
+          where: {
+            session_date: {
+              [Op.between]: [startOfMonth, endOfMonth],
+            },
+          },
+        });
+      })(),
+      // 정산완료율 계산
+      (async () => {
+        const currentDate = new Date();
+        const currentMonth = currentDate.getMonth();
+        const currentYear = currentDate.getFullYear();
+        const startOfMonth = new Date(currentYear, currentMonth, 1);
+        const endOfMonth = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59);
+
+        return await PTSession.count({
+          where: {
+            session_date: {
+              [Op.between]: [startOfMonth, endOfMonth],
+            },
+            end_time: {
+              [Op.ne]: null,
+            },
+          },
+        });
+      })(),
+      // 센터별 통계
+      Center.findAll({
+        include: [
+          {
+            model: User,
+            as: 'users',
+            attributes: ['id', 'status'],
+            required: false,
+          },
+          {
+            model: Member,
+            as: 'members',
+            attributes: ['id', 'status'],
+            required: false,
+          },
+        ],
+      }),
+      // 최근 유저 조회
+      (async () => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+
+        return await User.findAll({
+          where: {
+            createdAt: {
+              [Op.gte]: today,
+              [Op.lt]: tomorrow,
+            },
+          },
+          include: [
+            {
+              model: Position,
+              as: 'position',
+              attributes: ['name'],
+              required: false,
+            },
+          ],
+          order: [['createdAt', 'DESC']],
+          limit: 5,
+        });
+      })(),
+      // 최근 멤버 조회
+      (async () => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+
+        return await Member.findAll({
+          where: {
+            createdAt: {
+              [Op.gte]: today,
+              [Op.lt]: tomorrow,
+            },
+          },
+          include: [
+            {
+              model: Center,
+              as: 'center',
+              attributes: ['name'],
+              required: false,
+            },
+          ],
+          order: [['createdAt', 'DESC']],
+          limit: 5,
+        });
+      })(),
+      // 최근 공지 조회
+      (async () => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+
+        return await Notice.findAll({
+          where: {
+            createdAt: {
+              [Op.gte]: today,
+              [Op.lt]: tomorrow,
+            },
+          },
+          include: [
+            {
+              model: User,
+              as: 'sender',
+              attributes: ['name'],
+              required: false,
+            },
+          ],
+          order: [['createdAt', 'DESC']],
+          limit: 5,
+        });
+      })(),
+    ]);
+
+    console.log('총 사용자 수:', totalUsers);
     console.log('총 센터 수:', totalCenters);
 
-    const totalMembers = await Member.count();
-    console.log('총 회원 수:', totalMembers);
+    // 이번달 인건비 계산 (임시로 매출의 60%로 설정)
+    const currentMonthLaborCost = Math.round(currentMonthPayments * 0.6);
+
+    // 정산완료율 계산
+    const settlementCompletionRate =
+      currentMonthSessions > 0 ? Math.round((completedSessions / currentMonthSessions) * 100) : 0;
 
     // 전체 멤버 조회해서 최근 멤버 확인
     const allMembers = await Member.findAll({
@@ -30,24 +194,7 @@ const getDashboardStats = async (req, res) => {
       }))
     );
 
-    // 센터별 통계 추가
-    const centers = await Center.findAll({
-      include: [
-        {
-          model: User,
-          as: 'users',
-          attributes: ['id', 'status'],
-          required: false,
-        },
-        {
-          model: Member,
-          as: 'members',
-          attributes: ['id', 'status'],
-          required: false,
-        },
-      ],
-    });
-
+    // 센터별 통계 처리
     const centerStats = centers.map(center => ({
       id: center.id,
       name: center.name,
@@ -59,31 +206,7 @@ const getDashboardStats = async (req, res) => {
 
     console.log('센터별 통계 완료');
 
-    // 최근 유저 조회 (오늘 생성된 것만)
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-
-    const recentUsers = await User.findAll({
-      where: {
-        createdAt: {
-          [Op.gte]: today,
-          [Op.lt]: tomorrow,
-        },
-      },
-      include: [
-        {
-          model: Position,
-          as: 'position',
-          attributes: ['name'],
-          required: false,
-        },
-      ],
-      order: [['createdAt', 'DESC']],
-      limit: 5,
-    });
-
+    // 최근 데이터 로깅
     console.log('오늘 생성된 유저 조회 결과:', recentUsers.length, '개');
     console.log(
       '오늘 생성된 유저 데이터:',
@@ -96,26 +219,6 @@ const getDashboardStats = async (req, res) => {
       }))
     );
 
-    // 최근 멤버 조회 (오늘 생성된 것만)
-    const recentMembers = await Member.findAll({
-      where: {
-        createdAt: {
-          [Op.gte]: today,
-          [Op.lt]: tomorrow,
-        },
-      },
-      include: [
-        {
-          model: Center,
-          as: 'center',
-          attributes: ['name'],
-          required: false,
-        },
-      ],
-      order: [['createdAt', 'DESC']],
-      limit: 5,
-    });
-
     console.log('오늘 생성된 멤버 조회 결과:', recentMembers.length, '개');
     console.log(
       '오늘 생성된 멤버 데이터:',
@@ -127,26 +230,6 @@ const getDashboardStats = async (req, res) => {
       }))
     );
 
-    // 최근 공지 조회 (오늘 생성된 것만)
-    const recentNotices = await Notice.findAll({
-      where: {
-        createdAt: {
-          [Op.gte]: today,
-          [Op.lt]: tomorrow,
-        },
-      },
-      include: [
-        {
-          model: User,
-          as: 'sender',
-          attributes: ['name'],
-          required: false,
-        },
-      ],
-      order: [['createdAt', 'DESC']],
-      limit: 5,
-    });
-
     console.log('오늘 생성된 공지 조회 결과:', recentNotices.length, '개');
     console.log(
       '오늘 생성된 공지 데이터:',
@@ -157,7 +240,6 @@ const getDashboardStats = async (req, res) => {
         createdAt: notice.createdAt,
       }))
     );
-
     console.log('최근 데이터 조회 완료');
     console.log('최근 유저 수:', recentUsers.length);
     console.log('최근 멤버 수:', recentMembers.length);
@@ -178,18 +260,23 @@ const getDashboardStats = async (req, res) => {
             change: 0,
             changeType: 'increase',
           },
-          total_members: {
-            value: totalMembers,
+          current_month_revenue: {
+            value: currentMonthPayments,
             change: 0,
             changeType: 'increase',
           },
-          current_month_revenue: {
-            value: 0,
+          current_month_labor_cost: {
+            value: currentMonthLaborCost,
             change: 0,
             changeType: 'increase',
           },
           current_month_sessions: {
-            value: 0,
+            value: currentMonthSessions,
+            change: 0,
+            changeType: 'increase',
+          },
+          settlement_completion_rate: {
+            value: settlementCompletionRate,
             change: 0,
             changeType: 'increase',
           },

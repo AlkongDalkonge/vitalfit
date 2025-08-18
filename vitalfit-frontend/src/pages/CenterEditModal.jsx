@@ -155,6 +155,36 @@ const CenterEditModal = ({ isOpen, onClose, onUpdate, center }) => {
     onClose();
   };
 
+  // 센터 삭제 핸들러
+  const handleDelete = async () => {
+    const confirmDelete = window.confirm(
+      '정말로 이 센터를 삭제하시겠습니까?\n\n삭제된 센터는 복구할 수 없으며, 관련된 모든 데이터가 함께 삭제됩니다.'
+    );
+
+    if (!confirmDelete) return;
+
+    setLoading(true);
+
+    try {
+      const response = await centerAPI.deleteCenter(center.id);
+
+      if (response.success) {
+        // 부모 컴포넌트에서 센터 목록에서 제거
+        onUpdate(null); // null을 전달하여 삭제됨을 알림
+        onClose();
+      } else {
+        setErrors({ submit: response.message || '삭제에 실패했습니다.' });
+      }
+    } catch (error) {
+      console.error('센터 삭제 오류:', error);
+      setErrors({
+        submit: error.response?.data?.message || '센터 삭제 중 오류가 발생했습니다.',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -658,8 +688,19 @@ const CenterEditModal = ({ isOpen, onClose, onUpdate, center }) => {
             </div>
           )}
 
-          {/* 수정 버튼 */}
-          <div className="flex justify-end absolute bottom-8 right-6">
+          {/* 버튼 영역 */}
+          <div className="flex justify-between items-center absolute bottom-8 left-6 right-6">
+            {/* 삭제 버튼 */}
+            <button
+              type="button"
+              onClick={handleDelete}
+              disabled={loading}
+              className="px-4 py-3 text-red-600 border border-red-300 rounded-lg hover:bg-red-50 transition-colors duration-200 disabled:opacity-50"
+            >
+              삭제
+            </button>
+
+            {/* 수정 버튼 */}
             <button
               type="submit"
               disabled={loading}

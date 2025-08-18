@@ -300,55 +300,56 @@ const UserPage = () => {
 
                     <div
                       data-layer="직책"
-                      className="flex-[1] min-w-[80px] justify-start text-neutral-800 text-sm font-semibold font-['Nunito'] leading-normal"
+                      className="flex-[0.93] min-w-[80px] justify-start text-neutral-800 text-sm font-semibold font-['Nunito'] leading-normal"
                     >
                       직책
                     </div>
                     <div
                       data-layer="직원명"
-                      className="flex-[1] min-w-[80px] justify-start text-neutral-800 text-sm font-semibold font-['Nunito'] leading-normal"
+                      className="flex-[0.93] min-w-[80px] justify-start text-neutral-800 text-sm font-semibold font-['Nunito'] leading-normal"
                     >
                       직원명
                     </div>
+                    {/* 연락처 좌측 여유 */}
+                    <div className="flex-[0.1]"></div>
                     <div
                       data-layer="연락처"
-                      className="flex-[1.5] min-w-[100px] justify-start text-neutral-800 text-sm font-semibold font-['Nunito'] leading-normal"
+                      className="flex-[1.4] min-w-[100px] justify-start text-neutral-800 text-sm font-semibold font-['Nunito'] leading-normal"
                     >
                       연락처
                     </div>
                     <div
                       data-layer="고객 수"
-                      className="flex-[1] min-w-[80px] justify-start text-neutral-800 text-sm font-semibold font-['Nunito'] leading-normal"
+                      className="flex-[0.93] min-w-[80px] justify-start text-neutral-800 text-sm font-semibold font-['Nunito'] leading-normal"
                     >
                       고객 수
                     </div>
                     <div
                       data-layer="당월 매출"
-                      className="flex-[1] min-w-[80px] justify-start text-neutral-800 text-sm font-semibold font-['Nunito'] leading-normal"
+                      className="flex-[1.4] min-w-[80px] justify-start text-neutral-800 text-sm font-semibold font-['Nunito'] leading-normal"
                     >
                       당월 매출
                     </div>
                     <div
                       data-layer="소속"
-                      className="flex-[1] min-w-[80px] justify-start text-neutral-800 text-sm font-semibold font-['Nunito'] leading-normal"
+                      className="flex-[1.5] min-w-[80px] justify-start text-neutral-800 text-sm font-semibold font-['Nunito'] leading-normal"
                     >
                       소속
                     </div>
+                    {/* 상태 좌측 여유 */}
+                    <div className="flex-[0.1]"></div>
                     <div
                       data-layer="상태"
-                      className="flex-[1] min-w-[80px] justify-start text-neutral-800 text-sm font-semibold font-['Nunito'] leading-normal"
+                      className="flex-[0.93] min-w-[80px] justify-start text-neutral-800 text-sm font-semibold font-['Nunito'] leading-normal"
                     >
                       상태
                     </div>
                     <div
                       data-layer="PT기록"
-                      className="flex-[1] min-w-[80px] justify-start text-neutral-800 text-sm font-semibold font-['Nunito'] leading-normal"
+                      className="flex-[0.93] min-w-[80px] justify-start text-neutral-800 text-sm font-semibold font-['Nunito'] leading-normal"
                     >
                       PT기록
                     </div>
-
-                    {/* 우측 여유 */}
-                    <div className="flex-[0.3]"></div>
                   </div>
                 </div>
 
@@ -371,14 +372,17 @@ const UserPage = () => {
                           {/* 좌측 여유 */}
                           <div className="flex-[0.3]"></div>
 
-                          <div data-layer="직책" className="flex-[1] min-w-[80px] justify-start">
+                          <div data-layer="직책" className="flex-[0.93] min-w-[80px] justify-start">
                             <span
                               className={`px-2 py-1 rounded-full text-xs font-medium ${getPositionColor(user.position?.name)}`}
                             >
                               {user.position?.name || '-'}
                             </span>
                           </div>
-                          <div data-layer="직원명" className="flex-[1] min-w-[80px] justify-start">
+                          <div
+                            data-layer="직원명"
+                            className="flex-[0.93] min-w-[80px] justify-start"
+                          >
                             <button
                               onClick={() => handleViewUser(user.id)}
                               className="text-cyan-600 text-sm font-normal font-['Nunito'] leading-normal hover:text-cyan-800 hover:underline cursor-pointer transition-colors duration-200"
@@ -386,48 +390,52 @@ const UserPage = () => {
                               {user.name || '-'}
                             </button>
                           </div>
+                          {/* 연락처 좌측 여유 */}
+                          <div className="flex-[0.1]"></div>
                           <div
                             data-layer="연락처"
-                            className="flex-[1.5] min-w-[100px] justify-start text-neutral-600 text-sm font-normal font-['Nunito'] leading-normal"
+                            className="flex-[1.4] min-w-[100px] justify-start text-neutral-600 text-sm font-normal font-['Nunito'] leading-normal"
                           >
                             {formatPhoneNumber(user.phone) || '-'}
                           </div>
                           <div
                             data-layer="고객 수"
-                            className="flex-[1] min-w-[80px] justify-start text-neutral-600 text-sm font-normal font-['Nunito'] leading-normal"
+                            className="flex-[0.93] min-w-[80px] justify-start text-neutral-600 text-sm font-normal font-['Nunito'] leading-normal"
                           >
                             {getUserMemberCount(user.id)}
                           </div>
                           <div
                             data-layer="당월 매출"
-                            className="flex-[1] min-w-[80px] justify-start text-neutral-600 text-sm font-normal font-['Nunito'] leading-normal"
+                            className="flex-[1.4] min-w-[80px] justify-start text-neutral-600 text-sm font-normal font-['Nunito'] leading-normal"
                           >
                             -
                           </div>
                           <div
                             data-layer="소속"
-                            className="flex-[1] min-w-[80px] justify-start text-neutral-600 text-sm font-normal font-['Nunito'] leading-normal"
+                            className="flex-[1.5] min-w-[80px] justify-start text-neutral-600 text-sm font-normal font-['Nunito'] leading-normal"
                           >
-                            {user.center?.name || '-'}
+                            {user.center?.name || '-'}/{user.team?.name || '-'}
                           </div>
-                          <div data-layer="상태" className="flex-[1] min-w-[80px] justify-start">
+                          {/* 상태 좌측 여유 */}
+                          <div className="flex-[0.1]"></div>
+                          <div data-layer="상태" className="flex-[0.93] min-w-[80px] justify-start">
                             <span
                               className={`px-2 py-1 rounded-full text-xs font-medium ${getUserStatusColor(user.status)}`}
                             >
                               {getUserStatusText(user.status)}
                             </span>
                           </div>
-                          <div data-layer="PT기록" className="flex-[1] min-w-[80px] justify-start">
+                          <div
+                            data-layer="PT기록"
+                            className="flex-[0.93] min-w-[80px] justify-start"
+                          >
                             <button
                               onClick={() => handleViewPTRecord(user.id)}
-                              className="px-3 py-1 bg-gradient-to-r from-cyan-500 to-cyan-600 text-white rounded-md text-xs font-medium hover:from-cyan-600 hover:to-cyan-700 transition-all duration-200 shadow-sm hover:shadow-md"
+                              className="text-cyan-600 text-sm font-normal font-['Nunito'] leading-normal hover:text-cyan-800 hover:underline cursor-pointer transition-colors duration-200"
                             >
                               조회
                             </button>
                           </div>
-
-                          {/* 우측 여유 */}
-                          <div className="flex-[0.3]"></div>
                         </div>
                         <div className="h-0 border-b border-gray-50"></div>
                       </div>
