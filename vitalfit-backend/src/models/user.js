@@ -84,7 +84,7 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: true,
       },
       license: {
-        type: DataTypes.STRING(200),
+        type: DataTypes.TEXT,
         allowNull: true,
       },
       experience: {
@@ -96,7 +96,7 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: true,
       },
       instagram: {
-        type: DataTypes.STRING(100),
+        type: DataTypes.TEXT,
         allowNull: true,
       },
       shift: {
