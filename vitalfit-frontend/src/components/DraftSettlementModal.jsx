@@ -8,7 +8,7 @@ const DraftSettlementModal = ({ isOpen, onClose, draftSettlements }) => {
 
   const handleGoToSettlement = settlement => {
     const yearMonth = `${settlement.settlement_year}-${String(settlement.settlement_month).padStart(2, '0')}`;
-    navigate('/payment', {
+    navigate('/settlement', {
       state: {
         selectedMonth: yearMonth,
         selectedTrainer: settlement.user_id.toString(),
