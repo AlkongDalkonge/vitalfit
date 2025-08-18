@@ -125,7 +125,7 @@ const SettlementFilterBar = ({
         </div>
 
         {/* 검색 */}
-        <div className="flex-1 min-w-[200px]">
+        {/* <div className="flex-1 min-w-[200px]">
           <label className="block text-sm font-medium text-gray-700 mb-1">회원명 검색</label>
           <input
             type="text"
@@ -134,7 +134,7 @@ const SettlementFilterBar = ({
             placeholder="회원명을 입력하세요"
             className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
-        </div>
+        </div> */}
       </div>
     </div>
   );

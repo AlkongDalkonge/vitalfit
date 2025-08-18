@@ -89,17 +89,69 @@ module.exports = (sequelize, DataTypes) => {
         defaultValue: 0,
       },
       status: {
-        type: DataTypes.ENUM(
-          'draft',
-          'team_leader_approved',
-          'center_manager_approved',
-          'ceo_approved',
-          'paid',
-          'rejected',
-          'cancelled'
-        ),
+        type: DataTypes.ENUM('draft', 'acknowledged', 'center_approved', 'hq_approved', 'rejected'),
         allowNull: false,
         defaultValue: 'draft',
+      },
+      acknowledged_at: {
+        type: DataTypes.DATE,
+        allowNull: true,
+      },
+      acknowledged_by: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        references: {
+          model: 'users',
+          key: 'id',
+        },
+      },
+      center_approved_at: {
+        type: DataTypes.DATE,
+        allowNull: true,
+      },
+      center_approved_by: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        references: {
+          model: 'users',
+          key: 'id',
+        },
+      },
+      hq_approved_at: {
+        type: DataTypes.DATE,
+        allowNull: true,
+      },
+      hq_approved_by: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        references: {
+          model: 'users',
+          key: 'id',
+        },
+      },
+      rejected_at: {
+        type: DataTypes.DATE,
+        allowNull: true,
+      },
+      rejected_by: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        references: {
+          model: 'users',
+          key: 'id',
+        },
+      },
+      reject_reason: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      rejected_role: {
+        type: DataTypes.ENUM('center_manager', 'hq'),
+        allowNull: true,
+      },
+      payment_ref: {
+        type: DataTypes.STRING(100),
+        allowNull: true,
       },
       notes: {
         type: DataTypes.TEXT,
@@ -126,7 +178,9 @@ module.exports = (sequelize, DataTypes) => {
         {
           fields: ['status'],
         },
-
+        {
+          fields: ['center_id', 'status'],
+        },
         {
           fields: ['user_id', 'settlement_year', 'settlement_month'],
           unique: true,
@@ -145,6 +199,27 @@ module.exports = (sequelize, DataTypes) => {
     MonthlySettlement.belongsTo(models.Center, {
       foreignKey: 'center_id',
       as: 'center',
+    });
+
+    // 승인/반려 관련 사용자 관계
+    MonthlySettlement.belongsTo(models.User, {
+      foreignKey: 'acknowledged_by',
+      as: 'acknowledgedBy',
+    });
+
+    MonthlySettlement.belongsTo(models.User, {
+      foreignKey: 'center_approved_by',
+      as: 'centerApprovedBy',
+    });
+
+    MonthlySettlement.belongsTo(models.User, {
+      foreignKey: 'hq_approved_by',
+      as: 'hqApprovedBy',
+    });
+
+    MonthlySettlement.belongsTo(models.User, {
+      foreignKey: 'rejected_by',
+      as: 'rejectedBy',
     });
   };
 

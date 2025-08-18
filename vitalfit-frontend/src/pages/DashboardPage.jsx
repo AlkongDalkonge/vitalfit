@@ -10,12 +10,45 @@ import {
 } from 'react-icons/fa';
 import { getDashboardStats } from '../services/dashboardService';
 import { useAuth } from '../contexts/AuthContext';
+import { settlementAPI } from '../utils/api';
+import DraftSettlementModal from '../components/DraftSettlementModal';
 
 const DashboardPage = () => {
-  const { isAuthenticated, loading: authLoading } = useAuth();
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Draft 정산 알림 관련 상태
+  const [showDraftModal, setShowDraftModal] = useState(false);
+  const [draftSettlements, setDraftSettlements] = useState([]);
+  const [hasCheckedDraft, setHasCheckedDraft] = useState(false);
+
+  // Draft 정산 확인 함수
+  const checkDraftSettlements = async () => {
+    if (hasCheckedDraft) return; // 이미 확인했으면 스킵
+
+    // position_id가 11 이상인 사용자(admin, 회계팀, 센터장)는 draft 정산 확인하지 않음
+    if (user?.position_id >= 11) {
+      console.log('승인자 권한이므로 draft 정산 확인하지 않음:', {
+        position_id: user?.position_id,
+      });
+      setHasCheckedDraft(true);
+      return;
+    }
+
+    try {
+      const response = await settlementAPI.checkDraftSettlements(user?.id);
+      if (response.success && response.data.hasDraftSettlements) {
+        setDraftSettlements(response.data.draftSettlements);
+        setShowDraftModal(true);
+      }
+    } catch (error) {
+      console.error('Draft 정산 확인 오류:', error);
+    } finally {
+      setHasCheckedDraft(true);
+    }
+  };
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -33,6 +66,9 @@ const DashboardPage = () => {
         setLoading(true);
         const response = await getDashboardStats();
         setDashboardData(response.data);
+
+        // 대시보드 데이터 로드 완료 후 draft 정산 확인
+        await checkDraftSettlements();
       } catch (err) {
         if (err.response?.status === 401) {
           setError('인증이 만료되었습니다. 다시 로그인해주세요.');
@@ -306,6 +342,13 @@ const DashboardPage = () => {
           </button>
         </div>
       </div>
+
+      {/* Draft 정산 알림 모달 */}
+      <DraftSettlementModal
+        isOpen={showDraftModal}
+        onClose={() => setShowDraftModal(false)}
+        draftSettlements={draftSettlements}
+      />
     </div>
   );
 };

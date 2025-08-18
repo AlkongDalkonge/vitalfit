@@ -15,6 +15,8 @@ const positionRouter = require('./routes/positionRoute');
 const paymentRouter = require('./routes/paymentRoute');
 const bonusRouter = require('./routes/bonusRoute');
 const commissionRateRouter = require('./routes/commissionRateRoute');
+const jobRunRouter = require('./routes/jobRunRoute');
+const settlementRouter = require('./routes/settlementRoute');
 
 const { sequelize } = require('./models');
 const errorHandler = require('./middlewares/errorHandler');
@@ -46,6 +48,8 @@ app.use('/api/positions', positionRouter);
 app.use('/api/payments', paymentRouter);
 app.use('/api/bonus', bonusRouter);
 app.use('/api/commission-rates', commissionRateRouter);
+app.use('/api/job-runs', jobRunRouter);
+app.use('/api/settlements', settlementRouter);
 
 // 404 처리
 app.use((req, res) => {
@@ -62,8 +66,8 @@ app.use(errorHandler);
 const PORT = process.env.SERVER_PORT || 3001;
 
 sequelize
-  // .sync({ force: false })
-  .sync({ force: true })
+  // .sync({ force: true })
+  .sync({ force: false })
   .then(async () => {
     console.log('1️⃣ DB 테이블 생성 완료!');
 
@@ -73,14 +77,22 @@ sequelize
     if (shouldSeedData) {
       try {
         console.log('2️⃣ 시드 데이터를 추가합니다...');
+        console.log('SEED_DATA 환경변수:', process.env.SEED_DATA);
         await seedAllData();
         console.log('3️⃣ 시드 데이터 추가 완료!');
       } catch (error) {
-        console.error('시드 데이터 추가 실패:', error);
+        console.error('❌ 시드 데이터 추가 실패:', error);
+        console.error('❌ 오류 스택:', error.stack);
         // 시드 데이터 실패해도 서버는 계속 실행
       }
     } else {
       console.log('시드 데이터를 건너뜁니다. (SEED_DATA=false 또는 production 환경)');
+    }
+
+    // ✅ 크론 로드 (개발 환경에서만)
+    if (process.env.NODE_ENV !== 'production') {
+      require('./cron/publish.cron');
+      console.log('[cron] 배치 스케줄러 로드 완료 (dev only)');
     }
 
     console.log('4️⃣ 서버 실행 준비 완료');
