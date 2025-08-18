@@ -3,7 +3,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
-export default function Header({ activeMenu = null, userInfo }) {
+export default function Header({ activeMenu = null, userInfo, className = '' }) {
   const { getMenuIcon } = useIcons();
   const { getFormattedDate, getDayOfWeek } = useDate(); // 요일 함수 추가
   const { logout, user } = useAuth();
@@ -30,14 +30,14 @@ export default function Header({ activeMenu = null, userInfo }) {
     navigate('/account');
   };
 
-  const textStyle = 'text-sm font-semibold text-gray-800 cursor-pointer select-none';
+  const textStyle = 'text-sm font-medium text-gray-800 cursor-pointer select-none';
 
   // 날짜 + 요일
   const today = getFormattedDate(); // YYYY-MM-DD
   const dayOfWeek = getDayOfWeek(); // ex: 월요일, Tuesday 등
 
   return (
-    <header className="h-20 bg-white flex justify-between items-center px-8 border-b border-gray-100">
+    <header className={`h-20 bg-white flex justify-between items-center px-8 border-b border-gray-100 ${className}`}>
       <div className="flex items-center text-lg font-bold text-gray-800 gap-2">
         {activeMenu ? (
           <>
@@ -57,7 +57,7 @@ export default function Header({ activeMenu = null, userInfo }) {
           {today} ({dayOfWeek})
         </span>
 
-        <div className="flex items-center gap-4 font-semibold text-gray-800 select-none">
+        <div className="flex items-center gap-4 font-medium text-gray-800 select-none">
           {/* 프로필 이미지 - 클릭 가능 */}
           <div
             onClick={handleAccountClick}
@@ -80,7 +80,7 @@ export default function Header({ activeMenu = null, userInfo }) {
               />
             ) : (
               <img
-                src="/img/profileDefault.svg"
+                src="https://lh3.googleusercontent.com/pw/AP1GczPHYKy-ftX95akuneOtJAq_BTm0oNlL8mLTK7gUbZJqkYXHB1RDR-gseWYT7G9cVjTsIZyconxHncd5Ph1RASfAHtI75Abk4G9eH9HNtkLAUvHcBfloZzlYUNfcxHPQaTLMmbuZfqZ4I0Pkqf4jS43E=w200-h200-s-no-gm?authuser=0"
                 alt="기본 프로필"
                 className="w-10 h-10 rounded-full border-2 border-gray-200 object-cover"
               />
@@ -101,7 +101,7 @@ export default function Header({ activeMenu = null, userInfo }) {
           </span>
           <span
             onClick={handleLogout}
-            className={`${textStyle} hover:text-red-500`}
+            className={`${textStyle} hover:text-red-500 mr-8`}
             role="button"
             tabIndex={0}
             onKeyPress={e => {

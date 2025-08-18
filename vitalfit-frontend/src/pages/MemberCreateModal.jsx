@@ -264,10 +264,15 @@ const MemberCreateModal = ({ isOpen, onClose, onCreate }) => {
                 >
                   <span>
                     {formData.trainer_id
-                      ? filteredTrainers.find(t => t.id === formData.trainer_id)?.name +
-                        (filteredTrainers.find(t => t.id === formData.trainer_id)?.nickname
-                          ? ` (${filteredTrainers.find(t => t.id === formData.trainer_id)?.nickname})`
-                          : '')
+                      ? (() => {
+                          const trainer = filteredTrainers.find(t => t.id === formData.trainer_id);
+                          if (trainer) {
+                            const positionName = trainer.position?.name || '';
+                            const nickname = trainer.nickname ? ` (${trainer.nickname})` : '';
+                            return `${trainer.name} ${positionName}${nickname}`;
+                          }
+                          return '';
+                        })()
                       : formData.center_id
                         ? '트레이너를 선택하세요'
                         : '먼저 센터를 선택하세요'}
@@ -305,7 +310,7 @@ const MemberCreateModal = ({ isOpen, onClose, onCreate }) => {
                           }}
                           className="w-full px-3 py-2 text-left text-sm font-['Nunito'] hover:bg-gray-50 transition-colors duration-200"
                         >
-                          {trainer.name} {trainer.nickname ? `(${trainer.nickname})` : ''}
+                          {trainer.name} {trainer.position?.name || ''} {trainer.nickname ? `(${trainer.nickname})` : ''}
                         </button>
                       ))}
                     </div>
@@ -326,7 +331,7 @@ const MemberCreateModal = ({ isOpen, onClose, onCreate }) => {
                   </option>
                   {filteredTrainers.map(trainer => (
                     <option key={trainer.id} value={trainer.id}>
-                      {trainer.name} {trainer.nickname ? `(${trainer.nickname})` : ''}
+                      {trainer.name} {trainer.position?.name || ''} {trainer.nickname ? `(${trainer.nickname})` : ''}
                     </option>
                   ))}
                 </select>

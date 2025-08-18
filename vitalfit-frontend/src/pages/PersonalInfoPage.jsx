@@ -132,7 +132,7 @@ const PersonalInfoPage = () => {
           : `http://localhost:3001${user.profile_image_url}`;
         setPreviewImage(imageUrl);
       } else {
-        setPreviewImage('/img/profileDefault.png');
+        setPreviewImage('https://lh3.googleusercontent.com/pw/AP1GczPHYKy-ftX95akuneOtJAq_BTm0oNlL8mLTK7gUbZJqkYXHB1RDR-gseWYT7G9cVjTsIZyconxHncd5Ph1RASfAHtI75Abk4G9eH9HNtkLAUvHcBfloZzlYUNfcxHPQaTLMmbuZfqZ4I0Pkqf4jS43E=w200-h200-s-no-gm?authuser=0');
       }
       setLoading(false);
     } else {
@@ -214,7 +214,7 @@ const PersonalInfoPage = () => {
 
   const handlePhotoClick = () => {
     // 이미지가 있고 기본 이미지가 아닌 경우 확대
-    if (previewImage && previewImage !== '/img/profileDefault.png') {
+    if (previewImage && previewImage !== 'https://lh3.googleusercontent.com/pw/AP1GczPHYKy-ftX95akuneOtJAq_BTm0oNlL8mLTK7gUbZJqkYXHB1RDR-gseWYT7G9cVjTsIZyconxHncd5Ph1RASfAHtI75Abk4G9eH9HNtkLAUvHcBfloZzlYUNfcxHPQaTLMmbuZfqZ4I0Pkqf4jS43E=w200-h200-s-no-gm?authuser=0') {
       openImageModal(previewImage, '프로필 이미지', '프로필');
     } else {
       // 이미지가 없거나 기본 이미지인 경우 파일 선택
@@ -320,7 +320,7 @@ const PersonalInfoPage = () => {
   const handlePhotoDelete = async () => {
     try {
       await userAPI.deleteProfileImage();
-      setPreviewImage('/img/profileDefault.png');
+      setPreviewImage('https://lh3.googleusercontent.com/pw/AP1GczPHYKy-ftX95akuneOtJAq_BTm0oNlL8mLTK7gUbZJqkYXHB1RDR-gseWYT7G9cVjTsIZyconxHncd5Ph1RASfAHtI75Abk4G9eH9HNtkLAUvHcBfloZzlYUNfcxHPQaTLMmbuZfqZ4I0Pkqf4jS43E=w200-h200-s-no-gm?authuser=0');
       toast.success('프로필 이미지가 삭제되었습니다.');
       if (refreshUserInfo && typeof refreshUserInfo === 'function') {
         refreshUserInfo();
@@ -485,7 +485,7 @@ const PersonalInfoPage = () => {
             : `http://localhost:3001${updatedUser.profile_image_url}`;
           setPreviewImage(imageUrl);
         } else {
-          setPreviewImage('/img/profileDefault.png');
+          setPreviewImage('https://lh3.googleusercontent.com/pw/AP1GczPHYKy-ftX95akuneOtJAq_BTm0oNlL8mLTK7gUbZJqkYXHB1RDR-gseWYT7G9cVjTsIZyconxHncd5Ph1RASfAHtI75Abk4G9eH9HNtkLAUvHcBfloZzlYUNfcxHPQaTLMmbuZfqZ4I0Pkqf4jS43E=w200-h200-s-no-gm?authuser=0');
         }
       }
 
@@ -628,7 +628,7 @@ const PersonalInfoPage = () => {
           <div
             className="relative w-36 h-36 rounded-full outline outline-1 outline-gray-200 overflow-hidden cursor-pointer"
             onClick={() => {
-              if (previewImage && previewImage !== '/img/profileDefault.png') {
+              if (previewImage && previewImage !== 'https://lh3.googleusercontent.com/pw/AP1GczPHYKy-ftX95akuneOtJAq_BTm0oNlL8mLTK7gUbZJqkYXHB1RDR-gseWYT7G9cVjTsIZyconxHncd5Ph1RASfAHtI75Abk4G9eH9HNtkLAUvHcBfloZzlYUNfcxHPQaTLMmbuZfqZ4I0Pkqf4jS43E=w200-h200-s-no-gm?authuser=0') {
                 openImageModal(previewImage, '프로필 이미지', '프로필');
               }
             }}
@@ -670,7 +670,7 @@ const PersonalInfoPage = () => {
             >
               웹캠등록
             </button>
-            {previewImage && previewImage !== '/img/profileDefault.png' && (
+            {previewImage && previewImage !== 'https://lh3.googleusercontent.com/pw/AP1GczPHYKy-ftX95akuneOtJAq_BTm0oNlL8mLTK7gUbZJqkYXHB1RDR-gseWYT7G9cVjTsIZyconxHncd5Ph1RASfAHtI75Abk4G9eH9HNtkLAUvHcBfloZzlYUNfcxHPQaTLMmbuZfqZ4I0Pkqf4jS43E=w200-h200-s-no-gm?authuser=0' && (
               <button
                 type="button"
                 onClick={handlePhotoDelete}

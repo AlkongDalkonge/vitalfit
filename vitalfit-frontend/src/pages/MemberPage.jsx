@@ -273,7 +273,7 @@ const MemberPage = () => {
                           onClick={() => onTrainerFilterChange(trainer.name)}
                           className="w-full px-3 py-1.5 text-left text-xs text-neutral-600 hover:bg-sky-50"
                         >
-                          {trainer.name}
+                          {trainer.name} {trainer.position?.name || ''}
                         </button>
                       ))}
                     </div>
