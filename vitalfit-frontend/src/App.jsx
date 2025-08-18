@@ -12,6 +12,7 @@ import CenterPage from './pages/CenterPage';
 import UserPage from './pages/UserPage';
 import MemberPage from './pages/MemberPage';
 import MemberPTSessionPage from './pages/MemberPTSessionPage';
+import UserPTSessionPage from './pages/UserPTSessionPage';
 import SettlementPage from './pages/SettlementPage';
 import PayPage from './pages/PayPage';
 import PaymentHistoryPage from './pages/PaymentHistoryPage';
@@ -52,6 +53,7 @@ function App() {
             <Route index element={<DashboardPage />} />
             <Route path="centers" element={<CenterPage />} />
             <Route path="users" element={<UserPage />} />
+            <Route path="user/:userId/pt-sessions" element={<UserPTSessionPage />} />
             <Route path="members" element={<MemberPage />} />
             <Route path="member/:id/pt-sessions" element={<MemberPTSessionPage />} />
             <Route path="settlement" element={<SettlementPage />} />

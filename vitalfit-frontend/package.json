@@ -13,6 +13,7 @@
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
     "axios": "^1.11.0",
+    "date-fns": "^4.1.0",
     "html2canvas": "^1.4.1",
     "install": "^0.13.0",
     "jspdf": "^3.0.1",

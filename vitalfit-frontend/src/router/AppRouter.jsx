@@ -9,6 +9,7 @@ import CenterPage from '../pages/CenterPage';
 import UserPage from '../pages/UserPage';
 import MemberPage from '../pages/MemberPage';
 import MemberPTSessionPage from '../pages/MemberPTSessionPage';
+import UserPTSessionPage from '../pages/UserPTSessionPage';
 import PayPage from '../pages/PayPage';
 import PaymentPage from '../pages/PaymentPage';
 import PaymentHistoryPage from '../pages/PaymentHistoryPage';
@@ -29,6 +30,7 @@ const AppRouter = () => {
       <Route path="/dashboard" element={<DashboardPage />} />
       <Route path="/center" element={<CenterPage />} />
       <Route path="/user" element={<UserPage />} />
+      <Route path="/user/:userId/pt-sessions" element={<UserPTSessionPage />} />
       <Route path="/member/:memberId/pt-sessions" element={<MemberPTSessionPage />} />
       <Route path="/member" element={<MemberPage />} />
       <Route path="/pay" element={<PayPage />} />

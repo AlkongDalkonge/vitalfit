@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useUser } from '../utils/hooks';
 import { getUserStatusText, getUserStatusColor, formatPhoneNumber } from '../utils/userUtils';
 import UserDetailModal from '../components/UserDetailModal';
@@ -7,6 +8,9 @@ const UserPage = () => {
   // 모달 상태 관리
   const [selectedUser, setSelectedUser] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  // 네비게이션 훅
+  const navigate = useNavigate();
 
   // 커스텀 훅 사용
   const {
@@ -56,11 +60,18 @@ const UserPage = () => {
     }
   };
 
+  // PT기록 보기 핸들러
+  const handleViewPTRecord = userId => {
+    navigate(`/user/${userId}/pt-sessions`);
+  };
+
   // 모달 닫기 핸들러
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setSelectedUser(null);
   };
+
+
 
   // Position 기반 역할 색상 반환
   const getPositionColor = positionName => {
@@ -331,6 +342,12 @@ const UserPage = () => {
                     >
                       상태
                     </div>
+                    <div
+                      data-layer="PT기록"
+                      className="flex-[1] min-w-[80px] justify-start text-neutral-800 text-sm font-semibold font-['Nunito'] leading-normal"
+                    >
+                      PT기록
+                    </div>
 
                     {/* 우측 여유 */}
                     <div className="flex-[0.3]"></div>
@@ -401,6 +418,14 @@ const UserPage = () => {
                             >
                               {getUserStatusText(user.status)}
                             </span>
+                          </div>
+                          <div data-layer="PT기록" className="flex-[1] min-w-[80px] justify-start">
+                            <button
+                              onClick={() => handleViewPTRecord(user.id)}
+                              className="px-3 py-1 bg-gradient-to-r from-cyan-500 to-cyan-600 text-white rounded-md text-xs font-medium hover:from-cyan-600 hover:to-cyan-700 transition-all duration-200 shadow-sm hover:shadow-md"
+                            >
+                              조회
+                            </button>
                           </div>
 
                           {/* 우측 여유 */}

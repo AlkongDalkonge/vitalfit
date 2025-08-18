@@ -673,6 +673,172 @@ const getPTSessionsByMember = async (req, res) => {
   }
 };
 
+// 유저별 PT 세션 조회 (새로 추가)
+const getPTSessionsByUser = async (req, res) => {
+  const { userId } = req.params;
+  const { year, month } = req.query;
+
+  try {
+    // 파라미터 유효성 검증
+    const userIdNum = parseInt(userId);
+    if (isNaN(userIdNum) || userIdNum <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: '유효하지 않은 유저 ID입니다.',
+      });
+    }
+
+    // 유저 정보 조회
+    const user = await User.findByPk(userIdNum, {
+      attributes: ['id', 'name', 'nickname', 'email'],
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: '존재하지 않는 유저입니다.',
+      });
+    }
+
+    const whereClause = { trainer_id: userIdNum };
+
+    // 월별 필터링 추가
+    if (year && month) {
+      const yearNum = parseInt(year);
+      const monthNum = parseInt(month);
+
+      if (!isNaN(yearNum) && !isNaN(monthNum) && monthNum >= 1 && monthNum <= 12) {
+        const startDate = new Date(yearNum, monthNum - 1, 1);
+        const endDate = new Date(yearNum, monthNum, 0, 23, 59, 59);
+
+        whereClause.session_date = {
+          [Op.between]: [startDate, endDate],
+        };
+      }
+    }
+
+    // PT 세션 조회
+    const ptSessions = await PTSession.findAll({
+      where: whereClause,
+      attributes: [
+        'id',
+        'member_id',
+        'trainer_id',
+        'center_id',
+        'session_date',
+        'start_time',
+        'end_time',
+        'session_type',
+        'signature_data',
+        'signature_time',
+        'notes',
+        'created_at',
+        'updated_at',
+      ],
+      include: [
+        {
+          model: Member,
+          as: 'member',
+          attributes: ['id', 'name', 'phone'],
+        },
+        {
+          model: User,
+          as: 'trainer',
+          attributes: ['id', 'name', 'nickname'],
+        },
+        {
+          model: Center,
+          as: 'center',
+          attributes: ['id', 'name'],
+        },
+      ],
+      order: [
+        ['session_date', 'DESC'],
+        ['start_time', 'ASC'],
+      ],
+    });
+
+    // 통계 정보 계산
+    const totalSessions = ptSessions.length;
+
+    // 세션 타입별 통계
+    const regularSessions = ptSessions.filter(session => session.session_type === 'regular').length;
+    const freeSessions = ptSessions.filter(session => session.session_type === 'free').length;
+
+    // 수업 시간 계산 (시간 단위)
+    let totalSessionHours = 0;
+    ptSessions.forEach(session => {
+      if (session.start_time && session.end_time) {
+        const startTime = new Date(`2000-01-01T${session.start_time}`);
+        const endTime = new Date(`2000-01-01T${session.end_time}`);
+        const diffMs = endTime - startTime;
+        const diffHours = diffMs / (1000 * 60 * 60);
+        totalSessionHours += diffHours;
+      } else {
+        // end_time이 없는 경우 기본 1시간으로 계산
+        totalSessionHours += 1;
+      }
+    });
+
+    // 월별 통계 (최근 12개월)
+    const monthlyStats = [];
+    const currentDate = new Date();
+    for (let i = 0; i < 12; i++) {
+      const targetDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
+      const year = targetDate.getFullYear();
+      const month = targetDate.getMonth() + 1;
+      
+      const monthStart = new Date(year, month - 1, 1);
+      const monthEnd = new Date(year, month, 0, 23, 59, 59);
+      
+      const monthSessions = ptSessions.filter(session => {
+        const sessionDate = new Date(session.session_date);
+        return sessionDate >= monthStart && sessionDate <= monthEnd;
+      });
+      
+      monthlyStats.unshift({
+        year,
+        month,
+        total_sessions: monthSessions.length,
+        completed_sessions: monthSessions.filter(s => s.end_time).length,
+        regular_sessions: monthSessions.filter(s => s.session_type === 'regular').length,
+        free_sessions: monthSessions.filter(s => s.session_type === 'free').length,
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: '유저별 PT 세션 조회 성공',
+      data: {
+        user: {
+          id: user.id,
+          name: user.name,
+          nickname: user.nickname,
+          email: user.email,
+        },
+        pt_sessions: ptSessions,
+        statistics: {
+          total_sessions: totalSessions,
+          regular_sessions: regularSessions,
+          free_sessions: freeSessions,
+          total_session_hours: Math.round(totalSessionHours * 100) / 100,
+        },
+        monthly_stats: monthlyStats,
+        filters: {
+          year: year || null,
+          month: month || null,
+        },
+      },
+    });
+  } catch (error) {
+    console.error('유저별 PT 세션 조회 오류:', error);
+    return res.status(500).json({
+      success: false,
+      message: '유저별 PT 세션 조회 중 오류가 발생했습니다.',
+    });
+  }
+};
+
 module.exports = {
   createPTSession,
   updatePTSession,
@@ -680,4 +846,5 @@ module.exports = {
   getPTSessionsByMonth,
   getPTSessionsByMember,
   getTrainerPTSessionStats,
+  getPTSessionsByUser,
 };
