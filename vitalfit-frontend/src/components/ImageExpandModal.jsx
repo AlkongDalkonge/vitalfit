@@ -83,4 +83,3 @@ const ImageExpandModal = ({ isOpen, onClose, imageUrl, imageName, title }) => {
 };
 
 export default ImageExpandModal;
-

@@ -518,16 +518,16 @@ const getPTSessionsByMember = async (req, res) => {
   const { memberId } = req.params;
   const { page = 1, limit = 10, year, month } = req.query;
 
-      console.log('🔍 PT 세션 조회 요청:', {
-      memberId,
-      page,
-      limit,
-      year,
-      month,
-      headers: req.headers,
-      user: req.user,
-      authorization: req.headers.authorization ? '토큰 있음' : '토큰 없음'
-    });
+  console.log('🔍 PT 세션 조회 요청:', {
+    memberId,
+    page,
+    limit,
+    year,
+    month,
+    headers: req.headers,
+    user: req.user,
+    authorization: req.headers.authorization ? '토큰 있음' : '토큰 없음',
+  });
 
   try {
     const offset = (page - 1) * limit;
@@ -787,15 +787,15 @@ const getPTSessionsByUser = async (req, res) => {
       const targetDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
       const year = targetDate.getFullYear();
       const month = targetDate.getMonth() + 1;
-      
+
       const monthStart = new Date(year, month - 1, 1);
       const monthEnd = new Date(year, month, 0, 23, 59, 59);
-      
+
       const monthSessions = ptSessions.filter(session => {
         const sessionDate = new Date(session.session_date);
         return sessionDate >= monthStart && sessionDate <= monthEnd;
       });
-      
+
       monthlyStats.unshift({
         year,
         month,

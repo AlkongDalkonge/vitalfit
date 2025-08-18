@@ -420,4 +420,26 @@ export const ptSessionStatsAPI = {
   },
 };
 
+// Settlement API
+export const settlementAPI = {
+  getSettlements: async (params = {}) => {
+    return await apiGet('/settlements', { params });
+  },
+  getSettlement: async id => {
+    return await apiGet(`/settlements/${id}`);
+  },
+  checkDraftSettlements: async userId => {
+    return await apiGet('/settlements/check-draft', { params: { user_id: userId } });
+  },
+  acknowledge: async (id, userId) => {
+    return await apiPost(`/settlements/${id}/acknowledge`, null, { params: { user_id: userId } });
+  },
+  approve: async id => {
+    return await apiPost(`/settlements/${id}/approve`);
+  },
+  pay: async (id, data = {}) => {
+    return await apiPost(`/settlements/${id}/pay`, data);
+  },
+};
+
 export default api;

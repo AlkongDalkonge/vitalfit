@@ -108,7 +108,9 @@ const UserPTSessionPage = () => {
           <div className="flex items-center gap-16 pl-8">
             {/* 총 PT세션 */}
             <div className="text-center">
-              <div className="text-2xl font-bold text-cyan-600">{statistics.total_sessions || 0}</div>
+              <div className="text-2xl font-bold text-cyan-600">
+                {statistics.total_sessions || 0}
+              </div>
               <div className="text-sm text-gray-600">총 PT세션</div>
             </div>
 
@@ -128,9 +130,7 @@ const UserPTSessionPage = () => {
 
             {/* 보너스 PT 정보 */}
             <div className="text-center">
-              <div className="text-2xl font-bold text-black">
-                {statistics.free_sessions || 0}
-              </div>
+              <div className="text-2xl font-bold text-black">{statistics.free_sessions || 0}</div>
               <div className="text-sm text-gray-600">보너스 PT</div>
             </div>
 
@@ -319,9 +319,7 @@ const UserPTSessionPage = () => {
                       <div className="flex-[0.3]"></div>
 
                       <div className="flex-[1] min-w-[60px] justify-start">
-                        <span className="text-cyan-600 text-sm font-medium">
-                          {index + 1}
-                        </span>
+                        <span className="text-cyan-600 text-sm font-medium">{index + 1}</span>
                       </div>
                       <div className="flex-[1] min-w-[80px] justify-start">
                         <span
@@ -347,8 +345,8 @@ const UserPTSessionPage = () => {
                       <div className="flex-[1] min-w-[100px] justify-start">
                         <span
                           className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            session.end_time 
-                              ? 'text-green-600 bg-green-50' 
+                            session.end_time
+                              ? 'text-green-600 bg-green-50'
                               : 'text-yellow-600 bg-yellow-50'
                           }`}
                         >

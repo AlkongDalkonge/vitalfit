@@ -181,6 +181,20 @@ const getDashboardStats = async (req, res) => {
       ? Math.round((completedSessions / currentMonthSessions) * 100) 
       : 0;
 
+    // 전체 멤버 조회해서 최근 멤버 확인
+    const allMembers = await Member.findAll({
+      order: [['createdAt', 'DESC']],
+      limit: 10,
+    });
+    console.log(
+      '전체 멤버 (최근 10개):',
+      allMembers.map(m => ({
+        id: m.id,
+        name: m.name,
+        createdAt: m.createdAt,
+      }))
+    );
+
     // 센터별 통계 처리
     const centerStats = centers.map(center => ({
       id: center.id,
@@ -192,6 +206,41 @@ const getDashboardStats = async (req, res) => {
     }));
 
     console.log('센터별 통계 완료');
+
+    // 최근 데이터 로깅
+    console.log('오늘 생성된 유저 조회 결과:', recentUsers.length, '개');
+    console.log(
+      '오늘 생성된 유저 데이터:',
+      recentUsers.map(user => ({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        position: user.position ? user.position.name : null,
+        createdAt: user.createdAt,
+      }))
+    );
+
+    console.log('오늘 생성된 멤버 조회 결과:', recentMembers.length, '개');
+    console.log(
+      '오늘 생성된 멤버 데이터:',
+      recentMembers.map(member => ({
+        id: member.id,
+        name: member.name,
+        center: member.center ? member.center.name : null,
+        createdAt: member.createdAt,
+      }))
+    );
+
+    console.log('오늘 생성된 공지 조회 결과:', recentNotices.length, '개');
+    console.log(
+      '오늘 생성된 공지 데이터:',
+      recentNotices.map(notice => ({
+        id: notice.id,
+        title: notice.title,
+        sender: notice.sender ? notice.sender.name : null,
+        createdAt: notice.createdAt,
+      }))
+    );
     console.log('최근 데이터 조회 완료');
     console.log('최근 유저 수:', recentUsers.length);
     console.log('최근 멤버 수:', recentMembers.length);
@@ -241,19 +290,19 @@ const getDashboardStats = async (req, res) => {
           name: user.name,
           email: user.email,
           position: user.position ? user.position.name : null,
-          createdAt: user.createdAt
+          createdAt: user.createdAt,
         })),
         recent_members: recentMembers.map(member => ({
           id: member.id,
           name: member.name,
           center: member.center ? member.center.name : null,
-          createdAt: member.createdAt
+          createdAt: member.createdAt,
         })),
         recent_notices: recentNotices.map(notice => ({
           id: notice.id,
           title: notice.title,
           sender: notice.sender ? notice.sender.name : null,
-          createdAt: notice.createdAt
+          createdAt: notice.createdAt,
         })),
       },
     });

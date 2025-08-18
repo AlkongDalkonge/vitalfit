@@ -8,7 +8,7 @@ const UserPage = () => {
   // 모달 상태 관리
   const [selectedUser, setSelectedUser] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  
+
   // 네비게이션 훅
   const navigate = useNavigate();
 
@@ -70,8 +70,6 @@ const UserPage = () => {
     setIsModalOpen(false);
     setSelectedUser(null);
   };
-
-
 
   // Position 기반 역할 색상 반환
   const getPositionColor = positionName => {
