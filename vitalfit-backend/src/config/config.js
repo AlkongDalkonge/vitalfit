@@ -5,6 +5,9 @@ console.log('NODE_ENV:', process.env.NODE_ENV);
 console.log('TEST_DB_USERNAME:', process.env.TEST_DB_USERNAME);
 console.log('TEST_DB_HOST:', process.env.TEST_DB_HOST);
 console.log('TEST_DB_NAME:', process.env.TEST_DB_NAME);
+console.log('AZURE_DB_HOST:', process.env.AZURE_DB_HOST);
+console.log('AZURE_DB_USERNAME:', process.env.AZURE_DB_USERNAME);
+console.log('AZURE_DB_NAME:', process.env.AZURE_DB_NAME);
 
 const common = {
   dialect: 'postgres',
@@ -48,9 +51,17 @@ module.exports = {
     username: process.env.AZURE_DB_USERNAME,
     password: process.env.AZURE_DB_PASSWORD,
     database: process.env.AZURE_DB_NAME,
-    ssl: {
-      require: true,
-      rejectUnauthorized: false, // Azure PostgreSQL 연결을 위해 필요
+    dialectOptions: {
+      ssl: {
+        require: true,
+        rejectUnauthorized: false, // Azure PostgreSQL 연결을 위해 필요
+      },
+    },
+    pool: {
+      max: 5,
+      min: 0,
+      acquire: 30000,
+      idle: 10000,
     },
   },
 };

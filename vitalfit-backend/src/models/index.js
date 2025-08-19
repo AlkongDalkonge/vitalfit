@@ -1,12 +1,21 @@
 'use strict';
 
+require('dotenv').config();
+
 const fs = require('fs');
 const path = require('path');
 const Sequelize = require('sequelize');
 const process = require('process');
 const basename = path.basename(__filename);
 const env = process.env.NODE_ENV || 'development';
+console.log('Selected environment:', env);
 const config = require(__dirname + '/../config/config.js')[env];
+console.log('Selected config:', {
+  host: config.host,
+  database: config.database,
+  username: config.username,
+  dialectOptions: config.dialectOptions,
+});
 const db = {};
 
 let sequelize;
@@ -25,7 +34,8 @@ if (config && config.use_env_variable) {
     dialect: config.dialect,
     logging: config.logging,
     timezone: config.timezone,
-    ssl: config.ssl,
+    dialectOptions: config.dialectOptions,
+    pool: config.pool,
   });
 } else {
   console.error('Database configuration not found for environment:', env);
