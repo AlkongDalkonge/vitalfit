@@ -11,8 +11,16 @@
 .DS_Store
 
 # 환경변수 파일 (보안상 git에 올리지 않음)
-.env*
-!.env.example  # 예시 파일만 git에 포함
+# 먼저 예시 파일을 포함시키고 나머지 제외
+!.env.example
+
+.env
+.env.local
+.env.development
+.env.development.local
+.env.test.local
+.env.production
+.env.production.local
 
 # 로그 파일 (에러 발생 시 자동 생성, git에 올릴 필요 없음)
 npm-debug.log*

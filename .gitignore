@@ -11,10 +11,17 @@ dist/
 */dist/
 
 # Environment variables
+# First, include example files before excluding others
+!.env.example
+!**/.env.example
+!*/.env.example
+
 .env
 .env.local
+.env.development
 .env.development.local
 .env.test.local
+.env.production
 .env.production.local
 
 # Logs
@@ -54,8 +61,7 @@ jspm_packages/
 # Yarn Integrity file
 .yarn-integrity
 
-# dotenv environment variables file
-.env
+# dotenv environment variables file (already specified above)
 
 # parcel-bundler cache (https://parceljs.org/)
 .cache
@@ -109,4 +115,4 @@ Desktop.ini
 *.tmp
 *.temp .DS_Store
 **/.DS_Store
-**/*.zip
+**/*.zipvitalfit-backend/.env.backup

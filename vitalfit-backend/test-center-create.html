@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>센터 등록 API 테스트</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+            white-space: pre-wrap;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <h1>센터 등록 API 테스트</h1>
+    
+    <form id="centerForm">
+        <div class="form-group">
+            <label for="name">센터명 *</label>
+            <input type="text" id="name" name="name" value="테스트 센터" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="address">주소 *</label>
+            <input type="text" id="address" name="address" value="서울시 강남구 테스트로 123" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="phone">전화번호 *</label>
+            <input type="text" id="phone" name="phone" value="02-1234-5678" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="description">센터 설명</label>
+            <textarea id="description" name="description" rows="3">테스트용 센터입니다.</textarea>
+        </div>
+        
+        <div class="form-group">
+            <label for="weekday_hours">평일 운영시간</label>
+            <input type="text" id="weekday_hours" name="weekday_hours" value="06:00-24:00">
+        </div>
+        
+        <div class="form-group">
+            <label for="saturday_hours">토요일 운영시간</label>
+            <input type="text" id="saturday_hours" name="saturday_hours" value="06:00-22:00">
+        </div>
+        
+        <div class="form-group">
+            <label for="sunday_hours">일요일 운영시간</label>
+            <input type="text" id="sunday_hours" name="sunday_hours" value="08:00-20:00">
+        </div>
+        
+        <div class="form-group">
+            <label for="holiday_hours">공휴일 운영시간</label>
+            <input type="text" id="holiday_hours" name="holiday_hours" value="08:00-18:00">
+        </div>
+        
+        <div class="form-group">
+            <label for="has_parking">주차 가능</label>
+            <select id="has_parking" name="has_parking">
+                <option value="true">예</option>
+                <option value="false">아니오</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="parking_fee">주차요금</label>
+            <input type="text" id="parking_fee" name="parking_fee" value="무료">
+        </div>
+        
+        <div class="form-group">
+            <label for="parking_info">주차정보</label>
+            <textarea id="parking_info" name="parking_info" rows="2">지하 1층 주차장 이용 가능</textarea>
+        </div>
+        
+        <div class="form-group">
+            <label for="directions">오시는 길</label>
+            <input type="text" id="directions" name="directions" value="지하철 2호선 강남역 3번 출구에서 도보 5분">
+        </div>
+        
+        <div class="form-group">
+            <label for="status">상태</label>
+            <select id="status" name="status">
+                <option value="active">활성</option>
+                <option value="inactive">비활성</option>
+                <option value="closed">폐점</option>
+            </select>
+        </div>
+        
+        <button type="submit">센터 등록</button>
+        <button type="button" onclick="testGetCenters()">센터 목록 조회</button>
+    </form>
+    
+    <div id="result"></div>
+
+    <script>
+        document.getElementById('centerForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const data = {};
+            
+            for (let [key, value] of formData.entries()) {
+                if (value === 'true') data[key] = true;
+                else if (value === 'false') data[key] = false;
+                else data[key] = value;
+            }
+            
+            try {
+                const response = await fetch('http://localhost:3001/api/centers', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                const resultDiv = document.getElementById('result');
+                resultDiv.className = response.ok ? 'result success' : 'result error';
+                resultDiv.textContent = JSON.stringify(result, null, 2);
+                
+            } catch (error) {
+                const resultDiv = document.getElementById('result');
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '오류: ' + error.message;
+            }
+        });
+        
+        async function testGetCenters() {
+            try {
+                const response = await fetch('http://localhost:3001/api/centers');
+                const result = await response.json();
+                
+                const resultDiv = document.getElementById('result');
+                resultDiv.className = response.ok ? 'result success' : 'result error';
+                resultDiv.textContent = '센터 목록:\n' + JSON.stringify(result, null, 2);
+                
+            } catch (error) {
+                const resultDiv = document.getElementById('result');
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '오류: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html> 

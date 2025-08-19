@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { memberAPI } from '../utils/api';
 import { useMemberForm } from '../utils/hooks';
+import { statusOptions } from '../utils/memberUtils';
 
 const MemberCreateModal = ({ isOpen, onClose, onCreate }) => {
   // 커스텀 훅 사용 (생성 모드이므로 initialData는 null)
@@ -29,16 +30,13 @@ const MemberCreateModal = ({ isOpen, onClose, onCreate }) => {
     setLoading(true);
 
     try {
-      // API 전송용 데이터 준비 (숫자 타입 변환)
+      // API 전송용 데이터 준비
       const apiData = {
         name: formData.name,
         phone: formData.phone,
         center_id: parseInt(formData.center_id),
         trainer_id: parseInt(formData.trainer_id),
         join_date: formData.join_date,
-        total_sessions: formData.total_sessions ? parseInt(formData.total_sessions) : 0,
-        used_sessions: formData.used_sessions ? parseInt(formData.used_sessions) : 0,
-        free_sessions: formData.free_sessions ? parseInt(formData.free_sessions) : 0,
         status: formData.status,
       };
 
@@ -86,12 +84,13 @@ const MemberCreateModal = ({ isOpen, onClose, onCreate }) => {
   // 드롭다운 상태
   const [showCenterDropdown, setShowCenterDropdown] = useState(false);
   const [showTrainerDropdown, setShowTrainerDropdown] = useState(false);
+  const [showStatusDropdown, setShowStatusDropdown] = useState(false);
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="w-[750px] h-[580px] bg-white rounded-[20px] relative overflow-hidden">
+      <div className="w-[750px] h-[680px] bg-white rounded-[20px] relative overflow-hidden">
         {/* 로딩 오버레이 */}
         {loading && (
           <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center z-10">
@@ -265,10 +264,15 @@ const MemberCreateModal = ({ isOpen, onClose, onCreate }) => {
                 >
                   <span>
                     {formData.trainer_id
-                      ? filteredTrainers.find(t => t.id === formData.trainer_id)?.name +
-                        (filteredTrainers.find(t => t.id === formData.trainer_id)?.nickname
-                          ? ` (${filteredTrainers.find(t => t.id === formData.trainer_id)?.nickname})`
-                          : '')
+                      ? (() => {
+                          const trainer = filteredTrainers.find(t => t.id === formData.trainer_id);
+                          if (trainer) {
+                            const positionName = trainer.position?.name || '';
+                            const nickname = trainer.nickname ? ` (${trainer.nickname})` : '';
+                            return `${trainer.name} ${positionName}${nickname}`;
+                          }
+                          return '';
+                        })()
                       : formData.center_id
                         ? '트레이너를 선택하세요'
                         : '먼저 센터를 선택하세요'}
@@ -306,7 +310,8 @@ const MemberCreateModal = ({ isOpen, onClose, onCreate }) => {
                           }}
                           className="w-full px-3 py-2 text-left text-sm font-['Nunito'] hover:bg-gray-50 transition-colors duration-200"
                         >
-                          {trainer.name} {trainer.nickname ? `(${trainer.nickname})` : ''}
+                          {trainer.name} {trainer.position?.name || ''}{' '}
+                          {trainer.nickname ? `(${trainer.nickname})` : ''}
                         </button>
                       ))}
                     </div>
@@ -327,7 +332,8 @@ const MemberCreateModal = ({ isOpen, onClose, onCreate }) => {
                   </option>
                   {filteredTrainers.map(trainer => (
                     <option key={trainer.id} value={trainer.id}>
-                      {trainer.name} {trainer.nickname ? `(${trainer.nickname})` : ''}
+                      {trainer.name} {trainer.position?.name || ''}{' '}
+                      {trainer.nickname ? `(${trainer.nickname})` : ''}
                     </option>
                   ))}
                 </select>
@@ -380,8 +386,90 @@ const MemberCreateModal = ({ isOpen, onClose, onCreate }) => {
             </div>
           </div>
 
+          {/* 상태 */}
+          <div className="w-72 left-[50px] top-[411px] absolute inline-flex flex-col justify-start items-start gap-[5px]">
+            <div className="w-72 flex flex-col justify-start items-start gap-2">
+              <div className="justify-start text-neutral-900 text-sm font-normal font-['Nunito'] leading-normal">
+                상태 <span className="text-red-500">*</span>
+              </div>
+              <div className="relative w-72">
+                <button
+                  type="button"
+                  onClick={() => setShowStatusDropdown(!showStatusDropdown)}
+                  disabled={loading}
+                  className={`w-72 h-12 rounded-[10px] outline outline-1 outline-offset-[-0.50px] outline-stone-300 px-3 text-sm font-['Nunito'] focus:outline-cyan-500 bg-white flex items-center justify-between ${
+                    !formData.status ? 'text-neutral-400' : 'text-neutral-900'
+                  }`}
+                >
+                  <span>
+                    {formData.status
+                      ? statusOptions.find(s => s.value === formData.status)?.label ||
+                        '상태를 선택하세요'
+                      : '상태를 선택하세요'}
+                  </span>
+                  <svg
+                    width="16"
+                    height="8"
+                    viewBox="0 0 16 8"
+                    fill="none"
+                    className={`transition-transform duration-200 ${showStatusDropdown ? 'rotate-180' : ''}`}
+                  >
+                    <path
+                      d="M1 1L8 7L15 1"
+                      stroke="#1F2937"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </button>
+
+                {/* 커스텀 드롭다운 */}
+                {showStatusDropdown && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-stone-300 rounded-[10px] shadow-lg z-10">
+                    <div className="py-1">
+                      {statusOptions.map(status => (
+                        <button
+                          key={status.value}
+                          type="button"
+                          onClick={() => {
+                            handleInputChange({
+                              target: { name: 'status', value: status.value },
+                            });
+                            setShowStatusDropdown(false);
+                          }}
+                          className="w-full px-3 py-2 text-left text-sm font-['Nunito'] hover:bg-gray-50 transition-colors duration-200"
+                        >
+                          {status.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 숨겨진 select (폼 제출용) */}
+                <select
+                  name="status"
+                  value={formData.status}
+                  onChange={handleInputChange}
+                  required
+                  className="hidden"
+                  disabled={loading}
+                >
+                  <option value="">상태를 선택하세요</option>
+                  {statusOptions.map(status => (
+                    <option key={status.value} value={status.value}>
+                      {status.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {errors.status && <p className="text-red-500 text-xs mt-1">{errors.status}</p>}
+            </div>
+          </div>
+
           {/* 메모 */}
-          <div className="w-[620px] left-[50px] top-[411px] absolute inline-flex flex-col justify-start items-start gap-[5px]">
+          <div className="w-[620px] left-[50px] top-[517px] absolute inline-flex flex-col justify-start items-start gap-[5px]">
             <div className="w-[620px] flex flex-col justify-start items-start gap-2 mb-16">
               <div className="justify-start text-neutral-900 text-sm font-normal font-['Nunito'] leading-normal">
                 메모
@@ -402,7 +490,7 @@ const MemberCreateModal = ({ isOpen, onClose, onCreate }) => {
 
           {/* 에러 메시지 */}
           {errors.submit && (
-            <div className="left-[50px] top-[500px] absolute text-red-500 text-sm">
+            <div className="left-[50px] top-[600px] absolute text-red-500 text-sm">
               {errors.submit}
             </div>
           )}

@@ -1,0 +1,995 @@
+import React, { useState, useEffect, useRef, useCallback, memo, useMemo } from 'react';
+import { toast } from 'react-toastify';
+import { useAuth } from '../contexts/AuthContext';
+import { userAPI } from '../utils/api';
+import ImageExpandModal from '../components/ImageExpandModal';
+
+// API 기본 URL 환경 변수
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+
+const MyHistoryPage = () => {
+  const { user, refreshUserInfo } = useAuth();
+
+  const [loading, setLoading] = useState(true);
+  const [formData, setFormData] = useState({
+    license: '',
+    experience: '',
+    education: '',
+    instagram: '',
+    licenseData: {
+      image_name: '',
+      image_url: '',
+      uploaded_at: '',
+      isLocal: false,
+    },
+    experienceData: {
+      items: [
+        {
+          startDate: '',
+          endDate: '',
+          content: '',
+          status: '',
+        },
+      ],
+    },
+    educationData: {
+      items: [
+        {
+          startDate: '',
+          endDate: '',
+          content: '',
+          status: '',
+        },
+      ],
+    },
+    instagramData: {
+      image_name: '',
+      image_url: '',
+      uploaded_at: '',
+      isLocal: false,
+    },
+  });
+
+  // 이미지 확대 모달 상태
+  const [imageModal, setImageModal] = useState({
+    isOpen: false,
+    imageUrl: '',
+    imageName: '',
+    title: '',
+  });
+
+  // 자격증, 경력, 학력, 인스타그램 데이터 파싱
+  const parseAdditionalData = (data, fieldName) => {
+    if (!data) {
+      return {
+        image_name: '',
+        image_url: '',
+        uploaded_at: '',
+        isLocal: false,
+      };
+    }
+
+    try {
+      const parsed = JSON.parse(data);
+      // 센터 이미지와 유사한 간단한 구조
+      return {
+        image_name: parsed.image_name || '',
+        image_url: parsed.image_url || '',
+        uploaded_at: parsed.uploaded_at || '',
+        isLocal: false,
+      };
+    } catch (error) {
+      console.error(`${fieldName} 파싱 실패:`, error);
+      return {
+        image_name: '',
+        image_url: '',
+        uploaded_at: '',
+        isLocal: false,
+      };
+    }
+  };
+
+  // 자격증, 경력, 학력, 인스타그램 데이터 직렬화 함수
+  const serializeAdditionalData = (data, fieldName) => {
+    // 데이터베이스 제한 확인
+    const maxLengths = {
+      license: 200,
+      experience: 200,
+      education: 200,
+      instagram: 100,
+    };
+
+    const maxLength = maxLengths[fieldName] || 200;
+
+    if (fieldName === 'experience' || fieldName === 'education') {
+      // 경력, 학력은 items 구조로 저장
+      const jsonData = {
+        items: data.items || [],
+      };
+
+      const jsonString = JSON.stringify(jsonData);
+
+      if (jsonString.length <= maxLength) {
+        return jsonString;
+      } else {
+        // 제한을 초과하면 내용만 저장
+        const contentOnlyData = {
+          items:
+            data.items?.map(item => ({
+              startDate: '',
+              endDate: '',
+              content: item.content || '',
+            })) || [],
+        };
+        return JSON.stringify(contentOnlyData);
+      }
+    } else {
+      // 자격증, 인스타그램은 새로운 간단한 이미지 구조 (센터 이미지와 유사)
+      const jsonData = {
+        image_name: data.image_name || '',
+        image_url: data.image_url || '',
+        uploaded_at: data.uploaded_at || '',
+      };
+
+      const jsonString = JSON.stringify(jsonData);
+
+      if (jsonString.length <= maxLength) {
+        return jsonString;
+      } else {
+        // 제한을 초과하면 이미지 URL만 저장
+        const imageOnlyData = {
+          image_name: data.image_name || '',
+          image_url: data.image_url || '',
+          uploaded_at: '',
+        };
+        return JSON.stringify(imageOnlyData);
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (user) {
+      setFormData(prev => ({
+        ...prev,
+        license: user.license || '',
+        experience: user.experience || '',
+        education: user.education || '',
+        instagram: user.instagram || '',
+        // 추가 데이터 파싱
+        licenseData: parseAdditionalData(user.license, 'license'),
+        experienceData: parseAdditionalData(user.experience, 'experience'),
+        educationData: parseAdditionalData(user.education, 'education'),
+        instagramData: parseAdditionalData(user.instagram, 'instagram'),
+      }));
+      setLoading(false);
+    }
+  }, [user]);
+
+  // 자격증, 경력, 학력, 인스타그램 이미지 업로드 핸들러
+  const handleAdditionalImageUpload = async (fieldName, file) => {
+    const allowedTypes = ['.jpg', '.jpeg', '.png'];
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    const fileExtension = `.${file.name.split('.').pop().toLowerCase()}`;
+
+    if (!allowedTypes.includes(fileExtension)) {
+      toast.error('허용되지 않는 파일 형식입니다. JPG, JPEG, PNG 파일만 업로드 가능합니다.');
+      return;
+    }
+
+    if (file.size > maxSize) {
+      toast.error('파일 크기가 너무 큽니다. 최대 10MB까지 업로드 가능합니다.');
+      return;
+    }
+
+    try {
+      // 먼저 FileReader로 로컬 미리보기 추가 (센터 이미지와 동일한 방식)
+      const reader = new FileReader();
+      reader.onload = e => {
+        const previewUrl = e.target.result;
+        setFormData(prev => ({
+          ...prev,
+          [`${fieldName}Data`]: {
+            ...prev[`${fieldName}Data`],
+            image_name: file.name,
+            image_url: previewUrl, // FileReader로 생성된 미리보기 URL
+            uploaded_at: new Date().toISOString(),
+            isLocal: true, // 로컬 이미지 표시
+          },
+        }));
+      };
+      reader.readAsDataURL(file);
+
+      // FormData 생성 (센터 이미지와 동일한 방식)
+      const formData = new FormData();
+      formData.append('additional_image_url', file);
+      formData.append('field', fieldName);
+
+      // 서버에 업로드
+      const response = await userAPI.uploadAdditionalImage(formData);
+      const result = response.data;
+
+      if (result.success) {
+        // 업로드 성공 시 로컬 이미지를 서버 URL로 교체
+        setFormData(prev => ({
+          ...prev,
+          [`${fieldName}Data`]: {
+            ...prev[`${fieldName}Data`],
+            image_name: result.data.image_name,
+            image_url: result.data.image_url,
+            uploaded_at: result.data.uploaded_at,
+            isLocal: false, // 로컬 이미지 아님
+          },
+        }));
+        toast.success('이미지가 추가되었습니다.');
+      } else {
+        // 업로드 실패 시 로컬 이미지 제거
+        setFormData(prev => ({
+          ...prev,
+          [`${fieldName}Data`]: {
+            ...prev[`${fieldName}Data`],
+            image_name: '',
+            image_url: '',
+            uploaded_at: '',
+            isLocal: false,
+          },
+        }));
+        toast.error('이미지 업로드에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('이미지 업로드 실패:', error);
+      toast.error(
+        `이미지 업로드에 실패했습니다: ${error.response?.data?.message || error.message}`
+      );
+
+      // 에러 발생 시 로컬 이미지 제거
+      setFormData(prev => ({
+        ...prev,
+        [`${fieldName}Data`]: {
+          ...prev[`${fieldName}Data`],
+          image_name: '',
+          image_url: '',
+          uploaded_at: '',
+          isLocal: false,
+        },
+      }));
+    }
+  };
+
+  // 자격증, 경력, 학력, 인스타그램 이미지 삭제 핸들러
+  const handleAdditionalImageDelete = async fieldName => {
+    try {
+      // 현재 이미지 정보 가져오기
+      const currentData = formData[`${fieldName}Data`];
+
+      if (!currentData || !currentData.image_url) {
+        toast.error('삭제할 이미지가 없습니다.');
+        return;
+      }
+
+      // 로컬 이미지가 아닌 경우에만 서버에서 삭제 요청
+      if (!currentData.isLocal) {
+        // TODO: 서버에서 이미지 삭제 API 구현 필요
+        // 현재는 프론트엔드에서만 제거
+      }
+
+      // 이미지 정보 제거 (센터 이미지와 동일한 방식)
+      setFormData(prev => ({
+        ...prev,
+        [`${fieldName}Data`]: {
+          ...prev[`${fieldName}Data`],
+          image_name: '',
+          image_url: '',
+          uploaded_at: '',
+          isLocal: false,
+        },
+      }));
+
+      toast.success('이미지가 삭제되었습니다.');
+    } catch (error) {
+      console.error('이미지 삭제 실패:', error);
+      toast.error('이미지 삭제에 실패했습니다.');
+    }
+  };
+
+  // 자격증, 경력, 학력, 인스타그램 내용 변경 핸들러
+  const handleAdditionalContentChange = (fieldName, content) => {
+    setFormData(prev => ({
+      ...prev,
+      [`${fieldName}Data`]: {
+        ...prev[`${fieldName}Data`],
+        content,
+      },
+    }));
+  };
+
+  // 경력, 학력 항목 추가 핸들러
+  const handleAddItem = fieldName => {
+    setFormData(prev => ({
+      ...prev,
+      [`${fieldName}Data`]: {
+        ...prev[`${fieldName}Data`],
+        items: [
+          ...(prev[`${fieldName}Data`].items || []),
+          {
+            startDate: '',
+            endDate: '',
+            content: '',
+            status: fieldName === 'education' ? '' : undefined,
+          },
+        ],
+      },
+    }));
+  };
+
+  // 경력, 학력 항목 삭제 핸들러
+  const handleRemoveItem = (fieldName, index) => {
+    setFormData(prev => ({
+      ...prev,
+      [`${fieldName}Data`]: {
+        ...prev[`${fieldName}Data`],
+        items: prev[`${fieldName}Data`].items.filter((_, i) => i !== index),
+      },
+    }));
+  };
+
+  // 경력, 학력 항목 내용 변경 핸들러
+  const handleItemContentChange = (fieldName, index, field, value) => {
+    // 현재 스크롤 위치 저장
+    const scrollPosition = window.scrollY;
+
+    setFormData(prev => ({
+      ...prev,
+      [`${fieldName}Data`]: {
+        ...prev[`${fieldName}Data`],
+        items: prev[`${fieldName}Data`].items.map((item, i) =>
+          i === index ? { ...item, [field]: value } : item
+        ),
+      },
+    }));
+
+    // 스크롤 위치 복원
+    setTimeout(() => {
+      window.scrollTo(0, scrollPosition);
+    }, 0);
+  };
+
+  // 경력, 학력 항목 날짜 변경 핸들러
+  const handleItemDateChange = (fieldName, index, dateType, value) => {
+    // 현재 스크롤 위치 저장
+    const scrollPosition = window.scrollY;
+
+    setFormData(prev => ({
+      ...prev,
+      [`${fieldName}Data`]: {
+        ...prev[`${fieldName}Data`],
+        items: prev[`${fieldName}Data`].items.map((item, i) =>
+          i === index ? { ...item, [dateType]: value } : item
+        ),
+      },
+    }));
+
+    // 스크롤 위치 복원
+    setTimeout(() => {
+      window.scrollTo(0, scrollPosition);
+    }, 0);
+  };
+
+  // 이미지 확대 모달 열기
+  const openImageModal = (imageUrl, imageName, title) => {
+    const fullImageUrl = imageUrl.startsWith('http') ? imageUrl : `${API_BASE_URL}${imageUrl}`;
+    setImageModal({
+      isOpen: true,
+      imageUrl: fullImageUrl,
+      imageName: imageName || '이미지',
+      title: title || '이미지 보기',
+    });
+  };
+
+  // 이미지 확대 모달 닫기
+  const closeImageModal = () => {
+    setImageModal({
+      isOpen: false,
+      imageUrl: '',
+      imageName: '',
+      title: '',
+    });
+  };
+
+  // 인스타그램 링크 열기
+  const openInstagramLink = url => {
+    if (!url) {
+      toast.error('인스타그램 URL이 입력되지 않았습니다.');
+      return;
+    }
+
+    // URL 형식 검증 및 수정
+    let instagramUrl = url.trim();
+    if (!instagramUrl.startsWith('http://') && !instagramUrl.startsWith('https://')) {
+      instagramUrl = 'https://' + instagramUrl;
+    }
+
+    // 인스타그램 도메인 확인
+    if (!instagramUrl.includes('instagram.com')) {
+      toast.error('올바른 인스타그램 URL을 입력해주세요.');
+      return;
+    }
+
+    // 새 탭에서 링크 열기
+    window.open(instagramUrl, '_blank', 'noopener,noreferrer');
+  };
+
+  // 인스타그램 섬네일 가져오기
+  const fetchInstagramThumbnail = async url => {
+    try {
+      // 인스타그램 URL에서 사용자명 추출
+      const username = url.match(/instagram\.com\/([^\/\?]+)/)?.[1];
+      if (!username) {
+        toast.error('올바른 인스타그램 URL을 입력해주세요.');
+        return;
+      }
+
+      // 인스타그램 프로필 이미지 URL 생성 (공개 API 사용)
+      const thumbnailUrl = `https://www.instagram.com/${username}/media/?size=t`;
+
+      // 섬네일을 이미지 배열에 추가
+      setFormData(prev => ({
+        ...prev,
+        instagramData: {
+          ...prev.instagramData,
+          image_name: `${username}_thumbnail`,
+          image_url: thumbnailUrl,
+          uploaded_at: new Date().toISOString(),
+          isLocal: false,
+        },
+      }));
+
+      toast.success('인스타그램 섬네일이 추가되었습니다.');
+    } catch (error) {
+      console.error('인스타그램 섬네일 가져오기 실패:', error);
+      toast.error('인스타그램 섬네일을 가져올 수 없습니다.');
+    }
+  };
+
+  const handleSave = async () => {
+    try {
+      // 데이터 길이 검증
+      const maxLengths = {
+        license: 200,
+        experience: 200,
+        education: 200,
+        instagram: 100,
+      };
+
+      const fieldNames = {
+        license: '자격증',
+        experience: '경력',
+        education: '학력',
+        instagram: '인스타그램',
+      };
+
+      // 각 필드의 데이터 길이 확인
+      Object.keys(maxLengths).forEach(fieldName => {
+        const data = formData[`${fieldName}Data`];
+        if (data) {
+          const serialized = serializeAdditionalData(data, fieldName);
+          if (serialized.length > maxLengths[fieldName]) {
+            console.warn(
+              `${fieldNames[fieldName]} 데이터가 ${maxLengths[fieldName]}자를 초과합니다. 자동으로 잘라내어 저장됩니다.`
+            );
+          }
+        }
+      });
+
+      // 추가 데이터를 데이터베이스 제한에 맞춰 변환하여 저장
+      const licenseData = serializeAdditionalData(formData.licenseData, 'license');
+      const experienceData = serializeAdditionalData(formData.experienceData, 'experience');
+      const educationData = serializeAdditionalData(formData.educationData, 'education');
+      const instagramData = serializeAdditionalData(formData.instagramData, 'instagram');
+
+      const cleanFormData = {
+        license: licenseData,
+        experience: experienceData,
+        education: educationData,
+        instagram: instagramData,
+      };
+
+      // userAPI.updateMyAccount 사용
+      const response = await userAPI.updateMyAccount(cleanFormData);
+
+      // 저장 성공 후 formData를 즉시 업데이트
+      if (response.user) {
+        setFormData(prev => ({
+          ...prev,
+          license: response.user.license || prev.license,
+          experience: response.user.experience || prev.experience,
+          education: response.user.education || prev.education,
+          instagram: response.user.instagram || prev.instagram,
+          // 추가 데이터 업데이트
+          licenseData: response.user.license
+            ? parseAdditionalData(response.user.license, 'license')
+            : prev.licenseData,
+          experienceData: response.user.experience
+            ? parseAdditionalData(response.user.experience, 'experience')
+            : prev.experienceData,
+          educationData: response.user.education
+            ? parseAdditionalData(response.user.education, 'education')
+            : prev.educationData,
+          instagramData: response.user.instagram
+            ? parseAdditionalData(response.user.instagram, 'instagram')
+            : prev.instagramData,
+        }));
+      }
+
+      toast.success('이력 정보가 업데이트되었습니다.');
+
+      // 저장 후 최신 사용자 정보 재호출 (화면 갱신용)
+      if (refreshUserInfo && typeof refreshUserInfo === 'function') {
+        try {
+          await refreshUserInfo();
+        } catch (error) {
+          console.error('refreshUserInfo 호출 실패:', error);
+        }
+      }
+    } catch (err) {
+      console.error('업데이트 실패:', err.message);
+
+      // 더 자세한 에러 메시지 표시
+      let errorMessage = '업데이트에 실패했습니다.';
+      if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+
+      toast.error(`업데이트 실패: ${errorMessage}`);
+    }
+  };
+
+  // 자격증, 경력, 학력, 인스타그램 섹션 컴포넌트
+  const AdditionalInfoSection = memo(
+    ({
+      title,
+      fieldName,
+      data,
+      onImageUpload,
+      onImageDelete,
+      onContentChange,
+      onImageExpand,
+      onInstagramLink,
+      isDateField = false,
+      startDate = '',
+      endDate = '',
+      onStartDateChange = () => {},
+      onEndDateChange = () => {},
+      onAddItem = () => {},
+      onRemoveItem = () => {},
+      onItemContentChange = () => {},
+      onItemDateChange = () => {},
+    }) => {
+      const fileInputRef = useRef(null);
+      const [localLines, setLocalLines] = useState(['']);
+      const [isInitialized, setIsInitialized] = useState(false);
+      const debounceTimeoutRef = useRef(null);
+      const inputRefs = useRef([]);
+      const lastContentRef = useRef('');
+      const localLinesRef = useRef(['']);
+
+      // data.content를 메모이제이션하여 불필요한 리렌더링 방지
+      const memoizedContent = useMemo(() => data.content, [data.content]);
+
+      // 초기 로딩 시에만 localLines 동기화 (사용자 입력 중단 방지)
+      useEffect(() => {
+        if (!isInitialized && memoizedContent && memoizedContent !== lastContentRef.current) {
+          const lines = memoizedContent.split('\n');
+          setLocalLines(lines);
+          localLinesRef.current = lines;
+          lastContentRef.current = memoizedContent;
+          setIsInitialized(true);
+        } else if (!isInitialized && !memoizedContent) {
+          setLocalLines(['']);
+          localLinesRef.current = [''];
+          lastContentRef.current = '';
+          setIsInitialized(true);
+        }
+      }, [memoizedContent, isInitialized]);
+
+      // 컴포넌트 언마운트 시 타이머 정리
+      useEffect(() => {
+        return () => {
+          if (debounceTimeoutRef.current) {
+            clearTimeout(debounceTimeoutRef.current);
+          }
+        };
+      }, []);
+
+      const handleImageClick = useCallback(() => {
+        if (fileInputRef.current) {
+          fileInputRef.current.click();
+        }
+      }, []);
+
+      const handleFileChange = useCallback(
+        e => {
+          const file = e.target.files?.[0];
+          if (file) {
+            onImageUpload(fieldName, file);
+          }
+        },
+        [fieldName, onImageUpload]
+      );
+
+      const addContentLine = useCallback(() => {
+        setLocalLines(prevLines => {
+          const newLines = [...prevLines, ''];
+          localLinesRef.current = newLines;
+
+          // 다음 렌더링 후 새로 추가된 input에 포커스
+          setTimeout(() => {
+            if (inputRefs.current[newLines.length - 1]) {
+              inputRefs.current[newLines.length - 1].focus();
+            }
+          }, 0);
+
+          // 디바운싱 적용하여 부모 컴포넌트 상태 업데이트
+          if (debounceTimeoutRef.current) {
+            clearTimeout(debounceTimeoutRef.current);
+          }
+          debounceTimeoutRef.current = setTimeout(() => {
+            onContentChange(fieldName, newLines.join('\n'));
+          }, 300);
+
+          return newLines;
+        });
+      }, [fieldName, onContentChange]);
+
+      const removeContentLine = useCallback(
+        index => {
+          setLocalLines(prevLines => {
+            if (prevLines.length > 1) {
+              const newLines = prevLines.filter((_, i) => i !== index);
+              localLinesRef.current = newLines;
+
+              // 삭제 후 이전 input에 포커스 (가능한 경우)
+              setTimeout(() => {
+                const focusIndex = Math.min(index, newLines.length - 1);
+                if (inputRefs.current[focusIndex]) {
+                  inputRefs.current[focusIndex].focus();
+                }
+              }, 0);
+
+              // 디바운싱 적용하여 부모 컴포넌트 상태 업데이트
+              if (debounceTimeoutRef.current) {
+                clearTimeout(debounceTimeoutRef.current);
+              }
+              debounceTimeoutRef.current = setTimeout(() => {
+                onContentChange(fieldName, newLines.join('\n'));
+              }, 300);
+
+              return newLines;
+            }
+            return prevLines;
+          });
+        },
+        [fieldName, onContentChange]
+      );
+
+      const updateContentLine = useCallback(
+        (index, value) => {
+          setLocalLines(prevLines => {
+            const newLines = [...prevLines];
+            newLines[index] = value;
+            localLinesRef.current = newLines;
+
+            // 디바운싱 적용하여 부모 컴포넌트 상태 업데이트
+            if (debounceTimeoutRef.current) {
+              clearTimeout(debounceTimeoutRef.current);
+            }
+            debounceTimeoutRef.current = setTimeout(() => {
+              onContentChange(fieldName, newLines.join('\n'));
+            }, 300);
+
+            return newLines;
+          });
+        },
+        [fieldName, onContentChange]
+      );
+
+      // input refs 배열 초기화
+      useEffect(() => {
+        inputRefs.current = inputRefs.current.slice(0, localLines.length);
+      }, [localLines.length]);
+
+      // 경력, 학력인 경우 items 구조 렌더링
+      if (isDateField && data.items) {
+        return (
+          <div className="col-span-2">
+            <div className="border rounded-lg p-6 bg-gray-50">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h4 className="font-medium text-gray-600">{title}</h4>
+                  {fieldName === 'experience' && (
+                    <div className="text-xs text-gray-500 mt-1">재직 시 종료일 생략 가능</div>
+                  )}
+                </div>
+                <div className="text-xs text-gray-500">최대 200자</div>
+              </div>
+
+              <div className="space-y-4">
+                {data.items.map((item, index) => (
+                  <div key={index} className="border rounded-lg p-4 bg-white">
+                    <div className="flex items-center justify-between mb-3">
+                      <h5 className="text-sm font-medium text-gray-700">항목 {index + 1}</h5>
+                      {data.items.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => onRemoveItem(fieldName, index)}
+                          className="text-red-500 hover:text-red-700 text-sm"
+                        >
+                          삭제
+                        </button>
+                      )}
+                    </div>
+
+                    {/* 날짜와 내용 입력을 한 줄로 배치 */}
+                    <div className="flex items-center gap-3">
+                      {/* 시작일 */}
+                      <div className="w-32">
+                        <label className="block text-xs text-gray-600 mb-1">시작일</label>
+                        <input
+                          type="date"
+                          value={item.startDate}
+                          onChange={e =>
+                            onItemDateChange(fieldName, index, 'startDate', e.target.value)
+                          }
+                          className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                        />
+                      </div>
+
+                      {/* 구분자 */}
+                      <div className="flex items-end">
+                        <span className="text-gray-400 text-lg mb-2">~</span>
+                      </div>
+
+                      {/* 종료일 */}
+                      <div className="w-32">
+                        <label className="block text-xs text-gray-600 mb-1">종료일</label>
+                        <input
+                          type="date"
+                          value={item.endDate}
+                          onChange={e =>
+                            onItemDateChange(fieldName, index, 'endDate', e.target.value)
+                          }
+                          className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                        />
+                      </div>
+
+                      {/* 내용 입력 */}
+                      <div className="flex-1">
+                        <label className="block text-xs text-gray-600 mb-1">
+                          {fieldName === 'experience'
+                            ? '회사명/직책/담당업무'
+                            : '학교명/전공/학위 (예: 서울대학교/컴퓨터공학과)'}
+                        </label>
+                        <input
+                          type="text"
+                          value={item.content}
+                          onChange={e =>
+                            onItemContentChange(fieldName, index, 'content', e.target.value)
+                          }
+                          placeholder={
+                            fieldName === 'experience'
+                              ? '회사명/직책/담당업무를 입력하세요'
+                              : '학교명/전공/학위를 입력하세요 (예: 서울대학교/컴퓨터공학과)'
+                          }
+                          className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
+
+                      {/* 학력인 경우 졸업 상태 필드 추가 */}
+                      {fieldName === 'education' && (
+                        <div className="w-24">
+                          <label className="block text-xs text-gray-600 mb-1">상태</label>
+                          <select
+                            value={item.status || ''}
+                            onChange={e => {
+                              const status = e.target.value;
+                              // status 필드에 저장
+                              onItemContentChange(fieldName, index, 'status', status);
+                            }}
+                            className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                          >
+                            <option value="">선택</option>
+                            <option value="졸업">졸업</option>
+                            <option value="재학중">재학중</option>
+                            <option value="휴학">휴학</option>
+                            <option value="중퇴">중퇴</option>
+                            <option value="수료">수료</option>
+                          </select>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+
+                {/* 새 항목 추가 버튼 */}
+                <button
+                  type="button"
+                  onClick={() => onAddItem(fieldName)}
+                  className="w-full p-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  + 새 {title} 항목 추가
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      // 기존 이미지 + 내용 구조 렌더링 (자격증, 인스타그램)
+      return (
+        <div className="col-span-2">
+          <div className="border rounded-lg p-6 bg-gray-50">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h4 className="font-medium text-gray-600">{title}</h4>
+                {fieldName === 'experience' && (
+                  <div className="text-xs text-gray-500 mt-1">재직 시 종료일 생략 가능</div>
+                )}
+              </div>
+              <div className="text-xs text-gray-500">최대 200자</div>
+            </div>
+            <div className="flex gap-6">
+              {/* 왼쪽: 이미지 업로드 공간 또는 날짜 선택 */}
+              <div className="w-1/4">
+                {isDateField ? (
+                  // 날짜 선택 필드 (이력서 형식)
+                  <div className="space-y-3">
+                    <div className="text-center">
+                      <div className="text-sm font-medium text-gray-700 mb-3">📅 기간</div>
+                      <div className="space-y-3">
+                        <div>
+                          <label className="block text-xs text-gray-600 mb-1">시작일</label>
+                          <input
+                            type="date"
+                            value={startDate}
+                            onChange={e => onStartDateChange(e.target.value)}
+                            className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                            placeholder="시작일"
+                          />
+                        </div>
+                        <div className="text-center">
+                          <span className="text-gray-400 text-lg">↓</span>
+                        </div>
+                        <div>
+                          <label className="block text-xs text-gray-600 mb-1">종료일</label>
+                          <input
+                            type="date"
+                            value={endDate}
+                            onChange={e => onEndDateChange(e.target.value)}
+                            className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                            placeholder="종료일"
+                          />
+                        </div>
+                        {fieldName === 'experience' && (
+                          <div className="text-xs text-gray-500 text-center mt-2 p-2 bg-blue-50 rounded">
+                            💡 현재 재직 중이면
+                            <br />
+                            종료일을 비워두세요
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  // 기존 이미지 업로드 공간
+                  <div className="space-y-3">
+                    {/* 이미지 업로드 영역 */}
+                    <div className="mt-4">
+                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-blue-400 transition-colors">
+                        <input
+                          type="file"
+                          id={`${fieldName}-upload`}
+                          className="hidden"
+                          accept=".jpg,.jpeg,.png"
+                          onChange={e => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              onImageUpload(fieldName, file);
+                            }
+                          }}
+                        />
+                        <label htmlFor={`${fieldName}-upload`} className="cursor-pointer block">
+                          <div className="text-gray-600">
+                            {data.image_url ? (
+                              <div className="relative group">
+                                <img
+                                  src={
+                                    data.image_url.startsWith('http')
+                                      ? data.image_url
+                                      : `${API_BASE_URL}${data.image_url}`
+                                  }
+                                  alt={`${title} 이미지`}
+                                  className="w-full h-32 object-cover rounded-lg cursor-pointer"
+                                  onClick={() =>
+                                    onImageExpand(data.image_url, data.image_name, title)
+                                  }
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => onImageDelete(fieldName)}
+                                  className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full text-xs hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100"
+                                >
+                                  ×
+                                </button>
+                              </div>
+                            ) : (
+                              <>
+                                <svg
+                                  className="mx-auto h-12 w-12 text-gray-400"
+                                  stroke="currentColor"
+                                  fill="none"
+                                  viewBox="0 0 48 48"
+                                >
+                                  <path
+                                    d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+                                    strokeWidth={2}
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  />
+                                </svg>
+                                <p className="mt-2 text-sm text-gray-600">
+                                  이미지를 클릭하여 업로드하세요
+                                </p>
+                                <p className="mt-1 text-xs text-gray-500">
+                                  JPG, PNG 파일만 가능 (최대 10MB)
+                                </p>
+                              </>
+                            )}
+                          </div>
+                        </label>
+                      </div>
+                    </div>
+
+                    {/* 업로드된 이미지들 */}
+                    {data.image_url && (
+                      <div className="mt-3">
+                        <div className="text-sm text-gray-600 mb-2">
+                          업로드된 이미지: {data.image_name}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          업로드 시간: {new Date(data.uploaded_at).toLocaleString()}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* 오른쪽: 내용 입력 공간 */}
+              <div className="w-3/4">
+                <div className="space-y-3">
+                  {/* 경력/학력인 경우 상단에 기간 표시 */}
+                  {isDateField && (startDate || endDate) && (
+                    <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                      <div className="text-sm font-medium text-blue-800 mb-1">📅 선택된 기간</div>
+                      <div className="text-sm text-blue-700">
+                        {startDate} ~ {endDate || '현재'}
+                      </div>
+                    </div>
+                  )}
+
+                  {localLines.map((line, index) => (
+                    <div key={index} className="space-y-2">
+                      {/* 내용 입력 */}
+                      <div className="flex gap-2 items-center">
+                        <input
+                          ref={el => (inputRefs.current[index] = el)}
+                          type="text"
+                          value={line}
+                          onChange={e => updateContentLine(index, e.target.value)}
+                          placeholder={
+                            fieldName === 'experience'
+                              ? `회사명/직책/담당업무 ${index + 1}...`
+                              : fieldName === 'education'
+                                ? `학교명/전공/학위 ${index + 1}...`
+                                : `${title} 내용 ${index + 1}...`

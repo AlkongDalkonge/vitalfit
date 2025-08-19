@@ -7,6 +7,7 @@ export { useMember } from '../../hooks/useMember';
 export { useFilters } from '../../hooks/useFilters';
 export { useMemberForm } from '../../hooks/useMemberForm';
 export { usePTSession } from '../../hooks/usePTSession';
+export { useUserPTSession } from '../../hooks/useUserPTSession';
 export { usePTSessionForm } from '../../hooks/usePTSessionForm';
 export { useDatePicker } from '../../hooks/useDatePicker';
 

@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const centerController = require('../controllers/centerController');
+const { validateRequest, createCenterSchema } = require('../middlewares/validation');
 
 // 디버깅을 위한 미들웨어 추가
 router.use((req, res, next) => {
@@ -11,6 +12,10 @@ router.use((req, res, next) => {
 // ✅ 모든 센터 목록 조회
 // GET /api/centers
 router.get('/', centerController.getAllCenters);
+
+// ✅ 센터 등록
+// POST /api/centers
+router.post('/', validateRequest(createCenterSchema), centerController.createCenter);
 
 // ✅ 센터 검색 (ID 라우트보다 먼저 정의)
 // GET /api/centers/search?q=검색어&status=active

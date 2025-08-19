@@ -8,4 +8,12 @@ const profileUpload = createUpload(
   ['.jpg', '.jpeg', '.png'] // 허용 확장자
 );
 
-module.exports = profileUpload;
+// 추가 이미지 업로드 미들웨어 생성
+const additionalImageUpload = createUpload(
+  'additional_images', // 폴더명
+  'additional_image_url', // 필드명
+  8, // 최대 크기 (MB) - PDF 고려
+  ['.jpg', '.jpeg', '.png', '.pdf'] // 허용 확장자
+);
+
+module.exports = { profileUpload, additionalImageUpload };

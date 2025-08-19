@@ -1,7 +1,17 @@
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useUser } from '../utils/hooks';
 import { getUserStatusText, getUserStatusColor, formatPhoneNumber } from '../utils/userUtils';
+import UserDetailModal from '../components/UserDetailModal';
 
 const UserPage = () => {
+  // 모달 상태 관리
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // 네비게이션 훅
+  const navigate = useNavigate();
+
   // 커스텀 훅 사용
   const {
     users,
@@ -39,6 +49,26 @@ const UserPage = () => {
   const handleRegisterUser = () => {
     // TODO: 직원 등록 모달 또는 페이지로 이동
     alert('직원 등록 기능이 준비 중입니다.');
+  };
+
+  // 사용자 상세보기 핸들러
+  const handleViewUser = userId => {
+    const user = users.find(u => u.id === userId);
+    if (user) {
+      setSelectedUser(user);
+      setIsModalOpen(true);
+    }
+  };
+
+  // PT기록 보기 핸들러
+  const handleViewPTRecord = userId => {
+    navigate(`/user/${userId}/pt-sessions`);
+  };
+
+  // 모달 닫기 핸들러
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedUser(null);
   };
 
   // Position 기반 역할 색상 반환
@@ -270,49 +300,56 @@ const UserPage = () => {
 
                     <div
                       data-layer="직책"
-                      className="flex-[1] min-w-[80px] justify-start text-neutral-800 text-sm font-semibold font-['Nunito'] leading-normal"
+                      className="flex-[0.93] min-w-[80px] justify-start text-neutral-800 text-sm font-semibold font-['Nunito'] leading-normal"
                     >
                       직책
                     </div>
                     <div
                       data-layer="직원명"
-                      className="flex-[1] min-w-[80px] justify-start text-neutral-800 text-sm font-semibold font-['Nunito'] leading-normal"
+                      className="flex-[0.93] min-w-[80px] justify-start text-neutral-800 text-sm font-semibold font-['Nunito'] leading-normal"
                     >
                       직원명
                     </div>
+                    {/* 연락처 좌측 여유 */}
+                    <div className="flex-[0.1]"></div>
                     <div
                       data-layer="연락처"
-                      className="flex-[1.5] min-w-[100px] justify-start text-neutral-800 text-sm font-semibold font-['Nunito'] leading-normal"
+                      className="flex-[1.4] min-w-[100px] justify-start text-neutral-800 text-sm font-semibold font-['Nunito'] leading-normal"
                     >
                       연락처
                     </div>
                     <div
                       data-layer="고객 수"
-                      className="flex-[1] min-w-[80px] justify-start text-neutral-800 text-sm font-semibold font-['Nunito'] leading-normal"
+                      className="flex-[0.93] min-w-[80px] justify-start text-neutral-800 text-sm font-semibold font-['Nunito'] leading-normal"
                     >
                       고객 수
                     </div>
                     <div
                       data-layer="당월 매출"
-                      className="flex-[1] min-w-[80px] justify-start text-neutral-800 text-sm font-semibold font-['Nunito'] leading-normal"
+                      className="flex-[1.4] min-w-[80px] justify-start text-neutral-800 text-sm font-semibold font-['Nunito'] leading-normal"
                     >
                       당월 매출
                     </div>
                     <div
                       data-layer="소속"
-                      className="flex-[1] min-w-[80px] justify-start text-neutral-800 text-sm font-semibold font-['Nunito'] leading-normal"
+                      className="flex-[1.5] min-w-[80px] justify-start text-neutral-800 text-sm font-semibold font-['Nunito'] leading-normal"
                     >
                       소속
                     </div>
+                    {/* 상태 좌측 여유 */}
+                    <div className="flex-[0.1]"></div>
                     <div
                       data-layer="상태"
-                      className="flex-[1] min-w-[80px] justify-start text-neutral-800 text-sm font-semibold font-['Nunito'] leading-normal"
+                      className="flex-[0.93] min-w-[80px] justify-start text-neutral-800 text-sm font-semibold font-['Nunito'] leading-normal"
                     >
                       상태
                     </div>
-
-                    {/* 우측 여유 */}
-                    <div className="flex-[0.3]"></div>
+                    <div
+                      data-layer="PT기록"
+                      className="flex-[0.93] min-w-[80px] justify-start text-neutral-800 text-sm font-semibold font-['Nunito'] leading-normal"
+                    >
+                      PT기록
+                    </div>
                   </div>
                 </div>
 
@@ -326,7 +363,7 @@ const UserPage = () => {
                       </div>
                     </div>
                   ) : (
-                    filteredUsers.map(user => (
+                    filteredUsers.map((user, index) => (
                       <div
                         key={user.id}
                         className="hover:bg-gray-50 transition-colors duration-200 relative z-10"
@@ -335,55 +372,70 @@ const UserPage = () => {
                           {/* 좌측 여유 */}
                           <div className="flex-[0.3]"></div>
 
-                          <div data-layer="직책" className="flex-[1] min-w-[80px] justify-start">
+                          <div data-layer="직책" className="flex-[0.93] min-w-[80px] justify-start">
                             <span
                               className={`px-2 py-1 rounded-full text-xs font-medium ${getPositionColor(user.position?.name)}`}
                             >
                               {user.position?.name || '-'}
                             </span>
                           </div>
-                          <div data-layer="직원명" className="flex-[1] min-w-[80px] justify-start">
+                          <div
+                            data-layer="직원명"
+                            className="flex-[0.93] min-w-[80px] justify-start"
+                          >
                             <button
-                              onClick={() => {}}
+                              onClick={() => handleViewUser(user.id)}
                               className="text-cyan-600 text-sm font-normal font-['Nunito'] leading-normal hover:text-cyan-800 hover:underline cursor-pointer transition-colors duration-200"
                             >
                               {user.name || '-'}
                             </button>
                           </div>
+                          {/* 연락처 좌측 여유 */}
+                          <div className="flex-[0.1]"></div>
                           <div
                             data-layer="연락처"
-                            className="flex-[1.5] min-w-[100px] justify-start text-neutral-600 text-sm font-normal font-['Nunito'] leading-normal"
+                            className="flex-[1.4] min-w-[100px] justify-start text-neutral-600 text-sm font-normal font-['Nunito'] leading-normal"
                           >
                             {formatPhoneNumber(user.phone) || '-'}
                           </div>
                           <div
                             data-layer="고객 수"
-                            className="flex-[1] min-w-[80px] justify-start text-neutral-600 text-sm font-normal font-['Nunito'] leading-normal"
+                            className="flex-[0.93] min-w-[80px] justify-start text-neutral-600 text-sm font-normal font-['Nunito'] leading-normal"
                           >
                             {getUserMemberCount(user.id)}
                           </div>
                           <div
                             data-layer="당월 매출"
-                            className="flex-[1] min-w-[80px] justify-start text-neutral-600 text-sm font-normal font-['Nunito'] leading-normal"
+                            className="flex-[1.4] min-w-[80px] justify-start text-neutral-600 text-sm font-normal font-['Nunito'] leading-normal"
                           >
                             -
                           </div>
                           <div
                             data-layer="소속"
-                            className="flex-[1] min-w-[80px] justify-start text-neutral-600 text-sm font-normal font-['Nunito'] leading-normal"
+                            className="flex-[1.5] min-w-[80px] justify-start text-neutral-600 text-sm font-normal font-['Nunito'] leading-normal"
                           >
-                            {user.center?.name || '-'}
+                            {user.center?.name || '-'}/{user.team?.name || '-'}
                           </div>
-                          <div data-layer="상태" className="flex-[1] min-w-[80px] justify-start">
+                          {/* 상태 좌측 여유 */}
+                          <div className="flex-[0.1]"></div>
+                          <div data-layer="상태" className="flex-[0.93] min-w-[80px] justify-start">
                             <span
                               className={`px-2 py-1 rounded-full text-xs font-medium ${getUserStatusColor(user.status)}`}
                             >
                               {getUserStatusText(user.status)}
                             </span>
                           </div>
-
-                          {/* 우측 여유 */}
-                          <div className="flex-[0.3]"></div>
+                          <div
+                            data-layer="PT기록"
+                            className="flex-[0.93] min-w-[80px] justify-start"
+                          >
+                            <button
+                              onClick={() => handleViewPTRecord(user.id)}
+                              className="text-cyan-600 text-sm font-normal font-['Nunito'] leading-normal hover:text-cyan-800 hover:underline cursor-pointer transition-colors duration-200"
+                            >
+                              조회
+                            </button>
+                          </div>
                         </div>
                         <div className="h-0 border-b border-gray-50"></div>
                       </div>
@@ -412,6 +464,9 @@ const UserPage = () => {
           </div>
         </div>
       </div>
+
+      {/* 유저 상세 정보 모달 */}
+      <UserDetailModal user={selectedUser} isOpen={isModalOpen} onClose={handleCloseModal} />
     </div>
   );
 };

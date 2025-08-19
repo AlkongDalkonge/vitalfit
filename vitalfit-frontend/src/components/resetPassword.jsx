@@ -57,7 +57,11 @@ export default function ResetPassword() {
       {/* 왼쪽 박스 섹션 */}
       <div className="flex w-1/2 justify-end items-center">
         <div className="w-[550px] h-[706px] bg-white/20 backdrop-blur-sm rounded-l-3xl shadow-2xl border border-white/30 overflow-hidden">
-          <img src="/img/main.jpg" alt="Main Image" className="w-full h-full object-cover" />
+          <img
+            src="/img/infovitalfit.png"
+            alt="Main Image"
+            className="w-full h-full object-cover"
+          />
         </div>
       </div>
 
@@ -106,7 +110,7 @@ export default function ResetPassword() {
                 >
                   <div className="w-full h-full bg-white rounded-[9px] flex items-center justify-center">
                     <div className="PrimaryButton justify-start bg-gradient-to-r from-cyan-500 to-indigo-600 bg-clip-text text-transparent text-sm font-normal font-['Nunito'] leading-normal">
-                      Sign In
+                      로그인
                     </div>
                   </div>
                 </button>

@@ -1,133 +1,149 @@
 # VitalFit Backend
 
-VitalFit 프로젝트의 백엔드 API 서버입니다.
-
-## 프로젝트 가이드
-
-- **CONTRIBUTING.md**: 코드 컨벤션과 커밋 메시지 규칙
-- **API_SPEC.md**: API 명세서 예시
-- **.env.example**: 환경변수 설정 예시
-
-## 환경변수 설정
-
-프로젝트를 처음 클론한 후, 환경변수 파일을 생성하세요:
-
-```bash
-cp .env.example .env
-```
-
-.env 파일에 실제 사용하는 DB, 이메일, 소셜 로그인, AWS 등 정보를 입력해야 서버가 정상 동작합니다.
-
-### 이메일 설정 (비밀번호 재설정 기능)
-
-비밀번호 재설정 기능을 사용하려면 Gmail 설정이 필요합니다:
-
-1. **Gmail 앱 비밀번호 생성**
-   - Gmail 계정 설정 → 보안 → 2단계 인증 활성화
-   - 앱 비밀번호 생성 (16자리)
-
-2. **환경변수 설정**
-   ```bash
-   # .env 파일에 추가
-   EMAIL_USER=vitalfit.app@gmail.com
-   EMAIL_PASSWORD=your-gmail-app-password
-   FRONTEND_URL=http://localhost:3000
-   ```
-
-3. **개발 환경에서 테스트**
-   - 실제 Gmail 계정 대신 개발용 이메일 서비스 사용 가능
-   - Mailtrap, Ethereal Email 등 활용
-
-## Git 명령어 실행 방법
-
-### 기본 작업 흐름
-
-```bash
-# 변경사항 확인
-git status
-
-# 파일 추가
-git add .
-
-# 커밋
-git commit -m "[타입] 설명"
-
-# 원격 저장소에 푸시
-git push origin main
-```
-
-### 브랜치 작업
-
-```bash
-# 새 브랜치 생성
-git checkout -b feature/login
-
-# 브랜치 변경
-git checkout main
-
-# 브랜치 병합
-git merge feature/login
-```
-
-### 변경사항 되돌리기
-
-```bash
-# 마지막 커밋 취소
-git reset --soft HEAD~1
-
-# 특정 파일 변경사항 취소
-git checkout -- filename
-```
-
-## 코드 컨벤션 및 커밋 규칙
-
-- **코드 컨벤션**: 파일명, 함수명, 변수명 등 코딩 스타일 규칙
-- **커밋 메시지 규칙**: [타입] 설명 형식의 커밋 메시지 작성법
-
-자세한 내용은 **CONTRIBUTING.md** 파일을 참고하세요.
-
-## 실행 방법
-
-### 의존성 설치
+## 🚀 빠른 시작
 
 ```bash
 npm install
-```
-
-### 서버 실행
-
-```bash
 npm start
 ```
 
-서버가 정상 실행되면: ✅ Server running on http://localhost:3000
+## 🗄️ 데이터베이스 설정
 
-## 폴더 구조
+### PostgreSQL 설치 및 설정
 
+1. PostgreSQL 설치
+2. 데이터베이스 생성: `vitalfit_dev`
+3. `.env` 파일에 연결 정보 설정
+
+### 환경 변수 설정
+
+```bash
+# .env 파일 생성
+cp .env.example .env
+
+# 데이터베이스 정보 입력
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=vitalfit_dev
+DB_USER=your_username
+DB_PASSWORD=your_password
 ```
-vitalfit-backend/
-  └─ public/
-      ├─ logo/                # 로고 이미지 저장
-      ├─ profiles/            # 직원 프로필 사진 저장
-      └─ stores/              # 매장 사진 저장
-  └─ src/
-      ├─ app.js                # Express 서버의 진입점
-      ├─ config/               # DB 및 환경설정 관련 파일
-      │    └─ config.js        # 데이터베이스 설정 파일
-      ├─ controllers/          # 라우터에서 호출하는 비즈니스 로직 처리
-      ├─ middlewares/          # 공통 미들웨어(인증, 에러처리 등)
-      ├─ models/               # Sequelize 모델(테이블 구조 정의)
-      ├─ routes/               # API 라우터 정의
-      ├─ services/             # 서비스 계층(비즈니스 로직 분리 시 사용)
-      ├─ utils/                # 유틸리티 함수 모음
-  └─ test/
-      └─ test-connection.js    # DB 연결 테스트
-  └─ .gitignore
-  └─ package.json
-  └─ README.md
-  └─ CONTRIBUTING.md           # 코드 컨벤션/커밋 규칙
-  └─ .env.example              # 환경변수 예시
-```
+
+## ⚠️ 주의사항
+
+### gender 필드 관련 문제 해결
+
+## API 엔드포인트
+
+### 센터 관리 API
+
+#### 센터 등록
+- **POST** `/api/centers`
+- **설명**: 새로운 센터를 등록합니다.
+- **요청 본문**:
+  ```json
+  {
+    "name": "센터명 (필수)",
+    "address": "주소 (필수)",
+    "phone": "전화번호 (필수)",
+    "description": "센터 설명 (선택)",
+    "weekday_hours": "평일 운영시간 (선택)",
+    "saturday_hours": "토요일 운영시간 (선택)",
+    "sunday_hours": "일요일 운영시간 (선택)",
+    "holiday_hours": "공휴일 운영시간 (선택)",
+    "has_parking": true/false,
+    "parking_fee": "주차요금 (선택)",
+    "parking_info": "주차정보 (선택)",
+    "directions": "오시는 길 (선택)",
+    "status": "active/inactive/closed"
+  }
+  ```
+- **응답**:
+  ```json
+  {
+    "success": true,
+    "message": "센터 등록 성공",
+    "data": {
+      "id": 1,
+      "name": "센터명",
+      "address": "주소",
+      "phone": "전화번호",
+      // ... 기타 필드들
+    }
+  }
+  ```
+
+#### 센터 목록 조회
+- **GET** `/api/centers`
+- **설명**: 모든 활성 센터 목록을 조회합니다.
+
+#### 센터 상세 조회
+- **GET** `/api/centers/:id`
+- **설명**: 특정 센터의 상세 정보를 조회합니다.
+
+#### 센터 수정
+- **PUT** `/api/centers/:id`
+- **설명**: 센터 정보를 수정합니다.
+
+#### 센터 삭제
+- **DELETE** `/api/centers/:id`
+- **설명**: 센터를 삭제합니다.
+
+## API 엔드포인트
+
+### 센터 관리 API
+
+#### 센터 등록
+- **POST** `/api/centers`
+- **설명**: 새로운 센터를 등록합니다.
+- **요청 본문**:
+  ```json
+  {
+    "name": "센터명 (필수)",
+    "address": "주소 (필수)",
+    "phone": "전화번호 (필수)",
+    "description": "센터 설명 (선택)",
+    "weekday_hours": "평일 운영시간 (선택)",
+    "saturday_hours": "토요일 운영시간 (선택)",
+    "sunday_hours": "일요일 운영시간 (선택)",
+    "holiday_hours": "공휴일 운영시간 (선택)",
+    "has_parking": true/false,
+    "parking_fee": "주차요금 (선택)",
+    "parking_info": "주차정보 (선택)",
+    "directions": "오시는 길 (선택)",
+    "status": "active/inactive/closed"
+  }
+  ```
+- **응답**:
+  ```json
+  {
+    "success": true,
+    "message": "센터 등록 성공",
+    "data": {
+      "id": 1,
+      "name": "센터명",
+      "address": "주소",
+      "phone": "전화번호",
+      // ... 기타 필드들
+    }
+  }
+  ```
+
+#### 센터 목록 조회
+- **GET** `/api/centers`
+- **설명**: 모든 활성 센터 목록을 조회합니다.
+
+#### 센터 상세 조회
+- **GET** `/api/centers/:id`
+- **설명**: 특정 센터의 상세 정보를 조회합니다.
+
+#### 센터 수정
+- **PUT** `/api/centers/:id`
+- **설명**: 센터 정보를 수정합니다.
+
+#### 센터 삭제
+- **DELETE** `/api/centers/:id`
+- **설명**: 센터를 삭제합니다.
 
 ## 기술 스택
 
@@ -136,11 +152,60 @@ vitalfit-backend/
 - Sequelize (ORM)
 - PostgreSQL
 - JWT (인증)
+- Joi (유효성 검사)
 
-## 팀 협업 규칙
+만약 다음과 같은 에러가 발생한다면:
 
-- .env 파일은 절대 공유 금지
-- PR은 리뷰 후 병합
-- 코드 컨벤션은 CONTRIBUTING.md 참고
+```
+error: unterminated quoted string at or near "';"
+sql: `DO 'BEGIN CREATE TYPE "public"."enum_users_gender" AS ENUM(''male'', ''female''); ...`
+```
 
----
+**해결 방법:**
+
+1. PostgreSQL에 연결
+2. 다음 명령어 실행:
+
+```sql
+DROP TYPE IF EXISTS "public"."enum_users_gender" CASCADE;
+ALTER TABLE "public"."users" DROP COLUMN IF EXISTS "gender";
+```
+
+3. 서버 재시작
+
+### Sequelize 동기화 설정
+
+- **개발 환경**: `src/models/index.js`에서 `sequelize.sync()` 활성화
+- **프로덕션 환경**: `sequelize.sync()` 비활성화
+
+## 🔧 개발 가이드
+
+### 모델 수정 시 주의사항
+
+1. **새 필드 추가**: 기존 데이터와 호환성 확인
+2. **필드 타입 변경**: 데이터 마이그레이션 계획 수립
+3. **ENUM 사용**: PostgreSQL 호환성 문제 가능성 고려
+
+### 데이터베이스 동기화
+
+```javascript
+// 개발 환경
+sequelize.sync({ force: false, alter: true });
+
+// 프로덕션 환경
+// sequelize.sync() 사용 금지
+```
+
+## 📞 문제 해결
+
+### 일반적인 문제들
+
+1. **연결 거부**: PostgreSQL 서버 실행 상태 확인
+2. **권한 오류**: 데이터베이스 사용자 권한 확인
+3. **스키마 오류**: 위의 gender 필드 해결 방법 참조
+
+### 팀원 간 공유
+
+- 모델 변경사항은 반드시 팀에 공지
+- 데이터베이스 스키마 변경 시 마이그레이션 가이드 제공
+- 환경별 설정 파일 분리 권장

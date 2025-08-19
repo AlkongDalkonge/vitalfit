@@ -97,3 +97,68 @@ export const useTeam = (centerId = null) => {
     refetch: fetchTeams,
   };
 };
+
+/**
+ * 팀별 매출 통계를 관리하는 커스텀 훅
+ * @param {number|null} teamId - 팀 ID
+ * @param {number} year - 년도
+ * @param {number} month - 월
+ */
+export const useTeamRevenueStats = (teamId, year, month) => {
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    console.log('useTeamRevenueStats 훅 실행:', { teamId, year, month });
+
+    if (!teamId || !year || !month) {
+      console.log('useTeamRevenueStats - 조건 불충족, 초기화');
+      setStats(null);
+      setError(null);
+      return;
+    }
+
+    const fetchTeamRevenueStats = async () => {
+      console.log('팀별 매출 통계 API 호출 시작:', { teamId, year, month });
+      setLoading(true);
+      setError(null);
+
+      try {
+        const response = await teamAPI.getTeamRevenueStats(teamId, year, month);
+        console.log('팀별 매출 통계 API 응답:', response);
+
+        if (response.success) {
+          setStats(response.data);
+          console.log('팀별 매출 통계 데이터 설정 완료');
+        } else {
+          setError(response.message || '팀 매출 통계를 가져오는데 실패했습니다.');
+          console.log('팀별 매출 통계 API 실패:', response.message);
+        }
+      } catch (err) {
+        console.error('팀별 매출 통계 API 호출 오류:', err);
+        setError(err.response?.data?.message || '서버 오류가 발생했습니다.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTeamRevenueStats();
+  }, [teamId, year, month]);
+
+  const refresh = () => {
+    if (teamId && year && month) {
+      setStats(null);
+      setError(null);
+      // useEffect가 다시 실행되도록 강제로 상태를 변경
+      setLoading(true);
+    }
+  };
+
+  return {
+    stats,
+    loading,
+    error,
+    refresh,
+  };
+};

@@ -1,56 +1,56 @@
 require('dotenv').config();
-console.log('Database configuration loaded');
+
+// 디버깅: 환경 변수 확인
+console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('TEST_DB_USERNAME:', process.env.TEST_DB_USERNAME);
+console.log('TEST_DB_HOST:', process.env.TEST_DB_HOST);
+console.log('TEST_DB_NAME:', process.env.TEST_DB_NAME);
+
+const common = {
+  dialect: 'postgres',
+  logging: process.env.NODE_ENV === 'development' ? console.log : false,
+  timezone: '+09:00', // 한국 시간
+};
 
 module.exports = {
+  // JWT 설정
+  jwt: {
+    secret: process.env.JWT_SECRET,
+    expiresIn: process.env.JWT_EXPIRES_IN || '24h',
+    refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
+    reAuthExpiresIn: process.env.JWT_REAUTH_EXPIRES_IN || '2m',
+  },
+
+  // 로컬 테스트 DB
   development: {
-    username: process.env.DB_USERNAME || 'vitalfit_admin',
-    password: process.env.DB_PASSWORD || 'your_password_here',
-    database: process.env.DB_NAME || 'vitalfit',
-    host: process.env.DB_HOST || 'vitalfit.postgres.database.azure.com',
-    port: process.env.DB_PORT || 5432,
-    dialect: process.env.DB_DIALECT || 'postgres',
-    logging: false,
-    use_env_variable: false,
-    dialectOptions: {
-      ssl: {
-        require: true, // Azure PostgreSQL은 SSL 필수
-        rejectUnauthorized: false, // 인증서 검증 비활성화
-      },
-    },
-    pool: {
-      max: 5,
-      min: 0,
-      acquire: 30000,
-      idle: 10000,
-    },
+    ...common,
+    host: process.env.TEST_DB_HOST || 'localhost',
+    port: Number(process.env.TEST_DB_PORT) || 5432,
+    username: process.env.TEST_DB_USERNAME || 'postgres',
+    password: process.env.TEST_DB_PASSWORD || 'postgres',
+    database: process.env.TEST_DB_NAME || 'vitalfit_test',
   },
+
   test: {
-    username: process.env.DB_USERNAME || 'postgres',
-    password: process.env.DB_PASSWORD || 'postgres',
-    database: process.env.DB_NAME || 'vitalfit',
-    host: process.env.DB_HOST || 'localhost',
-    dialect: 'postgres',
-    logging: false,
+    ...common,
+    host: process.env.TEST_DB_HOST || 'localhost',
+    port: Number(process.env.TEST_DB_PORT) || 5432,
+    username: process.env.TEST_DB_USERNAME || 'postgres',
+    password: process.env.TEST_DB_PASSWORD || 'postgres',
+    database: process.env.TEST_DB_NAME || 'vitalfit_test',
   },
+
+  // Azure 운영 DB
   production: {
-    username: process.env.DB_USERNAME,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT || 5432,
-    dialect: 'postgres',
-    logging: false,
-    dialectOptions: {
-      ssl: {
-        require: true, // Azure PostgreSQL는 무조건 true
-        rejectUnauthorized: false, // 인증서 검증 비활성화
-      },
-    },
-    pool: {
-      max: 5,
-      min: 0,
-      acquire: 30000,
-      idle: 10000,
+    ...common,
+    host: process.env.AZURE_DB_HOST,
+    port: Number(process.env.AZURE_DB_PORT) || 5432,
+    username: process.env.AZURE_DB_USERNAME,
+    password: process.env.AZURE_DB_PASSWORD,
+    database: process.env.AZURE_DB_NAME,
+    ssl: {
+      require: true,
+      rejectUnauthorized: false, // Azure PostgreSQL 연결을 위해 필요
     },
   },
 };

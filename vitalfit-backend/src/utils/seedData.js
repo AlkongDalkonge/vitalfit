@@ -197,6 +197,15 @@ const seedPositions = async () => {
         is_active: true,
       },
       {
+        code: 'finance_team',
+        name: '회계팀',
+        level: 12,
+        base_salary: 0, // 회계팀은 별도 급여 체계
+        effective_date: '2024-06-01',
+        description: '재무 및 회계 업무 담당',
+        is_active: true,
+      },
+      {
         code: 'admin',
         name: '관리자',
         level: 99, // 특별 관리자 레벨
@@ -285,7 +294,10 @@ const seedTeams = async centers => {
 // 사용자 시드 데이터
 const seedUsers = async (centers, teams, positions) => {
   try {
-    const users = await User.bulkCreate([
+    console.log('사용자 시드 데이터 생성 시작...');
+
+    // 각 사용자를 개별적으로 생성 (bcrypt.hash 때문에)
+    const userData = [
       // 관리자
       {
         name: '관리자',
@@ -700,7 +712,83 @@ const seedUsers = async (centers, teams, positions) => {
         status: 'active',
         nickname: '손신림3트레이너',
       },
-    ]);
+
+      // 센터장들
+      {
+        name: '강남센터장',
+        email: 'gangnam.center@vitalfit.co.kr',
+        password: await bcrypt.hash('password123', 10),
+        phone: '010-9001-0001',
+        phone_verified: true,
+        position_id: positions.find(p => p.code === 'center_manager').id,
+        team_id: null,
+        center_id: centers[0].id, // 강남센터
+        join_date: '2024-01-01',
+        status: 'active',
+        nickname: '강남센터장',
+      },
+      {
+        name: '홍대센터장',
+        email: 'hongdae.center@vitalfit.co.kr',
+        password: await bcrypt.hash('password123', 10),
+        phone: '010-9002-0001',
+        phone_verified: true,
+        position_id: positions.find(p => p.code === 'center_manager').id,
+        team_id: null,
+        center_id: centers[1].id, // 홍대센터
+        join_date: '2024-01-01',
+        status: 'active',
+        nickname: '홍대센터장',
+      },
+      {
+        name: '신림센터장',
+        email: 'sillim.center@vitalfit.co.kr',
+        password: await bcrypt.hash('password123', 10),
+        phone: '010-9003-0001',
+        phone_verified: true,
+        position_id: positions.find(p => p.code === 'center_manager').id,
+        team_id: null,
+        center_id: centers[2].id, // 신림센터
+        join_date: '2024-01-01',
+        status: 'active',
+        nickname: '신림센터장',
+      },
+
+      // 회계팀
+      {
+        name: '회계팀장',
+        email: 'finance.manager@vitalfit.co.kr',
+        password: await bcrypt.hash('password123', 10),
+        phone: '010-9999-0001',
+        phone_verified: true,
+        position_id: positions.find(p => p.code === 'finance_team').id,
+        team_id: null,
+        center_id: centers[0].id, // 임시로 강남센터에 할당
+        join_date: '2024-01-01',
+        status: 'active',
+        nickname: '회계팀장',
+      },
+      {
+        name: '회계팀원',
+        email: 'finance.staff@vitalfit.co.kr',
+        password: await bcrypt.hash('password123', 10),
+        phone: '010-9999-0002',
+        phone_verified: true,
+        position_id: positions.find(p => p.code === 'finance_team').id,
+        team_id: null,
+        center_id: centers[0].id, // 임시로 강남센터에 할당
+        join_date: '2024-01-15',
+        status: 'active',
+        nickname: '회계팀원',
+      },
+    ];
+
+    // 각 사용자를 개별적으로 생성
+    const users = [];
+    for (const userInfo of userData) {
+      const user = await User.create(userInfo);
+      users.push(user);
+    }
 
     console.log(`✅ 사용자 시드 데이터 생성 완료 (${users.length}명 사용자)`);
     return users;
@@ -948,7 +1036,7 @@ const seedPayments = async (centers, users, members) => {
 };
 
 // 커미션 비율 시드 데이터
-const seedCommissionRates = async (centers, positions) => {
+const seedCommissionRates = async () => {
   try {
     console.log('📊 커미션 비율 시드 데이터 생성 중...');
 
@@ -1328,9 +1416,6 @@ const seedNoticeTargetRoles = async notices => {
 // PT 세션 시드 데이터
 const seedPTSessions = async (centers, users, members) => {
   try {
-    // 트레이너만 필터링 (관리자 제외)
-    const trainers = users.filter(u => u.name !== '관리자');
-
     // 동적으로 PT 세션 생성 (각 회원별 0~12개까지 다양하게)
     const ptSessionData = [];
 
@@ -1342,7 +1427,7 @@ const seedPTSessions = async (centers, users, members) => {
     ];
 
     months.forEach(({ month, days }) => {
-      members.forEach((member, index) => {
+      members.forEach(member => {
         // 회원별 PT 세션 수 (0~12개 랜덤)
         const sessionCount = Math.floor(Math.random() * 13); // 0~12
 
@@ -1392,7 +1477,7 @@ const seedAllData = async () => {
     // 순서대로 시드 데이터 생성 (외래키 의존성 고려)
     const centers = await seedCenters();
     const positions = await seedPositions();
-    const commissionRates = await seedCommissionRates(centers, positions);
+    const commissionRates = await seedCommissionRates();
     const bonusRules = await seedBonusRules();
     const teams = await seedTeams(centers);
     const users = await seedUsers(centers, teams, positions);

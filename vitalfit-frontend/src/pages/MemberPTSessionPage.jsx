@@ -1,4 +1,5 @@
 import { useParams } from 'react-router-dom';
+import { useEffect, useRef } from 'react';
 import PTSessionCreateModal from './PTSessionCreateModal';
 import PTSessionEditModal from './PTSessionEditModal';
 import { usePTSession, useDatePicker } from '../utils/hooks';
@@ -7,6 +8,19 @@ import { getSessionTypeText, getSessionTypeColor } from '../utils/ptSessionUtils
 
 const MemberPTSessionPage = () => {
   const { memberId } = useParams();
+  const yearDropdownRef = useRef(null);
+  const monthDropdownRef = useRef(null);
+
+  console.log('🔍 MemberPTSessionPage - memberId:', memberId);
+  console.log('🔍 MemberPTSessionPage - useParams():', useParams());
+  console.log('🔍 MemberPTSessionPage - window.location.pathname:', window.location.pathname);
+
+  // URL에서 memberId를 직접 추출하는 임시 방법
+  const pathname = window.location.pathname;
+  const pathMatch = pathname.match(/\/member\/(\d+)\/pt-sessions/);
+  const extractedMemberId = pathMatch ? pathMatch[1] : memberId;
+
+  console.log('🔍 MemberPTSessionPage - extractedMemberId:', extractedMemberId);
 
   // 커스텀 훅 사용
   const {
@@ -27,31 +41,25 @@ const MemberPTSessionPage = () => {
     getYearOptions,
     getMonthOptions,
     setIsCreateModalOpen,
-  } = usePTSession(memberId);
+    fetchMemberPTSessions,
+  } = usePTSession(extractedMemberId);
 
   const {
-    showDatePicker,
     showYearDropdown,
     showMonthDropdown,
-    toggleDatePicker,
     toggleYearDropdown,
     toggleMonthDropdown,
-    closeDatePicker,
     setShowYearDropdown,
     setShowMonthDropdown,
   } = useDatePicker();
 
   // 년도/월 변경 핸들러
   const handleYearChange = year => {
-    // currentYear와 currentMonth는 usePTSession에서 관리됨
-    // 실제 날짜 변경은 fetchMemberPTSessions를 다시 호출해야 함
     handleYearMonthChange(year, currentMonth);
     setShowYearDropdown(false);
   };
 
   const handleMonthChange = month => {
-    // currentYear와 currentMonth는 usePTSession에서 관리됨
-    // 실제 날짜 변경은 fetchMemberPTSessions를 다시 호출해야 함
     handleYearMonthChange(currentYear, month);
     setShowMonthDropdown(false);
   };
@@ -65,6 +73,23 @@ const MemberPTSessionPage = () => {
   const handleCloseCreateModal = () => {
     setIsCreateModalOpen(false);
   };
+
+  // 드롭다운 외부 클릭 시 닫기
+  useEffect(() => {
+    const handleClickOutside = event => {
+      if (yearDropdownRef.current && !yearDropdownRef.current.contains(event.target)) {
+        setShowYearDropdown(false);
+      }
+      if (monthDropdownRef.current && !monthDropdownRef.current.contains(event.target)) {
+        setShowMonthDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [setShowYearDropdown, setShowMonthDropdown]);
 
   if (loading) {
     return (
@@ -122,13 +147,13 @@ const MemberPTSessionPage = () => {
             {/* 구분선 */}
             <div className="h-12 w-px bg-gray-200"></div>
 
-            {/* 무료 잔여 세션 정보 */}
+            {/* 보너스 잔여 세션 정보 */}
             {member && (
               <div className="text-center">
                 <div className="text-2xl font-bold text-black">
                   {member.remaining_free_sessions || 0}
                 </div>
-                <div className="text-sm text-gray-600">무료 잔여 PT</div>
+                <div className="text-sm text-gray-600">보너스 잔여 PT</div>
               </div>
             )}
 
@@ -138,7 +163,7 @@ const MemberPTSessionPage = () => {
             {/* 누적 PT 정보 */}
             {member && (
               <div className="text-center">
-                <div className="text-2xl font-bold text-orange-500">
+                <div className="text-2xl font-bold">
                   {(member.actual_used_sessions || 0) + (member.actual_used_free_sessions || 0)}
                 </div>
                 <div className="text-sm text-gray-600">누적 PT</div>
@@ -146,129 +171,121 @@ const MemberPTSessionPage = () => {
             )}
           </div>
 
-          {/* 날짜 선택기 */}
-          <div className="relative">
-            <button
-              onClick={toggleDatePicker}
-              className="flex items-center gap-2 px-4 py-2 bg-sky-50 rounded-lg hover:bg-sky-100 transition-colors duration-200"
+          {/* 날짜 필터 섹션 */}
+          <div className="flex gap-4 items-center">
+            {/* 년도 필터 */}
+            <div
+              ref={yearDropdownRef}
+              data-layer="Input Field"
+              data-property-1="Small"
+              className="w-[120px] h-[30px] flex flex-col justify-start items-start dropdown-container relative z-50"
             >
-              <span className="font-medium">{formatYearMonth(currentYear, currentMonth)}</span>
-              <svg
-                className="w-4 h-4 text-gray-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+              <div
+                data-layer="Rectangle 3"
+                className="w-[120px] h-[30px] bg-sky-50 rounded-[8px] border border-gray-200 relative"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                />
-              </svg>
-            </button>
+                <button
+                  onClick={toggleYearDropdown}
+                  className="w-full h-full flex justify-between items-center px-3"
+                >
+                  <div
+                    data-layer="Placeholder"
+                    className={`Placeholder justify-start text-xs font-normal font-['Nunito'] leading-normal ${
+                      currentYear ? 'text-black' : 'text-neutral-400'
+                    }`}
+                  >
+                    {currentYear}년
+                  </div>
+                  <svg
+                    className="w-3 h-3 text-neutral-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </button>
 
-            {/* 날짜 선택 드롭다운 */}
-            {showDatePicker && (
-              <div className="absolute top-full right-0 mt-2 p-4 bg-white border border-gray-300 rounded-lg shadow-lg z-50 min-w-[240px]">
-                <div className="grid grid-cols-2 gap-3 mb-3">
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">년도</label>
-                    <div className="relative">
-                      <button
-                        onClick={toggleYearDropdown}
-                        className="w-full px-2 py-1.5 text-sm bg-white border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-left flex justify-between items-center"
-                      >
-                        <span>{currentYear}년</span>
-                        <svg
-                          className="w-4 h-4"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
+                {/* 년도 드롭다운 메뉴 */}
+                {showYearDropdown && (
+                  <div className="absolute top-full left-0 w-[120px] bg-white border border-gray-200 rounded-[8px] shadow-lg z-50 mt-1">
+                    <div className="py-1">
+                      {getYearOptions().map(year => (
+                        <button
+                          key={year}
+                          onClick={() => handleYearChange(year)}
+                          className="w-full px-3 py-1.5 text-left text-xs text-neutral-600 hover:bg-sky-50"
                         >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M19 9l-7 7-7-7"
-                          />
-                        </svg>
-                      </button>
-                      {showYearDropdown && (
-                        <div className="absolute top-full left-0 w-full bg-white border border-gray-300 rounded-b shadow-lg z-[100] max-h-32 overflow-y-auto">
-                          {getYearOptions().map(year => (
-                            <button
-                              key={year}
-                              onClick={() => handleYearChange(year)}
-                              className={`w-full px-2 py-1.5 text-sm text-left hover:bg-blue-50 ${
-                                currentYear === year ? 'bg-blue-100 text-blue-600 font-medium' : ''
-                              }`}
-                            >
-                              {year}년
-                            </button>
-                          ))}
-                        </div>
-                      )}
+                          {year}년
+                        </button>
+                      ))}
                     </div>
                   </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">월</label>
-                    <div className="relative">
-                      <button
-                        onClick={toggleMonthDropdown}
-                        className="w-full px-2 py-1.5 text-sm bg-white border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-left flex justify-between items-center"
-                      >
-                        <span>{currentMonth}월</span>
-                        <svg
-                          className="w-4 h-4"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M19 9l-7 7-7-7"
-                          />
-                        </svg>
-                      </button>
-                      {showMonthDropdown && (
-                        <div className="absolute top-full left-0 w-full bg-white border border-gray-300 rounded-b shadow-lg z-50 max-h-32 overflow-y-auto">
-                          {getMonthOptions().map(month => (
-                            <button
-                              key={month}
-                              onClick={() => handleMonthChange(month)}
-                              className={`w-full px-2 py-1.5 text-sm text-left hover:bg-blue-50 ${
-                                currentMonth === month
-                                  ? 'bg-blue-100 text-blue-600 font-medium'
-                                  : ''
-                              }`}
-                            >
-                              {month}월
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-                <div className="flex justify-end space-x-2 pt-1">
-                  <button
-                    onClick={closeDatePicker}
-                    className="px-2 py-1 text-xs text-gray-600 hover:text-gray-800"
-                  >
-                    취소
-                  </button>
-                  <button
-                    onClick={closeDatePicker}
-                    className="px-2 py-1 text-xs text-white rounded bg-gradient-to-br from-blue-400 to-blue-600 shadow-lg hover:shadow-xl transition-all duration-200"
-                  >
-                    확인
-                  </button>
-                </div>
+                )}
               </div>
-            )}
+            </div>
+
+            {/* 월 필터 */}
+            <div
+              ref={monthDropdownRef}
+              data-layer="Input Field"
+              data-property-1="Small"
+              className="w-[120px] h-[30px] flex flex-col justify-start items-start dropdown-container relative z-40"
+            >
+              <div
+                data-layer="Rectangle 3"
+                className="w-[120px] h-[30px] bg-sky-50 rounded-[8px] border border-gray-200 relative"
+              >
+                <button
+                  onClick={toggleMonthDropdown}
+                  className="w-full h-full flex justify-between items-center px-3"
+                >
+                  <div
+                    data-layer="Placeholder"
+                    className={`Placeholder justify-start text-xs font-normal font-['Nunito'] leading-normal ${
+                      currentMonth ? 'text-black' : 'text-neutral-400'
+                    }`}
+                  >
+                    {currentMonth}월
+                  </div>
+                  <svg
+                    className="w-3 h-3 text-neutral-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </button>
+
+                {/* 월 드롭다운 메뉴 */}
+                {showMonthDropdown && (
+                  <div className="absolute top-full left-0 w-[120px] bg-white border border-gray-200 rounded-[8px] shadow-lg z-30 mt-1">
+                    <div className="py-1">
+                      {getMonthOptions().map(month => (
+                        <button
+                          key={month}
+                          onClick={() => handleMonthChange(month)}
+                          className="w-full px-3 py-1.5 text-left text-xs text-neutral-600 hover:bg-sky-50"
+                        >
+                          {month}월
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
 

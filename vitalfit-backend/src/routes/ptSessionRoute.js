@@ -9,6 +9,7 @@ const {
   getPTSessionsByMonth,
   getPTSessionsByMember,
   getTrainerPTSessionStats,
+  getPTSessionsByUser,
 } = require('../controllers/ptSessionController');
 
 const {
@@ -47,5 +48,9 @@ router.get('/payments', getPaymentsByTrainerAndMonth);
 // ✅ 트레이너 기본급 조회
 // GET /api/pt-sessions/trainer-salary?trainer_id=1
 router.get('/trainer-salary', getTrainerSalary);
+
+// ✅ 유저별 PT 세션 조회 (새로 추가)
+// GET /api/pt-sessions/user/:userId
+router.get('/user/:userId', auth, getPTSessionsByUser);
 
 module.exports = router;
