@@ -409,7 +409,10 @@ const UserPage = () => {
                               {user.position?.name || '-'}
                             </span>
                           </div>
-                          <div data-layer="직원명" className="flex-[0.93] min-w-[80px] justify-start">
+                          <div
+                            data-layer="직원명"
+                            className="flex-[0.93] min-w-[80px] justify-start"
+                          >
                             <button
                               onClick={() => handleViewUser(user.id)}
                               className="text-cyan-600 text-sm font-normal font-['Nunito'] leading-normal hover:text-cyan-800 hover:underline cursor-pointer transition-colors duration-200"
@@ -452,7 +455,10 @@ const UserPage = () => {
                               {getUserStatusText(user.status)}
                             </span>
                           </div>
-                          <div data-layer="PT기록" className="flex-[0.93] min-w-[80px] justify-start">
+                          <div
+                            data-layer="PT기록"
+                            className="flex-[0.93] min-w-[80px] justify-start"
+                          >
                             <button
                               onClick={() => handleViewPTRecord(user.id)}
                               className="text-cyan-600 text-sm font-normal font-['Nunito'] leading-normal hover:text-cyan-800 hover:underline cursor-pointer transition-colors duration-200"

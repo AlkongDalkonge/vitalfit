@@ -214,7 +214,6 @@ const DashboardPage = () => {
                 오늘의 비탈핏 센터 현황을 확인해보세요.
               </p>
             </div>
-
           </div>
         </div>
 
@@ -226,15 +225,20 @@ const DashboardPage = () => {
               <div
                 key={index}
                 className={`rounded-lg p-6 transition-all duration-300 text-white shadow-md hover:-translate-y-1 hover:shadow-lg border-[0.1px] ${
-                  index === 0 ? 'border-[#a5b4fc]' : index === 1 ? 'border-[#a1e1fd]' : 'border-[#b6ecf1]'
+                  index === 0
+                    ? 'border-[#a5b4fc]'
+                    : index === 1
+                      ? 'border-[#a1e1fd]'
+                      : 'border-[#b6ecf1]'
                 }`}
-                                  style={{
-                    background: index === 0 
+                style={{
+                  background:
+                    index === 0
                       ? 'radial-gradient(circle at center -50%, rgba(235,245,255,0.8) 0%, rgba(235,245,255,0.6) 20%, #708aed 60%, #4d6be6 100%)'
                       : index === 1
-                      ? 'radial-gradient(circle at center -50%, rgba(235,245,255,0.8) 0%, rgba(235,245,255,0.6) 20%, #74d4fc 60%, #74d4fc 100%)'
-                      : 'radial-gradient(circle at center -50%, rgba(235,245,255,0.8) 0%, rgba(235,245,255,0.6) 20%, #80dfe5 60%, #80dfe5 100%)'
-                  }}
+                        ? 'radial-gradient(circle at center -50%, rgba(235,245,255,0.8) 0%, rgba(235,245,255,0.6) 20%, #74d4fc 60%, #74d4fc 100%)'
+                        : 'radial-gradient(circle at center -50%, rgba(235,245,255,0.8) 0%, rgba(235,245,255,0.6) 20%, #80dfe5 60%, #80dfe5 100%)',
+                }}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
@@ -242,12 +246,19 @@ const DashboardPage = () => {
                       className="w-8 h-8 rounded-full flex items-center justify-center shadow-md bg-white"
                       style={{ backgroundColor: 'white' }}
                     >
-                      <IconComponent size={20} color={index === 0 ? "#4d6be6" : index === 1 ? "#74d4fc" : "#80dfe5"} />
+                      <IconComponent
+                        size={20}
+                        color={index === 0 ? '#4d6be6' : index === 1 ? '#74d4fc' : '#80dfe5'}
+                      />
                     </div>
-                                          <div className="flex flex-col">
-                        <div className="text-4xl font-bold text-white drop-shadow-lg mb-2">{stat.value}</div>
-                        <span className="text-sm font-medium text-white drop-shadow-md">{stat.title}</span>
+                    <div className="flex flex-col">
+                      <div className="text-4xl font-bold text-white drop-shadow-lg mb-2">
+                        {stat.value}
                       </div>
+                      <span className="text-sm font-medium text-white drop-shadow-md">
+                        {stat.title}
+                      </span>
+                    </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-semibold text-white drop-shadow-md">
@@ -268,7 +279,10 @@ const DashboardPage = () => {
         {/* 최근 활동과 지점별 정산현황 */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
           {/* 최근 활동 */}
-          <div className="bg-white rounded-xl p-6 border border-gray-100" style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)' }}>
+          <div
+            className="bg-white rounded-xl p-6 border border-gray-100"
+            style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)' }}
+          >
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-semibold text-gray-800 m-0">최근 활동</h2>
               <div className="flex items-center gap-2">
@@ -292,7 +306,9 @@ const DashboardPage = () => {
                     >
                       <div className="flex justify-between items-center">
                         <div>
-                          <p className="text-sm font-medium text-gray-800 truncate">{notice.title}</p>
+                          <p className="text-sm font-medium text-gray-800 truncate">
+                            {notice.title}
+                          </p>
                           <p className="text-xs text-gray-500">{notice.author?.name || '관리자'}</p>
                         </div>
                         <span className="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded-full">
@@ -314,7 +330,10 @@ const DashboardPage = () => {
               {/* 새로 생성된 유저 */}
               <div className="space-y-3">
                 <div className="flex items-center gap-2 mb-4">
-                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#7dd3fc' }}></div>
+                  <div
+                    className="w-3 h-3 rounded-full"
+                    style={{ backgroundColor: '#7dd3fc' }}
+                  ></div>
                   <h3 className="font-semibold text-gray-800">새로운 직원</h3>
                 </div>
                 <div className="space-y-2">
@@ -322,23 +341,27 @@ const DashboardPage = () => {
                     <div
                       key={user.id || index}
                       className="p-3 rounded-lg border transition-colors"
-                      style={{ 
-                        backgroundColor: '#f0f9ff', 
+                      style={{
+                        backgroundColor: '#f0f9ff',
                         borderColor: '#bae6fd',
-                        '--tw-hover-bg-opacity': '0.8'
+                        '--tw-hover-bg-opacity': '0.8',
                       }}
-                      onMouseEnter={(e) => e.target.style.backgroundColor = '#e0f2fe'}
-                      onMouseLeave={(e) => e.target.style.backgroundColor = '#f0f9ff'}
+                      onMouseEnter={e => (e.target.style.backgroundColor = '#e0f2fe')}
+                      onMouseLeave={e => (e.target.style.backgroundColor = '#f0f9ff')}
                     >
                       <div className="flex justify-between items-center">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-full overflow-hidden">
                             <img
-                              src={user.profileImage || 'https://lh3.googleusercontent.com/pw/AP1GczPHYKy-ftX95akuneOtJAq_BTm0oNlL8mLTK7gUbZJqkYXHB1RDR-gseWYT7G9cVjTsIZyconxHncd5Ph1RASfAHtI75Abk4G9eH9HNtkLAUvHcBfloZzlYUNfcxHPQaTLMmbuZfqZ4I0Pkqf4jS43E=w200-h200-s-no-gm?authuser=0'}
+                              src={
+                                user.profileImage ||
+                                'https://lh3.googleusercontent.com/pw/AP1GczPHYKy-ftX95akuneOtJAq_BTm0oNlL8mLTK7gUbZJqkYXHB1RDR-gseWYT7G9cVjTsIZyconxHncd5Ph1RASfAHtI75Abk4G9eH9HNtkLAUvHcBfloZzlYUNfcxHPQaTLMmbuZfqZ4I0Pkqf4jS43E=w200-h200-s-no-gm?authuser=0'
+                              }
                               alt={`${user.name} 프로필`}
                               className="w-full h-full object-cover"
-                              onError={(e) => {
-                                e.target.src = 'https://lh3.googleusercontent.com/pw/AP1GczPHYKy-ftX95akuneOtJAq_BTm0oNlL8mLTK7gUbZJqkYXHB1RDR-gseWYT7G9cVjTsIZyconxHncd5Ph1RASfAHtI75Abk4G9eH9HNtkLAUvHcBfloZzlYUNfcxHPQaTLMmbuZfqZ4I0Pkqf4jS43E=w200-h200-s-no-gm?authuser=0';
+                              onError={e => {
+                                e.target.src =
+                                  'https://lh3.googleusercontent.com/pw/AP1GczPHYKy-ftX95akuneOtJAq_BTm0oNlL8mLTK7gUbZJqkYXHB1RDR-gseWYT7G9cVjTsIZyconxHncd5Ph1RASfAHtI75Abk4G9eH9HNtkLAUvHcBfloZzlYUNfcxHPQaTLMmbuZfqZ4I0Pkqf4jS43E=w200-h200-s-no-gm?authuser=0';
                               }}
                             />
                           </div>
@@ -349,10 +372,13 @@ const DashboardPage = () => {
                             </p>
                           </div>
                         </div>
-                        <span className="text-xs px-2 py-1 rounded-full" style={{ 
-                          color: '#0369a1', 
-                          backgroundColor: '#bae6fd' 
-                        }}>
+                        <span
+                          className="text-xs px-2 py-1 rounded-full"
+                          style={{
+                            color: '#0369a1',
+                            backgroundColor: '#bae6fd',
+                          }}
+                        >
                           {new Date(user.createdAt).toLocaleDateString('ko-KR')}
                         </span>
                       </div>
@@ -370,7 +396,10 @@ const DashboardPage = () => {
           </div>
 
           {/* 지점별 정산현황 */}
-          <div className="bg-white rounded-xl p-6 border border-gray-100" style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)' }}>
+          <div
+            className="bg-white rounded-xl p-6 border border-gray-100"
+            style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)' }}
+          >
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-semibold text-gray-800 m-0">지점별 정산현황</h2>
               <div className="flex items-center gap-2">
@@ -388,40 +417,60 @@ const DashboardPage = () => {
                   >
                     <div className="flex justify-between items-center mb-3">
                       <h3 className="font-semibold text-gray-800 text-lg">{center.name}</h3>
-                      <span className="text-sm px-2 py-1 rounded-full" style={{ 
-                        color: '#0f766e', 
-                        backgroundColor: '#b6ecf1' 
-                      }}>
+                      <span
+                        className="text-sm px-2 py-1 rounded-full"
+                        style={{
+                          color: '#0f766e',
+                          backgroundColor: '#b6ecf1',
+                        }}
+                      >
                         {center.settlement_status || '진행중'}
                       </span>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
-                                            <div className="text-center p-3 bg-white rounded-lg border border-indigo-200">
+                      <div className="text-center p-3 bg-white rounded-lg border border-indigo-200">
                         <p className="text-xs text-gray-500 mb-1">총 직원</p>
-                        <p className="text-lg font-bold" style={{ color: '#81dee5' }}>{center.total_users || 0}명</p>
+                        <p className="text-lg font-bold" style={{ color: '#81dee5' }}>
+                          {center.total_users || 0}명
+                        </p>
                       </div>
                       <div className="text-center p-3 bg-white rounded-lg border border-purple-200">
                         <p className="text-xs text-gray-500 mb-1">정산완료</p>
-                        <p className="text-lg font-bold" style={{ color: '#0891b2' }}>{center.settled_users || 0}명</p>
+                        <p className="text-lg font-bold" style={{ color: '#0891b2' }}>
+                          {center.settled_users || 0}명
+                        </p>
                       </div>
                     </div>
                     <div className="mt-3">
                       <div className="flex justify-between items-center text-sm">
                         <span className="text-gray-600">진행률</span>
                         <span className="font-semibold text-gray-800">
-                          {center.total_users > 0 
-                            ? Math.round(((center.settled_users || 0) / center.total_users) * 100) 
-                            : 0}%
+                          {center.total_users > 0
+                            ? Math.round(((center.settled_users || 0) / center.total_users) * 100)
+                            : 0}
+                          %
                         </span>
                       </div>
                       <div className="w-full bg-white rounded-full h-2 mt-1">
-                        {console.log('Progress bar width:', center.total_users > 0 ? Math.round(((center.settled_users || 0) / center.total_users) * 100) : 0)}
-                        <div 
+                        {console.log(
+                          'Progress bar width:',
+                          center.total_users > 0
+                            ? Math.round(((center.settled_users || 0) / center.total_users) * 100)
+                            : 0
+                        )}
+                        <div
                           className="bg-gradient-to-r from-[#81dee5] to-[#0891b2] h-2 rounded-full transition-all duration-300"
-                          style={{ 
-                            width: `${center.total_users > 0 
-                              ? Math.round(((center.settled_users || Math.floor(center.total_users * 0.3)) / center.total_users) * 100) 
-                              : 0}%` 
+                          style={{
+                            width: `${
+                              center.total_users > 0
+                                ? Math.round(
+                                    ((center.settled_users ||
+                                      Math.floor(center.total_users * 0.3)) /
+                                      center.total_users) *
+                                      100
+                                  )
+                                : 0
+                            }%`,
                           }}
                         ></div>
                       </div>
@@ -438,8 +487,6 @@ const DashboardPage = () => {
             </div>
           </div>
         </div>
-
-
 
         {/* 직급별 통계 */}
         {dashboardData?.position_stats && dashboardData.position_stats.length > 0 && (
@@ -478,8 +525,6 @@ const DashboardPage = () => {
             </div>
           </div>
         )}
-
-
       </div>
 
       {/* Draft 정산 알림 모달 */}

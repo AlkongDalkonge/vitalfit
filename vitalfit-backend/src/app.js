@@ -18,6 +18,7 @@ const commissionRateRouter = require('./routes/commissionRateRoute');
 const jobRunRouter = require('./routes/jobRunRoute');
 const settlementRouter = require('./routes/settlementRoute');
 const emailRouter = require('./routes/emailRoute');
+const notificationRouter = require('./routes/notificationRoute');
 
 const { sequelize } = require('./models');
 const errorHandler = require('./middlewares/errorHandler');
@@ -57,6 +58,7 @@ app.use('/api/commission-rates', commissionRateRouter);
 app.use('/api/job-runs', jobRunRouter);
 app.use('/api/settlements', settlementRouter);
 app.use('/api/email', emailRouter);
+app.use('/api/notifications', notificationRouter);
 
 // 404 처리
 app.use((req, res) => {

@@ -218,7 +218,7 @@ const SettlementCard = ({ settlement, userRole, onActionComplete }) => {
         )}
 
         {/* 회계: 지급 버튼 */}
-        {userRole === 'finance' && settlement.status === 'confirmed' && (
+        {userRole === 'finance' && settlement.status === 'center_approved' && (
           <PaymentButton onPay={handlePay} loading={loading} paymentRef={settlement.payment_ref} />
         )}
       </div>

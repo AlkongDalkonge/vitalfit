@@ -81,7 +81,7 @@ const CenterPage = () => {
       const result = await centerAPI.getCenterById(centerId);
       if (result.success && result.data.images) {
         const images = result.data.images;
-        
+
         // 메인 이미지가 여러 개인 경우 첫 번째만 메인으로 설정
         let mainImageFound = false;
         const processedImages = images.map(img => {
@@ -91,7 +91,7 @@ const CenterPage = () => {
           } else if (isMain) {
             mainImageFound = true;
           }
-          
+
           return {
             id: img.id,
             url: img.image_url,
@@ -100,7 +100,7 @@ const CenterPage = () => {
             name: img.image_name || 'center-image',
           };
         });
-        
+
         setCenterImages(prev => ({
           ...prev,
           [centerId]: processedImages,
@@ -244,21 +244,21 @@ const CenterPage = () => {
   const nextSlide = (centerId, totalImages) => {
     setCurrentSlideIndex(prev => ({
       ...prev,
-      [centerId]: ((prev[centerId] || 0) + 1) % totalImages
+      [centerId]: ((prev[centerId] || 0) + 1) % totalImages,
     }));
   };
 
   const prevSlide = (centerId, totalImages) => {
     setCurrentSlideIndex(prev => ({
       ...prev,
-      [centerId]: (prev[centerId] || 0) === 0 ? totalImages - 1 : (prev[centerId] || 0) - 1
+      [centerId]: (prev[centerId] || 0) === 0 ? totalImages - 1 : (prev[centerId] || 0) - 1,
     }));
   };
 
   const goToSlide = (centerId, index) => {
     setCurrentSlideIndex(prev => ({
       ...prev,
-      [centerId]: index
+      [centerId]: index,
     }));
   };
 
@@ -319,20 +319,22 @@ const CenterPage = () => {
             const activeMembers = members.filter(
               member => member.center_id === center.id && member.status === 'active'
             );
-            
+
             // 카드별 배경색 설정
-            let cardBgClass = "p-6 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 hover:shadow-lg transition-all duration-300";
-            if (index === 1) { // 두 번째 카드 (index 1)
-              cardBgClass = "p-6 rounded-xl bg-[#f0f9ff] border border-blue-200 hover:shadow-lg transition-all duration-300";
-            } else if (index === 2) { // 세 번째 카드 (index 2)
-              cardBgClass = "p-6 rounded-xl bg-[#e8f8fa] border border-blue-200 hover:shadow-lg transition-all duration-300";
+            let cardBgClass =
+              'p-6 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 hover:shadow-lg transition-all duration-300';
+            if (index === 1) {
+              // 두 번째 카드 (index 1)
+              cardBgClass =
+                'p-6 rounded-xl bg-[#f0f9ff] border border-blue-200 hover:shadow-lg transition-all duration-300';
+            } else if (index === 2) {
+              // 세 번째 카드 (index 2)
+              cardBgClass =
+                'p-6 rounded-xl bg-[#e8f8fa] border border-blue-200 hover:shadow-lg transition-all duration-300';
             }
-            
+
             return (
-              <div
-                key={center.id}
-                className={cardBgClass}
-              >
+              <div key={center.id} className={cardBgClass}>
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
                   <h3 className="font-bold text-gray-800 text-lg">{center.name}</h3>
@@ -356,8 +358,6 @@ const CenterPage = () => {
           })}
         </div>
       </div>
-
-
 
       <div className="bg-white rounded-xl p-6 shadow-sm">
         {centers.length === 0 ? (
@@ -475,46 +475,51 @@ const CenterPage = () => {
                                 return mainImage ? img.id !== mainImage.id : index !== 0;
                               });
 
-                                                             // 4개 이상이면 슬라이드, 4개 미만이면 그리드
-                               if (remainingImages.length >= 4) {
-                                 const imagesPerSlide = 4;
-                                 const totalSlides = Math.ceil(remainingImages.length / imagesPerSlide);
-                                 const currentSlide = currentSlideIndex[center.id] || 0;
-                                 const startIndex = currentSlide * imagesPerSlide;
-                                 const endIndex = Math.min(startIndex + imagesPerSlide, remainingImages.length);
-                                 const currentImages = remainingImages.slice(startIndex, endIndex);
-                                 
-                                 return (
-                                   <div className="relative">
-                                     {/* 슬라이드 컨테이너 */}
-                                     <div className="relative overflow-hidden rounded-lg">
-                                       <div className="grid grid-cols-4 gap-3">
-                                         {currentImages.map((image, index) => (
-                                           <div
-                                             key={image.id || (startIndex + index)}
-                                             className="aspect-square bg-gray-200 rounded-lg overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-200"
-                                             onClick={() => {
-                                               // 이미지 클릭 시 새 창에서 크게 보기
-                                               const imgUrl = `${API_BASE_URL}${image.image_url}`;
-                                               window.open(
-                                                 imgUrl,
-                                                 '_blank',
-                                                 'width=800,height=600,scrollbars=yes,resizable=yes'
-                                               );
-                                             }}
-                                           >
-                                             <img
-                                               src={`${API_BASE_URL}${image.image_url}`}
-                                               alt={`${center.name} 이미지 ${startIndex + index + 1}`}
-                                               className="w-full h-full object-cover hover:scale-110 transition-transform duration-200"
-                                               onError={e => {
-                                                 e.target.src = '/img/2center4.jpg';
-                                               }}
-                                             />
-                                           </div>
-                                         ))}
-                                       </div>
-                                     </div>
+                              // 4개 이상이면 슬라이드, 4개 미만이면 그리드
+                              if (remainingImages.length >= 4) {
+                                const imagesPerSlide = 4;
+                                const totalSlides = Math.ceil(
+                                  remainingImages.length / imagesPerSlide
+                                );
+                                const currentSlide = currentSlideIndex[center.id] || 0;
+                                const startIndex = currentSlide * imagesPerSlide;
+                                const endIndex = Math.min(
+                                  startIndex + imagesPerSlide,
+                                  remainingImages.length
+                                );
+                                const currentImages = remainingImages.slice(startIndex, endIndex);
+
+                                return (
+                                  <div className="relative">
+                                    {/* 슬라이드 컨테이너 */}
+                                    <div className="relative overflow-hidden rounded-lg">
+                                      <div className="grid grid-cols-4 gap-3">
+                                        {currentImages.map((image, index) => (
+                                          <div
+                                            key={image.id || startIndex + index}
+                                            className="aspect-square bg-gray-200 rounded-lg overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-200"
+                                            onClick={() => {
+                                              // 이미지 클릭 시 새 창에서 크게 보기
+                                              const imgUrl = `${API_BASE_URL}${image.image_url}`;
+                                              window.open(
+                                                imgUrl,
+                                                '_blank',
+                                                'width=800,height=600,scrollbars=yes,resizable=yes'
+                                              );
+                                            }}
+                                          >
+                                            <img
+                                              src={`${API_BASE_URL}${image.image_url}`}
+                                              alt={`${center.name} 이미지 ${startIndex + index + 1}`}
+                                              className="w-full h-full object-cover hover:scale-110 transition-transform duration-200"
+                                              onError={e => {
+                                                e.target.src = '/img/2center4.jpg';
+                                              }}
+                                            />
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
 
                                     {/* 슬라이드 네비게이션 버튼 */}
                                     {totalSlides > 1 && (
@@ -524,8 +529,18 @@ const CenterPage = () => {
                                           onClick={() => prevSlide(center.id, totalSlides)}
                                           className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 transition-all duration-200 z-10"
                                         >
-                                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                                          <svg
+                                            className="w-4 h-4"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                          >
+                                            <path
+                                              strokeLinecap="round"
+                                              strokeLinejoin="round"
+                                              strokeWidth={2}
+                                              d="M15 19l-7-7 7-7"
+                                            />
                                           </svg>
                                         </button>
 
@@ -534,8 +549,18 @@ const CenterPage = () => {
                                           onClick={() => nextSlide(center.id, totalSlides)}
                                           className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 transition-all duration-200 z-10"
                                         >
-                                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                          <svg
+                                            className="w-4 h-4"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                          >
+                                            <path
+                                              strokeLinecap="round"
+                                              strokeLinejoin="round"
+                                              strokeWidth={2}
+                                              d="M9 5l7 7-7 7"
+                                            />
                                           </svg>
                                         </button>
                                       </>
@@ -731,7 +756,9 @@ const CenterPage = () => {
                               {/* 새 이미지 업로드 */}
                               <div className="mb-4">
                                 <ImageUploader
-                                  onImageUpload={newImages => handleImageUpload(center.id, newImages)}
+                                  onImageUpload={newImages =>
+                                    handleImageUpload(center.id, newImages)
+                                  }
                                   currentImages={[]}
                                   maxImages={10}
                                   isMainImageRequired={false}
@@ -742,7 +769,9 @@ const CenterPage = () => {
                               {/* 기존 이미지 목록 */}
                               {centerImages[center.id] && centerImages[center.id].length > 0 && (
                                 <div className="mt-6">
-                                  <h6 className="text-sm font-medium text-gray-600 mb-3">등록된 이미지 ({centerImages[center.id].length}개)</h6>
+                                  <h6 className="text-sm font-medium text-gray-600 mb-3">
+                                    등록된 이미지 ({centerImages[center.id].length}개)
+                                  </h6>
                                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                                     {centerImages[center.id].map((image, index) => (
                                       <div key={image.id} className="relative group">
@@ -791,7 +820,8 @@ const CenterPage = () => {
                                 </div>
                               )}
 
-                              {(!centerImages[center.id] || centerImages[center.id].length === 0) && (
+                              {(!centerImages[center.id] ||
+                                centerImages[center.id].length === 0) && (
                                 <div className="text-center py-8 text-gray-500">
                                   등록된 이미지가 없습니다.
                                 </div>

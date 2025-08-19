@@ -266,15 +266,15 @@ const getAllMembers = async (req, res) => {
     if (memberIds.length > 0) {
       const sessionData = await PTSession.findAll({
         where: {
-          member_id: { [require('sequelize').Op.in]: memberIds }
+          member_id: { [require('sequelize').Op.in]: memberIds },
         },
         attributes: [
           'member_id',
           'session_type',
-          [require('sequelize').fn('COUNT', require('sequelize').col('id')), 'count']
+          [require('sequelize').fn('COUNT', require('sequelize').col('id')), 'count'],
         ],
         group: ['member_id', 'session_type'],
-        raw: true
+        raw: true,
       });
 
       // 세션 데이터를 멤버별로 정리

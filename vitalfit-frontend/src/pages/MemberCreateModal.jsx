@@ -310,7 +310,8 @@ const MemberCreateModal = ({ isOpen, onClose, onCreate }) => {
                           }}
                           className="w-full px-3 py-2 text-left text-sm font-['Nunito'] hover:bg-gray-50 transition-colors duration-200"
                         >
-                          {trainer.name} {trainer.position?.name || ''} {trainer.nickname ? `(${trainer.nickname})` : ''}
+                          {trainer.name} {trainer.position?.name || ''}{' '}
+                          {trainer.nickname ? `(${trainer.nickname})` : ''}
                         </button>
                       ))}
                     </div>
@@ -331,7 +332,8 @@ const MemberCreateModal = ({ isOpen, onClose, onCreate }) => {
                   </option>
                   {filteredTrainers.map(trainer => (
                     <option key={trainer.id} value={trainer.id}>
-                      {trainer.name} {trainer.position?.name || ''} {trainer.nickname ? `(${trainer.nickname})` : ''}
+                      {trainer.name} {trainer.position?.name || ''}{' '}
+                      {trainer.nickname ? `(${trainer.nickname})` : ''}
                     </option>
                   ))}
                 </select>

@@ -437,8 +437,27 @@ export const settlementAPI = {
   approve: async id => {
     return await apiPost(`/settlements/${id}/approve`);
   },
+  hqApprove: async id => {
+    return await apiPost(`/settlements/${id}/hq-approve`);
+  },
+  hqReject: async (id, rejectReason) => {
+    return await apiPost(`/settlements/${id}/hq-reject`, { reject_reason: rejectReason });
+  },
   pay: async (id, data = {}) => {
     return await apiPost(`/settlements/${id}/pay`, data);
+  },
+};
+
+// Notification API
+export const notificationAPI = {
+  getSettlementNotifications: async () => {
+    return await apiGet('/notifications/settlement');
+  },
+  markAsRead: async notificationId => {
+    return await apiPut(`/notifications/${notificationId}/read`);
+  },
+  markAllAsRead: async () => {
+    return await apiPut('/notifications/read-all');
   },
 };
 

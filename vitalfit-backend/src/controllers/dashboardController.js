@@ -35,7 +35,7 @@ const getDashboardStats = async (req, res) => {
       centers,
       recentUsers,
       recentMembers,
-      recentNotices
+      recentNotices,
     ] = await Promise.all([
       User.count(),
       Center.count(),
@@ -146,9 +146,8 @@ const getDashboardStats = async (req, res) => {
     const currentMonthLaborCost = Math.round(currentMonthPayments * 0.6);
 
     // 정산완료율 계산
-    const settlementCompletionRate = currentMonthSessions > 0 
-      ? Math.round((completedSessions / currentMonthSessions) * 100) 
-      : 0;
+    const settlementCompletionRate =
+      currentMonthSessions > 0 ? Math.round((completedSessions / currentMonthSessions) * 100) : 0;
 
     // 센터별 통계 처리
     const centerStats = centers.map(center => ({

@@ -9,9 +9,17 @@ const controller = require('../controllers/settlementController');
 // POST /api/settlements/:id/acknowledge
 router.post('/:id/acknowledge', controller.acknowledge);
 
-// 지점장: 승인
+// 센터장: 승인
 // POST /api/settlements/:id/approve
 router.post('/:id/approve', controller.approve);
+
+// 회계팀: 최종 승인
+// POST /api/settlements/:id/hq-approve
+router.post('/:id/hq-approve', controller.hqApprove);
+
+// 회계팀: 반려
+// POST /api/settlements/:id/hq-reject
+router.post('/:id/hq-reject', controller.hqReject);
 
 // 회계: 지급 처리
 // POST /api/settlements/:id/pay

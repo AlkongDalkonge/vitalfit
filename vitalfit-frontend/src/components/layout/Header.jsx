@@ -2,6 +2,9 @@ import { useIcons, useDate } from '../../utils/hooks';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import { useState, useEffect } from 'react';
+import { notificationAPI } from '../../utils/api';
+import SettlementNotificationModal from '../SettlementNotificationModal';
 
 export default function Header({ activeMenu = null, userInfo, className = '' }) {
   const { getMenuIcon } = useIcons();
@@ -10,6 +13,8 @@ export default function Header({ activeMenu = null, userInfo, className = '' }) 
   const navigate = useNavigate();
   const location = useLocation();
   const isDashboard = location.pathname === '/';
+  const [notificationCount, setNotificationCount] = useState(0);
+  const [showNotificationModal, setShowNotificationModal] = useState(false);
 
   const IconComponent = activeMenu ? getMenuIcon(activeMenu) : null;
 
@@ -27,9 +32,34 @@ export default function Header({ activeMenu = null, userInfo, className = '' }) 
     }
   };
 
+  // 알림 개수 로드
+  useEffect(() => {
+    const loadNotificationCount = async () => {
+      try {
+        const response = await notificationAPI.getSettlementNotifications();
+        if (response.success) {
+          setNotificationCount(response.data.length);
+        }
+      } catch (error) {
+        console.error('알림 개수 로드 오류:', error);
+      }
+    };
+
+    loadNotificationCount();
+
+    // 30초마다 알림 개수 새로고침
+    const interval = setInterval(loadNotificationCount, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
   // 내 계정 페이지로 이동
   const handleAccountClick = () => {
     navigate('/account');
+  };
+
+  // 알림 모달 열기
+  const handleNotificationClick = () => {
+    setShowNotificationModal(true);
   };
 
   const textStyle = 'text-sm font-medium text-gray-800 cursor-pointer select-none';
@@ -58,6 +88,28 @@ export default function Header({ activeMenu = null, userInfo, className = '' }) 
         <span className="text-sm font-medium text-gray-500">
           {today} ({dayOfWeek})
         </span>
+
+        {/* 알림 버튼 */}
+        <div className="relative">
+          <button
+            onClick={handleNotificationClick}
+            className="relative p-2 text-gray-600 hover:text-gray-800 transition-colors"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 17h5l-5 5v-5zM10 21v-1a4 4 0 00-4-4H6a4 4 0 00-4-4v-1m8 0V7a4 4 0 00-4-4H6a4 4 0 00-4-4v1m8 0v1a4 4 0 004 4h4a4 4 0 004-4V3a4 4 0 00-4-4H6a4 4 0 00-4 4v1"
+              />
+            </svg>
+            {notificationCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                {notificationCount > 9 ? '9+' : notificationCount}
+              </span>
+            )}
+          </button>
+        </div>
 
         <div className="flex items-center gap-4 font-medium text-gray-800 select-none">
           {/* 프로필 이미지 - 클릭 가능 */}
@@ -114,6 +166,12 @@ export default function Header({ activeMenu = null, userInfo, className = '' }) 
           </span>
         </div>
       </div>
+
+      {/* 알림 모달 */}
+      <SettlementNotificationModal
+        isOpen={showNotificationModal}
+        onClose={() => setShowNotificationModal(false)}
+      />
     </header>
   );
 }
