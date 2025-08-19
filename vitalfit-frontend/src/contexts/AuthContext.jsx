@@ -31,12 +31,8 @@ export const AuthProvider = ({ children }) => {
   // 자동 로그인 시도 (한 번만 실행)
   useEffect(() => {
     let isMounted = true;
-    let hasInitialized = false; // 초기화 완료 플래그 추가
 
     const initializeAuth = async () => {
-      // 이미 초기화가 완료되었으면 중복 실행 방지
-      if (hasInitialized) return;
-
       try {
         console.log('🔄 AuthContext: 자동 로그인 시도 시작');
 
@@ -68,9 +64,6 @@ export const AuthProvider = ({ children }) => {
               // localStorage에 최신 정보 저장
               localStorage.setItem('user', JSON.stringify(actualUser));
 
-              // 재인증 필요 여부 확인은 제거 (무한 루프 방지)
-              // checkReAuthRequired(actualUser.id);
-
               console.log('✅ 자동 로그인 성공 - isAuthenticated: true, user:', actualUser);
             } else {
               console.log('⚠️ 서버에서 사용자 정보 가져오기 실패, localStorage 정보 사용');
@@ -86,9 +79,6 @@ export const AuthProvider = ({ children }) => {
 
                   setUser(userData);
                   setIsAuthenticated(true);
-
-                  // 재인증 필요 여부 확인은 제거 (무한 루프 방지)
-                  // checkReAuthRequired(userData.id);
 
                   console.log('✅ localStorage 정보로 자동 로그인 성공');
                 } catch (error) {
@@ -115,9 +105,6 @@ export const AuthProvider = ({ children }) => {
                 setUser(userData);
                 setIsAuthenticated(true);
 
-                // 재인증 필요 여부 확인은 제거 (무한 루프 방지)
-                // checkReAuthRequired(userData.id);
-
                 console.log('✅ localStorage 정보로 자동 로그인 성공');
               } catch (error) {
                 console.error('사용자 정보 파싱 오류:', error);
@@ -133,16 +120,11 @@ export const AuthProvider = ({ children }) => {
           setIsAuthenticated(false);
           setUser(null);
         }
-
-        // 초기화 완료 플래그 설정
-        hasInitialized = true;
       } catch (error) {
         if (!isMounted) return;
 
         console.error('❌ AuthContext: 자동 로그인 중 오류 발생:', error);
         forceLogout();
-        // 에러 발생 시에도 초기화 완료 플래그 설정
-        hasInitialized = true;
       } finally {
         if (isMounted) {
           setLoading(false);
@@ -171,8 +153,6 @@ export const AuthProvider = ({ children }) => {
 
   // 재인증 성공 처리
   const handleReAuthSuccess = (userId, pagePath = null) => {
-    // setReAuthStatus는 토큰이 필요하므로 여기서는 호출하지 않음
-    // 실제 재인증 토큰은 PasswordConfirmModal에서 저장됨
     setReAuthRequired(false);
     setShowReAuthModal(false);
     console.log('✅ 재인증 성공 - 4분간 유효', pagePath ? `(경로: ${pagePath})` : '');
@@ -181,7 +161,6 @@ export const AuthProvider = ({ children }) => {
   // 재인증 실패 처리
   const handleReAuthFailure = () => {
     setShowReAuthModal(false);
-    // 재인증 실패 시 계정 페이지에서 리다이렉트하거나 처리
   };
 
   // 재인증 모달 닫기
@@ -247,7 +226,7 @@ export const AuthProvider = ({ children }) => {
 
       return null;
     }
-  }, []); // 빈 의존성 배열로 함수 재생성 방지
+  }, []);
 
   // 로그인 (Remember Me 지원)
   const login = async (email, password, rememberMe = false) => {

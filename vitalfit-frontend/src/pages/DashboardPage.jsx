@@ -90,20 +90,22 @@ const DashboardPage = () => {
     if (!dashboardData) return [];
 
     // position 1~11의 활성화된 유저 수 계산
-    const activeUsersCount = dashboardData.position_stats?.reduce((total, position) => {
-      if (position.id >= 1 && position.id <= 11) {
-        return total + (position.active_users || 0);
-      }
-      return total;
-    }, 0) || 0;
+    const activeUsersCount =
+      dashboardData.position_stats?.reduce((total, position) => {
+        if (position.id >= 1 && position.id <= 11) {
+          return total + (position.active_users || 0);
+        }
+        return total;
+      }, 0) || 0;
 
     // 이번달 total_settlement 합계 계산
-    const currentMonthLaborCost = dashboardData.position_stats?.reduce((total, position) => {
-      if (position.id >= 1 && position.id <= 11) {
-        return total + (position.total_settlement || 0);
-      }
-      return total;
-    }, 0) || 0;
+    const currentMonthLaborCost =
+      dashboardData.position_stats?.reduce((total, position) => {
+        if (position.id >= 1 && position.id <= 11) {
+          return total + (position.total_settlement || 0);
+        }
+        return total;
+      }, 0) || 0;
 
     return [
       {
@@ -207,12 +209,8 @@ const DashboardPage = () => {
         <div className="mb-12 pt-8">
           <div className="flex justify-between items-start">
             <div>
-              <h1 className="text-4xl font-bold mb-3 text-black">
-                안녕하세요, 관리자님!
-              </h1>
-              <p className="text-black text-lg">
-                오늘의 비탈핏 센터 현황을 확인해보세요.
-              </p>
+              <h1 className="text-4xl font-bold mb-3 text-black">안녕하세요, 관리자님!</h1>
+              <p className="text-black text-lg">오늘의 비탈핏 센터 현황을 확인해보세요.</p>
             </div>
           </div>
         </div>

@@ -39,32 +39,32 @@ const getDashboardStats = async (req, res) => {
     ] = await Promise.all([
       User.count(),
       Center.count(),
-      // 이번달 매출 계산
-      Payment.sum('amount', {
+      // 이번달 매출 계산 - payment_amount 컬럼 사용
+      Payment.sum('payment_amount', {
         where: {
           payment_date: {
-            [Op.between]: [startOfMonth, endOfMonth]
-          }
-        }
+            [Op.between]: [startOfMonth, endOfMonth],
+          },
+        },
       }).then(sum => sum || 0),
       // 이번달 PT 세션 수
       PTSession.count({
         where: {
           session_date: {
-            [Op.between]: [startOfMonth, endOfMonth]
-          }
-        }
+            [Op.between]: [startOfMonth, endOfMonth],
+          },
+        },
       }),
       // 정산완료율 계산
       PTSession.count({
         where: {
           session_date: {
-            [Op.between]: [startOfMonth, endOfMonth]
+            [Op.between]: [startOfMonth, endOfMonth],
           },
           end_time: {
-            [Op.ne]: null
-          }
-        }
+            [Op.ne]: null,
+          },
+        },
       }),
       // 센터별 통계
       Center.findAll({
@@ -88,8 +88,8 @@ const getDashboardStats = async (req, res) => {
         where: {
           createdAt: {
             [Op.gte]: today,
-            [Op.lt]: tomorrow
-          }
+            [Op.lt]: tomorrow,
+          },
         },
         include: [
           {
@@ -97,18 +97,18 @@ const getDashboardStats = async (req, res) => {
             as: 'position',
             attributes: ['name'],
             required: false,
-          }
+          },
         ],
         order: [['createdAt', 'DESC']],
-        limit: 5
+        limit: 5,
       }),
       // 최근 멤버 조회
       Member.findAll({
         where: {
           createdAt: {
             [Op.gte]: today,
-            [Op.lt]: tomorrow
-          }
+            [Op.lt]: tomorrow,
+          },
         },
         include: [
           {
@@ -116,18 +116,18 @@ const getDashboardStats = async (req, res) => {
             as: 'center',
             attributes: ['name'],
             required: false,
-          }
+          },
         ],
         order: [['createdAt', 'DESC']],
-        limit: 5
+        limit: 5,
       }),
       // 최근 공지 조회
       Notice.findAll({
         where: {
           createdAt: {
             [Op.gte]: today,
-            [Op.lt]: tomorrow
-          }
+            [Op.lt]: tomorrow,
+          },
         },
         include: [
           {
@@ -135,11 +135,11 @@ const getDashboardStats = async (req, res) => {
             as: 'sender',
             attributes: ['name'],
             required: false,
-          }
+          },
         ],
         order: [['createdAt', 'DESC']],
-        limit: 5
-      })
+        limit: 5,
+      }),
     ]);
 
     // 이번달 인건비 계산 (임시로 매출의 60%로 설정)
@@ -167,15 +167,15 @@ const getDashboardStats = async (req, res) => {
           as: 'users',
           attributes: ['id', 'status'],
           required: false,
-        }
+        },
       ],
-      order: [['id', 'ASC']]
+      order: [['id', 'ASC']],
     });
 
     const processedPositionStats = positionStats.map(position => {
       const totalUsers = position.users.length;
       const activeUsers = position.users.filter(user => user.status === 'active').length;
-      
+
       // 이번달 정산 금액 계산 (임시로 활성 유저 수 * 1000000으로 설정)
       const totalSettlement = activeUsers * 1000000;
 
