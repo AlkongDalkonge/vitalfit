@@ -2,6 +2,8 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../utils/hooks';
 import { getUserStatusText, getUserStatusColor, formatPhoneNumber } from '../utils/userUtils';
+import { canViewUserList, canViewUser, getUserListPermissionMessage, getUserViewPermissionMessage } from '../utils/permissionUtils';
+import { useAuth } from '../contexts/AuthContext';
 import UserDetailModal from '../components/UserDetailModal';
 
 const UserPage = () => {
@@ -11,6 +13,9 @@ const UserPage = () => {
 
   // 네비게이션 훅
   const navigate = useNavigate();
+
+  // 인증 컨텍스트 사용
+  const { user: currentUser } = useAuth();
 
   // 커스텀 훅 사용
   const {
@@ -34,6 +39,11 @@ const UserPage = () => {
     setShowTeamDropdown,
   } = useUser();
 
+  // 권한 체크
+  const canViewUserListPermission = useMemo(() => {
+    return canViewUserList(currentUser);
+  }, [currentUser]);
+
   // 사용자가 담당하는 member 수 계산 - useMemo로 메모이제이션
   const getUserMemberCount = useCallback(userId => {
     return members.filter(member => 
@@ -51,15 +61,28 @@ const UserPage = () => {
   const handleViewUser = useCallback(userId => {
     const user = users.find(u => u.id === userId);
     if (user) {
+      // 권한 체크
+      if (!canViewUser(currentUser, user)) {
+        alert(getUserViewPermissionMessage(currentUser?.position?.level));
+        return;
+      }
       setSelectedUser(user);
       setIsModalOpen(true);
     }
-  }, [users]);
+  }, [users, currentUser]);
 
   // PT기록 보기 핸들러 - useCallback으로 메모이제이션
   const handleViewPTRecord = useCallback(userId => {
-    navigate(`/user/${userId}/pt-sessions`);
-  }, [navigate]);
+    const user = users.find(u => u.id === userId);
+    if (user) {
+      // 권한 체크
+      if (!canViewUser(currentUser, user)) {
+        alert(getUserViewPermissionMessage(currentUser?.position?.level));
+        return;
+      }
+      navigate(`/user/${userId}/pt-sessions`);
+    }
+  }, [navigate, users, currentUser]);
 
   // 모달 닫기 핸들러 - useCallback으로 메모이제이션
   const handleCloseModal = useCallback(() => {
@@ -118,6 +141,18 @@ const UserPage = () => {
     });
     return counts;
   }, [filteredUsers, getUserMemberCount]);
+
+  // 권한이 없는 경우 권한 부족 메시지 표시
+  if (!canViewUserListPermission) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="text-red-500 text-center">
+          <p className="text-lg font-semibold mb-2">권한이 없습니다</p>
+          <p>{getUserListPermissionMessage()}</p>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

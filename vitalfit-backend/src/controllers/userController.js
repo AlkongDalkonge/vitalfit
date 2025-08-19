@@ -240,7 +240,14 @@ const signIn = async (req, res, next) => {
         message: '이메일과 비밀번호를 모두 입력해주세요.',
       });
 
-    const user = await User.findOne({ where: { email } });
+    const user = await User.findOne({
+      where: { email },
+      include: [
+        { model: Position, as: 'position', attributes: ['name', 'level'] },
+        { model: Center, as: 'center', attributes: ['name'] },
+        { model: Team, as: 'team', attributes: ['name'] },
+      ],
+    });
     if (!user || !(await bcrypt.compare(password, user.password))) {
       if (user) {
         user.login_attempts += 1;
@@ -317,6 +324,9 @@ const signIn = async (req, res, next) => {
         name: user.name,
         email: user.email,
         profile_image_url: user.profile_image_url,
+        position: user.position,
+        center: user.center,
+        team: user.team,
       },
     });
   } catch (err) {
@@ -352,6 +362,11 @@ const refreshAccessToken = async (req, res, next) => {
         id: decoded.uid,
         refresh_token: refreshToken,
       },
+      include: [
+        { model: Position, as: 'position', attributes: ['name', 'level'] },
+        { model: Center, as: 'center', attributes: ['name'] },
+        { model: Team, as: 'team', attributes: ['name'] },
+      ],
     });
 
     if (!user) {
@@ -391,6 +406,9 @@ const refreshAccessToken = async (req, res, next) => {
         name: user.name,
         email: user.email,
         profile_image_url: user.profile_image_url,
+        position: user.position,
+        center: user.center,
+        team: user.team,
       },
     });
   } catch (err) {
@@ -425,7 +443,7 @@ const getMyAccount = async (req, res, next) => {
         'nickname',
       ],
       include: [
-        { model: Position, as: 'position', attributes: ['name'] },
+        { model: Position, as: 'position', attributes: ['name', 'level'] },
         { model: Center, as: 'center', attributes: ['name'] },
         { model: Team, as: 'team', attributes: ['name'] },
       ],
@@ -1026,6 +1044,51 @@ const getAllUsers = async (req, res, next) => {
     const offset = (page - 1) * limit;
     const whereClause = {};
 
+    // 현재 로그인한 사용자 정보 조회 (권한 필터링용)
+    const currentUser = await User.findByPk(req.user.uid, {
+      include: [
+        { model: Position, as: 'position', attributes: ['id', 'level'] },
+        { model: Team, as: 'team', attributes: ['id'] },
+        { model: Center, as: 'center', attributes: ['id'] }
+      ]
+    });
+
+    if (!currentUser || !currentUser.position) {
+      return res.status(403).json({
+        success: false,
+        message: '권한 정보를 찾을 수 없습니다.',
+      });
+    }
+
+    const currentUserLevel = currentUser.position.level;
+
+    // 권한에 따른 필터링 적용
+    // 포지션 1~7: 본인만 조회
+    if (currentUserLevel >= 1 && currentUserLevel <= 7) {
+      whereClause.id = req.user.uid;
+    }
+    // 포지션 8~10: 소속 팀 유저만 조회
+    else if (currentUserLevel >= 8 && currentUserLevel <= 10) {
+      if (!currentUser.team_id) {
+        return res.status(403).json({
+          success: false,
+          message: '팀 정보가 없어 권한을 확인할 수 없습니다.',
+        });
+      }
+      whereClause.team_id = currentUser.team_id;
+    }
+    // 포지션 11: 소속 센터 유저만 조회
+    else if (currentUserLevel === 11) {
+      if (!currentUser.center_id) {
+        return res.status(403).json({
+          success: false,
+          message: '센터 정보가 없어 권한을 확인할 수 없습니다.',
+        });
+      }
+      whereClause.center_id = currentUser.center_id;
+    }
+    // 포지션 12, 99: 모든 유저 조회 가능 (필터링 없음)
+
     // 역할별 필터링 (position 기반)
     if (role) {
       // role을 position으로 매핑
@@ -1042,13 +1105,13 @@ const getAllUsers = async (req, res, next) => {
       }
     }
 
-    // 센터별 필터링
-    if (centerId) {
+    // 센터별 필터링 (권한이 있는 경우에만)
+    if (centerId && (currentUserLevel === 12 || currentUserLevel === 99)) {
       whereClause.center_id = parseInt(centerId);
     }
 
-    // 팀별 필터링
-    if (teamId) {
+    // 팀별 필터링 (권한이 있는 경우에만)
+    if (teamId && (currentUserLevel === 12 || currentUserLevel === 99)) {
       whereClause.team_id = parseInt(teamId);
     }
 

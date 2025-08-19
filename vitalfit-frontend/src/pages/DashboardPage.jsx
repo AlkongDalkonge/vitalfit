@@ -168,7 +168,14 @@ const DashboardPage = () => {
         },
         {
           title: '이번 달 인건비',
-          value: `₩${currentMonthLaborCost.toLocaleString()}`,
+          value: currentMonthLaborCost >= 10000 ? (
+            <span>
+              {Math.round(currentMonthLaborCost / 10000)}
+              <span className="text-lg">만원</span>
+            </span>
+          ) : (
+            `₩${currentMonthLaborCost.toLocaleString()}`
+          ),
           icon: FaMoneyBillWave,
           color: '#ef4444',
           change: '+0%',
@@ -300,7 +307,7 @@ const DashboardPage = () => {
           <div className="flex justify-between items-start">
             <div>
               <h1 className="text-4xl font-bold mb-3 text-black">안녕하세요, 관리자님!</h1>
-              <p className="text-black text-lg">오늘의 비탈핏 센터 현황을 확인해보세요.</p>
+              <p className="text-black text-sm">오늘의 비탈핏 센터 현황을 확인해보세요.</p>
             </div>
           </div>
         </div>

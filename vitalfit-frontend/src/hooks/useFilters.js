@@ -34,9 +34,9 @@ export const useFilters = () => {
     try {
       const response = await userAPI.getAllUsers({ role: 'trainer' });
       if (response.success) {
-        // 포지션 ID 1~7에 해당하는 트레이너만 필터링
+        // 포지션 레벨 1~7에 해당하는 트레이너만 필터링 (담당 멤버 가능)
         const filteredTrainers = response.data.users.filter(trainer => 
-          trainer.position_id >= 1 && trainer.position_id <= 7
+          trainer.position && trainer.position.level >= 1 && trainer.position.level <= 7
         );
         setTrainers(filteredTrainers);
         setFilteredTrainers(filteredTrainers);

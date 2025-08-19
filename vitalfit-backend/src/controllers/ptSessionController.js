@@ -1,4 +1,4 @@
-const { PTSession, Member, User, Center } = require('../models');
+const { PTSession, Member, User, Center, Payment } = require('../models');
 const { Op } = require('sequelize');
 const Joi = require('joi');
 
@@ -631,9 +631,19 @@ const getPTSessionsByMember = async (req, res) => {
       session => session.session_type === 'free'
     ).length;
 
-    // 잔여 세션 계산
-    const remainingSessions = Math.max(0, (member.total_sessions || 0) - actualUsedSessions);
-    const remainingFreeSessions = Math.max(0, (member.free_sessions || 0) - actualUsedFreeSessions);
+    // payments 테이블에서 해당 멤버의 총 세션 수 조회
+    const payments = await Payment.findAll({
+      where: { member_id: memberId },
+      attributes: ['session_count', 'free_session_count'],
+    });
+
+    // 총 세션 수 계산 (payments 테이블의 session_count 합계)
+    const totalSessionCount = payments.reduce((sum, payment) => sum + (payment.session_count || 0), 0);
+    const totalFreeSessionCount = payments.reduce((sum, payment) => sum + (payment.free_session_count || 0), 0);
+
+    // 잔여 세션 계산 (payments 테이블 기준)
+    const remainingSessions = Math.max(0, totalSessionCount - actualUsedSessions);
+    const remainingFreeSessions = Math.max(0, totalFreeSessionCount - actualUsedFreeSessions);
 
     return res.status(200).json({
       success: true,
@@ -645,6 +655,8 @@ const getPTSessionsByMember = async (req, res) => {
           remaining_free_sessions: remainingFreeSessions,
           actual_used_sessions: actualUsedSessions,
           actual_used_free_sessions: actualUsedFreeSessions,
+          total_session_count: totalSessionCount,
+          total_free_session_count: totalFreeSessionCount,
         },
         pt_sessions: ptSessions,
         pagination: {

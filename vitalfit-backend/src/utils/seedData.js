@@ -296,6 +296,13 @@ const seedUsers = async (centers, teams, positions) => {
   try {
     console.log('사용자 시드 데이터 생성 시작...');
 
+    // 기존 사용자 데이터 확인
+    const existingUsers = await User.findAll();
+    if (existingUsers.length > 0) {
+      console.log(`✅ 사용자 데이터가 이미 존재합니다 (${existingUsers.length}명 사용자)`);
+      return existingUsers;
+    }
+
     // 각 사용자를 개별적으로 생성 (bcrypt.hash 때문에)
     const userData = [
       // 관리자
@@ -316,7 +323,7 @@ const seedUsers = async (centers, teams, positions) => {
       // 강남센터 (13명) - 강남1팀(4명) + 강남2팀(3명) + 강남3팀(3명) + 강남4팀(3명)
       // 강남1팀 (4명)
       {
-        name: '김강남팀장',
+        name: '김민수',
         email: 'kim.gangnam1@vitalfit.co.kr',
         password: await bcrypt.hash('password123', 10),
         phone: '010-1001-0001',
@@ -326,10 +333,10 @@ const seedUsers = async (centers, teams, positions) => {
         center_id: centers[0].id,
         join_date: '2024-01-15',
         status: 'active',
-        nickname: '김강남팀장',
+        nickname: '김민수',
       },
       {
-        name: '이강남트레이너',
+        name: '이영희',
         email: 'lee.gangnam1@vitalfit.co.kr',
         password: await bcrypt.hash('password123', 10),
         phone: '010-1001-0002',
@@ -339,10 +346,10 @@ const seedUsers = async (centers, teams, positions) => {
         center_id: centers[0].id,
         join_date: '2024-02-01',
         status: 'active',
-        nickname: '이강남트레이너',
+        nickname: '이영희',
       },
       {
-        name: '박강남트레이너',
+        name: '박철수',
         email: 'park.gangnam1@vitalfit.co.kr',
         password: await bcrypt.hash('password123', 10),
         phone: '010-1001-0003',
@@ -352,10 +359,10 @@ const seedUsers = async (centers, teams, positions) => {
         center_id: centers[0].id,
         join_date: '2024-02-15',
         status: 'active',
-        nickname: '박강남트레이너',
+        nickname: '박철수',
       },
       {
-        name: '최강남트레이너',
+        name: '최미영',
         email: 'choi.gangnam1@vitalfit.co.kr',
         password: await bcrypt.hash('password123', 10),
         phone: '010-1001-0004',
@@ -365,12 +372,12 @@ const seedUsers = async (centers, teams, positions) => {
         center_id: centers[0].id,
         join_date: '2024-03-01',
         status: 'active',
-        nickname: '최강남트레이너',
+        nickname: '최미영',
       },
 
       // 강남2팀 (3명)
       {
-        name: '정강남2팀장',
+        name: '정준호',
         email: 'jung.gangnam2@vitalfit.co.kr',
         password: await bcrypt.hash('password123', 10),
         phone: '010-1002-0001',
@@ -380,10 +387,10 @@ const seedUsers = async (centers, teams, positions) => {
         center_id: centers[0].id,
         join_date: '2024-01-20',
         status: 'active',
-        nickname: '정강남2팀장',
+        nickname: '정준호',
       },
       {
-        name: '한강남2트레이너',
+        name: '한지영',
         email: 'han.gangnam2@vitalfit.co.kr',
         password: await bcrypt.hash('password123', 10),
         phone: '010-1002-0002',
@@ -393,10 +400,10 @@ const seedUsers = async (centers, teams, positions) => {
         center_id: centers[0].id,
         join_date: '2024-02-05',
         status: 'active',
-        nickname: '한강남2트레이너',
+        nickname: '한지영',
       },
       {
-        name: '오강남2트레이너',
+        name: '오상우',
         email: 'oh.gangnam2@vitalfit.co.kr',
         password: await bcrypt.hash('password123', 10),
         phone: '010-1002-0003',
@@ -406,12 +413,12 @@ const seedUsers = async (centers, teams, positions) => {
         center_id: centers[0].id,
         join_date: '2024-02-20',
         status: 'active',
-        nickname: '오강남2트레이너',
+        nickname: '오상우',
       },
 
       // 강남3팀 (3명)
       {
-        name: '강강남3팀장',
+        name: '강수진',
         email: 'kang.gangnam3@vitalfit.co.kr',
         password: await bcrypt.hash('password123', 10),
         phone: '010-1003-0001',
@@ -421,10 +428,10 @@ const seedUsers = async (centers, teams, positions) => {
         center_id: centers[0].id,
         join_date: '2024-01-25',
         status: 'active',
-        nickname: '강강남3팀장',
+        nickname: '강수진',
       },
       {
-        name: '윤강남3트레이너',
+        name: '윤현우',
         email: 'yoon.gangnam3@vitalfit.co.kr',
         password: await bcrypt.hash('password123', 10),
         phone: '010-1003-0002',
@@ -434,10 +441,10 @@ const seedUsers = async (centers, teams, positions) => {
         center_id: centers[0].id,
         join_date: '2024-02-10',
         status: 'active',
-        nickname: '윤강남3트레이너',
+        nickname: '윤현우',
       },
       {
-        name: '임강남3트레이너',
+        name: '임예은',
         email: 'lim.gangnam3@vitalfit.co.kr',
         password: await bcrypt.hash('password123', 10),
         phone: '010-1003-0003',
@@ -447,12 +454,12 @@ const seedUsers = async (centers, teams, positions) => {
         center_id: centers[0].id,
         join_date: '2024-02-25',
         status: 'active',
-        nickname: '임강남3트레이너',
+        nickname: '임예은',
       },
 
       // 강남4팀 (3명)
       {
-        name: '장강남4팀장',
+        name: '장동훈',
         email: 'jang.gangnam4@vitalfit.co.kr',
         password: await bcrypt.hash('password123', 10),
         phone: '010-1004-0001',
@@ -462,10 +469,10 @@ const seedUsers = async (centers, teams, positions) => {
         center_id: centers[0].id,
         join_date: '2024-01-30',
         status: 'active',
-        nickname: '장강남4팀장',
+        nickname: '장동훈',
       },
       {
-        name: '전강남4트레이너',
+        name: '전소영',
         email: 'jeon.gangnam4@vitalfit.co.kr',
         password: await bcrypt.hash('password123', 10),
         phone: '010-1004-0002',
@@ -475,10 +482,10 @@ const seedUsers = async (centers, teams, positions) => {
         center_id: centers[0].id,
         join_date: '2024-03-05',
         status: 'active',
-        nickname: '전강남4트레이너',
+        nickname: '전소영',
       },
       {
-        name: '조강남4트레이너',
+        name: '조재혁',
         email: 'jo.gangnam4@vitalfit.co.kr',
         password: await bcrypt.hash('password123', 10),
         phone: '010-1004-0003',
@@ -488,13 +495,13 @@ const seedUsers = async (centers, teams, positions) => {
         center_id: centers[0].id,
         join_date: '2024-03-10',
         status: 'active',
-        nickname: '조강남4트레이너',
+        nickname: '조재혁',
       },
 
       // 홍대센터 (9명) - 홍대1팀(3명) + 홍대2팀(3명) + 홍대3팀(3명)
       // 홍대1팀 (3명)
       {
-        name: '홍홍대1팀장',
+        name: '홍유진',
         email: 'hong.hongdae1@vitalfit.co.kr',
         password: await bcrypt.hash('password123', 10),
         phone: '010-2001-0001',
@@ -504,10 +511,10 @@ const seedUsers = async (centers, teams, positions) => {
         center_id: centers[1].id,
         join_date: '2024-01-15',
         status: 'active',
-        nickname: '홍홍대1팀장',
+        nickname: '홍유진',
       },
       {
-        name: '구홍대1트레이너',
+        name: '구태민',
         email: 'gu.hongdae1@vitalfit.co.kr',
         password: await bcrypt.hash('password123', 10),
         phone: '010-2001-0002',
@@ -517,10 +524,10 @@ const seedUsers = async (centers, teams, positions) => {
         center_id: centers[1].id,
         join_date: '2024-02-01',
         status: 'active',
-        nickname: '구홍대1트레이너',
+        nickname: '구태민',
       },
       {
-        name: '권홍대1트레이너',
+        name: '권하늘',
         email: 'kwon.hongdae1@vitalfit.co.kr',
         password: await bcrypt.hash('password123', 10),
         phone: '010-2001-0003',
@@ -530,12 +537,12 @@ const seedUsers = async (centers, teams, positions) => {
         center_id: centers[1].id,
         join_date: '2024-02-15',
         status: 'active',
-        nickname: '권홍대1트레이너',
+        nickname: '권하늘',
       },
 
       // 홍대2팀 (3명)
       {
-        name: '김홍대2팀장',
+        name: '김은호',
         email: 'kim.hongdae2@vitalfit.co.kr',
         password: await bcrypt.hash('password123', 10),
         phone: '010-2002-0001',
@@ -545,10 +552,10 @@ const seedUsers = async (centers, teams, positions) => {
         center_id: centers[1].id,
         join_date: '2024-01-20',
         status: 'active',
-        nickname: '김홍대2팀장',
+        nickname: '김은호',
       },
       {
-        name: '나홍대2트레이너',
+        name: '나다은',
         email: 'na.hongdae2@vitalfit.co.kr',
         password: await bcrypt.hash('password123', 10),
         phone: '010-2002-0002',
@@ -558,10 +565,10 @@ const seedUsers = async (centers, teams, positions) => {
         center_id: centers[1].id,
         join_date: '2024-02-05',
         status: 'active',
-        nickname: '나홍대2트레이너',
+        nickname: '나다은',
       },
       {
-        name: '남홍대2트레이너',
+        name: '남성민',
         email: 'nam.hongdae2@vitalfit.co.kr',
         password: await bcrypt.hash('password123', 10),
         phone: '010-2002-0003',
@@ -571,12 +578,12 @@ const seedUsers = async (centers, teams, positions) => {
         center_id: centers[1].id,
         join_date: '2024-02-20',
         status: 'active',
-        nickname: '남홍대2트레이너',
+        nickname: '남성민',
       },
 
       // 홍대3팀 (3명)
       {
-        name: '노홍대3팀장',
+        name: '노서연',
         email: 'no.hongdae3@vitalfit.co.kr',
         password: await bcrypt.hash('password123', 10),
         phone: '010-2003-0001',
@@ -586,10 +593,10 @@ const seedUsers = async (centers, teams, positions) => {
         center_id: centers[1].id,
         join_date: '2024-01-25',
         status: 'active',
-        nickname: '노홍대3팀장',
+        nickname: '노서연',
       },
       {
-        name: '류홍대3트레이너',
+        name: '류민수',
         email: 'ryu.hongdae3@vitalfit.co.kr',
         password: await bcrypt.hash('password123', 10),
         phone: '010-2003-0002',
@@ -599,10 +606,10 @@ const seedUsers = async (centers, teams, positions) => {
         center_id: centers[1].id,
         join_date: '2024-02-10',
         status: 'active',
-        nickname: '류홍대3트레이너',
+        nickname: '류민수',
       },
       {
-        name: '문홍대3트레이너',
+        name: '문영희',
         email: 'moon.hongdae3@vitalfit.co.kr',
         password: await bcrypt.hash('password123', 10),
         phone: '010-2003-0003',
@@ -612,13 +619,13 @@ const seedUsers = async (centers, teams, positions) => {
         center_id: centers[1].id,
         join_date: '2024-02-25',
         status: 'active',
-        nickname: '문홍대3트레이너',
+        nickname: '문영희',
       },
 
       // 신림센터 (7명) - 신림1팀(3명) + 신림2팀(2명) + 신림3팀(2명)
       // 신림1팀 (3명)
       {
-        name: '민신림1팀장',
+        name: '민철수',
         email: 'min.sillim1@vitalfit.co.kr',
         password: await bcrypt.hash('password123', 10),
         phone: '010-3001-0001',
@@ -628,10 +635,10 @@ const seedUsers = async (centers, teams, positions) => {
         center_id: centers[2].id,
         join_date: '2024-01-15',
         status: 'active',
-        nickname: '민신림1팀장',
+        nickname: '민철수',
       },
       {
-        name: '박신림1트레이너',
+        name: '박미영',
         email: 'park.sillim1@vitalfit.co.kr',
         password: await bcrypt.hash('password123', 10),
         phone: '010-3001-0002',
@@ -641,10 +648,10 @@ const seedUsers = async (centers, teams, positions) => {
         center_id: centers[2].id,
         join_date: '2024-02-01',
         status: 'active',
-        nickname: '박신림1트레이너',
+        nickname: '박미영',
       },
       {
-        name: '배신림1트레이너',
+        name: '배준호',
         email: 'bae.sillim1@vitalfit.co.kr',
         password: await bcrypt.hash('password123', 10),
         phone: '010-3001-0003',
@@ -654,12 +661,12 @@ const seedUsers = async (centers, teams, positions) => {
         center_id: centers[2].id,
         join_date: '2024-02-15',
         status: 'active',
-        nickname: '배신림1트레이너',
+        nickname: '배준호',
       },
 
       // 신림2팀 (2명)
       {
-        name: '백신림2팀장',
+        name: '백지영',
         email: 'baek.sillim2@vitalfit.co.kr',
         password: await bcrypt.hash('password123', 10),
         phone: '010-3002-0001',
@@ -669,10 +676,10 @@ const seedUsers = async (centers, teams, positions) => {
         center_id: centers[2].id,
         join_date: '2024-01-20',
         status: 'active',
-        nickname: '백신림2팀장',
+        nickname: '백지영',
       },
       {
-        name: '변신림2트레이너',
+        name: '변상우',
         email: 'byun.sillim2@vitalfit.co.kr',
         password: await bcrypt.hash('password123', 10),
         phone: '010-3002-0002',
@@ -682,12 +689,12 @@ const seedUsers = async (centers, teams, positions) => {
         center_id: centers[2].id,
         join_date: '2024-02-05',
         status: 'active',
-        nickname: '변신림2트레이너',
+        nickname: '변상우',
       },
 
       // 신림3팀 (2명)
       {
-        name: '서신림3팀장',
+        name: '서수진',
         email: 'seo.sillim3@vitalfit.co.kr',
         password: await bcrypt.hash('password123', 10),
         phone: '010-3003-0001',
@@ -697,10 +704,10 @@ const seedUsers = async (centers, teams, positions) => {
         center_id: centers[2].id,
         join_date: '2024-01-25',
         status: 'active',
-        nickname: '서신림3팀장',
+        nickname: '서수진',
       },
       {
-        name: '손신림3트레이너',
+        name: '손현우',
         email: 'son.sillim3@vitalfit.co.kr',
         password: await bcrypt.hash('password123', 10),
         phone: '010-3003-0002',
@@ -710,12 +717,12 @@ const seedUsers = async (centers, teams, positions) => {
         center_id: centers[2].id,
         join_date: '2024-02-10',
         status: 'active',
-        nickname: '손신림3트레이너',
+        nickname: '손현우',
       },
 
       // 센터장들
       {
-        name: '강남센터장',
+        name: '김예은',
         email: 'gangnam.center@vitalfit.co.kr',
         password: await bcrypt.hash('password123', 10),
         phone: '010-9001-0001',
@@ -725,10 +732,10 @@ const seedUsers = async (centers, teams, positions) => {
         center_id: centers[0].id, // 강남센터
         join_date: '2024-01-01',
         status: 'active',
-        nickname: '강남센터장',
+        nickname: '김예은',
       },
       {
-        name: '홍대센터장',
+        name: '이동훈',
         email: 'hongdae.center@vitalfit.co.kr',
         password: await bcrypt.hash('password123', 10),
         phone: '010-9002-0001',
@@ -738,10 +745,10 @@ const seedUsers = async (centers, teams, positions) => {
         center_id: centers[1].id, // 홍대센터
         join_date: '2024-01-01',
         status: 'active',
-        nickname: '홍대센터장',
+        nickname: '이동훈',
       },
       {
-        name: '신림센터장',
+        name: '박소영',
         email: 'sillim.center@vitalfit.co.kr',
         password: await bcrypt.hash('password123', 10),
         phone: '010-9003-0001',
@@ -751,35 +758,35 @@ const seedUsers = async (centers, teams, positions) => {
         center_id: centers[2].id, // 신림센터
         join_date: '2024-01-01',
         status: 'active',
-        nickname: '신림센터장',
+        nickname: '박소영',
       },
 
       // 회계팀
       {
-        name: '회계팀장',
+        name: '최재혁',
         email: 'finance.manager@vitalfit.co.kr',
         password: await bcrypt.hash('password123', 10),
         phone: '010-9999-0001',
         phone_verified: true,
-        position_id: positions.find(p => p.code === 'finance_team').id,
+        position_id: positions.find(p => p.code === 'finance_team')?.id || positions.find(p => p.code === 'admin')?.id,
         team_id: null,
         center_id: centers[0].id, // 임시로 강남센터에 할당
         join_date: '2024-01-01',
         status: 'active',
-        nickname: '회계팀장',
+        nickname: '최재혁',
       },
       {
-        name: '회계팀원',
+        name: '정유진',
         email: 'finance.staff@vitalfit.co.kr',
         password: await bcrypt.hash('password123', 10),
         phone: '010-9999-0002',
         phone_verified: true,
-        position_id: positions.find(p => p.code === 'finance_team').id,
+        position_id: positions.find(p => p.code === 'finance_team')?.id || positions.find(p => p.code === 'admin')?.id,
         team_id: null,
         center_id: centers[0].id, // 임시로 강남센터에 할당
         join_date: '2024-01-15',
         status: 'active',
-        nickname: '회계팀원',
+        nickname: '정유진',
       },
     ];
 
@@ -802,6 +809,13 @@ const seedUsers = async (centers, teams, positions) => {
 const seedMembers = async (centers, users) => {
   try {
     console.log('👥 회원 시드 데이터 생성 중...');
+
+    // 기존 회원 데이터 확인
+    const existingMembers = await Member.findAll();
+    if (existingMembers.length > 0) {
+      console.log(`✅ 회원 데이터가 이미 존재합니다 (${existingMembers.length}명 회원)`);
+      return existingMembers;
+    }
 
     // 트레이너만 필터링 (관리자 제외)
     const trainers = users.filter(u => u.name !== '관리자');
@@ -916,6 +930,13 @@ const seedMembers = async (centers, users) => {
 const seedPayments = async (centers, users, members) => {
   try {
     console.log('💳 결제 시드 데이터 생성 중... (6월, 7월, 8월 결제, 트레이너별 700-1100만원)');
+
+    // 기존 결제 데이터 확인
+    const existingPayments = await Payment.findAll();
+    if (existingPayments.length > 0) {
+      console.log(`✅ 결제 데이터가 이미 존재합니다 (${existingPayments.length}건 결제)`);
+      return existingPayments;
+    }
 
     // 트레이너만 필터링 (관리자 제외)
     const trainers = users.filter(u => u.name !== '관리자');
@@ -1272,7 +1293,7 @@ const seedNotices = async users => {
         view_count: 45,
       },
       {
-        sender_id: users.find(u => u.name === '김강남팀장').id,
+        sender_id: users.find(u => u.name === '김민수').id,
         title: '💪 강남1팀 7월 팀 미팅 안내',
         content:
           '강남1팀 7월 정기 팀 미팅을 다음과 같이 진행합니다.\n일시: 7월 15일(월) 오후 7시\n장소: 강남센터 세미나실\n주요 안건: 7월 목표 점검, 신규 프로그램 논의',
@@ -1289,7 +1310,7 @@ const seedNotices = async users => {
         view_count: 22,
       },
       {
-        sender_id: users.find(u => u.name === '홍홍대1팀장').id,
+        sender_id: users.find(u => u.name === '홍유진').id,
         title: '🎉 홍대센터 신규 장비 도입 완료',
         content:
           '홍대센터에 최신 스미스머신과 케이블크로스오버가 설치되었습니다. 사용법 교육은 7월 중 진행예정이며, 회원들에게 적극 홍보해주세요.',
@@ -1306,7 +1327,7 @@ const seedNotices = async users => {
         view_count: 31,
       },
       {
-        sender_id: users.find(u => u.name === '민신림1팀장').id,
+        sender_id: users.find(u => u.name === '민철수').id,
         title: '🌟 신림센터 회원 만족도 조사 결과',
         content:
           '6월 실시한 회원 만족도 조사 결과를 공유합니다. 전체 만족도 4.2/5점으로 우수한 결과를 보였습니다. 개선 사항도 함께 검토하겠습니다.',
@@ -1323,7 +1344,7 @@ const seedNotices = async users => {
         view_count: 37,
       },
       {
-        sender_id: users.find(u => u.name === '정강남2팀장').id,
+        sender_id: users.find(u => u.name === '정준호').id,
         title: '📱 새로운 PT 예약 시스템 도입',
         content:
           '8월부터 새로운 PT 예약 시스템이 도입됩니다. 기존 시스템보다 편리하고 직관적입니다. 사전 교육은 7월 30일에 진행됩니다.',
@@ -1416,6 +1437,13 @@ const seedNoticeTargetRoles = async notices => {
 // PT 세션 시드 데이터
 const seedPTSessions = async (centers, users, members) => {
   try {
+    // 기존 PT 세션 데이터 확인
+    const existingPTSessions = await PTSession.findAll();
+    if (existingPTSessions.length > 0) {
+      console.log(`✅ PT 세션 데이터가 이미 존재합니다 (${existingPTSessions.length}건 세션)`);
+      return existingPTSessions;
+    }
+
     // 동적으로 PT 세션 생성 (각 회원별 0~12개까지 다양하게)
     const ptSessionData = [];
 

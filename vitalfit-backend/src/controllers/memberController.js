@@ -1,4 +1,4 @@
-const { Member, Center, User, PTSession } = require('../models');
+const { Member, Center, User, PTSession, Position, Payment, Team } = require('../models');
 const Joi = require('joi');
 
 // 멤버 생성 스키마
@@ -67,11 +67,23 @@ const createMember = async (req, res) => {
       });
     }
 
-    const trainer = await User.findByPk(trainer_id);
+    const trainer = await User.findByPk(trainer_id, {
+      include: [
+        { model: Position, as: 'position', attributes: ['level'] }
+      ]
+    });
     if (!trainer) {
       return res.status(400).json({
         success: false,
         message: '존재하지 않는 트레이너입니다.',
+      });
+    }
+
+    // 포지션 레벨 8 이상은 담당 멤버가 될 수 없음
+    if (trainer.position && trainer.position.level >= 8) {
+      return res.status(400).json({
+        success: false,
+        message: '포지션 레벨 8 이상의 사용자는 담당 멤버가 될 수 없습니다.',
       });
     }
 
@@ -166,11 +178,23 @@ const updateMember = async (req, res) => {
     }
 
     if (updateData.trainer_id) {
-      const trainer = await User.findByPk(updateData.trainer_id);
+      const trainer = await User.findByPk(updateData.trainer_id, {
+        include: [
+          { model: Position, as: 'position', attributes: ['level'] }
+        ]
+      });
       if (!trainer) {
         return res.status(400).json({
           success: false,
           message: '존재하지 않는 트레이너입니다.',
+        });
+      }
+
+      // 포지션 레벨 8 이상은 담당 멤버가 될 수 없음
+      if (trainer.position && trainer.position.level >= 8) {
+        return res.status(400).json({
+          success: false,
+          message: '포지션 레벨 8 이상의 사용자는 담당 멤버가 될 수 없습니다.',
         });
       }
     }
@@ -216,13 +240,66 @@ const getAllMembers = async (req, res) => {
     const offset = (page - 1) * limit;
     const whereClause = {};
 
-    // 센터별 필터링
-    if (centerId) {
+    // 현재 로그인한 사용자 정보 조회 (권한 필터링용)
+    const currentUser = await User.findByPk(req.user.uid, {
+      include: [
+        { model: Position, as: 'position', attributes: ['id', 'level'] },
+        { model: Team, as: 'team', attributes: ['id'] },
+        { model: Center, as: 'center', attributes: ['id'] }
+      ]
+    });
+
+    if (!currentUser || !currentUser.position) {
+      return res.status(403).json({
+        success: false,
+        message: '권한 정보를 찾을 수 없습니다.',
+      });
+    }
+
+    const currentUserLevel = currentUser.position.level;
+
+    // 권한에 따른 필터링 적용
+    // 포지션 1~6: 본인이 담당하는 멤버만 조회
+    if (currentUserLevel >= 1 && currentUserLevel <= 6) {
+      whereClause.trainer_id = req.user.uid;
+    }
+    // 포지션 7~10: 소속 팀 유저가 담당인 모든 멤버 조회
+    else if (currentUserLevel >= 7 && currentUserLevel <= 10) {
+      if (!currentUser.team_id) {
+        return res.status(403).json({
+          success: false,
+          message: '팀 정보가 없어 권한을 확인할 수 없습니다.',
+        });
+      }
+      
+      // 팀에 속한 트레이너들의 ID를 조회
+      const teamTrainers = await User.findAll({
+        where: { team_id: currentUser.team_id },
+        attributes: ['id']
+      });
+      
+      const trainerIds = teamTrainers.map(trainer => trainer.id);
+      whereClause.trainer_id = { [require('sequelize').Op.in]: trainerIds };
+    }
+    // 포지션 11: 소속 센터의 모든 멤버 조회
+    else if (currentUserLevel === 11) {
+      if (!currentUser.center_id) {
+        return res.status(403).json({
+          success: false,
+          message: '센터 정보가 없어 권한을 확인할 수 없습니다.',
+        });
+      }
+      whereClause.center_id = currentUser.center_id;
+    }
+    // 포지션 12, 99: 모든 멤버 조회 가능 (필터링 없음)
+
+    // 센터별 필터링 (권한이 있는 경우에만)
+    if (centerId && (currentUserLevel === 12 || currentUserLevel === 99)) {
       whereClause.center_id = parseInt(centerId);
     }
 
-    // 트레이너별 필터링
-    if (trainerId) {
+    // 트레이너별 필터링 (권한이 있는 경우에만)
+    if (trainerId && (currentUserLevel === 12 || currentUserLevel === 99)) {
       whereClause.trainer_id = parseInt(trainerId);
     }
 
@@ -290,15 +367,37 @@ const getAllMembers = async (req, res) => {
       });
     }
 
+    // 각 멤버의 payments 데이터 조회
+    const paymentsData = await Payment.findAll({
+      where: {
+        member_id: { [require('sequelize').Op.in]: memberIds },
+      },
+      attributes: ['member_id', 'session_count', 'free_session_count'],
+      raw: true,
+    });
+
+    // payments 데이터를 멤버별로 정리
+    const paymentsByMember = {};
+    paymentsData.forEach(payment => {
+      const memberId = payment.member_id;
+      if (!paymentsByMember[memberId]) {
+        paymentsByMember[memberId] = { totalSessionCount: 0, totalFreeSessionCount: 0 };
+      }
+      paymentsByMember[memberId].totalSessionCount += (payment.session_count || 0);
+      paymentsByMember[memberId].totalFreeSessionCount += (payment.free_session_count || 0);
+    });
+
     // 각 멤버에 잔여 세션 정보 추가
     const membersWithRemainingSessions = members.map(member => {
       const memberSessions = sessionCounts[member.id] || { regular: 0, free: 0 };
+      const memberPayments = paymentsByMember[member.id] || { totalSessionCount: 0, totalFreeSessionCount: 0 };
+      
       const usedSessions = memberSessions.regular;
       const usedFreeSessions = memberSessions.free;
 
-      // 잔여 세션 계산
-      const remainingSessions = Math.max(0, (member.total_sessions || 0) - usedSessions);
-      const remainingFreeSessions = Math.max(0, (member.free_sessions || 0) - usedFreeSessions);
+      // 잔여 세션 계산 (payments 테이블 기준)
+      const remainingSessions = Math.max(0, memberPayments.totalSessionCount - usedSessions);
+      const remainingFreeSessions = Math.max(0, memberPayments.totalFreeSessionCount - usedFreeSessions);
 
       return {
         ...member.toJSON(),
@@ -306,6 +405,8 @@ const getAllMembers = async (req, res) => {
         remaining_free_sessions: remainingFreeSessions,
         actual_used_sessions: usedSessions,
         actual_used_free_sessions: usedFreeSessions,
+        total_session_count: memberPayments.totalSessionCount,
+        total_free_session_count: memberPayments.totalFreeSessionCount,
       };
     });
 

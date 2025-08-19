@@ -7,7 +7,7 @@ import { formatDate, formatDateTime, formatTime, formatYearMonth } from '../util
 import { getSessionTypeText, getSessionTypeColor } from '../utils/ptSessionUtils';
 
 const MemberPTSessionPage = () => {
-  const { memberId } = useParams();
+  const { id: memberId } = useParams();
   const yearDropdownRef = useRef(null);
   const monthDropdownRef = useRef(null);
 

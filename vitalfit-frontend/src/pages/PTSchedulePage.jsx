@@ -5,7 +5,6 @@ import { formatDate, formatTime } from '../utils/dateUtils';
 import { useCenter } from '../hooks/useCenter';
 import { useUser } from '../hooks/useUser';
 import PTSessionModal from '../components/PTSessionModal';
-import SessionChangeStatus from '../components/SessionChangeStatus';
 import { isTrainer, isTeamLeader, isManager, isCenterManager, isAdmin } from '../utils/auth';
 
 const PTSchedulePage = () => {

@@ -33,6 +33,10 @@ export const usePTSession = memberId => {
       });
 
       if (response.success) {
+        console.log('🔍 PT 세션 API 응답:', response.data);
+        console.log('🔍 멤버 정보:', response.data.member);
+        console.log('🔍 잔여 세션:', response.data.member.remaining_sessions);
+        console.log('🔍 잔여 보너스 세션:', response.data.member.remaining_free_sessions);
         setMember(response.data.member);
         setPtSessions(response.data.pt_sessions);
       } else {
