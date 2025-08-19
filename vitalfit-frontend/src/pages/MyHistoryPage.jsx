@@ -12,10 +12,11 @@ import InstagramSection from '../components/InstagramSection';
 // API 기본 URL 환경 변수
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
-const MyHistoryPage = () => {
-  const { user, refreshUserInfo } = useAuth();
+const MyHistoryPage = ({ onReAuthRequired }) => {
+  const { user, refreshUserInfo, updateUser } = useAuth();
 
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false); // 저장 중 상태 추가
   const [formData, setFormData] = useState({
     license: '',
     experience: '',
@@ -88,13 +89,29 @@ const MyHistoryPage = () => {
             },
           ],
         };
+      } else if (fieldName === 'license') {
+        return {
+          items: [
+            {
+              image_name: '',
+              image_url: '',
+              uploaded_at: '',
+              isLocal: false,
+              licenseName: '',
+              issuingOrganization: '',
+              issueDate: '',
+            },
+          ],
+        };
       } else {
         return {
           image_name: '',
           image_url: '',
           uploaded_at: '',
           isLocal: false,
-          content: '',
+          accountName: '',
+          instagramLink: '',
+          description: '',
         };
       }
     }
@@ -118,7 +135,10 @@ const MyHistoryPage = () => {
         // 자격증, 인스타그램은 이미지 + 내용 구조
         if (fieldName === 'license') {
           return {
-            items: parsed.items || [
+            items: (parsed.items || []).map(item => ({
+              ...item,
+              image_url: item.image_url || '',
+            })) || [
               {
                 image_name: '',
                 image_url: '',
@@ -175,43 +195,16 @@ const MyHistoryPage = () => {
 
   // 자격증, 경력, 학력, 인스타그램 데이터 직렬화 함수
   const serializeAdditionalData = (data, fieldName) => {
-    // 데이터베이스 제한 확인
-    const maxLengths = {
-      license: 200,
-      experience: 200,
-      education: 200,
-      instagram: 200, // 100 → 200으로 변경
-    };
-
-    const maxLength = maxLengths[fieldName] || 200;
-
+    // TEXT 타입이므로 제한 없음
     if (fieldName === 'experience' || fieldName === 'education') {
       // 경력, 학력은 items 구조
-      const jsonData = {
+      return JSON.stringify({
         items: data.items || [],
-      };
-
-      const jsonString = JSON.stringify(jsonData);
-
-      if (jsonString.length <= maxLength) {
-        return jsonString;
-      } else {
-        // 제한을 초과하면 내용만 저장
-        const contentOnlyData = {
-          items:
-            data.items?.map(item => ({
-              startDate: '',
-              endDate: '',
-              content: item.content || '',
-              status: fieldName === 'education' ? item.status || '' : undefined,
-            })) || [],
-        };
-        return JSON.stringify(contentOnlyData);
-      }
+      });
     } else {
       // 자격증, 인스타그램은 이미지 + 내용 구조
       if (fieldName === 'license') {
-        const jsonData = {
+        return JSON.stringify({
           items: (data.items || []).map(item => ({
             image_name: item.image_name || '',
             image_url: item.image_url || '',
@@ -220,51 +213,17 @@ const MyHistoryPage = () => {
             issuingOrganization: item.issuingOrganization || '',
             issueDate: item.issueDate || '',
           })),
-        };
-        const jsonString = JSON.stringify(jsonData);
-
-        if (jsonString.length <= maxLength) {
-          return jsonString;
-        } else {
-          // 제한을 초과하면 이미지만 저장
-          const imageOnlyData = {
-            items: (data.items || []).map(item => ({
-              image_name: item.image_name || '',
-              image_url: item.image_url || '',
-              uploaded_at: item.uploaded_at || '',
-              licenseName: '',
-              issuingOrganization: '',
-              issueDate: '',
-            })),
-          };
-          return JSON.stringify(imageOnlyData);
-        }
+        });
       } else {
         // 인스타그램은 단일 구조
-        const jsonData = {
+        return JSON.stringify({
           image_name: data.image_name || '',
           image_url: data.image_url || '',
           uploaded_at: data.uploaded_at || '',
           accountName: data.accountName || '',
           instagramLink: data.instagramLink || '',
           description: data.description || '',
-        };
-        const jsonString = JSON.stringify(jsonData);
-
-        if (jsonString.length <= maxLength) {
-          return jsonString;
-        } else {
-          // 제한을 초과하면 이미지만 저장
-          const imageOnlyData = {
-            image_name: data.image_name || '',
-            image_url: data.image_url || '',
-            uploaded_at: data.uploaded_at || '',
-            accountName: '',
-            instagramLink: '',
-            description: '',
-          };
-          return JSON.stringify(imageOnlyData);
-        }
+        });
       }
     }
   };
@@ -290,32 +249,37 @@ const MyHistoryPage = () => {
       const reader = new FileReader();
       reader.onload = e => {
         const previewUrl = e.target.result;
-        setFormData(prev => ({
-          ...prev,
-          [`${fieldName}Data`]: {
-            ...prev[`${fieldName}Data`],
-            items:
-              fieldName === 'license'
-                ? prev[`${fieldName}Data`].items.map((item, index) =>
-                    index === itemIndex
-                      ? {
-                          ...item,
-                          image_name: file.name,
-                          image_url: previewUrl,
-                          uploaded_at: new Date().toISOString(),
-                          isLocal: true,
-                        }
-                      : item
-                  )
-                : prev[`${fieldName}Data`].items,
-            ...(fieldName !== 'license' && {
-              image_name: file.name,
-              image_url: previewUrl,
-              uploaded_at: new Date().toISOString(),
-              isLocal: true,
-            }),
-          },
-        }));
+        setFormData(prev => {
+          const currentData = prev[`${fieldName}Data`] || {};
+          const currentItems = Array.isArray(currentData.items) ? currentData.items : [];
+
+          return {
+            ...prev,
+            [`${fieldName}Data`]: {
+              ...currentData,
+              items:
+                fieldName === 'license'
+                  ? currentItems.map((item, index) =>
+                      index === itemIndex
+                        ? {
+                            ...item,
+                            image_name: file.name,
+                            image_url: previewUrl,
+                            uploaded_at: new Date().toISOString(),
+                            isLocal: true,
+                          }
+                        : item
+                    )
+                  : currentItems,
+              ...(fieldName !== 'license' && {
+                image_name: file.name,
+                image_url: previewUrl,
+                uploaded_at: new Date().toISOString(),
+                isLocal: true,
+              }),
+            },
+          };
+        });
       };
       reader.readAsDataURL(file);
 
@@ -330,32 +294,43 @@ const MyHistoryPage = () => {
 
       if (result.success) {
         // 업로드 성공 시 로컬 이미지를 서버 URL로 교체
-        setFormData(prev => ({
-          ...prev,
-          [`${fieldName}Data`]: {
-            ...prev[`${fieldName}Data`],
-            items:
-              fieldName === 'license'
-                ? prev[`${fieldName}Data`].items.map((item, index) =>
-                    index === itemIndex
-                      ? {
-                          ...item,
-                          image_name: result.data.image_name,
-                          image_url: result.data.image_url,
-                          uploaded_at: result.data.uploaded_at,
-                          isLocal: false,
-                        }
-                      : item
-                  )
-                : prev[`${fieldName}Data`].items,
-            ...(fieldName !== 'license' && {
-              image_name: result.data.image_name,
-              image_url: result.data.image_url,
-              uploaded_at: result.data.uploaded_at,
-              isLocal: false,
-            }),
-          },
-        }));
+        // 이미지 URL을 절대 경로로 변환 (API_BASE_URL 제거)
+        const absoluteImageUrl = result.data.image_url.startsWith('http')
+          ? result.data.image_url
+          : result.data.image_url;
+
+        setFormData(prev => {
+          const currentData = prev[`${fieldName}Data`] || {};
+          const currentItems = Array.isArray(currentData.items) ? currentData.items : [];
+
+          return {
+            ...prev,
+            [`${fieldName}Data`]: {
+              ...currentData,
+              items:
+                fieldName === 'license'
+                  ? currentItems.map((item, index) =>
+                      index === itemIndex
+                        ? {
+                            ...item,
+                            image_name: result.data.image_name,
+                            image_url: absoluteImageUrl,
+                            uploaded_at: result.data.uploaded_at,
+                            isLocal: false,
+                          }
+                        : item
+                    )
+                  : currentItems,
+              ...(fieldName !== 'license' && {
+                image_name: result.data.image_name,
+                image_url: absoluteImageUrl,
+                uploaded_at: result.data.uploaded_at,
+                isLocal: false,
+              }),
+            },
+          };
+        });
+
         toast.success('이미지가 추가되었습니다.');
       } else {
         // 업로드 실패 시 로컬 이미지 제거
@@ -505,51 +480,77 @@ const MyHistoryPage = () => {
     }));
   };
 
-  // 자격증 항목 추가 핸들러
-  const handleAddLicenseItem = () => {
+  // 경력, 학력 항목 상태 변경 핸들러 (학력의 학위 선택용)
+  const handleItemStatusChange = (fieldName, index, value) => {
     setFormData(prev => ({
       ...prev,
-      licenseData: {
-        ...prev.licenseData,
-        items: [
-          ...prev.licenseData.items,
-          {
-            image_name: '',
-            image_url: '',
-            uploaded_at: '',
-            isLocal: false,
-            licenseName: '',
-            issuingOrganization: '',
-            issueDate: '',
-            additionalInfo: '',
-          },
-        ],
+      [`${fieldName}Data`]: {
+        ...prev[`${fieldName}Data`],
+        items: prev[`${fieldName}Data`].items.map((item, i) =>
+          i === index ? { ...item, status: value } : item
+        ),
       },
     }));
+  };
+
+  // 자격증 항목 추가 핸들러
+  const handleAddLicenseItem = () => {
+    setFormData(prev => {
+      const currentLicenseData = prev.licenseData || {};
+      const currentItems = Array.isArray(currentLicenseData.items) ? currentLicenseData.items : [];
+
+      return {
+        ...prev,
+        licenseData: {
+          ...currentLicenseData,
+          items: [
+            ...currentItems,
+            {
+              image_name: '',
+              image_url: '',
+              uploaded_at: '',
+              isLocal: false,
+              licenseName: '',
+              issuingOrganization: '',
+              issueDate: '',
+              additionalInfo: '',
+            },
+          ],
+        },
+      };
+    });
   };
 
   // 자격증 항목 삭제 핸들러
   const handleRemoveLicenseItem = index => {
-    setFormData(prev => ({
-      ...prev,
-      licenseData: {
-        ...prev.licenseData,
-        items: prev.licenseData.items.filter((_, i) => i !== index),
-      },
-    }));
+    setFormData(prev => {
+      const currentLicenseData = prev.licenseData || {};
+      const currentItems = Array.isArray(currentLicenseData.items) ? currentLicenseData.items : [];
+
+      return {
+        ...prev,
+        licenseData: {
+          ...currentLicenseData,
+          items: currentItems.filter((_, i) => i !== index),
+        },
+      };
+    });
   };
 
   // 자격증 항목 내용 변경 핸들러
   const handleLicenseContentChange = (index, field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      licenseData: {
-        ...prev.licenseData,
-        items: prev.licenseData.items.map((item, i) =>
-          i === index ? { ...item, [field]: value } : item
-        ),
-      },
-    }));
+    setFormData(prev => {
+      const currentLicenseData = prev.licenseData || {};
+      const currentItems = Array.isArray(currentLicenseData.items) ? currentLicenseData.items : [];
+
+      return {
+        ...prev,
+        licenseData: {
+          ...currentLicenseData,
+          items: currentItems.map((item, i) => (i === index ? { ...item, [field]: value } : item)),
+        },
+      };
+    });
   };
 
   // 인스타그램 항목 내용 변경 핸들러
@@ -637,50 +638,188 @@ const MyHistoryPage = () => {
     });
   };
 
-  // 저장 핸들러
-  const handleSave = async () => {
+  // 실제 저장 로직을 별도 함수로 분리
+  const performSave = async () => {
+    // 저장 중 상태 설정
+    setSaving(true);
+
     try {
-      // 각 필드별로 데이터 직렬화
-      const updateData = {
-        license: serializeAdditionalData(formData.licenseData, 'license'),
-        experience: serializeAdditionalData(formData.experienceData, 'experience'),
-        education: serializeAdditionalData(formData.educationData, 'education'),
-        instagram: serializeAdditionalData(formData.instagramData, 'instagram'),
+      console.log('🚀 이력 정보 저장 시작');
+      console.log('📝 현재 폼 데이터:', formData);
+
+      // 저장할 데이터 준비
+      const saveData = {
+        license: JSON.stringify(formData.licenseData),
+        experience: JSON.stringify(formData.experienceData),
+        education: JSON.stringify(formData.educationData),
+        instagram: JSON.stringify(formData.instagramData),
       };
 
-      // 사용자 정보 업데이트
-      await userAPI.updateMyAccount(updateData);
+      console.log('📤 전송할 데이터:', saveData);
 
-      // 사용자 정보 새로고침
-      if (refreshUserInfo) {
-        refreshUserInfo();
+      // API 호출
+      const response = await userAPI.updateMyAccount(saveData);
+      console.log('📥 API 응답:', response);
+
+      // API 응답 구조 확인 및 안전한 처리
+      const responseData = response.data || response;
+      const updatedUser = responseData.user || responseData;
+
+      console.log('📋 처리된 사용자 정보:', updatedUser);
+
+      if (updatedUser) {
+        // 1. 즉시 폼 데이터 업데이트 (DB 응답 데이터 사용)
+        console.log('🔄 폼 데이터 즉시 업데이트');
+        setFormData(prev => ({
+          ...prev,
+          license: updatedUser.license || prev.license,
+          experience: updatedUser.experience || prev.experience,
+          education: updatedUser.education || prev.education,
+          instagram: updatedUser.instagram || prev.instagram,
+          // 추가 데이터 파싱하여 업데이트
+          licenseData: updatedUser.license
+            ? parseAdditionalData(updatedUser.license, 'license')
+            : prev.licenseData,
+          experienceData: updatedUser.experience
+            ? parseAdditionalData(updatedUser.experience, 'experience')
+            : prev.experienceData,
+          educationData: updatedUser.education
+            ? parseAdditionalData(updatedUser.education, 'education')
+            : prev.educationData,
+          instagramData: updatedUser.instagram
+            ? parseAdditionalData(updatedUser.instagram, 'instagram')
+            : prev.instagramData,
+        }));
+
+        // 2. AuthContext의 사용자 정보 즉시 업데이트 (DB 응답 데이터 사용)
+        if (updateUser && typeof updateUser === 'function') {
+          console.log('🔄 AuthContext 사용자 정보 즉시 업데이트');
+          updateUser(updatedUser);
+        }
+
+        // 3. refreshUserInfo() 호출은 백그라운드에서 실행 (사용자 대기 없음)
+        if (refreshUserInfo && typeof refreshUserInfo === 'function') {
+          // 백그라운드에서 서버와 동기화 (사용자 대기 없음)
+          refreshUserInfo()
+            .then(() => {
+              console.log('✅ refreshUserInfo 백그라운드 완료');
+            })
+            .catch(error => {
+              console.error('사용자 정보 새로고침 실패:', error);
+              // 에러가 발생해도 이미 로컬 상태는 업데이트되었으므로 계속 진행
+            });
+        }
       }
 
-      toast.success('저장되었습니다.');
-    } catch (error) {
-      console.error('저장 실패:', error);
-      toast.error(`저장에 실패했습니다: ${error.response?.data?.message || error.message}`);
+      toast.success('이력 정보가 업데이트되었습니다.');
+    } catch (err) {
+      console.error('업데이트 실패:', err.message);
+
+      // 더 자세한 에러 메시지 표시
+      let errorMessage = '업데이트에 실패했습니다.';
+      if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+
+      toast.error(`업데이트 실패: ${errorMessage}`);
+    } finally {
+      // 저장 완료 후 로딩 상태 해제
+      setSaving(false);
     }
   };
 
   // 사용자 정보 로드
   useEffect(() => {
     if (user) {
-      setFormData(prev => ({
-        ...prev,
-        license: user.license || '',
-        experience: user.experience || '',
-        education: user.education || '',
-        instagram: user.instagram || '',
-        // 추가 데이터 파싱
-        licenseData: parseAdditionalData(user.license, 'license'),
-        experienceData: parseAdditionalData(user.experience, 'experience'),
-        educationData: parseAdditionalData(user.education, 'education'),
-        instagramData: parseAdditionalData(user.instagram, 'instagram'),
-      }));
+      try {
+        setFormData(prev => ({
+          ...prev,
+          license: user.license || '',
+          experience: user.experience || '',
+          education: user.education || '',
+          instagram: user.instagram || '',
+          // 추가 데이터 파싱 (안전하게 처리)
+          licenseData: parseAdditionalData(user.license, 'license'),
+          experienceData: parseAdditionalData(user.experience, 'experience'),
+          educationData: parseAdditionalData(user.education, 'education'),
+          instagramData: parseAdditionalData(user.instagram, 'instagram'),
+        }));
+      } catch (error) {
+        console.error('사용자 데이터 파싱 오류:', error);
+        // 오류 발생 시 기본값으로 설정
+        setFormData(prev => ({
+          ...prev,
+          license: user.license || '',
+          experience: user.experience || '',
+          education: user.education || '',
+          instagram: user.instagram || '',
+          licenseData: {
+            items: [
+              {
+                image_name: '',
+                image_url: '',
+                uploaded_at: '',
+                isLocal: false,
+                licenseName: '',
+                issuingOrganization: '',
+                issueDate: '',
+              },
+            ],
+          },
+          experienceData: {
+            items: [
+              {
+                startDate: '',
+                endDate: '',
+                content: '',
+                status: '',
+              },
+            ],
+          },
+          educationData: {
+            items: [
+              {
+                startDate: '',
+                endDate: '',
+                content: '',
+                status: '',
+              },
+            ],
+          },
+          instagramData: {
+            image_name: '',
+            image_url: '',
+            uploaded_at: '',
+            isLocal: false,
+            accountName: '',
+            instagramLink: '',
+            description: '',
+          },
+        }));
+      }
       setLoading(false);
     }
   }, [user]);
+
+  // 저장 핸들러 (재인증 확인 후 실제 저장 실행)
+  const handleSave = async () => {
+    // 저장할 때마다 재인증 요구
+    if (onReAuthRequired) {
+      onReAuthRequired(async () => {
+        try {
+          await performSave();
+        } catch (error) {
+          console.error('재인증 후 저장 실패:', error);
+        }
+      });
+      return;
+    }
+
+    // 재인증이 필요하지 않은 경우 바로 저장
+    await performSave();
+  };
 
   if (loading) {
     return (
@@ -694,13 +833,52 @@ const MyHistoryPage = () => {
     <div className="w-full bg-white">
       <div className="w-full">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">나의 이력</h1>
+          <h1 className="text-3xl font-bold text-gray-800">나의 이력</h1>
           <p className="text-gray-600">
             경력, 학력, 자격증, 인스타그램 등 나의 성장 기록을 관리하세요
           </p>
         </div>
 
         <div className="space-y-4">
+          {/* 자격증 섹션 */}
+          <LicenseSection
+            title="자격증"
+            fieldName="license"
+            data={formData.licenseData}
+            onImageUpload={handleAdditionalImageUpload}
+            onImageDelete={handleAdditionalImageDelete}
+            onImageExpand={openImageModal}
+            onContentChange={handleLicenseContentChange}
+            onAddItem={handleAddLicenseItem}
+            onRemoveItem={handleRemoveLicenseItem}
+          />
+
+          {/* 경력 섹션 */}
+          <CareerSection
+            title="경력"
+            fieldName="experience"
+            data={formData.experienceData}
+            onContentChange={handleAdditionalContentChange}
+            onAddItem={handleAddItem}
+            onRemoveItem={handleRemoveItem}
+            onItemContentChange={handleItemContentChange}
+            onItemDateChange={handleItemDateChange}
+            onItemStatusChange={handleItemStatusChange}
+          />
+
+          {/* 학력 섹션 */}
+          <CareerSection
+            title="학력"
+            fieldName="education"
+            data={formData.educationData}
+            onContentChange={handleAdditionalContentChange}
+            onAddItem={handleAddItem}
+            onRemoveItem={handleRemoveItem}
+            onItemContentChange={handleItemContentChange}
+            onItemDateChange={handleItemDateChange}
+            onItemStatusChange={handleItemStatusChange}
+          />
+
           {/* 인스타그램 섹션 */}
           <InstagramSection
             title="인스타그램"
@@ -714,64 +892,29 @@ const MyHistoryPage = () => {
             fetchInstagramThumbnail={fetchInstagramThumbnail}
             maxLength={200}
           />
-
-          {/* 경력 섹션 */}
-          <CareerSection
-            title="경력"
-            fieldName="experience"
-            data={formData.experienceData}
-            onContentChange={handleAdditionalContentChange}
-            onAddItem={handleAddItem}
-            onRemoveItem={handleRemoveItem}
-            onItemContentChange={handleItemContentChange}
-            onItemDateChange={handleItemDateChange}
-          />
-
-          {/* 학력 섹션 */}
-          <CareerSection
-            title="학력"
-            fieldName="education"
-            data={formData.educationData}
-            onContentChange={handleAdditionalContentChange}
-            onAddItem={handleAddItem}
-            onRemoveItem={handleRemoveItem}
-            onItemContentChange={handleItemContentChange}
-            onItemDateChange={handleItemDateChange}
-          />
-
-          {/* 자격증 섹션 */}
-          <LicenseSection
-            title="자격증"
-            fieldName="license"
-            data={formData.licenseData}
-            onImageUpload={handleAdditionalImageUpload}
-            onImageDelete={handleAdditionalImageDelete}
-            onImageExpand={openImageModal}
-            onContentChange={handleLicenseContentChange}
-            onAddItem={handleAddLicenseItem}
-            onRemoveItem={handleRemoveLicenseItem}
-          />
         </div>
 
-        <div className="mt-8 text-center">
+        {/* 저장 버튼 섹션 */}
+        <div className="w-full flex justify-center mt-8">
           <button
             type="button"
             onClick={handleSave}
-            className="w-96 mt-1 bg-gradient-to-r from-cyan-500 to-indigo-600 text-white py-2 px-4 rounded-[10px] hover:from-cyan-600 hover:to-indigo-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+            disabled={saving}
+            className="w-96 bg-gradient-to-r from-cyan-500 to-indigo-600 text-white py-2 px-4 rounded-[10px] hover:from-cyan-600 hover:to-indigo-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
           >
-            저장
+            {saving ? '저장 중...' : '저장'}
           </button>
         </div>
-      </div>
 
-      {/* 이미지 확대 모달 */}
-      <ImageExpandModal
-        isOpen={imageModal.isOpen}
-        onClose={closeImageModal}
-        imageUrl={imageModal.imageUrl}
-        imageName={imageModal.imageName}
-        title={imageModal.title}
-      />
+        {/* 이미지 확대 모달 */}
+        <ImageExpandModal
+          isOpen={imageModal.isOpen}
+          onClose={closeImageModal}
+          imageUrl={imageModal.imageUrl}
+          imageName={imageModal.imageName}
+          title={imageModal.title}
+        />
+      </div>
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import AuthService from '../utils/auth';
 import api from '../utils/api';
 import {
@@ -31,8 +31,12 @@ export const AuthProvider = ({ children }) => {
   // 자동 로그인 시도 (한 번만 실행)
   useEffect(() => {
     let isMounted = true;
+    let hasInitialized = false; // 초기화 완료 플래그 추가
 
     const initializeAuth = async () => {
+      // 이미 초기화가 완료되었으면 중복 실행 방지
+      if (hasInitialized) return;
+
       try {
         console.log('🔄 AuthContext: 자동 로그인 시도 시작');
 
@@ -64,8 +68,8 @@ export const AuthProvider = ({ children }) => {
               // localStorage에 최신 정보 저장
               localStorage.setItem('user', JSON.stringify(actualUser));
 
-              // 재인증 필요 여부 확인
-              checkReAuthRequired(actualUser.id);
+              // 재인증 필요 여부 확인은 제거 (무한 루프 방지)
+              // checkReAuthRequired(actualUser.id);
 
               console.log('✅ 자동 로그인 성공 - isAuthenticated: true, user:', actualUser);
             } else {
@@ -83,8 +87,8 @@ export const AuthProvider = ({ children }) => {
                   setUser(userData);
                   setIsAuthenticated(true);
 
-                  // 재인증 필요 여부 확인
-                  checkReAuthRequired(userData.id);
+                  // 재인증 필요 여부 확인은 제거 (무한 루프 방지)
+                  // checkReAuthRequired(userData.id);
 
                   console.log('✅ localStorage 정보로 자동 로그인 성공');
                 } catch (error) {
@@ -111,8 +115,8 @@ export const AuthProvider = ({ children }) => {
                 setUser(userData);
                 setIsAuthenticated(true);
 
-                // 재인증 필요 여부 확인
-                checkReAuthRequired(userData.id);
+                // 재인증 필요 여부 확인은 제거 (무한 루프 방지)
+                // checkReAuthRequired(userData.id);
 
                 console.log('✅ localStorage 정보로 자동 로그인 성공');
               } catch (error) {
@@ -129,11 +133,16 @@ export const AuthProvider = ({ children }) => {
           setIsAuthenticated(false);
           setUser(null);
         }
+
+        // 초기화 완료 플래그 설정
+        hasInitialized = true;
       } catch (error) {
         if (!isMounted) return;
 
         console.error('❌ AuthContext: 자동 로그인 중 오류 발생:', error);
         forceLogout();
+        // 에러 발생 시에도 초기화 완료 플래그 설정
+        hasInitialized = true;
       } finally {
         if (isMounted) {
           setLoading(false);
@@ -210,7 +219,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   // 사용자 정보 새로고침
-  const refreshUserInfo = async () => {
+  const refreshUserInfo = useCallback(async () => {
     try {
       console.log('🔄 refreshUserInfo 시작');
       const userInfo = await getUserInfo();
@@ -238,7 +247,7 @@ export const AuthProvider = ({ children }) => {
 
       return null;
     }
-  };
+  }, []); // 빈 의존성 배열로 함수 재생성 방지
 
   // 로그인 (Remember Me 지원)
   const login = async (email, password, rememberMe = false) => {

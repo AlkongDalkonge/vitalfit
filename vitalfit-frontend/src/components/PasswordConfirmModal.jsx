@@ -1,24 +1,100 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { toast } from 'react-toastify';
 import { useAuth } from '../contexts/AuthContext';
-import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import AuthService from '../utils/auth';
 
-const PasswordConfirmModal = ({ isOpen, onClose, onSuccess, pagePath = null }) => {
+const PasswordConfirmModal = ({ isOpen, onClose, onCancel, onSuccess, pagePath = null }) => {
   const { user } = useAuth();
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [hasShownToast, setHasShownToast] = useState(false); // 토스트 중복 방지
+  const [isSuccess, setIsSuccess] = useState(false); // 성공 상태 추가
+  const completedRef = useRef(false); // 이벤트 중복 방지를 위한 ref
+  const successProcessedRef = useRef(false); // 성공 처리 완료 여부
 
   useEffect(() => {
     if (isOpen) {
       setPassword('');
       setError('');
       setHasShownToast(false); // 모달이 열릴 때마다 토스트 상태 초기화
+      setIsSuccess(false); // 성공 상태 초기화
+      completedRef.current = false; // 완료 상태 초기화
+      successProcessedRef.current = false; // 성공 처리 완료 상태 초기화
     }
   }, [isOpen]);
+
+  // 모달 닫기 핸들러 - 성공 여부에 따라 다른 동작
+  const handleClose = () => {
+    // 이미 완료된 경우 중복 실행 방지
+    if (completedRef.current) {
+      console.log('⚠️ PasswordConfirmModal - 이미 완료됨, handleClose 무시');
+      return;
+    }
+
+    console.log(
+      '🔒 PasswordConfirmModal - handleClose 호출, isSuccess:',
+      isSuccess,
+      'successProcessed:',
+      successProcessedRef.current
+    );
+    completedRef.current = true; // 완료 상태 설정
+
+    if (isSuccess && successProcessedRef.current) {
+      // 성공 시에는 onClose만 호출 (isAuthenticated 영향 없음)
+      console.log('✅ PasswordConfirmModal - 성공 후 모달 닫기 (onClose만 호출)');
+      onClose();
+    } else {
+      // 취소 시에는 onCancel + onClose 호출
+      console.log('❌ PasswordConfirmModal - 취소 후 모달 닫기 (onCancel + onClose 호출)');
+      if (onCancel) {
+        onCancel();
+      }
+      onClose();
+    }
+  };
+
+  // 취소 버튼 핸들러
+  const handleCancel = () => {
+    // 이미 완료된 경우 중복 실행 방지
+    if (completedRef.current) {
+      console.log('⚠️ PasswordConfirmModal - 이미 완료됨, handleCancel 무시');
+      return;
+    }
+
+    console.log('❌ PasswordConfirmModal - handleCancel 호출 (사용자 취소)');
+    completedRef.current = true; // 완료 상태 설정
+    setIsSuccess(false); // 취소 상태 명시적 설정
+    successProcessedRef.current = false; // 성공 처리 완료 상태 해제
+
+    if (onCancel) {
+      onCancel();
+    }
+    onClose();
+  };
+
+  // 성공 처리 완료 후 모달 닫기 (비동기 안전)
+  const handleSuccessClose = () => {
+    console.log('✅ PasswordConfirmModal - 성공 처리 완료 후 모달 닫기');
+    // 성공 상태가 확실히 설정된 후에만 닫기
+    if (isSuccess && successProcessedRef.current) {
+      handleClose();
+    } else {
+      console.log('⚠️ PasswordConfirmModal - 성공 상태가 아직 설정되지 않음, 잠시 대기');
+      // 상태가 설정될 때까지 잠시 대기
+      setTimeout(() => {
+        if (isSuccess && successProcessedRef.current) {
+          handleClose();
+        } else {
+          console.error('❌ PasswordConfirmModal - 성공 상태 설정 실패');
+          // 강제로 닫기
+          completedRef.current = true;
+          onClose();
+        }
+      }, 200);
+    }
+  };
 
   const handleSubmit = async e => {
     e.preventDefault();
@@ -57,9 +133,6 @@ const PasswordConfirmModal = ({ isOpen, onClose, onSuccess, pagePath = null }) =
         pagePath,
       });
 
-      // 서버 연결 테스트
-      console.log('🌐 서버 연결 테스트 시작...');
-
       // 먼저 간단한 연결 테스트
       try {
         const testResponse = await fetch('http://localhost:3001/api/users/me', {
@@ -69,9 +142,7 @@ const PasswordConfirmModal = ({ isOpen, onClose, onSuccess, pagePath = null }) =
           },
           credentials: 'include',
         });
-        console.log('🔍 서버 연결 테스트 결과:', testResponse.status);
       } catch (testError) {
-        console.error('❌ 서버 연결 테스트 실패:', testError);
         setError('서버에 연결할 수 없습니다. 백엔드 서버가 실행 중인지 확인해주세요.');
         return;
       }
@@ -95,7 +166,6 @@ const PasswordConfirmModal = ({ isOpen, onClose, onSuccess, pagePath = null }) =
 
       if (response.ok) {
         const result = await response.json();
-        console.log('✅ 재인증 성공:', result);
 
         // 재인증 토큰 저장 (페이지 경로 포함)
         if (result.reAuthToken && user) {
@@ -118,45 +188,60 @@ const PasswordConfirmModal = ({ isOpen, onClose, onSuccess, pagePath = null }) =
               setPageReAuthStatus(userId, result.reAuthToken, pagePath);
               console.log('✅ 재인증 토큰 저장됨, userId:', userId, 'pagePath:', pagePath);
             }
-          } else {
-            console.error('❌ 사용자 ID를 찾을 수 없어 토큰 저장 실패, user:', user);
+          }
+        }
+
+        // 1. 먼저 성공 상태 설정
+        console.log('✅ PasswordConfirmModal - 성공 상태 설정 시작');
+        setIsSuccess(true);
+        successProcessedRef.current = true; // 성공 처리 완료 상태 설정
+        console.log(
+          '✅ PasswordConfirmModal - 성공 상태 설정 완료, isSuccess:',
+          true,
+          'successProcessed:',
+          true
+        );
+
+        // 2. 재인증 성공 시 콜백 실행
+        if (onSuccess) {
+          console.log('✅ PasswordConfirmModal - onSuccess 콜백 실행 시작:', onSuccess);
+          console.log('🔍 onSuccess 타입:', typeof onSuccess);
+          console.log('🔍 onSuccess 내용:', onSuccess);
+
+          try {
+            const successResult = await onSuccess(result); // await로 완료 보장
+            console.log('✅ onSuccess 콜백 실행 완료, 결과:', successResult);
+          } catch (error) {
+            console.error('❌ onSuccess 콜백 실행 실패:', error);
+            setIsSuccess(false); // 에러 시 실패 상태로 설정
+            successProcessedRef.current = false;
           }
         } else {
-          console.error('❌ 재인증 토큰 또는 사용자 정보 없음:', { result, user });
+          console.log('⚠️ PasswordConfirmModal - onSuccess 콜백이 없음');
+          console.log('🔍 props 확인:', { onSuccess, onClose, onCancel });
         }
 
-        // 재인증 성공 시 콜백 실행
-        if (onSuccess) {
-          onSuccess(result);
-        }
-
-        // 토스트 메시지는 한 번만 표시
+        // 3. 토스트 메시지는 한 번만 표시
         if (!hasShownToast) {
           // 페이지별로 다른 메시지 표시
           let message = '재인증이 완료되었습니다.';
           if (pagePath === '/account') {
-            message = '보안 확인이 완료되었습니다. 계정 정보에 접근할 수 있습니다.';
+            message = '본인 확인 되었습니다.';
           } else if (pagePath === '/account/password-change') {
-            message = '보안 확인이 완료되었습니다. 비밀번호를 변경할 수 있습니다.';
+            message = '본인 확인 되었습니다.';
           }
           toast.success(message);
           setHasShownToast(true);
         }
 
-        onClose();
+        // 4. 성공 처리 완료 후 모달 닫기 (비동기 안전)
+        console.log('✅ PasswordConfirmModal - 성공 처리 완료, 모달 닫기 시작');
+        handleSuccessClose();
       } else {
         const errorData = await response.json();
-        console.error('❌ 재인증 실패:', errorData);
         setError(errorData.message || '비밀번호가 일치하지 않습니다.');
       }
     } catch (error) {
-      console.error('❌ 재인증 오류:', error);
-      console.error('❌ 오류 상세 정보:', {
-        name: error.name,
-        message: error.message,
-        stack: error.stack,
-      });
-
       // 더 구체적인 에러 메시지 제공
       if (error.name === 'TypeError' && error.message.includes('fetch')) {
         setError('서버에 연결할 수 없습니다. 백엔드 서버가 실행 중인지 확인해주세요.');
@@ -177,10 +262,10 @@ const PasswordConfirmModal = ({ isOpen, onClose, onSuccess, pagePath = null }) =
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-                  <div className="text-center mb-6">
-            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 mb-4">
-              <span className="text-2xl">🔐</span>
-            </div>
+        <div className="text-center mb-6">
+          <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 mb-4">
+            <span className="text-2xl">🔒</span>
+          </div>
           <h2 className="text-xl font-bold text-gray-800 mb-2">보안 확인</h2>
           <p className="text-gray-600">계정 정보에 접근하려면 비밀번호를 다시 입력해주세요</p>
         </div>
@@ -203,7 +288,7 @@ const PasswordConfirmModal = ({ isOpen, onClose, onSuccess, pagePath = null }) =
                 className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700 transition-colors"
                 onClick={() => setShowPassword(!showPassword)}
               >
-                {showPassword ? <FaEyeSlash size={16} /> : <FaEye size={16} />}
+                {showPassword ? '★' : '☆'}
               </button>
             </div>
           </div>
@@ -211,6 +296,9 @@ const PasswordConfirmModal = ({ isOpen, onClose, onSuccess, pagePath = null }) =
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-3">
               <div className="flex">
+                <div className="flex-shrink-0">
+                  <span className="text-red-400 text-lg">❌</span>
+                </div>
                 <div className="ml-3">
                   <p className="text-sm text-red-800">{error}</p>
                 </div>
@@ -221,7 +309,7 @@ const PasswordConfirmModal = ({ isOpen, onClose, onSuccess, pagePath = null }) =
           <div className="flex space-x-3 pt-4">
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleCancel} // handleCancel 사용
               disabled={isLoading}
               className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 transition-colors"
             >
@@ -230,21 +318,18 @@ const PasswordConfirmModal = ({ isOpen, onClose, onSuccess, pagePath = null }) =
             <button
               type="submit"
               disabled={isLoading}
-              className="flex-1 h-11 bg-gradient-to-br from-blue-400 to-blue-600 rounded-[10px] inline-flex justify-center items-center gap-2.5 hover:from-blue-500 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/15 before:via-transparent before:to-transparent before:pointer-events-none disabled:opacity-50"
+              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
             >
-              {isLoading ? (
-                <div className="flex items-center justify-center">
-                  <span className="text-white text-sm font-medium font-['Nunito'] leading-normal drop-shadow-xl">확인 중...</span>
-                </div>
-              ) : (
-                <span className="text-white text-sm font-medium font-['Nunito'] leading-normal drop-shadow-xl">확인</span>
-              )}
+              확인
             </button>
           </div>
         </form>
 
         <div className="mt-4 p-3 bg-blue-50 rounded-lg">
           <div className="flex">
+            <div className="flex-shrink-0">
+              <span className="text-blue-400 text-lg">ℹ️</span>
+            </div>
             <div className="ml-3">
               <p className="text-sm text-blue-800">
                 <strong>보안을 위해</strong> 민감한 정보에 접근할 때는 비밀번호 재확인이 필요합니다.
