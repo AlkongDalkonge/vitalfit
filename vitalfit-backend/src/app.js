@@ -62,8 +62,8 @@ app.use('/api/notifications', notificationRouter);
 
 // 404 처리
 app.use((req, res) => {
-  res.status(404).json({
-    status: 404,
+  res.status(200).json({
+    status: 200,
     message: '요청한 리소스를 찾을 수 없습니다.',
   });
 });
