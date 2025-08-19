@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import WebcamCapture from './WebcamCapture';
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
 export default function SignUp() {
   const [formData, setFormData] = useState({
@@ -663,7 +664,7 @@ export default function SignUp() {
                     className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700 transition-colors"
                     onClick={() => setShowPassword(!showPassword)}
                   >
-                    {showPassword ? '★' : '☆'}
+                    {showPassword ? <FaEyeSlash size={16} /> : <FaEye size={16} />}
                   </button>
                 </div>
 
@@ -752,7 +753,7 @@ export default function SignUp() {
                     className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700 transition-colors"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   >
-                    {showConfirmPassword ? '★' : '☆'}
+                    {showConfirmPassword ? <FaEyeSlash size={16} /> : <FaEye size={16} />}
                   </button>
                 </div>
                 {/* 비밀번호 일치 여부 표시 */}

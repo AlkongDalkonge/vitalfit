@@ -233,9 +233,16 @@ const PTSessionCreateModal = ({ isOpen, onClose, memberId, member, onCreate }) =
             <button
               type="submit"
               disabled={loading}
-              className="px-12 py-3 bg-gradient-to-br from-blue-400 to-blue-600 text-white text-sm rounded-lg hover:from-blue-500 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50"
+              data-layer="Button"
+              data-property-1="Default"
+              className="Button w-40 h-11 p-2.5 bg-gradient-to-br from-blue-400 to-blue-600 rounded-[10px] inline-flex justify-center items-center gap-2.5 hover:from-blue-500 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/15 before:via-transparent before:to-transparent before:pointer-events-none disabled:opacity-50"
             >
-              {loading ? '등록 중...' : '등록'}
+              <div
+                data-layer="Primary Button"
+                className="PrimaryButton justify-start text-white text-sm font-medium font-['Nunito'] leading-normal drop-shadow-xl"
+              >
+                {loading ? '등록 중...' : '등록'}
+              </div>
             </button>
           </div>
         </form>

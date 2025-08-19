@@ -421,7 +421,7 @@ const SettlementPage = () => {
   };
 
   return (
-    <div className="p-6 space-y-8 max-w-[1200px] mx-auto bg-white rounded-xl shadow">
+    <div className="pt-0 px-6 pb-6 space-y-8 max-w-[1200px] mx-auto bg-white rounded-xl shadow">
       {/* 필터 영역 */}
       <SettlementFilterBar
         centers={centers}

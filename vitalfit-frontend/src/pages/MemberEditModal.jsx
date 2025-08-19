@@ -60,7 +60,7 @@ const MemberEditModal = ({ isOpen, onClose, member, onUpdate }) => {
   };
 
   // 필터링된 트레이너 목록 가져오기
-  const filteredTrainers = getFilteredTrainers();
+  const filteredTrainers = getFilteredTrainers;
 
   // 드롭다운 상태
   const [showCenterDropdown, setShowCenterDropdown] = useState(false);

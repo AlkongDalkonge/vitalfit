@@ -101,25 +101,25 @@ const PayPage = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
+      <div className="flex justify-center items-center h-48">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500"></div>
       </div>
     );
   }
 
   return (
-    <div className="w-full max-w-7xl mx-auto p-6 min-h-screen flex flex-col">
-      <div className="flex flex-col gap-6 flex-1 pb-0">
+    <div className="w-full max-w-7xl mx-auto p-4 flex flex-col">
+      <div className="flex flex-col gap-4 flex-1 pb-0">
         {/* 최상단 제목 */}
         <div
           data-layer="PT 결제"
-          className="text-black text-3xl font-extrabold font-['Nunito'] bg-white rounded-lg p-4"
+          className="text-black text-3xl font-extrabold font-['Nunito'] bg-white rounded-lg p-3"
         >
           PT 결제
         </div>
 
         {/* 필터 및 총건수 섹션 */}
-        <div className="flex justify-end items-center pr-8 pt-[5px] pl-[30px] flex-shrink-0 bg-white rounded-lg py-2 px-4">
+        <div className="flex justify-end items-center pr-8 pt-[5px] pl-[30px] flex-shrink-0 bg-white rounded-lg py-1 px-3">
           {/* 필터 및 검색 섹션 */}
           <div className="flex gap-4 items-center">
             {/* 검색창 */}
@@ -290,7 +290,7 @@ const PayPage = () => {
           <div className="flex flex-col">
             {/* 테이블 컨테이너 */}
             <div className="overflow-hidden">
-              <div className="overflow-y-auto max-h-[calc(100vh-350px)] relative">
+              <div className="overflow-y-auto max-h-[calc(100vh-300px)] relative">
                 {/* 테이블 헤더 */}
                 <div className="border-b border-gray-200 sticky top-0 z-30 bg-white shadow-sm relative">
                   <div className="flex items-center p-4 min-w-max gap-4">

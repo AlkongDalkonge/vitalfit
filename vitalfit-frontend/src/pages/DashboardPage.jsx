@@ -87,34 +87,48 @@ const DashboardPage = () => {
 
   // 통계 데이터 포맷팅
   const formatStats = () => {
-    if (!dashboardData || !dashboardData.overview) return [];
+    if (!dashboardData) return [];
 
-    const { overview } = dashboardData;
+    // position 1~11의 활성화된 유저 수 계산
+    const activeUsersCount = dashboardData.position_stats?.reduce((total, position) => {
+      if (position.id >= 1 && position.id <= 11) {
+        return total + (position.active_users || 0);
+      }
+      return total;
+    }, 0) || 0;
+
+    // 이번달 total_settlement 합계 계산
+    const currentMonthLaborCost = dashboardData.position_stats?.reduce((total, position) => {
+      if (position.id >= 1 && position.id <= 11) {
+        return total + (position.total_settlement || 0);
+      }
+      return total;
+    }, 0) || 0;
 
     return [
       {
         title: '총 직원 수',
-        value: `${overview.total_users?.value || 0}명`,
+        value: `${activeUsersCount}명`,
         icon: FaUsers,
         color: '#3b82f6',
-        change: `${(overview.total_users?.change || 0) >= 0 ? '+' : ''}${overview.total_users?.change || 0}명`,
-        changeType: overview.total_users?.changeType || 'increase',
+        change: '+0명',
+        changeType: 'increase',
       },
       {
         title: '이번 달 인건비',
-        value: `₩${(overview.current_month_labor_cost?.value || 0).toLocaleString()}`,
+        value: `₩${currentMonthLaborCost.toLocaleString()}`,
         icon: FaMoneyBillWave,
         color: '#ef4444',
-        change: `${(overview.current_month_labor_cost?.change || 0) >= 0 ? '+' : ''}${overview.current_month_labor_cost?.change || 0}%`,
-        changeType: overview.current_month_labor_cost?.changeType || 'increase',
+        change: '+0%',
+        changeType: 'increase',
       },
       {
         title: '정산완료율',
-        value: `${overview.settlement_completion_rate?.value || 0}%`,
+        value: `${dashboardData.overview?.settlement_completion_rate?.value || 0}%`,
         icon: FaPercentage,
         color: '#8b5cf6',
-        change: `${(overview.settlement_completion_rate?.change || 0) >= 0 ? '+' : ''}${overview.settlement_completion_rate?.change || 0}%`,
-        changeType: overview.settlement_completion_rate?.changeType || 'increase',
+        change: `${(dashboardData.overview?.settlement_completion_rate?.change || 0) >= 0 ? '+' : ''}${dashboardData.overview?.settlement_completion_rate?.change || 0}%`,
+        changeType: dashboardData.overview?.settlement_completion_rate?.changeType || 'increase',
       },
     ];
   };
@@ -143,10 +157,10 @@ const DashboardPage = () => {
   // 인증 로딩 중이거나 데이터 로딩 중인 경우
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#5e5dfa] from-0% via-[#a4e6ef] via-20% to-white to-30%">
+      <div className="min-h-screen bg-white">
         <div className="max-w-6xl mx-auto pt-8">
           <div className="flex justify-center items-center h-64">
-            <div className="text-white text-lg font-semibold">
+            <div className="text-black text-lg font-semibold">
               {authLoading ? '인증 상태를 확인하는 중...' : '데이터를 불러오는 중...'}
             </div>
           </div>
@@ -158,21 +172,21 @@ const DashboardPage = () => {
   // 에러가 있는 경우
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#5e5dfa] from-0% via-[#a4e6ef] via-20% to-white to-30%">
+      <div className="min-h-screen bg-white">
         <div className="max-w-6xl mx-auto pt-8">
           <div className="flex flex-col justify-center items-center h-64">
-            <div className="text-white mb-4 text-lg">{error}</div>
+            <div className="text-black mb-4 text-lg">{error}</div>
             {error.includes('로그인이 필요') || error.includes('인증이 만료') ? (
               <button
                 onClick={() => (window.location.href = '/login')}
-                className="px-4 py-2 bg-white text-blue-600 rounded-lg hover:bg-gray-100 transition-colors font-semibold"
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold"
               >
                 로그인하기
               </button>
             ) : (
               <button
                 onClick={() => window.location.reload()}
-                className="px-4 py-2 bg-white text-gray-600 rounded-lg hover:bg-gray-100 transition-colors font-semibold"
+                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-semibold"
               >
                 다시 시도
               </button>
@@ -187,16 +201,16 @@ const DashboardPage = () => {
   const recentActivities = formatRecentActivities();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#5e5dfa] from-0% via-[#a4e6ef] via-20% to-white to-30%">
+    <div className="min-h-screen bg-white">
       <div className="max-w-7xl mx-auto p-5">
-        {/* 대시보드 헤더 영역 - 그라데이션 배경에 직접 표시 */}
+        {/* 대시보드 헤더 영역 */}
         <div className="mb-12 pt-8">
           <div className="flex justify-between items-start">
             <div>
-              <h1 className="text-4xl font-bold mb-3 text-white drop-shadow-lg">
+              <h1 className="text-4xl font-bold mb-3 text-black">
                 안녕하세요, 관리자님!
               </h1>
-              <p className="text-white text-xl drop-shadow-md">
+              <p className="text-black text-lg">
                 오늘의 비탈핏 센터 현황을 확인해보세요.
               </p>
             </div>
@@ -370,7 +384,7 @@ const DashboardPage = () => {
                 dashboardData.center_stats.map((center, index) => (
                   <div
                     key={center.id || index}
-                    className="p-4 rounded-lg bg-gradient-to-r from-[#e1f4f6] to-[#c3f0f5] border border-indigo-100 hover:shadow-md transition-all duration-300"
+                    className="p-4 rounded-lg bg-gradient-to-r from-gray-50 to-blue-50 border border-indigo-100 hover:shadow-md transition-all duration-300"
                   >
                     <div className="flex justify-between items-center mb-3">
                       <h3 className="font-semibold text-gray-800 text-lg">{center.name}</h3>

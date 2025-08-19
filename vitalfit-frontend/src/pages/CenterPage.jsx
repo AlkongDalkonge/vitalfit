@@ -266,7 +266,7 @@ const CenterPage = () => {
   if (loading) {
     return (
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-800 mb-6">지점 관리</h1>
+        <h1 className="text-3xl font-bold text-gray-800 mb-6 py-0">지점 관리</h1>
         <div className="bg-white rounded-xl p-6 shadow-sm">
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -281,7 +281,7 @@ const CenterPage = () => {
   if (error) {
     return (
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-800 mb-6">지점 관리</h1>
+        <h1 className="text-3xl font-bold text-gray-800 mb-6 py-0">지점 관리</h1>
         <div className="bg-white rounded-xl p-6 shadow-sm">
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
@@ -302,7 +302,7 @@ const CenterPage = () => {
 
   return (
     <div className="max-w-7xl mx-auto">
-      <div className="mb-6">
+      <div className="mb-6 py-0">
         <h1 className="text-3xl font-bold text-gray-800">지점 관리</h1>
       </div>
 
@@ -682,13 +682,13 @@ const CenterPage = () => {
                       <div className="flex gap-3">
                         <button
                           onClick={() => handleEditCenter(center)}
-                          className="px-4 py-2 text-blue-600 border border-blue-300 rounded-lg hover:bg-blue-50 transition-colors duration-200"
+                          className="px-4 py-2 text-blue-600 text-sm font-medium font-['Nunito'] border border-blue-300 rounded-lg hover:bg-blue-50 transition-colors duration-200"
                         >
                           수정
                         </button>
                         <button
                           onClick={() => toggleImageManagement(center.id)}
-                          className="px-4 py-2 text-purple-600 border border-purple-300 rounded-lg hover:bg-purple-50 transition-colors duration-200"
+                          className="px-4 py-2 text-purple-600 text-sm font-medium font-['Nunito'] border border-purple-300 rounded-lg hover:bg-purple-50 transition-colors duration-200"
                         >
                           이미지
                         </button>
@@ -810,12 +810,17 @@ const CenterPage = () => {
       </div>
 
       {/* 센터 등록 버튼 */}
-      <div className="flex justify-start mt-6">
+      <div className="flex justify-end mt-6">
         <button
           onClick={() => setCreateModalOpen(true)}
-          className="px-6 py-3 bg-gradient-to-br from-blue-400 to-blue-600 text-white text-sm rounded-lg hover:from-blue-500 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+          className="Button w-40 h-11 p-2.5 bg-gradient-to-br from-blue-400 to-blue-600 rounded-[10px] inline-flex justify-center items-center gap-2.5 hover:from-blue-500 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/15 before:via-transparent before:to-transparent before:pointer-events-none"
         >
-          센터 등록
+          <div
+            data-layer="Primary Button"
+            className="PrimaryButton justify-start text-white text-sm font-medium font-['Nunito'] leading-normal drop-shadow-xl"
+          >
+            센터 등록
+          </div>
         </button>
       </div>
 

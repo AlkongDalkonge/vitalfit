@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { useAuth } from '../contexts/AuthContext';
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import AuthService from '../utils/auth';
 
 const PasswordConfirmModal = ({ isOpen, onClose, onSuccess, pagePath = null }) => {
@@ -176,10 +177,10 @@ const PasswordConfirmModal = ({ isOpen, onClose, onSuccess, pagePath = null }) =
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-        <div className="text-center mb-6">
-          <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 mb-4">
-            <span className="text-2xl">🔒</span>
-          </div>
+                  <div className="text-center mb-6">
+            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 mb-4">
+              <span className="text-2xl">🔐</span>
+            </div>
           <h2 className="text-xl font-bold text-gray-800 mb-2">보안 확인</h2>
           <p className="text-gray-600">계정 정보에 접근하려면 비밀번호를 다시 입력해주세요</p>
         </div>
@@ -202,7 +203,7 @@ const PasswordConfirmModal = ({ isOpen, onClose, onSuccess, pagePath = null }) =
                 className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700 transition-colors"
                 onClick={() => setShowPassword(!showPassword)}
               >
-                {showPassword ? '😵‍💫' : '🥺'}
+                {showPassword ? <FaEyeSlash size={16} /> : <FaEye size={16} />}
               </button>
             </div>
           </div>
@@ -210,9 +211,6 @@ const PasswordConfirmModal = ({ isOpen, onClose, onSuccess, pagePath = null }) =
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-3">
               <div className="flex">
-                <div className="flex-shrink-0">
-                  <span className="text-red-400 text-lg">❌</span>
-                </div>
                 <div className="ml-3">
                   <p className="text-sm text-red-800">{error}</p>
                 </div>
@@ -232,15 +230,14 @@ const PasswordConfirmModal = ({ isOpen, onClose, onSuccess, pagePath = null }) =
             <button
               type="submit"
               disabled={isLoading}
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+              className="flex-1 h-11 bg-gradient-to-br from-blue-400 to-blue-600 rounded-[10px] inline-flex justify-center items-center gap-2.5 hover:from-blue-500 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/15 before:via-transparent before:to-transparent before:pointer-events-none disabled:opacity-50"
             >
               {isLoading ? (
                 <div className="flex items-center justify-center">
-                  <span className="animate-spin mr-2">⏳</span>
-                  확인 중...
+                  <span className="text-white text-sm font-medium font-['Nunito'] leading-normal drop-shadow-xl">확인 중...</span>
                 </div>
               ) : (
-                '확인'
+                <span className="text-white text-sm font-medium font-['Nunito'] leading-normal drop-shadow-xl">확인</span>
               )}
             </button>
           </div>
@@ -248,9 +245,6 @@ const PasswordConfirmModal = ({ isOpen, onClose, onSuccess, pagePath = null }) =
 
         <div className="mt-4 p-3 bg-blue-50 rounded-lg">
           <div className="flex">
-            <div className="flex-shrink-0">
-              <span className="text-blue-400 text-lg">ℹ️</span>
-            </div>
             <div className="ml-3">
               <p className="text-sm text-blue-800">
                 <strong>보안을 위해</strong> 민감한 정보에 접근할 때는 비밀번호 재확인이 필요합니다.

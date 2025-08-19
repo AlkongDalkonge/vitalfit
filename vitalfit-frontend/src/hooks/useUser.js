@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { userAPI, centerAPI, teamAPI, memberAPI } from '../utils/api';
+import { userAPI, centerAPI, teamAPI, memberAPI, paymentAPI } from '../utils/api';
 
 /**
  * 사용자 관리 관련 상태와 로직을 관리하는 커스텀 훅
@@ -11,6 +11,7 @@ export const useUser = () => {
   const [centers, setCenters] = useState([]);
   const [teams, setTeams] = useState([]);
   const [members, setMembers] = useState([]);
+  const [userRevenues, setUserRevenues] = useState({}); // 사용자별 매출 데이터
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -23,14 +24,51 @@ export const useUser = () => {
   const [showCenterDropdown, setShowCenterDropdown] = useState(false);
   const [showTeamDropdown, setShowTeamDropdown] = useState(false);
 
+  // 현재 년월 계산
+  const currentDate = new Date();
+  const currentYear = currentDate.getFullYear();
+  const currentMonth = currentDate.getMonth() + 1;
+
+  // 사용자별 당월 매출 가져오기
+  const fetchUserRevenues = async (userIds) => {
+    try {
+      const revenues = {};
+      
+      // 각 사용자별로 매출 데이터 가져오기
+      for (const userId of userIds) {
+        try {
+          const response = await paymentAPI.getPaymentsByTrainerAndMonth(userId, currentYear, currentMonth);
+          if (response.success && response.data.payments) {
+            const totalRevenue = response.data.payments.reduce((sum, payment) => sum + payment.payment_amount, 0);
+            revenues[userId] = totalRevenue;
+          } else {
+            revenues[userId] = 0;
+          }
+        } catch (error) {
+          console.error(`사용자 ${userId} 매출 조회 실패:`, error);
+          revenues[userId] = 0;
+        }
+      }
+      
+      setUserRevenues(revenues);
+    } catch (error) {
+      console.error('사용자 매출 조회 실패:', error);
+    }
+  };
+
   // API 호출 함수들
   const fetchUsers = async (filters = {}) => {
     try {
       setLoading(true);
       const response = await userAPI.getAllUsers({ limit: 1000, ...filters });
       if (response.success) {
-        setUsers(response.data.users);
-        setFilteredUsers(response.data.users);
+        const userList = response.data.users;
+        setUsers(userList);
+        setFilteredUsers(userList);
+        
+        // 사용자 목록이 로드되면 매출 데이터도 가져오기
+        const userIds = userList.map(user => user.id);
+        await fetchUserRevenues(userIds);
       }
     } catch (error) {
       console.error('사용자 조회 실패:', error);
@@ -157,6 +195,7 @@ export const useUser = () => {
     selectedTeam,
     showCenterDropdown,
     showTeamDropdown,
+    userRevenues, // 매출 데이터 추가
 
     // 함수들
     fetchUsers,

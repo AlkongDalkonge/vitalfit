@@ -155,7 +155,7 @@ const PaymentHistoryPage = () => {
   }
 
   return (
-    <div className="w-full max-w-7xl mx-auto p-6 min-h-screen flex flex-col">
+    <div className="w-full max-w-7xl mx-auto pt-0 px-6 pb-6 min-h-screen flex flex-col">
       <div className="flex flex-col gap-6 flex-1">
         {/* 헤더 */}
         <div className="flex items-center justify-between bg-white rounded-lg p-4 shadow-sm">
@@ -174,7 +174,7 @@ const PaymentHistoryPage = () => {
                 />
               </svg>
             </button>
-            <div>
+            <div className="py-0">
               <h1 className="text-2xl font-bold text-gray-900">결제 내역</h1>
               <p className="text-gray-600">
                 멤버 ID: {memberId} - {member?.name} ({member?.phone})
@@ -312,9 +312,14 @@ const PaymentHistoryPage = () => {
         <div className="flex justify-start mt-6">
           <button
             onClick={handleRegisterPayment}
-            className="px-6 py-3 bg-gradient-to-br from-blue-400 to-blue-600 text-white text-sm rounded-lg hover:from-blue-500 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+            className="Button w-40 h-11 p-2.5 bg-gradient-to-br from-blue-400 to-blue-600 rounded-[10px] inline-flex justify-center items-center gap-2.5 hover:from-blue-500 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/15 before:via-transparent before:to-transparent before:pointer-events-none"
           >
-            결제 등록
+            <div
+              data-layer="Primary Button"
+              className="PrimaryButton justify-start text-white text-sm font-medium font-['Nunito'] leading-normal drop-shadow-xl"
+            >
+              결제 등록
+            </div>
           </button>
         </div>
 

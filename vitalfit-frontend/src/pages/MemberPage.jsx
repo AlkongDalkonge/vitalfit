@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import MemberEditModal from './MemberEditModal';
 import MemberCreateModal from './MemberCreateModal';
 import { useMember, useFilters } from '../utils/hooks';
-import { getStatusText, statusOptions } from '../utils/memberUtils';
+import { getStatusText, statusOptions, getMemberStatusColor } from '../utils/memberUtils';
 
 const MemberPage = () => {
   const navigate = useNavigate();
@@ -39,6 +39,7 @@ const MemberPage = () => {
     showCenterDropdown,
     showTrainerDropdown,
     centers,
+    trainers,
     filteredTrainers,
     buildImmediateFilters,
     handleCenterFilterChange,
@@ -75,12 +76,13 @@ const MemberPage = () => {
   }, []);
 
   // 즉시 필터링 적용 함수
-  const filterMembersImmediate = async (centerId, trainerName) => {
+  const filterMembersImmediate = async (centerId, trainerName, newStatusFilter = null) => {
     try {
       const filters = buildImmediateFilters(centerId, trainerName);
-      // 상태 필터 추가
-      if (statusFilter && statusFilter !== '전체선택') {
-        filters.status = statusFilter;
+      // 상태 필터 추가 (새로운 값이 있으면 사용, 없으면 현재 상태 사용)
+      const statusToUse = newStatusFilter !== null ? newStatusFilter : statusFilter;
+      if (statusToUse && statusToUse !== '전체선택') {
+        filters.status = statusToUse;
       }
       await fetchMembers(filters);
 
@@ -106,11 +108,17 @@ const MemberPage = () => {
   };
 
   const onStatusFilterChange = value => {
-    setStatusFilter(value);
-    if (value === '전체선택') {
-      setStatusFilter('');
-    }
-    filterMembersImmediate(centerFilter, trainerFilter);
+    const newStatusFilter = value === '전체선택' ? '' : value;
+    setStatusFilter(newStatusFilter);
+    
+    // 현재 선택된 센터와 트레이너의 실제 값들을 가져와서 필터링
+    const currentCenter = centers.find(c => c.name === centerFilter);
+    const centerId = currentCenter ? currentCenter.id : null;
+    const currentTrainer = trainers.find(t => t.name === trainerFilter);
+    const trainerName = currentTrainer ? currentTrainer.name : trainerFilter;
+    
+    // 새로운 상태 필터 값으로 즉시 필터링 적용
+    filterMembersImmediate(centerId, trainerName, newStatusFilter);
   };
   // 기타 핸들러들
   const handleRegisterMember = () => {
@@ -137,12 +145,12 @@ const MemberPage = () => {
   }
 
   return (
-    <div className="w-full max-w-7xl mx-auto p-6 min-h-screen flex flex-col">
+    <div className="w-full max-w-7xl mx-auto pt-0 px-6 pb-6 flex flex-col">
       <div className="flex flex-col gap-6 flex-1 pb-0">
         {/* 최상단 제목 */}
         <div
           data-layer="모든 고객"
-          className="text-black text-3xl font-extrabold font-['Nunito'] bg-white rounded-lg p-4"
+          className="text-black text-3xl font-extrabold font-['Nunito'] bg-white rounded-lg py-0 px-4"
         >
           모든 고객
         </div>
@@ -471,11 +479,12 @@ const MemberPage = () => {
                         >
                           {member.remaining_sessions || 0}
                         </div>
-                        <div
-                          data-layer="상태"
-                          className="flex-[1] min-w-[90px] justify-start text-neutral-600 text-sm font-normal font-['Nunito'] leading-normal"
-                        >
-                          {getStatusText(member.status)}
+                        <div data-layer="상태" className="flex-[1] min-w-[90px] justify-start">
+                          <span
+                            className={`px-2 py-1 rounded-full text-xs font-medium ${getMemberStatusColor(member.status)}`}
+                          >
+                            {getStatusText(member.status)}
+                          </span>
                         </div>
                         <div data-layer="PT 기록" className="flex-[1] min-w-[90px] justify-start">
                           <button
@@ -495,24 +504,24 @@ const MemberPage = () => {
                 </div>
               </div>
             </div>
-
-            {/* 고객 등록 버튼 */}
-            <div className="flex justify-start mt-16 mb-0">
-              <button
-                onClick={handleRegisterMember}
-                data-layer="Button"
-                data-property-1="Default"
-                className="Button w-52 h-11 p-2.5 bg-gradient-to-br from-blue-400 to-blue-600 rounded-[10px] inline-flex justify-center items-center gap-2.5 hover:from-blue-500 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/15 before:via-transparent before:to-transparent before:pointer-events-none"
-              >
-                <div
-                  data-layer="Primary Button"
-                  className="PrimaryButton justify-start text-white text-sm font-normal font-['Nunito'] leading-normal"
-                >
-                  고객 등록
-                </div>
-              </button>
-            </div>
           </div>
+        </div>
+
+        {/* 고객 등록 버튼 */}
+        <div className="flex justify-end mt-4 mb-0">
+          <button
+            onClick={handleRegisterMember}
+            data-layer="Button"
+            data-property-1="Default"
+            className="Button w-40 h-11 p-2.5 bg-gradient-to-br from-blue-400 to-blue-600 rounded-[10px] inline-flex justify-center items-center gap-2.5 hover:from-blue-500 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/15 before:via-transparent before:to-transparent before:pointer-events-none"
+          >
+            <div
+              data-layer="Primary Button"
+              className="PrimaryButton justify-start text-white text-sm font-medium font-['Nunito'] leading-normal drop-shadow-xl"
+            >
+              고객 등록
+            </div>
+          </button>
         </div>
 
         {/* 멤버 수정 모달 */}

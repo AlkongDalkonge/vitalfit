@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { memberAPI, centerAPI, userAPI } from '../utils/api';
 
 /**
@@ -21,8 +21,8 @@ export const useMember = () => {
   // 드롭다운 상태
   const [statusDropdowns, setStatusDropdowns] = useState({});
 
-  // API 호출 함수들
-  const fetchMembers = async (filters = {}) => {
+  // API 호출 함수들 - useCallback으로 메모이제이션
+  const fetchMembers = useCallback(async (filters = {}) => {
     try {
       const response = await memberAPI.getAllMembers({ limit: 1000, ...filters });
       if (response.success) {
@@ -32,21 +32,21 @@ export const useMember = () => {
     } catch (error) {
       console.error('멤버 조회 실패:', error);
     }
-  };
+  }, []);
 
-  // 멤버 관련 핸들러들
-  const handleEditMember = member => {
+  // 멤버 관련 핸들러들 - useCallback으로 메모이제이션
+  const handleEditMember = useCallback(member => {
     setEditingMember(member);
     setIsEditModalOpen(true);
-  };
+  }, []);
 
-  const handleCloseEditModal = () => {
+  const handleCloseEditModal = useCallback(() => {
     setIsEditModalOpen(false);
     setEditingMember(null);
-  };
+  }, []);
 
-  const handleUpdateMember = updatedMember => {
-    // 로컬 상태 업데이트
+  const handleUpdateMember = useCallback(updatedMember => {
+    // 로컬 상태 업데이트 - 함수형 업데이트로 최적화
     setMembers(prevMembers =>
       prevMembers.map(member => (member.id === updatedMember.id ? updatedMember : member))
     );
@@ -56,28 +56,28 @@ export const useMember = () => {
 
     // 모달 닫기
     handleCloseEditModal();
-  };
+  }, [handleCloseEditModal]);
 
-  const handleCreateMember = newMember => {
+  const handleCreateMember = useCallback(newMember => {
     // 로컬 상태에 새 멤버 추가
     setMembers(prevMembers => [newMember, ...prevMembers]);
     setFilteredMembers(prevMembers => [newMember, ...prevMembers]);
 
     // 모달 닫기
     setIsCreateModalOpen(false);
-  };
+  }, []);
 
-  const handleCloseCreateModal = () => {
+  const handleCloseCreateModal = useCallback(() => {
     setIsCreateModalOpen(false);
-  };
+  }, []);
 
-  // 상태 변경 처리
-  const handleStatusChange = async (memberId, newStatus) => {
+  // 상태 변경 처리 - useCallback으로 메모이제이션
+  const handleStatusChange = useCallback(async (memberId, newStatus) => {
     try {
       const response = await memberAPI.updateMember(memberId, { status: newStatus });
 
       if (response.success) {
-        // 로컬 상태 업데이트
+        // 로컬 상태 업데이트 - 함수형 업데이트로 최적화
         setMembers(prevMembers =>
           prevMembers.map(member =>
             member.id === memberId ? { ...member, status: newStatus } : member
@@ -97,51 +97,56 @@ export const useMember = () => {
 
     // 드롭다운 닫기
     setStatusDropdowns(prev => ({ ...prev, [memberId]: false }));
-  };
+  }, []);
 
-  // 상태 드롭다운 토글
-  const toggleStatusDropdown = memberId => {
-    setStatusDropdowns(prev => {
-      const newState = {
-        ...prev,
-        [memberId]: !prev[memberId],
-      };
-      return newState;
-    });
-  };
+  // 상태 드롭다운 토글 - useCallback으로 메모이제이션
+  const toggleStatusDropdown = useCallback(memberId => {
+    setStatusDropdowns(prev => ({
+      ...prev,
+      [memberId]: !prev[memberId],
+    }));
+  }, []);
 
-  // 검색 핸들러
-  const handleSearchChange = term => {
+  // 검색 핸들러 - useCallback으로 메모이제이션
+  const handleSearchChange = useCallback(term => {
     setSearchTerm(term);
-    // 이름으로 검색 필터링
-    const filtered = members.filter(member =>
-      member.name.toLowerCase().includes(term.toLowerCase())
+  }, []);
+
+  // 검색 결과를 useMemo로 메모이제이션
+  const searchFilteredMembers = useMemo(() => {
+    if (!searchTerm.trim()) return members;
+    return members.filter(member =>
+      member.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
-    setFilteredMembers(filtered);
-  };
+  }, [members, searchTerm]);
 
-  // 필터링된 멤버 업데이트 함수 (외부에서 호출 가능)
-  const updateFilteredMembers = newFilteredMembers => {
-    setFilteredMembers(newFilteredMembers);
-  };
-
-  // 드롭다운 외부 클릭 처리
+  // searchFilteredMembers가 변경될 때만 filteredMembers 업데이트
   useEffect(() => {
-    const handleClickOutside = event => {
-      // 드롭다운 내부 클릭이 아닌 경우에만 닫기
-      if (
-        !event.target.closest('[data-dropdown="status"]') &&
-        !event.target.closest('.status-dropdown-option')
-      ) {
-        setStatusDropdowns({});
-      }
-    };
+    setFilteredMembers(searchFilteredMembers);
+  }, [searchFilteredMembers]);
 
+  // 필터링된 멤버 업데이트 함수 - useCallback으로 메모이제이션
+  const updateFilteredMembers = useCallback(newFilteredMembers => {
+    setFilteredMembers(newFilteredMembers);
+  }, []);
+
+  // 드롭다운 외부 클릭 처리 - useCallback으로 메모이제이션
+  const handleClickOutside = useCallback(event => {
+    // 드롭다운 내부 클릭이 아닌 경우에만 닫기
+    if (
+      !event.target.closest('[data-dropdown="status"]') &&
+      !event.target.closest('.status-dropdown-option')
+    ) {
+      setStatusDropdowns({});
+    }
+  }, []);
+
+  useEffect(() => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, []);
+  }, [handleClickOutside]);
 
   return {
     // 상태

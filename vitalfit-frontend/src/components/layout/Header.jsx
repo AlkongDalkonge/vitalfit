@@ -1,6 +1,6 @@
 import { useIcons, useDate } from '../../utils/hooks';
 import { useAuth } from '../../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
 export default function Header({ activeMenu = null, userInfo, className = '' }) {
@@ -8,6 +8,8 @@ export default function Header({ activeMenu = null, userInfo, className = '' }) 
   const { getFormattedDate, getDayOfWeek } = useDate(); // 요일 함수 추가
   const { logout, user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const isDashboard = location.pathname === '/';
 
   const IconComponent = activeMenu ? getMenuIcon(activeMenu) : null;
 
@@ -37,7 +39,7 @@ export default function Header({ activeMenu = null, userInfo, className = '' }) 
   const dayOfWeek = getDayOfWeek(); // ex: 월요일, Tuesday 등
 
   return (
-    <header className={`h-20 bg-white flex justify-between items-center px-8 border-b border-gray-100 ${className}`}>
+    <header className={`h-16 flex justify-between items-center px-8 ${isDashboard ? 'bg-transparent border-transparent' : 'bg-white border-b border-gray-100'} ${className}`}>
       <div className="flex items-center text-lg font-bold text-gray-800 gap-2">
         {activeMenu ? (
           <>

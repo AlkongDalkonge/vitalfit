@@ -18,13 +18,29 @@ export const getStatusText = status => {
   }
 };
 
-// 상태 옵션들
+// 상태 옵션들 (논리적 순서로 정렬)
 export const statusOptions = [
   { value: 'active', label: '활성' },
   { value: 'inactive', label: '비활성' },
   { value: 'expired', label: '만료' },
   { value: 'withdrawn', label: '탈퇴' },
 ];
+
+// 멤버 상태별 색상 클래스 반환
+export const getMemberStatusColor = status => {
+  switch (status) {
+    case 'active':
+      return 'text-green-600 bg-green-50';
+    case 'inactive':
+      return 'text-gray-600 bg-gray-50';
+    case 'expired':
+      return 'text-yellow-600 bg-yellow-50';
+    case 'withdrawn':
+      return 'text-red-600 bg-red-50';
+    default:
+      return 'text-gray-600 bg-gray-50';
+  }
+};
 
 // 날짜 포맷팅 함수 (필요시 추가)
 export const formatDate = dateString => {

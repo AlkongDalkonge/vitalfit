@@ -92,8 +92,8 @@ const UserPTSessionPage = () => {
   }
 
   return (
-    <div className="w-full max-w-7xl mx-auto p-6 min-h-screen flex flex-col">
-      <div className="flex flex-col gap-6 flex-1">
+    <div className="w-full max-w-7xl mx-auto p-4 flex flex-col">
+      <div className="flex flex-col gap-4 flex-1">
         {/* 최상단 제목 및 유저 정보 */}
         <div>
           {user && (
@@ -103,8 +103,11 @@ const UserPTSessionPage = () => {
           )}
         </div>
 
+        {/* 여유 공간 추가 */}
+        <div className="h-4"></div>
+
         {/* 날짜 선택 및 통계 섹션 */}
-        <div className="flex justify-between items-center bg-white p-4 rounded-lg shadow-sm border">
+        <div className="flex justify-between items-center bg-white p-3 rounded-lg shadow-sm border">
           <div className="flex items-center gap-16 pl-8">
             {/* 총 PT세션 */}
             <div className="text-center">
@@ -266,7 +269,7 @@ const UserPTSessionPage = () => {
 
         {/* PT 세션 테이블 */}
         <div className="overflow-hidden rounded-lg shadow-sm border border-gray-100">
-          <div className="overflow-y-auto max-h-[calc(100vh-400px)]">
+          <div className="overflow-y-auto max-h-[calc(100vh-350px)]">
             {/* 테이블 헤더 */}
             <div className="border-b border-gray-200 sticky top-0 z-10 bg-white">
               <div className="flex items-center p-4 min-w-max gap-4">
@@ -305,7 +308,7 @@ const UserPTSessionPage = () => {
             {/* 테이블 데이터 */}
             <div className="bg-white">
               {ptSessions.length === 0 ? (
-                <div className="flex justify-center items-center h-48">
+                <div className="flex justify-center items-center h-32">
                   <div className="text-center text-gray-500">
                     <p className="text-lg mb-2">등록된 PT 세션이 없습니다</p>
                     <p className="text-sm">선택한 기간에 PT 세션 기록이 없습니다</p>

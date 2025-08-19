@@ -14,7 +14,7 @@ export default function Sidebar({ activeMenu = null, setActiveMenu, onLogoClick 
       >
         <img src="/logo.png" alt="Logo" className="w-16 h-16" />
         <div className="flex flex-col items-center text-center">
-          <span className="text-base font-bold text-gray-800 leading-tight">Vitalfit</span>
+          <span className="text-base font-bold text-gray-800 leading-tight">VitalFit</span>
           <span className="text-xs text-gray-500 leading-tight">ERP System</span>
         </div>
       </div>
@@ -28,9 +28,9 @@ export default function Sidebar({ activeMenu = null, setActiveMenu, onLogoClick 
             return (
               <li
                 key={item.name}
-                className={`flex items-center px-6 py-3 gap-3 text-gray-700 text-sm font-medium transition-all duration-300 ease-in-out mb-3 relative cursor-pointer hover:bg-gray-50 hover:text-gray-800 hover:translate-x-0.5 ${
+                className={`flex items-center px-6 py-3 gap-3 text-gray-700 text-sm font-medium transition-all duration-300 ease-in-out mb-3 relative cursor-pointer hover:bg-gradient-to-r hover:from-blue-50/80 hover:to-cyan-50/80 hover:text-gray-800 hover:translate-x-0.5 ${
                   isActive
-                    ? 'bg-gradient-to-r from-blue-50 to-cyan-50 border-gradient-left font-semibold'
+                    ? 'border-gradient-left font-semibold'
                     : ''
                 }`}
                 onClick={() => setActiveMenu(item.name)}
@@ -41,19 +41,25 @@ export default function Sidebar({ activeMenu = null, setActiveMenu, onLogoClick 
                   }`}
                 >
                   <div
-                    className={
-                      isActive ? 'bg-gradient-to-r from-blue-500 to-blue-400 p-0.5 rounded' : ''
-                    }
+                    className={`transition-all duration-300 ease-in-out ${
+                      isActive 
+                        ? 'bg-gradient-to-r from-blue-500 to-blue-400 p-0.5 rounded' 
+                        : 'hover:bg-gradient-to-r hover:from-blue-400/60 hover:to-cyan-400/60 hover:p-0.5 hover:rounded'
+                    }`}
                   >
-                    <IconComponent size={14} color={isActive ? '#ffffff' : '#374151'} />
+                    <IconComponent 
+                      size={14} 
+                      color={isActive ? '#ffffff' : '#374151'} 
+                      className="transition-all duration-300 ease-in-out"
+                    />
                   </div>
                 </div>
                 <span
-                  className={
+                  className={`transition-all duration-300 ease-in-out ${
                     isActive
                       ? 'bg-gradient-to-r from-blue-600 to-blue-500 bg-clip-text text-transparent'
-                      : ''
-                  }
+                      : 'hover:bg-gradient-to-r hover:from-blue-600/70 hover:to-cyan-600/70 hover:bg-clip-text hover:text-transparent'
+                  }`}
                 >
                   {item.name}
                 </span>

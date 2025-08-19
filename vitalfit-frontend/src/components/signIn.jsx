@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-toastify';
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
 export default function SignIn() {
   const [email, setEmail] = useState('');
@@ -247,7 +248,7 @@ export default function SignIn() {
                     className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700 transition-colors"
                     onClick={() => setShowPassword(!showPassword)}
                   >
-                    {showPassword ? '★' : '☆'}
+                    {showPassword ? <FaEyeSlash size={16} /> : <FaEye size={16} />}
                   </button>
                 </div>
               </div>
