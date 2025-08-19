@@ -18,6 +18,26 @@ cp .env.example .env
 
 .env 파일에 실제 사용하는 DB, 이메일, 소셜 로그인, AWS 등 정보를 입력해야 서버가 정상 동작합니다.
 
+### 이메일 설정 (비밀번호 재설정 기능)
+
+비밀번호 재설정 기능을 사용하려면 Gmail 설정이 필요합니다:
+
+1. **Gmail 앱 비밀번호 생성**
+   - Gmail 계정 설정 → 보안 → 2단계 인증 활성화
+   - 앱 비밀번호 생성 (16자리)
+
+2. **환경변수 설정**
+   ```bash
+   # .env 파일에 추가
+   EMAIL_USER=vitalfit.app@gmail.com
+   EMAIL_PASSWORD=your-gmail-app-password
+   FRONTEND_URL=http://localhost:3000
+   ```
+
+3. **개발 환경에서 테스트**
+   - 실제 Gmail 계정 대신 개발용 이메일 서비스 사용 가능
+   - Mailtrap, Ethereal Email 등 활용
+
 ## Git 명령어 실행 방법
 
 ### 기본 작업 흐름

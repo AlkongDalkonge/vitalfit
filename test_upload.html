@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>파일 업로드 테스트</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 600px;
+        margin: 50px auto;
+        padding: 20px;
+        background-color: #f5f5f5;
+      }
+      .form-group {
+        margin-bottom: 15px;
+      }
+      label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+      }
+      input,
+      select {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 16px;
+      }
+      button {
+        background-color: #007bff;
+        color: white;
+        padding: 12px 24px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 16px;
+      }
+      button:hover {
+        background-color: #0056b3;
+      }
+      .result {
+        margin-top: 20px;
+        padding: 15px;
+        border-radius: 4px;
+        white-space: pre-wrap;
+      }
+      .success {
+        background-color: #d4edda;
+        border: 1px solid #c3e6cb;
+        color: #155724;
+      }
+      .error {
+        background-color: #f8d7da;
+        border: 1px solid #f5c6cb;
+        color: #721c24;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>파일 업로드 테스트</h1>
+
+    <form id="uploadForm">
+      <div class="form-group">
+        <label for="name">이름:</label>
+        <input type="text" id="name" name="name" value="테스트유저" required />
+      </div>
+
+      <div class="form-group">
+        <label for="email">이메일:</label>
+        <input
+          type="email"
+          id="email"
+          name="email"
+          value="test@example.com"
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="password">비밀번호:</label>
+        <input
+          type="password"
+          id="password"
+          name="password"
+          value="password123"
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="confirmPassword">비밀번호 확인:</label>
+        <input
+          type="password"
+          id="confirmPassword"
+          name="confirmPassword"
+          value="password123"
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="position_id">직책:</label>
+        <select id="position_id" name="position_id" required>
+          <option value="1">연습생</option>
+          <option value="2">교육생</option>
+          <option value="3">트레이너</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="center_id">센터:</label>
+        <select id="center_id" name="center_id" required>
+          <option value="1">바이탈핏 강남센터</option>
+          <option value="2">바이탈핏 홍대센터</option>
+          <option value="3">바이탈핏 신림센터</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="terms_accepted">약관 동의:</label>
+        <input
+          type="checkbox"
+          id="terms_accepted"
+          name="terms_accepted"
+          value="true"
+          checked
+          required
+        />
+        <label for="terms_accepted" style="display: inline"
+          >이용약관에 동의합니다</label
+        >
+      </div>
+
+      <div class="form-group">
+        <label for="profile_image_url">프로필 이미지:</label>
+        <input
+          type="file"
+          id="profile_image_url"
+          name="profile_image_url"
+          accept="image/*"
+        />
+      </div>
+
+      <button type="submit">회원가입 테스트</button>
+    </form>
+
+    <div id="result"></div>
+
+    <script>
+      document
+        .getElementById("uploadForm")
+        .addEventListener("submit", async function (e) {
+          e.preventDefault();
+
+          const formData = new FormData();
+          formData.append("name", document.getElementById("name").value);
+          formData.append("email", document.getElementById("email").value);
+          formData.append(
+            "password",
+            document.getElementById("password").value
+          );
+          formData.append(
+            "confirmPassword",
+            document.getElementById("confirmPassword").value
+          );
+          formData.append(
+            "position_id",
+            document.getElementById("position_id").value
+          );
+          formData.append(
+            "center_id",
+            document.getElementById("center_id").value
+          );
+          formData.append(
+            "terms_accepted",
+            document.getElementById("terms_accepted").checked
+          );
+
+          const fileInput = document.getElementById("profile_image_url");
+          if (fileInput.files[0]) {
+            formData.append("profile_image_url", fileInput.files[0]);
+          }
+
+          const resultDiv = document.getElementById("result");
+          resultDiv.innerHTML = "요청 중...";
+          resultDiv.className = "";
+
+          try {
+            const response = await fetch(
+              "http://localhost:3001/api/users/signup",
+              {
+                method: "POST",
+                body: formData,
+              }
+            );
+
+            const data = await response.json();
+
+            if (response.ok) {
+              resultDiv.innerHTML = `✅ 성공!\n\n응답: ${JSON.stringify(data, null, 2)}`;
+              resultDiv.className = "result success";
+            } else {
+              resultDiv.innerHTML = `❌ 실패 (${response.status})\n\n에러: ${JSON.stringify(data, null, 2)}`;
+              resultDiv.className = "result error";
+            }
+          } catch (error) {
+            resultDiv.innerHTML = `❌ 네트워크 오류\n\n${error.message}`;
+            resultDiv.className = "result error";
+          }
+        });
+    </script>
+  </body>
+</html>

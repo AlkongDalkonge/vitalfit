@@ -1,3 +1,5 @@
+const bcrypt = require('bcrypt');
+
 const {
   Center,
   User,
@@ -16,42 +18,61 @@ const {
 // 센터 시드 데이터
 const seedCenters = async () => {
   try {
+    // 기존 센터 데이터 확인
+    const existingCenters = await Center.findAll();
+    if (existingCenters.length > 0) {
+      console.log(`✅ 센터 데이터가 이미 존재합니다 (${existingCenters.length}개 센터)`);
+      return existingCenters;
+    }
+
     const centers = await Center.bulkCreate([
       {
         name: '바이탈핏 강남센터',
-        address: '서울시 강남구 테헤란로 123',
+        address: '서울시 강남구 테헤란로 123-45 강남빌딩 2층',
         phone: '02-1234-5678',
-        email: 'gangnam@vitalfit.co.kr',
-        kakao_id: 'vitalfit_gangnam',
-        instagram: 'vitalfit_gangnam',
-        store_image_name: 'gangnam_store.jpg',
-        store_image_url: '/uploads/stores/gangnam_store.jpg',
-        business_hours: '06:00 - 22:00',
-        is_active: true,
+        description:
+          '강남 최고의 프리미엄 피트니스 센터입니다. 최신 운동기구와 전문 트레이너들이 여러분의 건강한 변화를 도와드립니다.',
+        weekday_hours: '06:00 - 22:00',
+        saturday_hours: '08:00 - 20:00',
+        sunday_hours: '09:00 - 18:00',
+        holiday_hours: '10:00 - 16:00',
+        has_parking: true,
+        parking_fee: '2시간 무료, 추가 시간당 1,000원',
+        parking_info: '지하 1층 ~ 지하 3층 (총 50대 가능)',
+        directions: '강남역 2번 출구에서 도보 3분, 테헤란로 방향',
+        status: 'active',
       },
       {
         name: '바이탈핏 홍대센터',
-        address: '서울시 마포구 홍익로 456',
+        address: '서울시 마포구 홍익로 456-78 홍대타워 3층',
         phone: '02-2345-6789',
-        email: 'hongdae@vitalfit.co.kr',
-        kakao_id: 'vitalfit_hongdae',
-        instagram: 'vitalfit_hongdae',
-        store_image_name: 'hongdae_store.jpg',
-        store_image_url: '/uploads/stores/hongdae_store.jpg',
-        business_hours: '06:00 - 22:00',
-        is_active: true,
+        description:
+          '홍대의 핫한 감성과 함께하는 트렌디한 피트니스 공간입니다. 젊은 에너지가 넘치는 분위기에서 운동하세요.',
+        weekday_hours: '06:30 - 23:00',
+        saturday_hours: '07:00 - 22:00',
+        sunday_hours: '08:00 - 20:00',
+        holiday_hours: '09:00 - 18:00',
+        has_parking: false,
+        parking_fee: null,
+        parking_info: '인근 공영주차장 이용 (도보 2분)',
+        directions: '홍대입구역 9번 출구에서 도보 5분, 홍익대 정문 방향',
+        status: 'active',
       },
       {
         name: '바이탈핏 신림센터',
-        address: '서울시 관악구 신림동 789',
+        address: '서울시 관악구 신림동 789-12 신림프라자 4층',
         phone: '02-3456-7890',
-        email: 'sillim@vitalfit.co.kr',
-        kakao_id: 'vitalfit_sillim',
-        instagram: 'vitalfit_sillim',
-        store_image_name: 'sillim_store.jpg',
-        store_image_url: '/uploads/stores/sillim_store.jpg',
-        business_hours: '06:00 - 22:00',
-        is_active: true,
+        description:
+          '학생과 직장인을 위한 합리적인 가격의 피트니스 센터입니다. 넓은 공간과 다양한 프로그램을 제공합니다.',
+        weekday_hours: '05:30 - 23:30',
+        saturday_hours: '06:00 - 22:00',
+        sunday_hours: '07:00 - 21:00',
+        holiday_hours: '08:00 - 19:00',
+        has_parking: true,
+        parking_fee: '첫 1시간 무료, 추가 30분당 500원',
+        parking_info: '건물 뒤편 전용 주차장 (30대 가능)',
+        directions: '신림역 1번 출구에서 도보 7분, 신림사거리 방향',
+        status: 'active',
       },
     ]);
 
@@ -67,6 +88,13 @@ const seedCenters = async () => {
 const seedPositions = async () => {
   try {
     console.log('📊 Position 시드 데이터 생성 중...');
+
+    // 기존 Position 데이터 확인
+    const existingPositions = await Position.findAll();
+    if (existingPositions.length > 0) {
+      console.log(`✅ Position 데이터가 이미 존재합니다 (${existingPositions.length}개 Position)`);
+      return existingPositions;
+    }
 
     const positions = await Position.bulkCreate([
       {
@@ -262,7 +290,7 @@ const seedUsers = async (centers, teams, positions) => {
       {
         name: '관리자',
         email: 'admin@vitalfit.co.kr',
-        password: '$2b$10$hashedpassword',
+        password: await bcrypt.hash('password123', 10),
         phone: '010-0000-0000',
         phone_verified: true,
         position_id: positions.find(p => p.code === 'admin').id,
@@ -278,7 +306,7 @@ const seedUsers = async (centers, teams, positions) => {
       {
         name: '김강남팀장',
         email: 'kim.gangnam1@vitalfit.co.kr',
-        password: '$2b$10$hashedpassword',
+        password: await bcrypt.hash('password123', 10),
         phone: '010-1001-0001',
         phone_verified: true,
         position_id: positions.find(p => p.code === 'team_leader').id,
@@ -291,7 +319,7 @@ const seedUsers = async (centers, teams, positions) => {
       {
         name: '이강남트레이너',
         email: 'lee.gangnam1@vitalfit.co.kr',
-        password: '$2b$10$hashedpassword',
+        password: await bcrypt.hash('password123', 10),
         phone: '010-1001-0002',
         phone_verified: true,
         position_id: positions.find(p => p.code === 'trainer').id,
@@ -304,7 +332,7 @@ const seedUsers = async (centers, teams, positions) => {
       {
         name: '박강남트레이너',
         email: 'park.gangnam1@vitalfit.co.kr',
-        password: '$2b$10$hashedpassword',
+        password: await bcrypt.hash('password123', 10),
         phone: '010-1001-0003',
         phone_verified: true,
         position_id: positions.find(p => p.code === 'trainer').id,
@@ -317,7 +345,7 @@ const seedUsers = async (centers, teams, positions) => {
       {
         name: '최강남트레이너',
         email: 'choi.gangnam1@vitalfit.co.kr',
-        password: '$2b$10$hashedpassword',
+        password: await bcrypt.hash('password123', 10),
         phone: '010-1001-0004',
         phone_verified: true,
         position_id: positions.find(p => p.code === 'trainer').id,
@@ -332,7 +360,7 @@ const seedUsers = async (centers, teams, positions) => {
       {
         name: '정강남2팀장',
         email: 'jung.gangnam2@vitalfit.co.kr',
-        password: '$2b$10$hashedpassword',
+        password: await bcrypt.hash('password123', 10),
         phone: '010-1002-0001',
         phone_verified: true,
         position_id: positions.find(p => p.code === 'team_leader').id,
@@ -345,7 +373,7 @@ const seedUsers = async (centers, teams, positions) => {
       {
         name: '한강남2트레이너',
         email: 'han.gangnam2@vitalfit.co.kr',
-        password: '$2b$10$hashedpassword',
+        password: await bcrypt.hash('password123', 10),
         phone: '010-1002-0002',
         phone_verified: true,
         position_id: positions.find(p => p.code === 'trainer').id,
@@ -358,7 +386,7 @@ const seedUsers = async (centers, teams, positions) => {
       {
         name: '오강남2트레이너',
         email: 'oh.gangnam2@vitalfit.co.kr',
-        password: '$2b$10$hashedpassword',
+        password: await bcrypt.hash('password123', 10),
         phone: '010-1002-0003',
         phone_verified: true,
         position_id: positions.find(p => p.code === 'trainer').id,
@@ -373,7 +401,7 @@ const seedUsers = async (centers, teams, positions) => {
       {
         name: '강강남3팀장',
         email: 'kang.gangnam3@vitalfit.co.kr',
-        password: '$2b$10$hashedpassword',
+        password: await bcrypt.hash('password123', 10),
         phone: '010-1003-0001',
         phone_verified: true,
         position_id: positions.find(p => p.code === 'team_leader').id,
@@ -386,7 +414,7 @@ const seedUsers = async (centers, teams, positions) => {
       {
         name: '윤강남3트레이너',
         email: 'yoon.gangnam3@vitalfit.co.kr',
-        password: '$2b$10$hashedpassword',
+        password: await bcrypt.hash('password123', 10),
         phone: '010-1003-0002',
         phone_verified: true,
         position_id: positions.find(p => p.code === 'trainer').id,
@@ -399,7 +427,7 @@ const seedUsers = async (centers, teams, positions) => {
       {
         name: '임강남3트레이너',
         email: 'lim.gangnam3@vitalfit.co.kr',
-        password: '$2b$10$hashedpassword',
+        password: await bcrypt.hash('password123', 10),
         phone: '010-1003-0003',
         phone_verified: true,
         position_id: positions.find(p => p.code === 'trainer').id,
@@ -414,7 +442,7 @@ const seedUsers = async (centers, teams, positions) => {
       {
         name: '장강남4팀장',
         email: 'jang.gangnam4@vitalfit.co.kr',
-        password: '$2b$10$hashedpassword',
+        password: await bcrypt.hash('password123', 10),
         phone: '010-1004-0001',
         phone_verified: true,
         position_id: positions.find(p => p.code === 'team_leader').id,
@@ -427,7 +455,7 @@ const seedUsers = async (centers, teams, positions) => {
       {
         name: '전강남4트레이너',
         email: 'jeon.gangnam4@vitalfit.co.kr',
-        password: '$2b$10$hashedpassword',
+        password: await bcrypt.hash('password123', 10),
         phone: '010-1004-0002',
         phone_verified: true,
         position_id: positions.find(p => p.code === 'trainer').id,
@@ -440,7 +468,7 @@ const seedUsers = async (centers, teams, positions) => {
       {
         name: '조강남4트레이너',
         email: 'jo.gangnam4@vitalfit.co.kr',
-        password: '$2b$10$hashedpassword',
+        password: await bcrypt.hash('password123', 10),
         phone: '010-1004-0003',
         phone_verified: true,
         position_id: positions.find(p => p.code === 'trainer').id,
@@ -456,7 +484,7 @@ const seedUsers = async (centers, teams, positions) => {
       {
         name: '홍홍대1팀장',
         email: 'hong.hongdae1@vitalfit.co.kr',
-        password: '$2b$10$hashedpassword',
+        password: await bcrypt.hash('password123', 10),
         phone: '010-2001-0001',
         phone_verified: true,
         position_id: positions.find(p => p.code === 'team_leader').id,
@@ -469,7 +497,7 @@ const seedUsers = async (centers, teams, positions) => {
       {
         name: '구홍대1트레이너',
         email: 'gu.hongdae1@vitalfit.co.kr',
-        password: '$2b$10$hashedpassword',
+        password: await bcrypt.hash('password123', 10),
         phone: '010-2001-0002',
         phone_verified: true,
         position_id: positions.find(p => p.code === 'trainer').id,
@@ -482,7 +510,7 @@ const seedUsers = async (centers, teams, positions) => {
       {
         name: '권홍대1트레이너',
         email: 'kwon.hongdae1@vitalfit.co.kr',
-        password: '$2b$10$hashedpassword',
+        password: await bcrypt.hash('password123', 10),
         phone: '010-2001-0003',
         phone_verified: true,
         position_id: positions.find(p => p.code === 'trainer').id,
@@ -497,7 +525,7 @@ const seedUsers = async (centers, teams, positions) => {
       {
         name: '김홍대2팀장',
         email: 'kim.hongdae2@vitalfit.co.kr',
-        password: '$2b$10$hashedpassword',
+        password: await bcrypt.hash('password123', 10),
         phone: '010-2002-0001',
         phone_verified: true,
         position_id: positions.find(p => p.code === 'team_leader').id,
@@ -510,7 +538,7 @@ const seedUsers = async (centers, teams, positions) => {
       {
         name: '나홍대2트레이너',
         email: 'na.hongdae2@vitalfit.co.kr',
-        password: '$2b$10$hashedpassword',
+        password: await bcrypt.hash('password123', 10),
         phone: '010-2002-0002',
         phone_verified: true,
         position_id: positions.find(p => p.code === 'trainer').id,
@@ -523,7 +551,7 @@ const seedUsers = async (centers, teams, positions) => {
       {
         name: '남홍대2트레이너',
         email: 'nam.hongdae2@vitalfit.co.kr',
-        password: '$2b$10$hashedpassword',
+        password: await bcrypt.hash('password123', 10),
         phone: '010-2002-0003',
         phone_verified: true,
         position_id: positions.find(p => p.code === 'trainer').id,
@@ -538,7 +566,7 @@ const seedUsers = async (centers, teams, positions) => {
       {
         name: '노홍대3팀장',
         email: 'no.hongdae3@vitalfit.co.kr',
-        password: '$2b$10$hashedpassword',
+        password: await bcrypt.hash('password123', 10),
         phone: '010-2003-0001',
         phone_verified: true,
         position_id: positions.find(p => p.code === 'team_leader').id,
@@ -551,7 +579,7 @@ const seedUsers = async (centers, teams, positions) => {
       {
         name: '류홍대3트레이너',
         email: 'ryu.hongdae3@vitalfit.co.kr',
-        password: '$2b$10$hashedpassword',
+        password: await bcrypt.hash('password123', 10),
         phone: '010-2003-0002',
         phone_verified: true,
         position_id: positions.find(p => p.code === 'trainer').id,
@@ -564,7 +592,7 @@ const seedUsers = async (centers, teams, positions) => {
       {
         name: '문홍대3트레이너',
         email: 'moon.hongdae3@vitalfit.co.kr',
-        password: '$2b$10$hashedpassword',
+        password: await bcrypt.hash('password123', 10),
         phone: '010-2003-0003',
         phone_verified: true,
         position_id: positions.find(p => p.code === 'trainer').id,
@@ -580,7 +608,7 @@ const seedUsers = async (centers, teams, positions) => {
       {
         name: '민신림1팀장',
         email: 'min.sillim1@vitalfit.co.kr',
-        password: '$2b$10$hashedpassword',
+        password: await bcrypt.hash('password123', 10),
         phone: '010-3001-0001',
         phone_verified: true,
         position_id: positions.find(p => p.code === 'team_leader').id,
@@ -593,7 +621,7 @@ const seedUsers = async (centers, teams, positions) => {
       {
         name: '박신림1트레이너',
         email: 'park.sillim1@vitalfit.co.kr',
-        password: '$2b$10$hashedpassword',
+        password: await bcrypt.hash('password123', 10),
         phone: '010-3001-0002',
         phone_verified: true,
         position_id: positions.find(p => p.code === 'trainer').id,
@@ -606,7 +634,7 @@ const seedUsers = async (centers, teams, positions) => {
       {
         name: '배신림1트레이너',
         email: 'bae.sillim1@vitalfit.co.kr',
-        password: '$2b$10$hashedpassword',
+        password: await bcrypt.hash('password123', 10),
         phone: '010-3001-0003',
         phone_verified: true,
         position_id: positions.find(p => p.code === 'trainer').id,
@@ -621,7 +649,7 @@ const seedUsers = async (centers, teams, positions) => {
       {
         name: '백신림2팀장',
         email: 'baek.sillim2@vitalfit.co.kr',
-        password: '$2b$10$hashedpassword',
+        password: await bcrypt.hash('password123', 10),
         phone: '010-3002-0001',
         phone_verified: true,
         position_id: positions.find(p => p.code === 'team_leader').id,
@@ -634,7 +662,7 @@ const seedUsers = async (centers, teams, positions) => {
       {
         name: '변신림2트레이너',
         email: 'byun.sillim2@vitalfit.co.kr',
-        password: '$2b$10$hashedpassword',
+        password: await bcrypt.hash('password123', 10),
         phone: '010-3002-0002',
         phone_verified: true,
         position_id: positions.find(p => p.code === 'trainer').id,
@@ -649,7 +677,7 @@ const seedUsers = async (centers, teams, positions) => {
       {
         name: '서신림3팀장',
         email: 'seo.sillim3@vitalfit.co.kr',
-        password: '$2b$10$hashedpassword',
+        password: await bcrypt.hash('password123', 10),
         phone: '010-3003-0001',
         phone_verified: true,
         position_id: positions.find(p => p.code === 'team_leader').id,
@@ -662,7 +690,7 @@ const seedUsers = async (centers, teams, positions) => {
       {
         name: '손신림3트레이너',
         email: 'son.sillim3@vitalfit.co.kr',
-        password: '$2b$10$hashedpassword',
+        password: await bcrypt.hash('password123', 10),
         phone: '010-3003-0002',
         phone_verified: true,
         position_id: positions.find(p => p.code === 'trainer').id,
@@ -799,7 +827,7 @@ const seedMembers = async (centers, users) => {
 // 결제 시드 데이터
 const seedPayments = async (centers, users, members) => {
   try {
-    console.log('💳 결제 시드 데이터 생성 중... (7월 결제, 트레이너별 700-1100만원)');
+    console.log('💳 결제 시드 데이터 생성 중... (6월, 7월, 8월 결제, 트레이너별 700-1100만원)');
 
     // 트레이너만 필터링 (관리자 제외)
     const trainers = users.filter(u => u.name !== '관리자');
@@ -815,89 +843,98 @@ const seedPayments = async (centers, users, members) => {
       { sessions: 30, amount: 2500000, free: 4, name: 'PT 30+4회' },
     ];
 
-    trainers.forEach(trainer => {
-      // 각 트레이너별 회원 찾기
-      const trainerMembers = members.filter(m => m.trainer_id === trainer.id);
+    // 6월, 7월, 8월 데이터 생성
+    const months = [
+      { month: 6, days: 30 },
+      { month: 7, days: 31 },
+      { month: 8, days: 31 },
+    ];
 
-      // 트레이너별 목표 매출 (700-1100만원)
-      const targetRevenue = 7000000 + Math.floor(Math.random() * 4000000); // 700-1100만원
-      let currentRevenue = 0;
+    months.forEach(({ month, days }) => {
+      trainers.forEach(trainer => {
+        // 각 트레이너별 회원 찾기
+        const trainerMembers = members.filter(m => m.trainer_id === trainer.id);
 
-      // 회원들에게 랜덤하게 결제 분배
-      const usedMembers = [];
+        // 트레이너별 목표 매출 (700-1100만원)
+        const targetRevenue = 7000000 + Math.floor(Math.random() * 4000000); // 700-1100만원
+        let currentRevenue = 0;
 
-      while (currentRevenue < targetRevenue && usedMembers.length < trainerMembers.length) {
-        // 아직 사용하지 않은 회원 중 랜덤 선택
-        const availableMembers = trainerMembers.filter(m => !usedMembers.includes(m.id));
-        if (availableMembers.length === 0) break;
+        // 회원들에게 랜덤하게 결제 분배
+        const usedMembers = [];
 
-        const selectedMember =
-          availableMembers[Math.floor(Math.random() * availableMembers.length)];
-        usedMembers.push(selectedMember.id);
+        while (currentRevenue < targetRevenue && usedMembers.length < trainerMembers.length) {
+          // 아직 사용하지 않은 회원 중 랜덤 선택
+          const availableMembers = trainerMembers.filter(m => !usedMembers.includes(m.id));
+          if (availableMembers.length === 0) break;
 
-        // 남은 목표 매출에 맞는 패키지 선택
-        const remainingRevenue = targetRevenue - currentRevenue;
-        const suitablePackages = sessionPackages.filter(
-          pkg => pkg.amount <= remainingRevenue * 1.2
-        ); // 20% 여유
+          const selectedMember =
+            availableMembers[Math.floor(Math.random() * availableMembers.length)];
+          usedMembers.push(selectedMember.id);
 
-        if (suitablePackages.length === 0) break;
+          // 남은 목표 매출에 맞는 패키지 선택
+          const remainingRevenue = targetRevenue - currentRevenue;
+          const suitablePackages = sessionPackages.filter(
+            pkg => pkg.amount <= remainingRevenue * 1.2
+          ); // 20% 여유
 
-        const selectedPackage =
-          suitablePackages[Math.floor(Math.random() * suitablePackages.length)];
+          if (suitablePackages.length === 0) break;
 
-        // 7월 내 랜덤 날짜
-        const day = Math.floor(Math.random() * 31) + 1;
-        const paymentDate = `2024-07-${String(day).padStart(2, '0')}`;
+          const selectedPackage =
+            suitablePackages[Math.floor(Math.random() * suitablePackages.length)];
 
-        paymentData.push({
-          member_id: selectedMember.id,
-          trainer_id: trainer.id,
-          center_id: trainer.center_id,
-          payment_amount: selectedPackage.amount,
-          session_count: selectedPackage.sessions,
-          free_session_count: selectedPackage.free,
-          payment_date: paymentDate,
-          payment_method: paymentMethods[Math.floor(Math.random() * paymentMethods.length)],
-          notes: selectedPackage.name + ' 결제',
-        });
+          // 해당 월 내 랜덤 날짜
+          const day = Math.floor(Math.random() * days) + 1;
+          const paymentDate = `2025-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 
-        currentRevenue += selectedPackage.amount;
-      }
+          paymentData.push({
+            member_id: selectedMember.id,
+            trainer_id: trainer.id,
+            center_id: trainer.center_id,
+            payment_amount: selectedPackage.amount,
+            session_count: selectedPackage.sessions,
+            free_session_count: selectedPackage.free,
+            payment_date: paymentDate,
+            payment_method: paymentMethods[Math.floor(Math.random() * paymentMethods.length)],
+            notes: selectedPackage.name + ' 결제',
+          });
 
-      // 목표 매출에 못 미치면 일부 회원에게 추가 결제
-      while (currentRevenue < targetRevenue * 0.9 && usedMembers.length > 0) {
-        const randomMemberId = usedMembers[Math.floor(Math.random() * usedMembers.length)];
-        const selectedMember = trainerMembers.find(m => m.id === randomMemberId);
+          currentRevenue += selectedPackage.amount;
+        }
 
-        const remainingRevenue = targetRevenue - currentRevenue;
-        const suitablePackages = sessionPackages.filter(
-          pkg => pkg.amount <= remainingRevenue * 1.2
-        );
+        // 목표 매출에 못 미치면 일부 회원에게 추가 결제
+        while (currentRevenue < targetRevenue * 0.9 && usedMembers.length > 0) {
+          const randomMemberId = usedMembers[Math.floor(Math.random() * usedMembers.length)];
+          const selectedMember = trainerMembers.find(m => m.id === randomMemberId);
 
-        if (suitablePackages.length === 0) break;
+          const remainingRevenue = targetRevenue - currentRevenue;
+          const suitablePackages = sessionPackages.filter(
+            pkg => pkg.amount <= remainingRevenue * 1.2
+          );
 
-        const selectedPackage =
-          suitablePackages[Math.floor(Math.random() * suitablePackages.length)];
+          if (suitablePackages.length === 0) break;
 
-        // 7월 내 다른 날짜
-        const day = Math.floor(Math.random() * 31) + 1;
-        const paymentDate = `2024-07-${String(day).padStart(2, '0')}`;
+          const selectedPackage =
+            suitablePackages[Math.floor(Math.random() * suitablePackages.length)];
 
-        paymentData.push({
-          member_id: selectedMember.id,
-          trainer_id: trainer.id,
-          center_id: trainer.center_id,
-          payment_amount: selectedPackage.amount,
-          session_count: selectedPackage.sessions,
-          free_session_count: selectedPackage.free,
-          payment_date: paymentDate,
-          payment_method: paymentMethods[Math.floor(Math.random() * paymentMethods.length)],
-          notes: selectedPackage.name + ' 추가결제',
-        });
+          // 해당 월 내 다른 날짜
+          const day = Math.floor(Math.random() * days) + 1;
+          const paymentDate = `2025-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 
-        currentRevenue += selectedPackage.amount;
-      }
+          paymentData.push({
+            member_id: selectedMember.id,
+            trainer_id: trainer.id,
+            center_id: trainer.center_id,
+            payment_amount: selectedPackage.amount,
+            session_count: selectedPackage.sessions,
+            free_session_count: selectedPackage.free,
+            payment_date: paymentDate,
+            payment_method: paymentMethods[Math.floor(Math.random() * paymentMethods.length)],
+            notes: selectedPackage.name + ' 추가결제',
+          });
+
+          currentRevenue += selectedPackage.amount;
+        }
+      });
     });
 
     const payments = await Payment.bulkCreate(paymentData);
@@ -918,164 +955,127 @@ const seedCommissionRates = async (centers, positions) => {
     const commissionRates = await CommissionRate.bulkCreate([
       // === 기본 정책 (전체 지점, 전체 직급 적용) ===
       {
+        min_revenue: 0,
+        max_revenue: 3000000,
+        commission_per_session: 6000,
+        monthly_commission: 0,
+        effective_date: '2024-01-01',
+        center_id: null,
+        position_id: null,
+        is_active: true,
+        description: '기본 정책 - 300만원 미만 구간',
+      },
+      {
         min_revenue: 3000000,
         max_revenue: 4000000,
         commission_per_session: 10000,
         monthly_commission: 0,
-        effective_date: '2024-06-01',
+        effective_date: '2024-01-01',
         center_id: null,
         position_id: null,
         is_active: true,
-        description: '기본 정책 - 300만~400만원 구간',
+        description: '기본 정책 - 300만원 이상 구간',
       },
       {
         min_revenue: 4000000,
         max_revenue: 5000000,
         commission_per_session: 11000,
         monthly_commission: 0,
-        effective_date: '2024-06-01',
+        effective_date: '2024-01-01',
         center_id: null,
         position_id: null,
         is_active: true,
-        description: '기본 정책 - 400만~500만원 구간',
+        description: '기본 정책 - 400만원 이상 구간',
       },
       {
         min_revenue: 5000000,
         max_revenue: 6000000,
         commission_per_session: 12000,
         monthly_commission: 0,
-        effective_date: '2024-06-01',
+        effective_date: '2024-01-01',
         center_id: null,
         position_id: null,
         is_active: true,
-        description: '기본 정책 - 500만~600만원 구간',
+        description: '기본 정책 - 500만원 이상 구간',
       },
       {
         min_revenue: 6000000,
         max_revenue: 7000000,
         commission_per_session: 13000,
         monthly_commission: 300000,
-        effective_date: '2024-06-01',
+        effective_date: '2024-01-01',
         center_id: null,
         position_id: null,
         is_active: true,
-        description: '기본 정책 - 600만~700만원 구간 (월 커미션 시작)',
+        description: '기본 정책 - 600만원 이상 구간',
       },
       {
         min_revenue: 7000000,
         max_revenue: 8000000,
         commission_per_session: 14000,
         monthly_commission: 400000,
-        effective_date: '2024-06-01',
+        effective_date: '2024-01-01',
         center_id: null,
         position_id: null,
         is_active: true,
-        description: '기본 정책 - 700만~800만원 구간',
+        description: '기본 정책 - 700만원 이상 구간',
       },
       {
         min_revenue: 8000000,
         max_revenue: 9000000,
         commission_per_session: 15000,
         monthly_commission: 500000,
-        effective_date: '2024-06-01',
+        effective_date: '2024-01-01',
         center_id: null,
         position_id: null,
         is_active: true,
-        description: '기본 정책 - 800만~900만원 구간',
+        description: '기본 정책 - 800만원 이상 구간',
       },
       {
         min_revenue: 9000000,
         max_revenue: 10000000,
         commission_per_session: 20000,
         monthly_commission: 600000,
-        effective_date: '2024-06-01',
+        effective_date: '2024-01-01',
         center_id: null,
         position_id: null,
         is_active: true,
-        description: '기본 정책 - 900만~1000만원 구간',
+        description: '기본 정책 - 900만원 이상 구간',
       },
       {
         min_revenue: 10000000,
         max_revenue: null,
         commission_per_session: 21000,
         monthly_commission: 700000,
-        effective_date: '2024-06-01',
+        effective_date: '2024-01-01',
         center_id: null,
         position_id: null,
         is_active: true,
         description: '기본 정책 - 1000만원 이상 구간',
       },
 
-      // === 강남센터 특별 정책 ===
+      // === 팀장 특별 정책 (position_id=7) ===
       {
-        min_revenue: 8000000,
-        max_revenue: 9000000,
-        commission_per_session: 16000,
-        monthly_commission: 550000,
-        effective_date: '2024-06-01',
-        center_id: centers.find(c => c.name === '바이탈핏 강남센터').id,
-        position_id: null,
+        min_revenue: 12000000,
+        max_revenue: 15000000,
+        commission_per_session: 25000,
+        monthly_commission: 800000,
+        effective_date: '2024-01-01',
+        center_id: null,
+        position_id: 7, // 팀장
         is_active: true,
-        description: '강남센터 특별 정책 - 800만~900만원 구간 (기본보다 +1000원)',
+        description: '팀장 특별 정책 - 1200만원 이상 구간',
       },
       {
-        min_revenue: 9000000,
+        min_revenue: 15000000,
         max_revenue: null,
-        commission_per_session: 22000,
-        monthly_commission: 750000,
-        effective_date: '2024-06-01',
-        center_id: centers.find(c => c.name === '바이탈핏 강남센터').id,
-        position_id: null,
-        is_active: true,
-        description: '강남센터 특별 정책 - 900만원 이상 구간 (기본보다 +1000원)',
-      },
-
-      // === 시니어 이상 직급 특별 정책 ===
-      {
-        min_revenue: 5000000,
-        max_revenue: 6000000,
-        commission_per_session: 6000,
-        monthly_commission: 0,
-        effective_date: '2024-06-01',
+        commission_per_session: 27000,
+        monthly_commission: 900000,
+        effective_date: '2024-01-01',
         center_id: null,
-        position_id: positions.find(p => p.code === 'senior').id,
+        position_id: 7, // 팀장
         is_active: true,
-        description: '시니어 직급 특별 정책 - 팀원 관리 업무로 인한 개인 매출 감소 보상',
-      },
-      {
-        min_revenue: 5000000,
-        max_revenue: 6000000,
-        commission_per_session: 6000,
-        monthly_commission: 0,
-        effective_date: '2024-06-01',
-        center_id: null,
-        position_id: positions.find(p => p.code === 'team_leader').id,
-        is_active: true,
-        description: '팀장 직급 특별 정책 - 팀원 관리 업무로 인한 개인 매출 감소 보상',
-      },
-
-      // === 연습생/교육생 특별 정책 (낮은 커미션) ===
-      {
-        min_revenue: 3000000,
-        max_revenue: 5000000,
-        commission_per_session: 8000,
-        monthly_commission: 0,
-        effective_date: '2024-06-01',
-        center_id: null,
-        position_id: positions.find(p => p.code === 'trainee').id,
-        is_active: true,
-        description: '연습생 특별 정책 - 교육 기간 중 낮은 커미션율 적용',
-      },
-      {
-        min_revenue: 3000000,
-        max_revenue: 5000000,
-        commission_per_session: 9000,
-        monthly_commission: 0,
-        effective_date: '2024-06-01',
-        center_id: null,
-        position_id: positions.find(p => p.code === 'student').id,
-        is_active: true,
-        description: '교육생 특별 정책 - 교육 기간 중 낮은 커미션율 적용',
+        description: '팀장 특별 정책 - 1500만원 이상 구간',
       },
     ]);
 
@@ -1334,35 +1334,44 @@ const seedPTSessions = async (centers, users, members) => {
     // 동적으로 PT 세션 생성 (각 회원별 0~12개까지 다양하게)
     const ptSessionData = [];
 
-    members.forEach((member, index) => {
-      // 회원별 PT 세션 수 (0~12개 랜덤)
-      const sessionCount = Math.floor(Math.random() * 13); // 0~12
+    // 6월, 7월, 8월 데이터 생성
+    const months = [
+      { month: 6, days: 30 },
+      { month: 7, days: 31 },
+      { month: 8, days: 31 },
+    ];
 
-      for (let i = 0; i < sessionCount; i++) {
-        // 7월 내 랜덤 날짜
-        const day = Math.floor(Math.random() * 31) + 1;
-        const sessionDate = `2024-07-${String(day).padStart(2, '0')}`;
+    months.forEach(({ month, days }) => {
+      members.forEach((member, index) => {
+        // 회원별 PT 세션 수 (0~12개 랜덤)
+        const sessionCount = Math.floor(Math.random() * 13); // 0~12
 
-        // 랜덤 시간 (9시~21시)
-        const startHour = 9 + Math.floor(Math.random() * 12);
-        const startTime = `${String(startHour).padStart(2, '0')}:00:00`;
-        const endTime = `${String(startHour + 1).padStart(2, '0')}:00:00`;
+        for (let i = 0; i < sessionCount; i++) {
+          // 해당 월 내 랜덤 날짜
+          const day = Math.floor(Math.random() * days) + 1;
+          const sessionDate = `2025-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 
-        ptSessionData.push({
-          member_id: member.id,
-          trainer_id: member.trainer_id, // 회원의 담당 트레이너
-          center_id: member.center_id, // 회원의 소속 센터
-          session_date: sessionDate,
-          start_time: startTime,
-          end_time: endTime,
-          session_type: Math.random() < 0.9 ? 'regular' : 'free', // 90% regular, 10% free
-          signature_data:
-            'data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCI+CiAgPHRleHQgeD0iNTAiIHk9IjUwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiPuuUjOyWtOygkTwvdGV4dD4KPC9zdmc+Cg==',
-          signature_time: `${sessionDate}T${endTime.substring(0, 5)}:00Z`,
-          notes: `PT 세션 ${i + 1}회차`,
-          idempotency_key: `pt_session_${member.id}_${i + 1}`,
-        });
-      }
+          // 랜덤 시간 (9시~21시)
+          const startHour = 9 + Math.floor(Math.random() * 12);
+          const startTime = `${String(startHour).padStart(2, '0')}:00:00`;
+          const endTime = `${String(startHour + 1).padStart(2, '0')}:00:00`;
+
+          ptSessionData.push({
+            member_id: member.id,
+            trainer_id: member.trainer_id, // 회원의 담당 트레이너
+            center_id: member.center_id, // 회원의 소속 센터
+            session_date: sessionDate,
+            start_time: startTime,
+            end_time: endTime,
+            session_type: Math.random() < 0.9 ? 'regular' : 'free', // 90% regular, 10% free
+            signature_data:
+              'data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCI+CiAgPHRleHQgeD0iNTAiIHk9IjUwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiPuuUjOyWtOygkTwvdGV4dD4KPC9zdmc+Cg==',
+            signature_time: `${sessionDate}T${endTime.substring(0, 5)}:00Z`,
+            notes: `PT 세션 ${i + 1}회차`,
+            idempotency_key: `pt_session_${member.id}_${month}_${i + 1}`,
+          });
+        }
+      });
     });
 
     const ptSessions = await PTSession.bulkCreate(ptSessionData);

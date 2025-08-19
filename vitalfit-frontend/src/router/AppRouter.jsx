@@ -1,4 +1,8 @@
 import { Routes, Route } from 'react-router-dom';
+
+import SignIn from '../components/signIn';
+import SignUp from '../components/signUp';
+import ResetPassword from '../components/resetPassword';
 import DashboardPage from '../pages/DashboardPage';
 import CenterPage from '../pages/CenterPage';
 import UserPage from '../pages/UserPage';
@@ -13,7 +17,11 @@ import AccountPage from '../pages/AccountPage';
 const AppRouter = () => {
   return (
     <Routes>
-      <Route path="/" element={<DashboardPage />} />
+      <Route path="/" element={<SignIn />} />
+      <Route path="/login" element={<SignIn />} />
+      <Route path="/signup" element={<SignUp />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/dashboard" element={<DashboardPage />} />
       <Route path="/center" element={<CenterPage />} />
       <Route path="/user" element={<UserPage />} />
       <Route path="/member" element={<MemberPage />} />

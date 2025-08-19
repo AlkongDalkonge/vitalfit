@@ -22,30 +22,30 @@ export const getPathFromMenu = menuName => {
 
 export const getMenuFromPath = pathname => {
   // 대시보드 경로는 null 반환 (메뉴 활성화 없음)
-  if (pathname === '/') {
+  if (pathname === '/' || pathname === '/dashboard' || pathname === '/dashboard/') {
     return null;
   }
 
   // 경로별 메뉴 매칭 (하위 경로 포함)
-  if (pathname.startsWith('/center')) {
+  if (pathname.startsWith('/center') || pathname.startsWith('/dashboard/center')) {
     return '지점';
   }
-  if (pathname.startsWith('/user')) {
+  if (pathname.startsWith('/user') || pathname.startsWith('/dashboard/user')) {
     return '직원';
   }
-  if (pathname.startsWith('/member')) {
+  if (pathname.startsWith('/member') || pathname.startsWith('/dashboard/member')) {
     return '고객';
   }
-  if (pathname.startsWith('/payment')) {
+  if (pathname.startsWith('/payment') || pathname.startsWith('/dashboard/payment')) {
     return '정산시스템';
   }
-  if (pathname.startsWith('/notice')) {
+  if (pathname.startsWith('/notice') || pathname.startsWith('/dashboard/notice')) {
     return '알림/공지';
   }
-  if (pathname.startsWith('/report')) {
+  if (pathname.startsWith('/report') || pathname.startsWith('/dashboard/report')) {
     return '분석리포트';
   }
-  if (pathname.startsWith('/account')) {
+  if (pathname.startsWith('/account') || pathname.startsWith('/dashboard/account')) {
     return '내계정';
   }
 
@@ -54,7 +54,7 @@ export const getMenuFromPath = pathname => {
 
 export const ROUTES = {
   HOME: '/',
-  DASHBOARD: '/',
+  DASHBOARD: '/dashboard',
   CENTER: '/center',
   USER: '/user',
   MEMBER: '/member',

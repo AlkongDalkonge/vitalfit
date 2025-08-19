@@ -23,6 +23,11 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.INTEGER,
         allowNull: false,
       },
+      pt_type: {
+        type: DataTypes.STRING(50),
+        allowNull: true,
+        comment: 'PT 종류 (개인PT, 그룹PT 등)',
+      },
       session_count: {
         type: DataTypes.INTEGER,
         allowNull: false,
