@@ -19,6 +19,7 @@ export const useIcons = () => {
     직원: FaUsers,
     고객: FaUserFriends,
     'PT 결제': FaCreditCard,
+    'PT 일정관리': FaCalendarAlt,
     정산시스템: FaCalculator,
     '알림/공지': FaBell,
     분석리포트: FaChartBar,
