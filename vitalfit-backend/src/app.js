@@ -72,16 +72,16 @@ app.use((req, res) => {
 app.use(errorHandler);
 
 // DB 연결 및 서버 실행
-const PORT = process.env.SERVER_PORT || 3001;
+const PORT = process.env.PORT || 3001;
 
 sequelize
-  // .sync({ force: false, alter: true })
-  .sync({ force: true })
+  .sync({ force: false, alter: true })
+  // .sync({ force: true })
   .then(async () => {
     console.log('1️⃣ DB 테이블 생성 완료!');
 
     // 시드 데이터 실행 조건 확인
-    const shouldSeedData = process.env.SEED_DATA === 'true';
+    const shouldSeedData = process.env.SEED_DATA === 'false';
 
     if (shouldSeedData) {
       try {
