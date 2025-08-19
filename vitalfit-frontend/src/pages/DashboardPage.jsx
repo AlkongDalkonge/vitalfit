@@ -25,6 +25,9 @@ const DashboardPage = () => {
   const [draftSettlements, setDraftSettlements] = useState([]);
   const [hasCheckedDraft, setHasCheckedDraft] = useState(false);
 
+  // 무한 로딩 방지를 위한 타임아웃 설정
+  const [loadingTimeout, setLoadingTimeout] = useState(null);
+
   // Draft 정산 확인 함수
   const checkDraftSettlements = async () => {
     if (hasCheckedDraft) return; // 이미 확인했으면 스킵
@@ -54,85 +57,136 @@ const DashboardPage = () => {
   useEffect(() => {
     const fetchDashboardData = async () => {
       // 인증이 완료되지 않았으면 대기
-      if (authLoading) return;
+      if (authLoading) {
+        console.log('🔍 인증 로딩 중...');
+        return;
+      }
 
       // 인증되지 않은 경우 에러 설정
       if (!isAuthenticated) {
+        console.log('❌ 인증되지 않음');
         setError('로그인이 필요합니다.');
         setLoading(false);
         return;
       }
 
       try {
+        console.log('🚀 대시보드 데이터 요청 시작');
         setLoading(true);
+        setError(null);
+
+        // 로딩 타임아웃 설정 (30초)
+        const timeoutId = setTimeout(() => {
+          console.warn('⚠️ 대시보드 데이터 로딩 타임아웃');
+          setError('데이터 로딩이 시간 초과되었습니다. 새로고침해주세요.');
+          setLoading(false);
+        }, 30000);
+        setLoadingTimeout(timeoutId);
+
         const response = await getDashboardStats();
-        setDashboardData(response.data);
+        console.log('📡 대시보드 API 응답:', response);
+
+        // 타임아웃 클리어
+        clearTimeout(timeoutId);
+        setLoadingTimeout(null);
+
+        // 응답 데이터 구조 검증
+        if (response && response.data) {
+          setDashboardData(response.data);
+          console.log('✅ 대시보드 데이터 설정 완료');
+        } else {
+          console.warn('⚠️ 응답 데이터 구조가 예상과 다름:', response);
+          setDashboardData(response || {});
+        }
 
         // 대시보드 데이터 로드 완료 후 draft 정산 확인
         await checkDraftSettlements();
       } catch (err) {
+        console.error('❌ 대시보드 데이터 로딩 실패:', err);
+
+        // 타임아웃 클리어
+        if (loadingTimeout) {
+          clearTimeout(loadingTimeout);
+          setLoadingTimeout(null);
+        }
+
         if (err.response?.status === 401) {
           setError('인증이 만료되었습니다. 다시 로그인해주세요.');
+        } else if (err.response?.status === 500) {
+          setError('서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+        } else if (err.message) {
+          setError(`데이터를 불러오는데 실패했습니다: ${err.message}`);
         } else {
           setError('대시보드 데이터를 불러오는데 실패했습니다.');
         }
-        console.error('대시보드 데이터 로딩 실패:', err);
       } finally {
         setLoading(false);
       }
     };
 
     fetchDashboardData();
-  }, [isAuthenticated, authLoading]);
+
+    // 컴포넌트 언마운트 시 타임아웃 클리어
+    return () => {
+      if (loadingTimeout) {
+        clearTimeout(loadingTimeout);
+      }
+    };
+  }, [isAuthenticated, authLoading, user?.id]);
 
   // 통계 데이터 포맷팅
   const formatStats = () => {
     if (!dashboardData) return [];
 
-    // position 1~11의 활성화된 유저 수 계산
-    const activeUsersCount =
-      dashboardData.position_stats?.reduce((total, position) => {
-        if (position.id >= 1 && position.id <= 11) {
-          return total + (position.active_users || 0);
-        }
-        return total;
-      }, 0) || 0;
+    try {
+      // position 1~11의 활성화된 유저 수 계산
+      const activeUsersCount =
+        dashboardData.position_stats?.reduce((total, position) => {
+          if (position.id >= 1 && position.id <= 11) {
+            return total + (position.active_users || 0);
+          }
+          return total;
+        }, 0) || 0;
 
-    // 이번달 total_settlement 합계 계산
-    const currentMonthLaborCost =
-      dashboardData.position_stats?.reduce((total, position) => {
-        if (position.id >= 1 && position.id <= 11) {
-          return total + (position.total_settlement || 0);
-        }
-        return total;
-      }, 0) || 0;
+      // 이번달 total_settlement 합계 계산
+      const currentMonthLaborCost =
+        dashboardData.position_stats?.reduce((total, position) => {
+          if (position.id >= 1 && position.id <= 11) {
+            return total + (position.total_settlement || 0);
+          }
+          return total;
+        }, 0) || 0;
 
-    return [
-      {
-        title: '총 직원 수',
-        value: `${activeUsersCount}명`,
-        icon: FaUsers,
-        color: '#3b82f6',
-        change: '+0명',
-        changeType: 'increase',
-      },
-      {
-        title: '이번 달 인건비',
-        value: `₩${currentMonthLaborCost.toLocaleString()}`,
-        icon: FaMoneyBillWave,
-        color: '#ef4444',
-        change: '+0%',
-        changeType: 'increase',
-      },
-      {
-        title: '정산완료율',
-        value: `${dashboardData.overview?.settlement_completion_rate?.value || 0}%`,
-        icon: FaPercentage,
-        color: '#8b5cf6',
-        change: `${(dashboardData.overview?.settlement_completion_rate?.change || 0) >= 0 ? '+' : ''}${dashboardData.overview?.settlement_completion_rate?.change || 0}%`,
-        changeType: dashboardData.overview?.settlement_completion_rate?.changeType || 'increase',
-      },
-    ];
+      return [
+        {
+          title: '총 직원 수',
+          value: `${activeUsersCount}명`,
+          icon: FaUsers,
+          color: '#3b82f6',
+          change: '+0명',
+          changeType: 'increase',
+        },
+        {
+          title: '이번 달 인건비',
+          value: `₩${currentMonthLaborCost.toLocaleString()}`,
+          icon: FaMoneyBillWave,
+          color: '#ef4444',
+          change: '+0%',
+          changeType: 'increase',
+        },
+        {
+          title: '정산완료율',
+          value: `${dashboardData.overview?.settlement_completion_rate?.value || 0}%`,
+          icon: FaPercentage,
+          color: '#8b5cf6',
+          change: `${(dashboardData.overview?.settlement_completion_rate?.change || 0) >= 0 ? '+' : ''}${dashboardData.overview?.settlement_completion_rate?.change || 0}%`,
+          changeType: dashboardData.overview?.settlement_completion_rate?.changeType || 'increase',
+        },
+      ];
+    } catch (error) {
+      console.error('통계 데이터 포맷팅 오류:', error);
+      return [];
+    }
   };
 
   // 최근 활동 데이터 포맷팅
@@ -145,15 +199,24 @@ const DashboardPage = () => {
       };
     }
 
-    const recentUsers = dashboardData.recent_users || [];
-    const recentMembers = dashboardData.recent_members || [];
-    const recentNotices = dashboardData.recent_notices || [];
+    try {
+      const recentUsers = dashboardData.recent_users || [];
+      const recentMembers = dashboardData.recent_members || [];
+      const recentNotices = dashboardData.recent_notices || [];
 
-    return {
-      recentUsers,
-      recentMembers,
-      recentNotices,
-    };
+      return {
+        recentUsers,
+        recentMembers,
+        recentNotices,
+      };
+    } catch (error) {
+      console.error('최근 활동 데이터 포맷팅 오류:', error);
+      return {
+        recentUsers: [],
+        recentMembers: [],
+        recentNotices: [],
+      };
+    }
   };
 
   // 인증 로딩 중이거나 데이터 로딩 중인 경우
@@ -161,10 +224,18 @@ const DashboardPage = () => {
     return (
       <div className="min-h-screen bg-white">
         <div className="max-w-6xl mx-auto pt-8">
-          <div className="flex justify-center items-center h-64">
-            <div className="text-black text-lg font-semibold">
+          <div className="flex flex-col justify-center items-center h-64">
+            <div className="text-black text-lg font-semibold mb-4">
               {authLoading ? '인증 상태를 확인하는 중...' : '데이터를 불러오는 중...'}
             </div>
+            {/* 로딩 스피너 추가 */}
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            {/* 로딩 시간이 길어질 경우 안내 메시지 */}
+            {loading && !authLoading && (
+              <div className="text-sm text-gray-500 mt-4 text-center">
+                로딩이 오래 걸리는 경우 새로고침을 시도해보세요
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -193,6 +264,25 @@ const DashboardPage = () => {
                 다시 시도
               </button>
             )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 데이터가 없는 경우
+  if (!dashboardData) {
+    return (
+      <div className="min-h-screen bg-white">
+        <div className="max-w-6xl mx-auto pt-8">
+          <div className="flex flex-col justify-center items-center h-64">
+            <div className="text-black mb-4 text-lg">데이터를 불러올 수 없습니다.</div>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-semibold"
+            >
+              새로고침
+            </button>
           </div>
         </div>
       </div>
@@ -450,12 +540,6 @@ const DashboardPage = () => {
                         </span>
                       </div>
                       <div className="w-full bg-white rounded-full h-2 mt-1">
-                        {console.log(
-                          'Progress bar width:',
-                          center.total_users > 0
-                            ? Math.round(((center.settled_users || 0) / center.total_users) * 100)
-                            : 0
-                        )}
                         <div
                           className="bg-gradient-to-r from-[#81dee5] to-[#0891b2] h-2 rounded-full transition-all duration-300"
                           style={{

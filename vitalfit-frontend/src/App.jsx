@@ -51,6 +51,7 @@ function App() {
             }
           >
             <Route index element={<DashboardPage />} />
+            <Route path="dashboard" element={<DashboardPage />} />
             <Route path="centers" element={<CenterPage />} />
             <Route path="users" element={<UserPage />} />
             <Route path="user/:userId/pt-sessions" element={<UserPTSessionPage />} />
