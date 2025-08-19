@@ -34,6 +34,8 @@ const MemberPage = () => {
   } = useMember();
 
   const {
+    centerFilter,
+    trainerFilter,
     showCenterDropdown,
     showTrainerDropdown,
     centers,
@@ -108,7 +110,10 @@ const MemberPage = () => {
     if (value === '전체선택') {
       setStatusFilter('');
     }
-    filterMembersImmediate(selectedCenter, selectedTrainer);
+    // centerFilter와 trainerFilter를 사용하여 필터링
+    const center = centers.find(c => c.name === centerFilter);
+    const centerId = center ? center.id : null;
+    filterMembersImmediate(centerId, trainerFilter);
   };
   // 기타 핸들러들
   const handleRegisterMember = () => {
