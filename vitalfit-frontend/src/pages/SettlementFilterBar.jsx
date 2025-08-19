@@ -14,6 +14,7 @@ const SettlementFilterBar = ({
   setSearch,
   selectedMonth,
   setSelectedMonth,
+  user,
 }) => {
   return (
     <div className="bg-gray-50 p-4 rounded-lg">
@@ -28,7 +29,8 @@ const SettlementFilterBar = ({
               setSelectedTeam(null);
               setSelectedTrainer(null);
             }}
-            className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            disabled={user?.position_id === 11} // 센터장은 센터 변경 불가
+            className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
           >
             <option value="">전체 센터</option>
             {centers?.map(center => (
@@ -37,6 +39,9 @@ const SettlementFilterBar = ({
               </option>
             ))}
           </select>
+          {user?.position_id === 11 && (
+            <p className="text-xs text-gray-500 mt-1">센터장은 본인 센터만 확인 가능</p>
+          )}
         </div>
 
         {/* 팀 선택 */}
