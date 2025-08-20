@@ -295,7 +295,7 @@ const CenterPage = () => {
   if (loading) {
     return (
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-800 mb-6 py-0">지점 관리</h1>
+        <h1 className="text-black text-3xl font-extrabold font-['Nunito'] bg-white rounded-lg p-3 mb-6">지점 관리</h1>
         <div className="bg-white rounded-xl p-6 shadow-sm">
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -310,7 +310,7 @@ const CenterPage = () => {
   if (error) {
     return (
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-800 mb-6 py-0">지점 관리</h1>
+        <h1 className="text-black text-3xl font-extrabold font-['Nunito'] bg-white rounded-lg p-3 mb-6">지점 관리</h1>
         <div className="bg-white rounded-xl p-6 shadow-sm">
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
@@ -332,7 +332,7 @@ const CenterPage = () => {
   return (
     <div className="max-w-7xl mx-auto">
       <div className="mb-6 py-0">
-        <h1 className="text-3xl font-bold text-gray-800">지점 관리</h1>
+        <h1 className="text-black text-3xl font-extrabold font-['Nunito'] bg-white rounded-lg p-3">지점 관리</h1>
       </div>
 
       {/* 센터별 현황 */}

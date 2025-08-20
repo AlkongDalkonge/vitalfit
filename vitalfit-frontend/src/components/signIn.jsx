@@ -75,20 +75,11 @@ export default function SignIn() {
 
   // 컴포넌트 언마운트 시 모든 토스티 정리
   useEffect(() => {
-    return () => {
-      Object.values(toastIds).forEach(id => {
-        if (id) {
-          toast.dismiss(id);
-        }
-      });
-    };
-  }, [toastIds]);
-
-  // 로그인된 상태에서 로그인 페이지 접속 시 대시보드로 리다이렉트 (뒤로 가기 방지)
-  useEffect(() => {
-    if (!authLoading && isAuthenticated && user) {
-      // replace를 사용하여 히스토리에서 로그인 페이지를 대체 (뒤로 가기 방지)
-      navigate('/dashboard', { replace: true });
+    if (!authLoading && isAuthenticated) {
+      // toast.info('로그인중...'); // 주석처리됨
+      setTimeout(() => {
+        navigate('/');
+      }, 1000);
     }
   }, [authLoading, isAuthenticated, user, navigate]);
 
@@ -141,7 +132,7 @@ export default function SignIn() {
       const result = await login(email, password, rememberMe);
 
       if (result.success) {
-        showToastOnce('success', '로그인되었습니다.', 'loginSuccess');
+        // showToastOnce('success', '로그인되었습니다.', 'loginSuccess'); // 주석처리됨
 
         // 이메일 저장 설정 (Remember Me가 체크된 경우에만)
         if (rememberMe) {
@@ -150,8 +141,8 @@ export default function SignIn() {
           localStorage.removeItem('savedEmail');
         }
 
-        // 즉시 대시보드로 이동 (상태 변경 문제 방지)
-        navigate('/dashboard', { replace: true });
+        // toast.success('로그인되었습니다.'); // 주석처리됨
+        navigate('/');
       } else {
         setError(result.message || '로그인에 실패했습니다.');
       }

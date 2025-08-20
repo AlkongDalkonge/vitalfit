@@ -201,10 +201,10 @@ const UserPage = () => {
       <div className="flex flex-col gap-6 flex-1 pb-0">
         {/* 최상단 제목 */}
         <div
-          data-layer="모든 직원"
-          className="text-black text-3xl font-extrabold font-['Nunito'] bg-white rounded-lg py-0 px-4"
+          data-layer="직원 관리"
+          className="text-black text-3xl font-extrabold font-['Nunito'] bg-white rounded-lg p-3"
         >
-          모든 직원
+          직원 관리
         </div>
 
         {/* 필터 및 총건수 섹션 */}

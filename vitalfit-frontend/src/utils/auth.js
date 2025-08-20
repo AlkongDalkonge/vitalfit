@@ -200,13 +200,13 @@ class AuthService {
   static handleRefreshFailure() {
     console.warn('⚠️ 토큰 갱신 실패 - 사용자에게 알림');
 
-    // 사용자에게 토큰 갱신 실패 알림
-    if (window.showRefreshFailureNotification) {
-      window.showRefreshFailureNotification();
-    } else {
-      // 기본 알림 (Toast 또는 모달)
-      alert('세션이 만료되었습니다. 다시 로그인해주세요.');
-    }
+    // 사용자에게 토큰 갱신 실패 알림 (주석처리됨)
+    // if (window.showRefreshFailureNotification) {
+    //   window.showRefreshFailureNotification();
+    // } else {
+    //   // 기본 알림 (Toast 또는 모달)
+    //   alert('세션이 만료되었습니다. 다시 로그인해주세요.');
+    // }
   }
 
   // Access Token 갱신

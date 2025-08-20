@@ -6,7 +6,7 @@ export default function Sidebar({ activeMenu = null, setActiveMenu, onLogoClick 
   const { getMenuIcon } = useIcons();
 
   return (
-    <aside className="w-60 bg-white border-r border-gray-200 h-screen flex flex-col fixed left-0 top-0">
+    <aside className="w-56 bg-white border-r border-gray-200 h-screen flex flex-col fixed left-0 top-0">
       {/* 로고 */}
       <div
         className="p-16 flex flex-col items-center justify-center gap-3 bg-white h-48 box-border cursor-pointer"
@@ -28,7 +28,7 @@ export default function Sidebar({ activeMenu = null, setActiveMenu, onLogoClick 
             return (
               <li
                 key={item.name}
-                className={`flex items-center px-6 py-3 gap-3 text-gray-700 text-sm font-medium transition-all duration-300 ease-in-out mb-3 relative cursor-pointer hover:bg-gray-50 hover:text-gray-800 hover:translate-x-0.5 ${
+                className={`flex items-center px-6 py-3 gap-4 text-gray-700 text-base font-medium transition-all duration-300 ease-in-out mb-3 relative cursor-pointer hover:bg-gray-50 hover:text-gray-800 hover:translate-x-0.5 ${
                   isActive
                     ? 'bg-gradient-to-r from-blue-50 to-cyan-50 border-gradient-left font-semibold'
                     : ''
@@ -36,7 +36,7 @@ export default function Sidebar({ activeMenu = null, setActiveMenu, onLogoClick 
                 onClick={() => setActiveMenu(item.name)}
               >
                 <div
-                  className={`flex items-center justify-center w-4 h-4 transition-all duration-300 ease-in-out ${
+                  className={`flex items-center justify-center w-4 h-4 pl-5 pr-4 transition-all duration-300 ease-in-out ${
                     isActive ? 'scale-110' : 'hover:scale-105'
                   }`}
                 >

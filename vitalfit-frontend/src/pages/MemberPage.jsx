@@ -149,10 +149,10 @@ const MemberPage = () => {
       <div className="flex flex-col gap-6 flex-1 pb-0">
         {/* 최상단 제목 */}
         <div
-          data-layer="모든 고객"
-          className="text-black text-3xl font-extrabold font-['Nunito'] bg-white rounded-lg py-0 px-4"
+          data-layer="고객 관리"
+          className="text-black text-3xl font-extrabold font-['Nunito'] bg-white rounded-lg p-3"
         >
-          모든 고객
+          고객 관리
         </div>
 
         {/* 필터 및 총건수 섹션 */}
@@ -174,11 +174,11 @@ const MemberPage = () => {
             <div
               data-layer="Input Field"
               data-property-1="Small"
-              className="w-[120px] h-[30px] flex flex-col justify-start items-start dropdown-container relative z-50"
+              className="w-[130px] h-[30px] flex flex-col justify-start items-start dropdown-container relative z-50"
             >
               <div
                 data-layer="Rectangle 3"
-                className="w-[120px] h-[30px] bg-sky-50 rounded-[8px] border border-gray-200 relative"
+                className="w-[130px] h-[30px] bg-sky-50 rounded-[8px] border border-gray-200 relative"
               >
                 <button
                   onClick={() => setShowCenterDropdown(!showCenterDropdown)}
@@ -188,7 +188,7 @@ const MemberPage = () => {
                     data-layer="Placeholder"
                     className="Placeholder justify-start text-neutral-400 text-xs font-normal font-['Nunito'] leading-normal"
                   >
-                    지점
+                    {centerFilter && centerFilter !== 'Select option' ? centerFilter : '지점'}
                   </div>
                   <svg
                     className="w-3 h-3 text-neutral-400"
@@ -207,7 +207,7 @@ const MemberPage = () => {
 
                 {/* 드롭다운 메뉴 */}
                 {showCenterDropdown && (
-                  <div className="absolute top-full left-0 w-[120px] bg-white border border-gray-200 rounded-[8px] shadow-lg z-50 mt-1">
+                  <div className="absolute top-full left-0 w-[130px] bg-white border border-gray-200 rounded-[8px] shadow-lg z-50 mt-1">
                     <div className="py-1">
                       <button
                         onClick={() => onCenterFilterChange('Select option')}
@@ -248,7 +248,7 @@ const MemberPage = () => {
                     data-layer="Placeholder"
                     className="Placeholder justify-start text-neutral-400 text-xs font-normal font-['Nunito'] leading-normal"
                   >
-                    트레이너
+                    {trainerFilter && trainerFilter !== 'Select option' ? trainerFilter : '트레이너'}
                   </div>
                   <svg
                     className="w-3 h-3 text-neutral-400"
@@ -306,9 +306,7 @@ const MemberPage = () => {
                 >
                   <div
                     data-layer="Placeholder"
-                    className={`Placeholder justify-start text-xs font-normal font-['Nunito'] leading-normal ${
-                      statusFilter ? 'text-neutral-900' : 'text-neutral-400'
-                    }`}
+                    className="Placeholder justify-start text-neutral-400 text-xs font-normal font-['Nunito'] leading-normal"
                   >
                     {statusFilter
                       ? statusOptions.find(s => s.value === statusFilter)?.label || statusFilter

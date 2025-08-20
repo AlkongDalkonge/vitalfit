@@ -3,8 +3,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useState, useEffect } from 'react';
-import { notificationAPI } from '../../utils/api';
-import SettlementNotificationModal from '../SettlementNotificationModal';
+// import { notificationAPI } from '../../utils/api'; // 주석처리됨
+// import SettlementNotificationModal from '../SettlementNotificationModal'; // 주석처리됨
 
 export default function Header({ activeMenu = null, userInfo, className = '' }) {
   const { getMenuIcon } = useIcons();
@@ -13,8 +13,8 @@ export default function Header({ activeMenu = null, userInfo, className = '' }) 
   const navigate = useNavigate();
   const location = useLocation();
   const isDashboard = location.pathname === '/';
-  const [notificationCount, setNotificationCount] = useState(0);
-  const [showNotificationModal, setShowNotificationModal] = useState(false);
+  // const [notificationCount, setNotificationCount] = useState(0); // 주석처리됨
+  // const [showNotificationModal, setShowNotificationModal] = useState(false); // 주석처리됨
 
   const IconComponent = activeMenu ? getMenuIcon(activeMenu) : null;
 
@@ -25,42 +25,42 @@ export default function Header({ activeMenu = null, userInfo, className = '' }) 
   const handleLogout = async () => {
     try {
       await logout();
-      toast.success('로그아웃되었습니다.');
+      // toast.success('로그아웃되었습니다.'); // 주석처리됨
       navigate('/login');
     } catch (error) {
-      toast.error('로그아웃 중 오류가 발생했습니다.');
+      // toast.error('로그아웃 중 오류가 발생했습니다.'); // 주석처리됨
     }
   };
 
-  // 알림 개수 로드
-  useEffect(() => {
-    const loadNotificationCount = async () => {
-      try {
-        const response = await notificationAPI.getSettlementNotifications();
-        if (response.success) {
-          setNotificationCount(response.data.length);
-        }
-      } catch (error) {
-        console.error('알림 개수 로드 오류:', error);
-      }
-    };
+  // 알림 개수 로드 (주석처리됨)
+  // useEffect(() => {
+  //   const loadNotificationCount = async () => {
+  //     try {
+  //       const response = await notificationAPI.getSettlementNotifications();
+  //       if (response.success) {
+  //         setNotificationCount(response.data.length);
+  //       }
+  //     } catch (error) {
+  //       console.error('알림 개수 로드 오류:', error);
+  //     }
+  //   };
 
-    loadNotificationCount();
+  //   loadNotificationCount();
 
-    // 30초마다 알림 개수 새로고침
-    const interval = setInterval(loadNotificationCount, 30000);
-    return () => clearInterval(interval);
-  }, []);
+  //   // 30초마다 알림 개수 새로고침
+  //   const interval = setInterval(loadNotificationCount, 30000);
+  //   return () => clearInterval(interval);
+  // }, []);
 
   // 내 계정 페이지로 이동
   const handleAccountClick = () => {
     navigate('/account');
   };
 
-  // 알림 모달 열기
-  const handleNotificationClick = () => {
-    setShowNotificationModal(true);
-  };
+  // 알림 모달 열기 (주석처리됨)
+  // const handleNotificationClick = () => {
+  //   setShowNotificationModal(true);
+  // };
 
   const textStyle = 'text-sm font-medium text-gray-800 cursor-pointer select-none';
 
@@ -70,7 +70,7 @@ export default function Header({ activeMenu = null, userInfo, className = '' }) 
 
   return (
     <header
-      className={`h-16 flex justify-between items-center px-8 ${isDashboard ? 'bg-transparent border-transparent' : 'bg-white border-b border-gray-100'} ${className}`}
+      className={`h-16 flex justify-between items-center px-8 ${isDashboard ? 'bg-transparent border-transparent' : 'bg-white'} ${className}`}
     >
       <div className="flex items-center text-lg font-bold text-gray-800 gap-2">
         {activeMenu ? (
@@ -91,8 +91,8 @@ export default function Header({ activeMenu = null, userInfo, className = '' }) 
           {today} ({dayOfWeek})
         </span>
 
-        {/* 알림 버튼 */}
-        <div className="relative">
+        {/* 알림 버튼 (주석처리됨) */}
+        {/* <div className="relative">
           <button
             onClick={handleNotificationClick}
             className="relative p-2 text-gray-600 hover:text-gray-800 transition-colors"
@@ -111,7 +111,7 @@ export default function Header({ activeMenu = null, userInfo, className = '' }) 
               </span>
             )}
           </button>
-        </div>
+        </div> */}
 
         <div className="flex items-center gap-4 font-medium text-gray-800 select-none">
           {/* 프로필 이미지 - 클릭 가능 */}
@@ -169,11 +169,11 @@ export default function Header({ activeMenu = null, userInfo, className = '' }) 
         </div>
       </div>
 
-      {/* 알림 모달 */}
-      <SettlementNotificationModal
+      {/* 알림 모달 (주석처리됨) */}
+      {/* <SettlementNotificationModal
         isOpen={showNotificationModal}
         onClose={() => setShowNotificationModal(false)}
-      />
+      /> */}
     </header>
   );
 }
