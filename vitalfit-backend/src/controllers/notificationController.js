@@ -4,11 +4,15 @@ const { SettlementNotification, MonthlySettlement, User } = require('../models')
 exports.getSettlementNotifications = async (req, res) => {
   try {
     // TODO: Auth 구현 후 req.user 사용
-    const userId = req.user?.id || 1;
+    const user = req.user || null;
+    const actingUserId = user?.id ?? Number(req.query.user_id);
+    if (!actingUserId) {
+      return res.status(401).json({ success: false, message: '사용자 정보가 없습니다.' });
+    }
 
     const notifications = await SettlementNotification.findAll({
       where: {
-        user_id: userId,
+        user_id: actingUserId,
         is_read: false,
       },
       include: [
@@ -44,12 +48,16 @@ exports.markAsRead = async (req, res) => {
   try {
     const { notificationId } = req.params;
     // TODO: Auth 구현 후 req.user 사용
-    const userId = req.user?.id || 1;
+    const user = req.user || null;
+    const actingUserId = user?.id ?? Number(req.query.user_id);
+    if (!actingUserId) {
+      return res.status(401).json({ success: false, message: '사용자 정보가 없습니다.' });
+    }
 
     const notification = await SettlementNotification.findOne({
       where: {
         id: notificationId,
-        user_id: userId,
+        user_id: actingUserId,
       },
     });
 
@@ -80,13 +88,17 @@ exports.markAsRead = async (req, res) => {
 exports.markAllAsRead = async (req, res) => {
   try {
     // TODO: Auth 구현 후 req.user 사용
-    const userId = req.user?.id || 1;
+    const user = req.user || null;
+    const actingUserId = user?.id ?? Number(req.query.user_id);
+    if (!actingUserId) {
+      return res.status(401).json({ success: false, message: '사용자 정보가 없습니다.' });
+    }
 
     await SettlementNotification.update(
       { is_read: true },
       {
         where: {
-          user_id: userId,
+          user_id: actingUserId,
           is_read: false,
         },
       }

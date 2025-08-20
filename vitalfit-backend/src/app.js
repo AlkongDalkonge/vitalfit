@@ -72,7 +72,7 @@ app.use((req, res) => {
 app.use(errorHandler);
 
 // DB 연결 및 서버 실행
-const PORT = process.env.SERVER_PORT || 3001;
+const PORT = process.env.PORT || 3001;
 
 sequelize
   .sync({ force: false, alter: true })

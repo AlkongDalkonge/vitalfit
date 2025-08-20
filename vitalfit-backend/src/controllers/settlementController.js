@@ -25,7 +25,7 @@ exports.getById = async (req, res) => {
         },
         {
           model: User,
-          as: 'managerApprovedBy',
+          as: 'centerApprovedBy',
           attributes: ['id', 'name'],
         },
         {
@@ -61,12 +61,15 @@ exports.getById = async (req, res) => {
 exports.checkDraftSettlements = async (req, res) => {
   try {
     // TODO: Auth 구현 후 req.user 사용
-    // 임시로 쿼리 파라미터에서 user_id를 받음
-    const userId = req.query.user_id || req.user?.id || 1;
-    console.log('Draft 정산 확인 - 사용자 ID:', userId);
+    const authUser = req.user || null;
+    const actingUserId = authUser?.id ?? Number(req.query.user_id);
+    if (!actingUserId) {
+      return res.status(401).json({ success: false, message: '사용자 정보가 없습니다.' });
+    }
+    console.log('Draft 정산 확인 - 사용자 ID:', actingUserId);
 
     // 사용자 정보 조회
-    const user = await User.findByPk(userId);
+    const user = await User.findByPk(actingUserId);
     if (!user) {
       return res.json({
         success: true,
@@ -93,7 +96,7 @@ exports.checkDraftSettlements = async (req, res) => {
 
     const draftSettlements = await MonthlySettlement.findAll({
       where: {
-        user_id: userId,
+        user_id: actingUserId,
         status: 'draft',
       },
       include: [
@@ -146,7 +149,7 @@ exports.checkDraftSettlements = async (req, res) => {
 exports.list = async (req, res) => {
   try {
     // TODO: Auth 구현 후 req.user 사용
-    const user = req.user || { id: 1, position_id: 11, center_id: 1 }; // 임시 사용자 정보
+    const user = req.user || null;
 
     console.log('🔍 [정산 목록 조회] 요청 시작');
     console.log('🔍 [정산 목록 조회] 요청 파라미터:', {
@@ -162,19 +165,22 @@ exports.list = async (req, res) => {
     if (req.query.status) where.status = req.query.status;
     if (req.query.user_id) where.user_id = Number(req.query.user_id);
 
-    // 센터장인 경우 본인 센터의 정산만 조회
-    if (user.position_id === 11) {
-      // 센터장
-      where.center_id = user.center_id;
-      console.log('🔍 [정산 목록 조회] 센터장 권한 - 센터 ID 필터 적용:', user.center_id);
-    }
-    // 회계팀(position_id === 12)은 모든 센터의 정산을 볼 수 있음 (필터링 없음)
-    // position_id < 11인 직원들은 본인의 정산만 볼 수 있음
-    else if (user.position_id < 11) {
-      where.user_id = user.id;
-      console.log('🔍 [정산 목록 조회] 직원 권한 - 본인 ID 필터 적용:', user.id);
+    // 로그인 정보가 있을 때만 서버측 강제 필터 적용
+    if (user) {
+      if (user.position_id === 11) {
+        // 센터장: 본인 센터만
+        where.center_id = user.center_id;
+        console.log('🔍 [정산 목록 조회] 센터장 권한 - 센터 ID 필터 적용:', user.center_id);
+      } else if (user.position_id < 11) {
+        // 직원: 본인 것만
+        where.user_id = user.id;
+        console.log('🔍 [정산 목록 조회] 직원 권한 - 본인 ID 필터 적용:', user.id);
+      } else {
+        console.log('🔍 [정산 목록 조회] 관리자/회계팀 권한 - 필터 없음');
+      }
     } else {
-      console.log('🔍 [정산 목록 조회] 관리자/회계팀 권한 - 필터 없음');
+      // 미로그인/로컬: 쿼리 파라미터 우선 (프론트에서 보낸 user_id/year/month 존중)
+      console.log('🔍 [정산 목록 조회] 미로그인/로컬 - 쿼리 파라미터 우선 사용', where);
     }
 
     console.log('🔍 [정산 목록 조회] WHERE 조건:', where);
@@ -247,10 +253,12 @@ exports.list = async (req, res) => {
 exports.acknowledge = async (req, res) => {
   try {
     // TODO: Auth 구현 후 req.user 사용
-    // 임시로 쿼리 파라미터에서 user_id를 받음
-    const userId = req.query.user_id || req.user?.id || 1;
-    console.log('정산 확인 - 사용자 ID:', userId);
-    const user = { id: userId, position_id: 1 }; // 임시 사용자 정보
+    const user = req.user || null;
+    const actingUserId = user?.id ?? Number(req.query.user_id);
+    if (!actingUserId) {
+      return res.status(401).json({ success: false, message: '사용자 정보가 없습니다.' });
+    }
+    console.log('정산 확인 - 사용자 ID:', actingUserId);
     const settlement = await MonthlySettlement.findByPk(req.params.id, {
       include: [
         {
@@ -312,7 +320,7 @@ exports.acknowledge = async (req, res) => {
 
     settlement.status = 'acknowledged';
     settlement.acknowledged_at = new Date();
-    settlement.acknowledged_by = user.id;
+    settlement.acknowledged_by = actingUserId;
     await settlement.save();
 
     res.json({
@@ -335,7 +343,12 @@ exports.approve = async (req, res) => {
 
   try {
     // TODO: Auth 구현 후 req.user 사용
-    const user = req.user || { id: 1, position_id: 11, center_id: 1 }; // 임시 센터장 정보
+    const user = req.user || null;
+    const actingUserId = user?.id ?? Number(req.query.user_id);
+    const actingCenterId = user?.center_id ?? Number(req.query.center_id);
+    if (!actingUserId || !actingCenterId) {
+      return res.status(401).json({ success: false, message: '사용자 정보가 없습니다.' });
+    }
 
     const result = await sequelize.transaction(async t => {
       // 행잠금으로 정산 데이터 조회 (include 없이)
@@ -365,7 +378,7 @@ exports.approve = async (req, res) => {
       // }
 
       // TODO: Auth 구현 후 센터 체크 추가
-      if (trainer.center_id !== user.center_id) {
+      if (trainer.center_id !== actingCenterId) {
         throw new Error('본인 센터의 정산만 승인할 수 있습니다.');
       }
 
@@ -392,7 +405,7 @@ exports.approve = async (req, res) => {
       // 상태 업데이트
       settlement.status = 'center_approved';
       settlement.center_approved_at = new Date();
-      settlement.center_approved_by = user.id;
+      settlement.center_approved_by = actingUserId;
       await settlement.save({ transaction: t });
 
       return {
@@ -446,7 +459,12 @@ exports.hqApprove = async (req, res) => {
 
   try {
     // TODO: Auth 구현 후 req.user 사용
-    const user = req.user || { id: 1, position_id: 12 }; // 임시 회계팀 정보
+    const user = req.user || null;
+    // 필요 시, req.query.user_id를 임시로 허용
+    const actingUserId = user?.id ?? Number(req.query.user_id);
+    if (!actingUserId) {
+      return res.status(401).json({ success: false, message: '사용자 정보가 없습니다.' });
+    }
 
     const result = await sequelize.transaction(async t => {
       // 행잠금으로 정산 데이터 조회
@@ -483,7 +501,7 @@ exports.hqApprove = async (req, res) => {
       // 상태 업데이트
       settlement.status = 'hq_approved';
       settlement.hq_approved_at = new Date();
-      settlement.hq_approved_by = user.id;
+      settlement.hq_approved_by = actingUserId;
       await settlement.save({ transaction: t });
 
       return {
@@ -531,7 +549,12 @@ exports.hqReject = async (req, res) => {
 
   try {
     // TODO: Auth 구현 후 req.user 사용
-    const user = req.user || { id: 1, position_id: 12 }; // 임시 회계팀 정보
+    const user = req.user || null;
+    // 필요 시, req.query.user_id를 임시로 허용
+    const actingUserId = user?.id ?? Number(req.query.user_id);
+    if (!actingUserId) {
+      return res.status(401).json({ success: false, message: '사용자 정보가 없습니다.' });
+    }
     const { reject_reason } = req.body || {};
 
     if (!reject_reason || reject_reason.trim() === '') {
@@ -576,7 +599,7 @@ exports.hqReject = async (req, res) => {
       // 상태 업데이트
       settlement.status = 'rejected';
       settlement.rejected_at = new Date();
-      settlement.rejected_by = user.id;
+      settlement.rejected_by = actingUserId;
       settlement.reject_reason = reject_reason.trim();
       settlement.rejected_role = 'hq';
       await settlement.save({ transaction: t });
@@ -667,7 +690,12 @@ exports.hqReject = async (req, res) => {
 exports.pay = async (req, res) => {
   try {
     // TODO: Auth 구현 후 req.user 사용
-    const user = req.user || { id: 1, position_id: 12 }; // 임시 회계팀 정보
+    const user = req.user || null;
+    // 필요 시, req.query.user_id를 임시로 허용
+    const actingUserId = user?.id ?? Number(req.query.user_id);
+    if (!actingUserId) {
+      return res.status(401).json({ success: false, message: '사용자 정보가 없습니다.' });
+    }
     const { payment_ref } = req.body || {};
 
     const settlement = await MonthlySettlement.findByPk(req.params.id);
@@ -706,7 +734,7 @@ exports.pay = async (req, res) => {
 
     settlement.status = 'paid';
     settlement.paid_at = new Date();
-    settlement.paid_by = user.id;
+    settlement.paid_by = actingUserId;
     if (payment_ref) settlement.payment_ref = String(payment_ref);
     await settlement.save();
 
