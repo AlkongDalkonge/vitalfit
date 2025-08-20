@@ -18,6 +18,7 @@ import SettlementApprovalPage from '../pages/SettlementApprovalPage';
 import NoticePage from '../pages/NoticePage';
 import NoticeDetailPage from '../pages/NoticeDetailPage';
 import ReportPage from '../pages/ReportPage';
+import AnalyticsReportPage from '../pages/AnalyticsReportPage';
 import AccountPage from '../pages/AccountPage';
 import { ROUTES } from './routeUtils';
 
@@ -45,6 +46,7 @@ const AppRouter = () => {
       <Route path="/notice" element={<NoticePage />} />
       <Route path="/notice/:id" element={<NoticeDetailPage />} />
       <Route path="/report" element={<ReportPage />} />
+      <Route path="/analytics" element={<AnalyticsReportPage />} />
       <Route path="/account" element={<AccountPage />} />
     </Routes>
   );

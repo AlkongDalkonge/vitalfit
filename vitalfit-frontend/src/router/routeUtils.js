@@ -14,7 +14,7 @@ export const getPathFromMenu = menuName => {
     case '알림/공지':
       return '/notices';
     case '분석리포트':
-      return '/report';
+      return '/analytics';
     case '내계정':
       return '/account';
     default:
@@ -47,7 +47,7 @@ export const getMenuFromPath = pathname => {
   if (pathname.startsWith('/notices') || pathname.startsWith('/dashboard/notices')) {
     return '알림/공지';
   }
-  if (pathname.startsWith('/report') || pathname.startsWith('/dashboard/report')) {
+  if (pathname.startsWith('/analytics') || pathname.startsWith('/dashboard/analytics')) {
     return '분석리포트';
   }
   if (pathname.startsWith('/account') || pathname.startsWith('/dashboard/account')) {
@@ -68,7 +68,7 @@ export const ROUTES = {
   PAYMENT_HISTORY: '/payment-history',
   PT_SESSIONS: '/members/:id/pt-sessions',
   NOTICE: '/notices',
-  REPORT: '/report',
+  ANALYTICS: '/analytics',
   ACCOUNT: '/account',
   PERSONAL_INFO: '/account/personal-info',
   DELETE_ACCOUNT: '/account/delete-account',
@@ -81,7 +81,7 @@ export const MENU_CONFIG = [
   { name: 'PT 결제', path: ROUTES.PAY },
   { name: '정산시스템', path: ROUTES.PAYMENT },
   { name: '알림/공지', path: ROUTES.NOTICE },
-  { name: '분석리포트', path: ROUTES.REPORT },
+  { name: '분석리포트', path: ROUTES.ANALYTICS },
   { name: '내계정', path: ROUTES.ACCOUNT },
 ];
 

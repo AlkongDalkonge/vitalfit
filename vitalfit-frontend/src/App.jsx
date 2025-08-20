@@ -23,6 +23,7 @@ import NoticeDetailPage from './pages/NoticeDetailPage';
 import MyWorkPage from './pages/MyWorkPage';
 import MyHistoryPage from './pages/MyHistoryPage';
 import ReportPage from './pages/ReportPage';
+import AnalyticsReportPage from './pages/AnalyticsReportPage';
 import PasswordChangePage from './pages/PasswordChangePage';
 import EmailVerificationPage from './pages/EmailVerificationPage';
 
@@ -67,6 +68,7 @@ function App() {
             <Route path="my-work" element={<MyWorkPage />} />
             <Route path="my-history" element={<MyHistoryPage />} />
             <Route path="report" element={<ReportPage />} />
+            <Route path="analytics" element={<AnalyticsReportPage />} />
             <Route path="password-change" element={<PasswordChangePage />} />
           </Route>
         </Routes>
