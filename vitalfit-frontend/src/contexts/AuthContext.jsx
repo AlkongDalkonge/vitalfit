@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import AuthService from '../utils/auth';
 import api from '../utils/api';
 import {
@@ -64,9 +64,6 @@ export const AuthProvider = ({ children }) => {
               // localStorage에 최신 정보 저장
               localStorage.setItem('user', JSON.stringify(actualUser));
 
-              // 재인증 필요 여부 확인
-              checkReAuthRequired(actualUser.id);
-
               console.log('✅ 자동 로그인 성공 - isAuthenticated: true, user:', actualUser);
             } else {
               console.log('⚠️ 서버에서 사용자 정보 가져오기 실패, localStorage 정보 사용');
@@ -82,9 +79,6 @@ export const AuthProvider = ({ children }) => {
 
                   setUser(userData);
                   setIsAuthenticated(true);
-
-                  // 재인증 필요 여부 확인
-                  checkReAuthRequired(userData.id);
 
                   console.log('✅ localStorage 정보로 자동 로그인 성공');
                 } catch (error) {
@@ -110,9 +104,6 @@ export const AuthProvider = ({ children }) => {
 
                 setUser(userData);
                 setIsAuthenticated(true);
-
-                // 재인증 필요 여부 확인
-                checkReAuthRequired(userData.id);
 
                 console.log('✅ localStorage 정보로 자동 로그인 성공');
               } catch (error) {
@@ -162,8 +153,6 @@ export const AuthProvider = ({ children }) => {
 
   // 재인증 성공 처리
   const handleReAuthSuccess = (userId, pagePath = null) => {
-    // setReAuthStatus는 토큰이 필요하므로 여기서는 호출하지 않음
-    // 실제 재인증 토큰은 PasswordConfirmModal에서 저장됨
     setReAuthRequired(false);
     setShowReAuthModal(false);
     console.log('✅ 재인증 성공 - 4분간 유효', pagePath ? `(경로: ${pagePath})` : '');
@@ -172,7 +161,6 @@ export const AuthProvider = ({ children }) => {
   // 재인증 실패 처리
   const handleReAuthFailure = () => {
     setShowReAuthModal(false);
-    // 재인증 실패 시 계정 페이지에서 리다이렉트하거나 처리
   };
 
   // 재인증 모달 닫기
@@ -210,7 +198,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   // 사용자 정보 새로고침
-  const refreshUserInfo = async () => {
+  const refreshUserInfo = useCallback(async () => {
     try {
       console.log('🔄 refreshUserInfo 시작');
       const userInfo = await getUserInfo();
@@ -238,7 +226,7 @@ export const AuthProvider = ({ children }) => {
 
       return null;
     }
-  };
+  }, []);
 
   // 로그인 (Remember Me 지원)
   const login = async (email, password, rememberMe = false) => {

@@ -533,7 +533,7 @@ export default function SignUp() {
                   ) : (
                     <div className="w-20 h-20 rounded-full bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center">
                       <img
-                        src="https://lh3.googleusercontent.com/pw/AP1GczPHYKy-ftX95akuneOtJAq_BTm0oNlL8mLTK7gUbZJqkYXHB1RDR-gseWYT7G9cVjTsIZyconxHncd5Ph1RASfAHtI75Abk4G9eH9HNtkLAUvHcBfloZzlYUNfcxHPQaTLMmbuZfqZ4I0Pkqf4jS43E=w200-h200-s-no-gm?authuser=0"
+                        src="/img/profileDefault.png"
                         alt="기본 프로필"
                         className="w-full h-full rounded-full object-cover"
                       />

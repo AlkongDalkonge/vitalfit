@@ -7,7 +7,7 @@ import { formatDate, formatDateTime, formatTime, formatYearMonth } from '../util
 import { getSessionTypeText, getSessionTypeColor } from '../utils/ptSessionUtils';
 
 const MemberPTSessionPage = () => {
-  const { memberId } = useParams();
+  const { id: memberId } = useParams();
   const yearDropdownRef = useRef(null);
   const monthDropdownRef = useRef(null);
 
@@ -111,8 +111,8 @@ const MemberPTSessionPage = () => {
   }
 
   return (
-    <div className="w-full max-w-7xl mx-auto p-6 min-h-screen flex flex-col">
-      <div className="flex flex-col gap-6 flex-1">
+    <div className="w-full max-w-7xl mx-auto p-4 flex flex-col">
+      <div className="flex flex-col gap-4 flex-1">
         {/* 최상단 제목 및 멤버 정보 */}
         <div>
           {member && (
@@ -123,7 +123,7 @@ const MemberPTSessionPage = () => {
         </div>
 
         {/* 날짜 선택 및 통계 섹션 */}
-        <div className="flex justify-between items-center bg-white p-4 rounded-lg shadow-sm border">
+        <div className="flex justify-between items-center bg-white p-3 rounded-lg shadow-sm border">
           <div className="flex items-center gap-16 pl-8">
             {/* 총 세션 수 */}
             <div className="text-center">
@@ -291,7 +291,7 @@ const MemberPTSessionPage = () => {
 
         {/* PT 세션 테이블 */}
         <div className="overflow-hidden rounded-lg shadow-sm border border-gray-100">
-          <div className="overflow-y-auto max-h-[calc(100vh-400px)]">
+          <div className="overflow-y-auto max-h-[calc(100vh-350px)]">
             {/* 테이블 헤더 */}
             <div className="border-b border-gray-200 sticky top-0 z-10 bg-white">
               <div className="flex items-center p-4 min-w-max gap-4">
@@ -330,7 +330,7 @@ const MemberPTSessionPage = () => {
             {/* 테이블 데이터 */}
             <div className="bg-white">
               {ptSessions.length === 0 ? (
-                <div className="flex justify-center items-center h-48">
+                <div className="flex justify-center items-center h-32">
                   <div className="text-center text-gray-500">
                     <p className="text-lg mb-2">등록된 PT 세션이 없습니다</p>
                     <p className="text-sm">새로운 PT 세션을 등록해보세요</p>
@@ -388,16 +388,16 @@ const MemberPTSessionPage = () => {
         </div>
 
         {/* PT 세션 등록 버튼 */}
-        <div className="flex justify-start mt-8 pb-6">
+        <div className="flex justify-end mt-4 mb-0">
           <button
             onClick={handleOpenCreateModal}
             data-layer="Button"
             data-property-1="Default"
-            className="Button w-52 h-11 p-2.5 bg-gradient-to-br from-blue-400 to-blue-600 rounded-[10px] inline-flex justify-center items-center gap-2.5 hover:from-blue-500 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/15 before:via-transparent before:to-transparent before:pointer-events-none"
+            className="Button w-40 h-11 p-2.5 bg-gradient-to-br from-blue-400 to-blue-600 rounded-[10px] inline-flex justify-center items-center gap-2.5 hover:from-blue-500 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/15 before:via-transparent before:to-transparent before:pointer-events-none"
           >
             <div
               data-layer="Primary Button"
-              className="PrimaryButton justify-start text-white text-sm font-normal font-['Nunito'] leading-normal"
+              className="PrimaryButton justify-start text-white text-sm font-medium font-['Nunito'] leading-normal drop-shadow-xl"
             >
               PT 등록
             </div>

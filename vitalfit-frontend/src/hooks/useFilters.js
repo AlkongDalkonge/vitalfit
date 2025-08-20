@@ -34,8 +34,12 @@ export const useFilters = () => {
     try {
       const response = await userAPI.getAllUsers({ role: 'trainer' });
       if (response.success) {
-        setTrainers(response.data.users);
-        setFilteredTrainers(response.data.users);
+        // 포지션 레벨 1~7에 해당하는 트레이너만 필터링 (담당 멤버 가능)
+        const filteredTrainers = response.data.users.filter(
+          trainer => trainer.position && trainer.position.level >= 1 && trainer.position.level <= 7
+        );
+        setTrainers(filteredTrainers);
+        setFilteredTrainers(filteredTrainers);
       }
     } catch (error) {
       console.error('트레이너 조회 실패:', error);

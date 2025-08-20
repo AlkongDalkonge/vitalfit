@@ -10,24 +10,24 @@ export default function Layout() {
   const isDashboard = location.pathname === '/';
 
   return (
-    <div className="flex h-screen bg-white overflow-hidden">
+    <div className="flex min-h-screen bg-white">
       <Sidebar
         activeMenu={activeMenu}
         setActiveMenu={handleMenuClick}
         onLogoClick={handleLogoClick}
       />
-      <div className="flex-1 flex flex-col ml-60 h-screen relative">
+      <div className="flex-1 flex flex-col ml-60">
         <Header
           activeMenu={activeMenu}
           userInfo={userInfo}
           className={
             isDashboard
-              ? 'absolute top-0 left-0 right-0 z-10 bg-transparent border-transparent'
+              ? 'absolute top-0 left-0 right-0 z-20 bg-transparent border-transparent'
               : ''
           }
         />
         <main
-          className={`flex-1 ${isDashboard ? '' : 'p-8'} ${isDashboard ? 'bg-transparent' : 'bg-white'} overflow-y-auto`}
+          className={`flex-1 ${isDashboard ? '' : 'pt-0 px-8 pb-0'} ${isDashboard ? 'bg-transparent' : 'bg-white'}`}
         >
           <Outlet />
         </main>

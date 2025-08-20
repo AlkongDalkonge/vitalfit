@@ -6,31 +6,32 @@ class AuthService {
   static setAccessToken(token, rememberMe = false) {
     console.log('🔐 setAccessToken 호출:', {
       token: token ? token.substring(0, 20) + '...' : null,
-      rememberMe,
+      rememberMe: rememberMe,
     });
 
-    if (rememberMe) {
+    // rememberMe가 명시적으로 false인 경우에만 sessionStorage 사용
+    if (rememberMe === false) {
+      sessionStorage.setItem('accessToken', token);
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('rememberMe');
+      console.log('📱 토큰을 sessionStorage에 저장 (rememberMe: false)');
+    } else {
+      // rememberMe가 true이거나 undefined인 경우 localStorage 사용
       localStorage.setItem('accessToken', token);
       localStorage.setItem('rememberMe', 'true');
-      console.log('💾 localStorage에 토큰 저장 완료');
-    } else {
-      sessionStorage.setItem('accessToken', token);
-      localStorage.setItem('rememberMe', 'false');
-      console.log('💾 sessionStorage에 토큰 저장 완료');
+      sessionStorage.removeItem('accessToken');
+      console.log('💾 토큰을 localStorage에 저장 (rememberMe: true)');
     }
-    window.__accessToken = token; // 메모리에도 저장 (성능 향상)
-    console.log('💾 메모리에 토큰 저장 완료');
 
-    // 토큰 만료 시간 설정 (Remember Me에 따라)
-    const expiryTime = rememberMe ? 7 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000; // 7일 또는 24시간
+    // 메모리에 토큰 저장
+    window.__accessToken = token;
+
+    // 토큰 만료 시간 설정
+    const expiryTime = rememberMe ? 7 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
     const expiryDate = new Date(Date.now() + expiryTime);
     localStorage.setItem('tokenExpiry', expiryDate.toISOString());
-    console.log('⏰ 토큰 만료 시간 설정:', expiryDate.toISOString());
 
-    // 자동 갱신 타이머 설정
     this.setupAutoRefresh(token, rememberMe);
-
-    // 저장 확인
     this.debugTokenStorage();
   }
 
@@ -358,5 +359,48 @@ class AuthService {
     console.log('================================');
   }
 }
+
+// 권한 체크 유틸리티 함수들
+export const hasRole = (user, requiredRole) => {
+  if (!user || !user.position_id) return false;
+  return user.position_id >= requiredRole;
+};
+
+export const isAdmin = user => hasRole(user, 99); // 관리자 (level 99)
+export const isCenterManager = user => hasRole(user, 11); // 센터장 (level 11)
+export const isManager = user => hasRole(user, 9); // 매니저 (level 9)
+export const isTeamLeader = user => hasRole(user, 7); // 팀장 (level 7)
+export const isTrainer = user => hasRole(user, 3); // 트레이너 (level 3)
+export const isStudent = user => hasRole(user, 2); // 교육생 (level 2)
+export const isTrainee = user => hasRole(user, 1); // 연습생 (level 1)
+
+// PT 스케줄 관련 권한 체크
+export const canViewAllPTSchedules = user => {
+  return isAdmin(user) || isCenterManager(user) || isManager(user);
+};
+
+export const canEditPTSessions = user => {
+  return (
+    isTrainer(user) ||
+    isTeamLeader(user) ||
+    isManager(user) ||
+    isCenterManager(user) ||
+    isAdmin(user)
+  );
+};
+
+export const canViewAdminPTSchedule = user => {
+  return isAdmin(user); // 관리자만 접근 가능
+};
+
+export const canViewTrainerPTSchedule = user => {
+  return (
+    isTrainer(user) ||
+    isTeamLeader(user) ||
+    isManager(user) ||
+    isCenterManager(user) ||
+    isAdmin(user)
+  );
+};
 
 export default AuthService;

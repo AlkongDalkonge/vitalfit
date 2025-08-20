@@ -27,8 +27,8 @@ const ReportPage = () => {
   const loading = centersLoading || teamsLoading || statsLoading;
 
   return (
-    <div className="max-w-6xl mx-auto">
-      <h1 className="text-3xl font-bold text-gray-800 mb-6">팀 PT 매출 리포트</h1>
+    <div className="max-w-6xl mx-auto pt-0">
+      <h1 className="text-3xl font-bold text-gray-800 mb-6 py-0">팀 PT 매출 리포트</h1>
 
       {/* 필터 섹션 */}
       <div className="bg-white rounded-xl p-6 shadow-sm mb-6">

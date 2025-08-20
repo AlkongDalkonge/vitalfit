@@ -4,10 +4,11 @@ import { useAuth } from '../contexts/AuthContext';
 import { userAPI } from '../utils/api';
 import { useNavigate } from 'react-router-dom';
 
-const MyWorkPage = () => {
-  const { user, refreshUserInfo } = useAuth();
+const MyWorkPage = ({ onReAuthRequired }) => {
+  const { user, refreshUserInfo, updateUser } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false); // 저장 중 상태 추가
 
   // 자동 리다이렉트 관련 상태
   const inactivityTimeoutRef = useRef(null);
@@ -33,7 +34,7 @@ const MyWorkPage = () => {
     reason: '',
   });
 
-  // 쉬는 날 신청 내역 상태
+  // 쉬는 날 신청 내역 상태 (백엔드에서 초기화)
   const [leaveRequests, setLeaveRequests] = useState([]);
 
   // 휴가 유형 옵션
@@ -44,6 +45,56 @@ const MyWorkPage = () => {
     { value: 'personal', label: '휴가', color: 'bg-green-100 text-green-800' },
     { value: 'other', label: '근무신청', color: 'bg-gray-100 text-gray-800' },
   ];
+
+  // 휴가 신청 상태 변화 감지 및 로컬 스토리지 동기화
+  useEffect(() => {
+    console.log('🔄 휴가 신청 상태 변화:', {
+      totalRequests: leaveRequests.length,
+      requests: leaveRequests.map(req => ({
+        id: req.id,
+        status: req.status,
+        submittedAt: req.submittedAt,
+        reason: req.reason,
+      })),
+    });
+  }, [leaveRequests]);
+
+  // 백엔드에서 휴가 신청 목록 가져오기
+  const fetchLeaveRequests = async () => {
+    try {
+      const response = await fetch(
+        `http://localhost:3001/api/users/leave/list?userId=${user?.id || user?.uid}`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+          },
+        }
+      );
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          setLeaveRequests(result.data || []);
+          console.log('✅ 휴가 신청 목록 가져오기 성공:', result.data);
+        }
+      }
+    } catch (error) {
+      console.error('❌ 휴가 신청 목록 가져오기 실패:', error);
+    }
+  };
+
+  // 초기 상태 로깅 및 휴가 신청 목록 가져오기
+  useEffect(() => {
+    console.log('🚀 MyWorkPage 초기 상태:', {
+      leaveRequestsLength: leaveRequests.length,
+      leaveRequests: leaveRequests,
+      user: user?.name,
+    });
+
+    if (user?.id || user?.uid) {
+      fetchLeaveRequests();
+    }
+  }, [user]);
 
   // shift 데이터 파싱 함수
   const parseShiftData = shiftString => {
@@ -186,8 +237,8 @@ const MyWorkPage = () => {
     }));
   };
 
-  // 쉬는 날 신청 제출
-  const handleLeaveRequestSubmit = async e => {
+  // 실제 휴가 신청 로직을 별도 함수로 분리
+  const performLeaveRequest = async e => {
     e.preventDefault();
 
     if (!leaveRequestForm.startDate || !leaveRequestForm.reason.trim()) {
@@ -210,9 +261,8 @@ const MyWorkPage = () => {
       }
     }
 
-    // 시간 검증
+    // 시간 검증 (토스트 없이)
     if (leaveRequestForm.startTime >= leaveRequestForm.endTime) {
-      toast.error('시작 시간은 종료 시간보다 이전이어야 합니다.');
       return;
     }
 
@@ -230,11 +280,22 @@ const MyWorkPage = () => {
         },
       };
 
-      // 오른쪽 승인내역에 추가
-      setLeaveRequests(prev => [newRequest, ...prev]);
+      // 오른쪽 승인내역에 추가 (상태 업데이트 강화)
+      const updatedRequests = [newRequest, ...leaveRequests];
+      setLeaveRequests(updatedRequests);
 
-      // 관리자에게 이메일 발송
-      await sendLeaveRequestEmail(newRequest);
+      console.log('🔄 휴가 신청 상태 업데이트:', {
+        newRequest,
+        prevLength: leaveRequests.length,
+        newLength: updatedRequests.length,
+        updatedRequests,
+      });
+
+      // 백엔드에 휴가 신청 제출
+      const backendRequestId = await submitLeaveRequestToBackend(newRequest);
+
+      // 백엔드에서 받은 requestId로 업데이트
+      newRequest.id = backendRequestId;
 
       // 폼 초기화
       setLeaveRequestForm({
@@ -246,6 +307,22 @@ const MyWorkPage = () => {
         reason: '',
       });
 
+      // 상태 업데이트 확인
+      console.log('✅ 휴가 신청 완료:', {
+        newRequestId: newRequest.id,
+        totalRequests: updatedRequests.length,
+        status: 'pending',
+      });
+
+      // 상태 업데이트 후 실제 상태 확인
+      console.log('🔍 신청 완료 후 실제 상태:', {
+        leaveRequestsLength: updatedRequests.length,
+        newRequestExists: updatedRequests.some(req => req.id === newRequest.id),
+      });
+
+      // 강제 업데이트로 상태 동기화
+      forceUpdateLeaveRequests();
+
       toast.success('휴가 신청이 완료되었습니다. 관리자에게 승인 요청이 전송되었습니다.');
     } catch (error) {
       console.error('휴가 신청 실패:', error);
@@ -253,40 +330,75 @@ const MyWorkPage = () => {
     }
   };
 
-  // 휴가 신청 메일 발송
-  const sendLeaveRequestEmail = async request => {
+  // 쉬는 날 신청 제출
+  const handleLeaveRequestSubmit = async e => {
+    e.preventDefault();
+
+    // 신청할 때마다 재인증 요구
+    if (onReAuthRequired) {
+      onReAuthRequired(async () => {
+        try {
+          await performLeaveRequest(e);
+        } catch (error) {
+          console.error('재인증 후 휴가 신청 실패:', error);
+        }
+      });
+      return;
+    }
+
+    // 재인증이 필요하지 않은 경우 바로 실행
+    await performLeaveRequest(e);
+  };
+
+  // 상태 강제 업데이트를 위한 함수
+  const forceUpdateLeaveRequests = () => {
+    setLeaveRequests(prev => [...prev]);
+  };
+
+  // 메일에서 승인 시 UI 상태 업데이트
+  const updateLeaveRequestStatus = (requestId, newStatus) => {
+    setLeaveRequests(prev =>
+      prev.map(req => (req.id === requestId ? { ...req, status: newStatus } : req))
+    );
+
+    console.log(`✅ 휴가 신청 ${requestId} 상태 업데이트: ${newStatus}`);
+  };
+
+  // 백엔드 휴가 신청 API 호출
+  const submitLeaveRequestToBackend = async request => {
     try {
-      const response = await fetch('http://localhost:3001/api/email/leave-request', {
+      const response = await fetch('http://localhost:3001/api/users/leave/submit', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
         },
         body: JSON.stringify({
-          request: {
-            type: request.leaveType,
-            startDate: request.startDate,
-            endDate: request.endDate,
-            startTime: request.startTime,
-            endTime: request.endTime,
-            reason: request.reason,
-            user: request.user,
-          },
-          adminEmail: 'vitalfit.dev@gmail.com',
+          leaveType: request.leaveType,
+          startDate: request.startDate,
+          endDate: request.endDate,
+          startTime: request.startTime,
+          endTime: request.endTime,
+          reason: request.reason,
+          userId: user?.id || user?.uid,
+          userName: user?.name || '사용자',
+          userEmail: user?.email || 'unknown@email.com',
         }),
       });
 
       if (!response.ok) {
-        throw new Error('메일 발송에 실패했습니다.');
+        throw new Error('백엔드 휴가 신청에 실패했습니다.');
       }
 
       const result = await response.json();
       if (!result.success) {
-        throw new Error(result.message || '메일 발송에 실패했습니다.');
+        throw new Error(result.message || '백엔드 휴가 신청에 실패했습니다.');
       }
 
-      console.log('휴가 신청 메일 발송 성공:', result);
+      console.log('백엔드 휴가 신청 성공:', result);
+      return result.requestId; // 백엔드에서 생성된 requestId 반환
     } catch (error) {
-      console.error('메일 발송 실패:', error);
+      console.error('백엔드 휴가 신청 실패:', error);
       throw error;
     }
   };
@@ -308,43 +420,10 @@ const MyWorkPage = () => {
 
       setLeaveRequests(updatedRequests);
 
-      // 승인/거절 이메일 발송
-      const request = leaveRequests.find(req => req.id === requestId);
-      if (request) {
-        await sendLeaveResponseEmail(request, action);
-      }
-
       toast.success(`휴가 신청이 ${action === 'approved' ? '승인' : '거절'}되었습니다.`);
     } catch (error) {
       console.error('휴가 신청 처리 실패:', error);
       toast.error('처리에 실패했습니다.');
-    }
-  };
-
-  // 사용자에게 승인/거절 결과 이메일 발송
-  const sendLeaveResponseEmail = async (request, action) => {
-    try {
-      const response = await fetch('http://localhost:3001/api/email/leave-response', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          request,
-          action,
-          userEmail: request.user.email,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('결과 이메일 발송에 실패했습니다.');
-      }
-
-      console.log(
-        `✅ ${action === 'approved' ? '승인' : '거절'} 결과 이메일이 사용자에게 전송되었습니다.`
-      );
-    } catch (error) {
-      console.error('❌ 결과 이메일 발송 실패:', error);
     }
   };
 
@@ -357,10 +436,15 @@ const MyWorkPage = () => {
   // 휴가 신청 전송 (관리자용)
   const handleSendLeaveRequest = async request => {
     try {
+      // 백엔드에 휴가 신청 제출
+      const backendRequestId = await submitLeaveRequestToBackend(request);
+
+      // 백엔드에서 받은 requestId로 업데이트
       const updatedRequests = leaveRequests.map(req => {
         if (req.id === request.id) {
           return {
             ...req,
+            id: backendRequestId,
             status: 'pending',
             submittedAt: new Date().toISOString(),
           };
@@ -369,7 +453,6 @@ const MyWorkPage = () => {
       });
       setLeaveRequests(updatedRequests);
 
-      await sendLeaveRequestEmail(request);
       toast.success('휴가 신청이 전송되었습니다.');
     } catch (error) {
       console.error('휴가 신청 전송 실패:', error);
@@ -468,7 +551,7 @@ const MyWorkPage = () => {
         () => {
           console.log('⏰ 5분 경과, 자동으로 대시보드로 이동');
           toast.info('보안을 위해 대시보드로 이동합니다.');
-          navigate('/');
+          navigate('/dashboard');
         },
         5 * 60 * 1000
       ); // 5분
@@ -585,61 +668,71 @@ const MyWorkPage = () => {
     });
   };
 
+  // 저장 핸들러
   const handleSave = async () => {
+    // 저장 중 상태 설정
+    setSaving(true);
+
     try {
-      // shiftData 구조 검증
-      if (
-        !formData.shiftData ||
-        !formData.shiftData.schedules ||
-        !Array.isArray(formData.shiftData.schedules)
-      ) {
-        throw new Error('Invalid shiftData structure');
-      }
+      console.log('🚀 근무 정보 저장 시작');
+      console.log('📝 현재 폼 데이터:', formData);
 
-      // 각 schedule의 days 배열 검증
-      formData.shiftData.schedules.forEach((schedule, index) => {
-        if (!schedule.days || !Array.isArray(schedule.days)) {
-          throw new Error(`Invalid days array in schedule ${index}`);
+      // shift 데이터 직렬화
+      const shiftDataString = JSON.stringify(formData.shiftData);
+      console.log('📤 전송할 shift 데이터:', shiftDataString);
+
+      // API 호출
+      const response = await userAPI.updateMyAccount({ shift: shiftDataString });
+      console.log('📥 API 응답:', response);
+
+      // API 응답 구조 확인 및 안전한 처리
+      const responseData = response.data || response;
+      const updatedUser = responseData.user || responseData;
+
+      console.log('📋 처리된 사용자 정보:', updatedUser);
+
+      if (updatedUser) {
+        // 1. 즉시 폼 데이터 업데이트 (DB 응답 데이터 사용)
+        console.log('🔄 폼 데이터 즉시 업데이트');
+        if (updatedUser.shift) {
+          try {
+            const parsedShiftData = parseShiftData(updatedUser.shift);
+            setFormData(prev => ({
+              ...prev,
+              shiftData: parsedShiftData,
+            }));
+          } catch (error) {
+            console.error('shift 데이터 파싱 실패:', error);
+          }
         }
-      });
 
-      // shift 데이터를 압축하여 100자 이내로 맞추기
-      const compressedShift = compressShiftData(formData.shiftData);
-      const cleanFormData = { shift: compressedShift };
+        // 2. AuthContext의 사용자 정보 즉시 업데이트 (DB 응답 데이터 사용)
+        if (updateUser && typeof updateUser === 'function') {
+          console.log('🔄 AuthContext 사용자 정보 즉시 업데이트');
+          updateUser(updatedUser);
+        }
 
-      // userAPI.updateMyAccount 사용
-      const response = await userAPI.updateMyAccount(cleanFormData);
-
-      // 저장 성공 후 formData를 즉시 업데이트
-      if (response.user) {
-        setFormData(prev => ({
-          ...prev,
-          shiftData: response.user.shift ? parseShiftData(response.user.shift) : prev.shiftData,
-        }));
-      }
-
-      toast.success('근무 일정이 업데이트되었습니다.');
-
-      // 저장 후 최신 사용자 정보 재호출 (화면 갱신용)
-      if (refreshUserInfo && typeof refreshUserInfo === 'function') {
-        try {
-          await refreshUserInfo();
-        } catch (error) {
-          console.error('refreshUserInfo 호출 실패:', error);
+        // 3. refreshUserInfo() 호출은 백그라운드에서 실행 (사용자 대기 없음)
+        if (refreshUserInfo && typeof refreshUserInfo === 'function') {
+          // 백그라운드에서 서버와 동기화 (사용자 대기 없음)
+          refreshUserInfo()
+            .then(() => {
+              console.log('✅ refreshUserInfo 백그라운드 완료');
+            })
+            .catch(error => {
+              console.error('사용자 정보 새로고침 실패:', error);
+              // 에러가 발생해도 이미 로컬 상태는 업데이트되었으므로 계속 진행
+            });
         }
       }
-    } catch (err) {
-      console.error('업데이트 실패:', err.message);
 
-      // 더 자세한 에러 메시지 표시
-      let errorMessage = '업데이트에 실패했습니다.';
-      if (err.response?.data?.message) {
-        errorMessage = err.response.data.message;
-      } else if (err.message) {
-        errorMessage = err.message;
-      }
-
-      toast.error(`업데이트 실패: ${errorMessage}`);
+      toast.success('근무 정보가 저장되었습니다.');
+    } catch (error) {
+      console.error('저장 실패:', error);
+      toast.error(`저장에 실패했습니다: ${error.response?.data?.message || error.message}`);
+    } finally {
+      // 저장 완료 후 로딩 상태 해제
+      setSaving(false);
     }
   };
 
@@ -655,7 +748,7 @@ const MyWorkPage = () => {
     <div className="w-full bg-white">
       <div className="w-full">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">나의 업무</h1>
+          <h1 className="text-3xl font-bold text-gray-800">나의 업무</h1>
           <p className="text-gray-600">근무 일정 및 휴가를 신청할 수 있습니다</p>
         </div>
 
@@ -782,7 +875,9 @@ const MyWorkPage = () => {
 
           {/* 오른쪽 1/3: 승인 내역 */}
           <div className="lg:col-span-1 bg-white rounded-lg p-4 border border-gray-200">
-            <h2 className="text-base font-semibold text-gray-800 mb-3">승인 내역</h2>
+            <h2 className="text-base font-semibold text-gray-800 mb-3">
+              승인 내역 ({leaveRequests.length}건)
+            </h2>
 
             {leaveRequests.length > 0 ? (
               <div className="space-y-2">
@@ -814,22 +909,7 @@ const MyWorkPage = () => {
                               전송
                             </button>
                           )}
-                          {request.status === 'pending' && (
-                            <>
-                              <button
-                                onClick={() => handleLeaveRequestAction(request.id, 'approved')}
-                                className="text-green-600 hover:text-green-800 text-xs font-medium hover:bg-blue-50 px-2 py-1 rounded-md transition-colors border border-green-300"
-                              >
-                                승인
-                              </button>
-                              <button
-                                onClick={() => handleLeaveRequestAction(request.id, 'rejected')}
-                                className="text-red-600 hover:text-red-800 text-xs font-medium hover:bg-red-50 px-1 py-0.5 rounded-md transition-colors border border-green-300"
-                              >
-                                미승인
-                              </button>
-                            </>
-                          )}
+
                           <button
                             onClick={() => handleDeleteLeaveRequest(request.id)}
                             className="text-red-500 hover:text-red-700 text-xs font-medium hover:bg-red-50 px-1 py-0.5 rounded-md transition-colors"

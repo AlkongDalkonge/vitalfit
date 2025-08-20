@@ -89,7 +89,7 @@ const NoticePage = () => {
   // 로딩 중
   if (loading) {
     return (
-      <div className="max-w-7xl mx-auto p-6">
+      <div className="max-w-7xl mx-auto pt-0 px-6 pb-6">
         <div className="flex justify-center items-center h-64">
           <div className="text-lg text-gray-600">공지사항을 불러오는 중...</div>
         </div>
@@ -100,7 +100,7 @@ const NoticePage = () => {
   // 에러 발생
   if (error) {
     return (
-      <div className="max-w-7xl mx-auto p-6">
+      <div className="max-w-7xl mx-auto pt-0 px-6 pb-6">
         <div className="bg-red-50 border border-red-200 rounded-md p-4">
           <div className="text-red-800 font-medium">오류가 발생했습니다</div>
           <div className="text-red-600 text-sm mt-1">{error}</div>
@@ -116,8 +116,8 @@ const NoticePage = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-6">
-      <div className="flex items-center justify-between mb-6">
+    <div className="max-w-7xl mx-auto pt-0 px-6 pb-6">
+      <div className="flex items-center mb-6">
         <div className="flex gap-4 items-center w-full max-w-3xl">
           <select
             className="border border-gray-300 rounded-md p-2 text-sm"
@@ -148,16 +148,10 @@ const NoticePage = () => {
             검색
           </button>
         </div>
-        <button
-          onClick={handleCreateNotice}
-          className="bg-gradient-to-r from-cyan-500 to-blue-500 text-white px-5 py-2 rounded-md text-sm font-medium shadow-md hover:brightness-110 transition"
-        >
-          공지사항 작성
-        </button>
       </div>
 
       <div className="bg-white rounded-xl p-6 shadow-sm">
-        <div className="flex justify-between items-center mb-4">
+        <div className="flex justify-between items-center mb-4 py-0">
           <h2 className="text-xl font-extrabold text-gray-800">공지사항/알림</h2>
           <div className="text-sm text-gray-600">
             총 {pagination.totalItems}건 (페이지 {pagination.currentPage}/{pagination.totalPages})
@@ -254,6 +248,23 @@ const NoticePage = () => {
         onClose={handleCloseModal}
         onSuccess={handleCreateSuccess}
       />
+
+      {/* 공지사항 작성 버튼 - 우측 하단 */}
+      <div className="flex justify-end mt-4 mb-0">
+        <button
+          onClick={handleCreateNotice}
+          data-layer="Button"
+          data-property-1="Default"
+          className="Button w-40 h-11 p-2.5 bg-gradient-to-br from-blue-400 to-blue-600 rounded-[10px] inline-flex justify-center items-center gap-2.5 hover:from-blue-500 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/15 before:via-transparent before:to-transparent before:pointer-events-none"
+        >
+          <div
+            data-layer="Primary Button"
+            className="PrimaryButton justify-start text-white text-sm font-medium font-['Nunito'] leading-normal drop-shadow-xl"
+          >
+            공지사항 작성
+          </div>
+        </button>
+      </div>
     </div>
   );
 };

@@ -308,7 +308,13 @@ export const ptSessionAPI = {
   getSessionsByUser: async (userId, params = {}) => {
     console.log('🚀 유저 PT 세션 API 호출:', { userId, params });
     const result = await apiGet(`/pt-sessions/user/${userId}`, { params });
-    console.log('📡 유저 PT 세션 API 응답:', result);
+    console.log('📡 PT 세션 API 응답:', result);
+    return result;
+  },
+  getPTSessionsByMonth: async (year, month) => {
+    console.log('🚀 월별 PT 세션 API 호출:', { year, month });
+    const result = await apiGet(`/pt-sessions/month/${year}/${month}`);
+    console.log('📡 월별 PT 세션 API 응답:', result);
     return result;
   },
   createSession: async data => {

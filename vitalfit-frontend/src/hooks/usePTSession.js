@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { ptSessionAPI } from '../utils/api';
 
 /**
@@ -21,10 +21,9 @@ export const usePTSession = memberId => {
   const [currentYear, setCurrentYear] = useState(currentDate.getFullYear());
   const [currentMonth, setCurrentMonth] = useState(currentDate.getMonth() + 1);
 
-  // 데이터 가져오기
-  const fetchMemberPTSessions = async () => {
+  // 데이터 가져오기 - useCallback으로 메모이제이션
+  const fetchMemberPTSessions = useCallback(async () => {
     try {
-      console.log('🔍 PT 세션 조회 시작:', { memberId, currentYear, currentMonth });
       setLoading(true);
       setError(null);
 
@@ -33,9 +32,11 @@ export const usePTSession = memberId => {
         month: currentMonth,
       });
 
-      console.log('✅ PT 세션 조회 응답:', response);
-
       if (response.success) {
+        console.log('🔍 PT 세션 API 응답:', response.data);
+        console.log('🔍 멤버 정보:', response.data.member);
+        console.log('🔍 잔여 세션:', response.data.member.remaining_sessions);
+        console.log('🔍 잔여 보너스 세션:', response.data.member.remaining_free_sessions);
         setMember(response.data.member);
         setPtSessions(response.data.pt_sessions);
       } else {
@@ -47,25 +48,31 @@ export const usePTSession = memberId => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [memberId, currentYear, currentMonth]);
 
-  // 세션 추가
-  const handleCreateSession = newSession => {
-    // 데이터 새로고침
-    fetchMemberPTSessions();
-    setIsCreateModalOpen(false);
-  };
+  // 세션 추가 - useCallback으로 메모이제이션
+  const handleCreateSession = useCallback(
+    newSession => {
+      // 데이터 새로고침
+      fetchMemberPTSessions();
+      setIsCreateModalOpen(false);
+    },
+    [fetchMemberPTSessions]
+  );
 
-  // 세션 수정
-  const handleUpdateSession = updatedSession => {
-    // 데이터 새로고침
-    fetchMemberPTSessions();
-    setIsEditModalOpen(false);
-    setEditingSession(null);
-  };
+  // 세션 수정 - useCallback으로 메모이제이션
+  const handleUpdateSession = useCallback(
+    updatedSession => {
+      // 데이터 새로고침
+      fetchMemberPTSessions();
+      setIsEditModalOpen(false);
+      setEditingSession(null);
+    },
+    [fetchMemberPTSessions]
+  );
 
-  // 세션 삭제
-  const handleDeleteSession = async sessionId => {
+  // 세션 삭제 - useCallback으로 메모이제이션
+  const handleDeleteSession = useCallback(async sessionId => {
     try {
       const response = await ptSessionAPI.deleteSession(sessionId);
       if (response.success) {
@@ -74,50 +81,47 @@ export const usePTSession = memberId => {
     } catch (error) {
       console.error('세션 삭제 실패:', error);
     }
-  };
+  }, []);
 
-  // 편집 모달 열기
-  const handleEditSession = session => {
+  // 편집 모달 열기 - useCallback으로 메모이제이션
+  const handleEditSession = useCallback(session => {
     setEditingSession(session);
     setIsEditModalOpen(true);
-  };
+  }, []);
 
-  // 편집 모달 닫기
-  const handleCloseEditModal = () => {
+  // 편집 모달 닫기 - useCallback으로 메모이제이션
+  const handleCloseEditModal = useCallback(() => {
     setIsEditModalOpen(false);
     setEditingSession(null);
-  };
+  }, []);
 
-  // 년도/월 변경
-  const handleYearMonthChange = (year, month) => {
+  // 년도/월 변경 - useCallback으로 메모이제이션
+  const handleYearMonthChange = useCallback((year, month) => {
     setCurrentYear(year);
     setCurrentMonth(month);
-  };
+  }, []);
 
-  // 년도 옵션 생성
-  const getYearOptions = () => {
+  // 년도 옵션 생성 - useMemo로 메모이제이션
+  const getYearOptions = useMemo(() => {
     const currentDateYear = new Date().getFullYear();
     const years = [];
     for (let i = currentDateYear - 2; i <= currentDateYear + 2; i++) {
       years.push(i);
     }
     return years;
-  };
+  }, []);
 
-  // 월 옵션 생성
-  const getMonthOptions = () => {
+  // 월 옵션 생성 - useMemo로 메모이제이션
+  const getMonthOptions = useMemo(() => {
     return Array.from({ length: 12 }, (_, i) => i + 1);
-  };
+  }, []);
 
-  // 데이터 로드 useEffect
+  // 데이터 로드 useEffect - 의존성 배열 수정
   useEffect(() => {
-    console.log('🔄 useEffect 실행:', { memberId, currentYear, currentMonth });
     if (memberId && memberId !== 'undefined') {
       fetchMemberPTSessions();
-    } else {
-      console.log('⚠️ memberId가 유효하지 않음:', memberId);
     }
-  }, [memberId, currentYear, currentMonth]);
+  }, [memberId, currentYear, currentMonth, fetchMemberPTSessions]);
 
   return {
     // 상태

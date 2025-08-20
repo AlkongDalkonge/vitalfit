@@ -15,6 +15,7 @@ import MemberPTSessionPage from './pages/MemberPTSessionPage';
 import UserPTSessionPage from './pages/UserPTSessionPage';
 import SettlementPage from './pages/SettlementPage';
 import PayPage from './pages/PayPage';
+import PTSchedulePage from './pages/PTSchedulePage';
 import PaymentHistoryPage from './pages/PaymentHistoryPage';
 import PersonalInfoPage from './pages/PersonalInfoPage';
 import AccountPage from './pages/AccountPage';
@@ -52,6 +53,7 @@ function App() {
             }
           >
             <Route index element={<DashboardPage />} />
+            <Route path="dashboard" element={<DashboardPage />} />
             <Route path="centers" element={<CenterPage />} />
             <Route path="users" element={<UserPage />} />
             <Route path="user/:userId/pt-sessions" element={<UserPTSessionPage />} />
@@ -59,6 +61,7 @@ function App() {
             <Route path="member/:id/pt-sessions" element={<MemberPTSessionPage />} />
             <Route path="settlement" element={<SettlementPage />} />
             <Route path="pay" element={<PayPage />} />
+            <Route path="pt-schedule" element={<PTSchedulePage />} />
             <Route path="payment-history" element={<PaymentHistoryPage />} />
             <Route path="payment-history/:memberId" element={<PaymentHistoryPage />} />
             <Route path="personal-info" element={<PersonalInfoPage />} />

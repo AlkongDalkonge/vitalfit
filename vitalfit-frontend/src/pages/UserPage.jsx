@@ -1,7 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../utils/hooks';
 import { getUserStatusText, getUserStatusColor, formatPhoneNumber } from '../utils/userUtils';
+import {
+  canViewUserList,
+  canViewUser,
+  getUserListPermissionMessage,
+  getUserViewPermissionMessage,
+} from '../utils/permissionUtils';
+import { useAuth } from '../contexts/AuthContext';
 import UserDetailModal from '../components/UserDetailModal';
 
 const UserPage = () => {
@@ -12,6 +19,9 @@ const UserPage = () => {
   // 네비게이션 훅
   const navigate = useNavigate();
 
+  // 인증 컨텍스트 사용
+  const { user: currentUser } = useAuth();
+
   // 커스텀 훅 사용
   const {
     users,
@@ -19,6 +29,7 @@ const UserPage = () => {
     centers,
     teams,
     members,
+    userRevenues, // 매출 데이터 추가
     loading,
     error,
     searchTerm,
@@ -33,46 +44,68 @@ const UserPage = () => {
     setShowTeamDropdown,
   } = useUser();
 
-  // 사용자가 담당하는 member 수 계산
-  const getUserMemberCount = userId => {
-    console.log('Members data:', members);
-    console.log('Looking for trainerId:', userId);
-    const userMembers = members.filter(member => {
-      console.log('Member trainerId:', member.trainerId, 'Member trainer:', member.trainer);
-      return member.trainerId === userId || (member.trainer && member.trainer.id === userId);
-    });
-    console.log('User members count:', userMembers.length);
-    return userMembers.length;
-  };
+  // 권한 체크
+  const canViewUserListPermission = useMemo(() => {
+    return canViewUserList(currentUser);
+  }, [currentUser]);
 
-  // 직원 등록 핸들러
-  const handleRegisterUser = () => {
+  // 사용자가 담당하는 member 수 계산 - useMemo로 메모이제이션
+  const getUserMemberCount = useCallback(
+    userId => {
+      return members.filter(
+        member => member.trainerId === userId || (member.trainer && member.trainer.id === userId)
+      ).length;
+    },
+    [members]
+  );
+
+  // 직원 등록 핸들러 - useCallback으로 메모이제이션
+  const handleRegisterUser = useCallback(() => {
     // TODO: 직원 등록 모달 또는 페이지로 이동
     alert('직원 등록 기능이 준비 중입니다.');
-  };
+  }, []);
 
-  // 사용자 상세보기 핸들러
-  const handleViewUser = userId => {
-    const user = users.find(u => u.id === userId);
-    if (user) {
-      setSelectedUser(user);
-      setIsModalOpen(true);
-    }
-  };
+  // 사용자 상세보기 핸들러 - useCallback으로 메모이제이션
+  const handleViewUser = useCallback(
+    userId => {
+      const user = users.find(u => u.id === userId);
+      if (user) {
+        // 권한 체크
+        if (!canViewUser(currentUser, user)) {
+          alert(getUserViewPermissionMessage(currentUser?.position?.level));
+          return;
+        }
+        setSelectedUser(user);
+        setIsModalOpen(true);
+      }
+    },
+    [users, currentUser]
+  );
 
-  // PT기록 보기 핸들러
-  const handleViewPTRecord = userId => {
-    navigate(`/user/${userId}/pt-sessions`);
-  };
+  // PT기록 보기 핸들러 - useCallback으로 메모이제이션
+  const handleViewPTRecord = useCallback(
+    userId => {
+      const user = users.find(u => u.id === userId);
+      if (user) {
+        // 권한 체크
+        if (!canViewUser(currentUser, user)) {
+          alert(getUserViewPermissionMessage(currentUser?.position?.level));
+          return;
+        }
+        navigate(`/user/${userId}/pt-sessions`);
+      }
+    },
+    [navigate, users, currentUser]
+  );
 
-  // 모달 닫기 핸들러
-  const handleCloseModal = () => {
+  // 모달 닫기 핸들러 - useCallback으로 메모이제이션
+  const handleCloseModal = useCallback(() => {
     setIsModalOpen(false);
     setSelectedUser(null);
-  };
+  }, []);
 
-  // Position 기반 역할 색상 반환
-  const getPositionColor = positionName => {
+  // Position 기반 역할 색상 반환 - useCallback으로 메모이제이션
+  const getPositionColor = useCallback(positionName => {
     if (!positionName) return 'text-gray-600 bg-gray-50';
 
     const name = positionName.toLowerCase();
@@ -87,7 +120,62 @@ const UserPage = () => {
     } else {
       return 'text-gray-600 bg-gray-50';
     }
-  };
+  }, []);
+
+  // 센터 드롭다운 토글 - useCallback으로 메모이제이션
+  const toggleCenterDropdown = useCallback(() => {
+    setShowCenterDropdown(!showCenterDropdown);
+  }, [showCenterDropdown, setShowCenterDropdown]);
+
+  // 팀 드롭다운 토글 - useCallback으로 메모이제이션
+  const toggleTeamDropdown = useCallback(() => {
+    setShowTeamDropdown(!showTeamDropdown);
+  }, [showTeamDropdown, setShowTeamDropdown]);
+
+  // 검색 입력 핸들러 - useCallback으로 메모이제이션
+  const handleSearchInputChange = useCallback(
+    e => {
+      handleSearchChange(e.target.value);
+    },
+    [handleSearchChange]
+  );
+
+  // 센터 선택 핸들러 - useCallback으로 메모이제이션
+  const handleCenterSelect = useCallback(
+    centerName => {
+      handleCenterChange(centerName);
+    },
+    [handleCenterChange]
+  );
+
+  // 팀 선택 핸들러 - useCallback으로 메모이제이션
+  const handleTeamSelect = useCallback(
+    teamName => {
+      handleTeamChange(teamName);
+    },
+    [handleTeamChange]
+  );
+
+  // 사용자별 멤버 수를 useMemo로 메모이제이션
+  const userMemberCounts = useMemo(() => {
+    const counts = {};
+    filteredUsers.forEach(user => {
+      counts[user.id] = getUserMemberCount(user.id);
+    });
+    return counts;
+  }, [filteredUsers, getUserMemberCount]);
+
+  // 권한이 없는 경우 권한 부족 메시지 표시
+  if (!canViewUserListPermission) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="text-red-500 text-center">
+          <p className="text-lg font-semibold mb-2">권한이 없습니다</p>
+          <p>{getUserListPermissionMessage()}</p>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -109,12 +197,12 @@ const UserPage = () => {
   }
 
   return (
-    <div className="w-full max-w-7xl mx-auto p-6 min-h-screen flex flex-col">
+    <div className="w-full max-w-7xl mx-auto pt-0 px-6 pb-6 flex flex-col">
       <div className="flex flex-col gap-6 flex-1 pb-0">
         {/* 최상단 제목 */}
         <div
           data-layer="모든 직원"
-          className="text-black text-3xl font-extrabold font-['Nunito'] bg-white rounded-lg p-4"
+          className="text-black text-3xl font-extrabold font-['Nunito'] bg-white rounded-lg py-0 px-4"
         >
           모든 직원
         </div>
@@ -128,7 +216,7 @@ const UserPage = () => {
               <input
                 type="text"
                 value={searchTerm}
-                onChange={e => handleSearchChange(e.target.value)}
+                onChange={handleSearchInputChange}
                 placeholder="이름, 이메일로 검색"
                 className="w-full h-full bg-sky-50 rounded-[8px] border border-gray-200 px-3 text-xs font-normal font-['Nunito'] focus:outline-none focus:ring-1 focus:ring-cyan-500"
               />
@@ -145,7 +233,7 @@ const UserPage = () => {
                 className="w-[130px] h-[30px] bg-sky-50 rounded-[8px] border border-gray-200 relative"
               >
                 <button
-                  onClick={() => setShowCenterDropdown(!showCenterDropdown)}
+                  onClick={toggleCenterDropdown}
                   className="w-full h-full flex justify-between items-center px-3"
                 >
                   <div
@@ -174,7 +262,7 @@ const UserPage = () => {
                   <div className="absolute top-full left-0 w-[130px] bg-white border border-gray-200 rounded-[8px] shadow-lg z-50 mt-1">
                     <div className="py-1">
                       <button
-                        onClick={() => handleCenterChange('Select option')}
+                        onClick={() => handleCenterSelect('Select option')}
                         className="w-full px-3 py-1.5 text-left text-xs text-neutral-600 hover:bg-sky-50"
                       >
                         전체선택
@@ -182,7 +270,7 @@ const UserPage = () => {
                       {centers.map(center => (
                         <button
                           key={center.id}
-                          onClick={() => handleCenterChange(center.name)}
+                          onClick={() => handleCenterSelect(center.name)}
                           className="w-full px-3 py-1.5 text-left text-xs text-neutral-600 hover:bg-sky-50"
                         >
                           {center.name}
@@ -205,7 +293,7 @@ const UserPage = () => {
                 className="w-[120px] h-[30px] bg-sky-50 rounded-[8px] border border-gray-200 relative"
               >
                 <button
-                  onClick={() => setShowTeamDropdown(!showTeamDropdown)}
+                  onClick={toggleTeamDropdown}
                   className="w-full h-full flex justify-between items-center px-3"
                 >
                   <div
@@ -234,7 +322,7 @@ const UserPage = () => {
                   <div className="absolute top-full left-0 w-[120px] bg-white border border-gray-200 rounded-[8px] shadow-lg z-30 mt-1">
                     <div className="py-1">
                       <button
-                        onClick={() => handleTeamChange('Select option')}
+                        onClick={() => handleTeamSelect('Select option')}
                         className="w-full px-3 py-1.5 text-left text-xs text-neutral-600 hover:bg-sky-50"
                       >
                         전체선택
@@ -242,7 +330,7 @@ const UserPage = () => {
                       {teams.map(team => (
                         <button
                           key={team.id}
-                          onClick={() => handleTeamChange(team.name)}
+                          onClick={() => handleTeamSelect(team.name)}
                           className="w-full px-3 py-1.5 text-left text-xs text-neutral-600 hover:bg-sky-50"
                         >
                           {team.name}
@@ -402,13 +490,15 @@ const UserPage = () => {
                             data-layer="고객 수"
                             className="flex-[0.93] min-w-[80px] justify-start text-neutral-600 text-sm font-normal font-['Nunito'] leading-normal"
                           >
-                            {getUserMemberCount(user.id)}
+                            {userMemberCounts[user.id] || 0}
                           </div>
                           <div
                             data-layer="당월 매출"
                             className="flex-[1.4] min-w-[80px] justify-start text-neutral-600 text-sm font-normal font-['Nunito'] leading-normal"
                           >
-                            -
+                            {userRevenues[user.id]
+                              ? `₩${userRevenues[user.id].toLocaleString()}`
+                              : '₩0'}
                           </div>
                           <div
                             data-layer="소속"
@@ -444,25 +534,25 @@ const UserPage = () => {
                 </div>
               </div>
             </div>
-
-            {/* 직원 등록 버튼 */}
-            <div className="flex justify-start mt-16 mb-0">
-              <button
-                onClick={handleRegisterUser}
-                data-layer="Button"
-                data-property-1="Default"
-                className="Button w-52 h-11 p-2.5 bg-gradient-to-br from-blue-400 to-blue-600 rounded-[10px] inline-flex justify-center items-center gap-2.5 hover:from-blue-500 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/15 before:via-transparent before:to-transparent before:pointer-events-none"
-              >
-                <div
-                  data-layer="Primary Button"
-                  className="PrimaryButton justify-start text-white text-sm font-normal font-['Nunito'] leading-normal"
-                >
-                  직원 등록
-                </div>
-              </button>
-            </div>
           </div>
         </div>
+
+        {/* 직원 등록 버튼 */}
+        {/* <div className="flex justify-end mt-4 mb-0">
+          <button
+            onClick={handleRegisterUser}
+            data-layer="Button"
+            data-property-1="Default"
+            className="Button w-40 h-11 p-2.5 bg-gradient-to-br from-blue-400 to-blue-600 rounded-[10px] inline-flex justify-center items-center gap-2.5 hover:from-blue-500 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/15 before:via-transparent before:to-transparent before:pointer-events-none"
+          >
+            <div
+              data-layer="Primary Button"
+              className="PrimaryButton justify-start text-white text-sm font-medium font-['Nunito'] leading-normal drop-shadow-xl"
+            >
+              직원 등록
+            </div>
+          </button>
+        </div> */}
       </div>
 
       {/* 유저 상세 정보 모달 */}
