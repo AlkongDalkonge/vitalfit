@@ -58,6 +58,14 @@ module.exports = (sequelize, DataTypes) => {
       team_id: {
         type: DataTypes.INTEGER,
         allowNull: true,
+        set(value) {
+          // 빈 문자열을 null로 변환
+          if (value === '') {
+            this.setDataValue('team_id', null);
+          } else {
+            this.setDataValue('team_id', value);
+          }
+        },
       },
       center_id: {
         type: DataTypes.INTEGER,

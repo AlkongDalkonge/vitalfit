@@ -3,6 +3,7 @@ const path = require('path');
 const router = express.Router();
 const userController = require('../controllers/userController');
 const { profileUpload, additionalImageUpload } = require('../middlewares/profileUpload');
+const accountImageUpload = require('../middlewares/accountImageUpload');
 const auth = require('../middlewares/authMiddleware');
 const { requireReAuth } = require('../middlewares/reauthMiddleware');
 const {
@@ -80,6 +81,16 @@ router.post(
   profileUpload.handleError,
   profileUpload.processFile,
   userController.uploadProfileImage
+);
+
+// 계좌 이미지 업로드 라우트
+router.post(
+  '/upload-account-image',
+  auth,
+  accountImageUpload.uploadSingle,
+  accountImageUpload.handleError,
+  accountImageUpload.processFile,
+  userController.uploadAccountImage
 );
 
 // 추가 이미지 업로드 라우트

@@ -430,12 +430,22 @@ const getMyAccount = async (req, res, next) => {
         'id',
         'name',
         'email',
+        'phone',
+        'gender',
         'profile_image_url',
         'nickname',
         'position_id',
         'center_id',
         'team_id',
         'status',
+        'account_number',
+        'account_bank',
+        'account_image_url',
+        'account_image_name',
+        'license',
+        'experience',
+        'education',
+        'instagram',
         // refresh_token은 보안상 별도로 관리
       ],
     });
@@ -457,12 +467,22 @@ const getMyAccount = async (req, res, next) => {
         id: user.id,
         name: user.name,
         email: user.email,
+        phone: user.phone,
+        gender: user.gender,
         profile_image_url: user.profile_image_url,
         nickname: user.nickname,
         position_id: user.position_id,
         center_id: user.center_id,
         team_id: user.team_id,
         status: user.status,
+        account_number: user.account_number,
+        account_bank: user.account_bank,
+        account_image_url: user.account_image_url,
+        account_image_name: user.account_image_name,
+        license: user.license,
+        experience: user.experience,
+        education: user.education,
+        instagram: user.instagram,
         // refresh_token은 보안상 별도로 관리
       },
     });
@@ -537,9 +557,32 @@ const updateMyAccount = async (req, res, next) => {
       }
     }
 
-    if (updates.center_id) await validateForeignKey(Center, updates.center_id, '센터');
-    if (updates.position_id) await validateForeignKey(Position, updates.position_id, '직책');
-    if (updates.team_id) await validateForeignKey(Team, updates.team_id, '팀');
+    // 필수 필드 검증 및 전처리
+    if (!updates.position_id || updates.position_id === '') {
+      return res.status(400).json({
+        success: false,
+        message: '직책은 필수 선택 항목입니다.',
+      });
+    }
+
+    if (!updates.center_id || updates.center_id === '') {
+      return res.status(400).json({
+        success: false,
+        message: '센터는 필수 선택 항목입니다.',
+      });
+    }
+
+    // 빈 문자열을 null로 변환 (선택적 필드만)
+    if (updates.team_id === '') {
+      updates.team_id = null;
+    }
+
+    // 외래키 검증
+    await validateForeignKey(Center, updates.center_id, '센터');
+    await validateForeignKey(Position, updates.position_id, '직책');
+    if (updates.team_id) {
+      await validateForeignKey(Team, updates.team_id, '팀');
+    }
 
     const user = await User.findByPk(req.user.uid);
     if (!user)
@@ -554,6 +597,14 @@ const updateMyAccount = async (req, res, next) => {
     // enum 필드들이 빈 문자열이면 null로 변환
     if (updates.gender === '') {
       updates.gender = null;
+    }
+
+    // gender 필드 값 검증
+    if (updates.gender && !['male', 'female'].includes(updates.gender)) {
+      return res.status(400).json({
+        success: false,
+        message: '성별은 male, female 중 하나여야 합니다.',
+      });
     }
 
     // ❌ 보안: status 필드는 사용자가 직접 변경할 수 없음
@@ -599,12 +650,13 @@ const updateAccountInfo = async (req, res, next) => {
   try {
     const { account_number, account_bank, account_image_name, account_image_url } = req.body;
 
-    if (!account_number) {
-      return res.status(400).json({
-        success: false,
-        message: '계좌번호를 입력해주세요.',
-      });
-    }
+    // 계좌번호가 없어도 저장 가능 (기존 정보 초기화 목적)
+    // if (!account_number) {
+    //   return res.status(400).json({
+    //     success: false,
+    //     message: '계좌번호를 입력해주세요.',
+    //   });
+    // }
 
     const user = await User.findByPk(req.user.uid);
     if (!user) {
@@ -1428,6 +1480,45 @@ const sendVerification = async (req, res, next) => {
   }
 };
 
+// ✅ 계좌 이미지 업로드
+const uploadAccountImage = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: '업로드할 파일이 없습니다.',
+      });
+    }
+
+    console.log('=== 계좌 이미지 업로드 시작 ===');
+    console.log('📁 업로드된 파일:', req.file);
+    console.log('📝 req.body:', req.body);
+
+    // 파일 정보 추출
+    const originalName = req.body.account_image_name || req.file.originalname;
+    const fileUrl = req.body.account_image_url || `/uploads/accounts/${req.file.filename}`;
+
+    console.log('✅ 계좌 이미지 업로드 성공:', {
+      originalName,
+      fileUrl,
+      filename: req.file.filename,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: '계좌 이미지가 업로드되었습니다.',
+      data: {
+        image_name: originalName,
+        image_url: fileUrl,
+        filename: req.file.filename,
+      },
+    });
+  } catch (err) {
+    console.error('계좌 이미지 업로드 오류:', err);
+    next(err);
+  }
+};
+
 module.exports = {
   signUp,
   verifyEmail,
@@ -1443,6 +1534,7 @@ module.exports = {
   deleteProfileImage,
   uploadProfileImage, // 새로 추가된 함수
   uploadAdditionalImage, // 새로 추가된 함수
+  uploadAccountImage, // 계좌 이미지 업로드 함수
   deactivateAccount,
   getAllUsers,
   getUserById,
