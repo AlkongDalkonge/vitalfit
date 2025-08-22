@@ -148,12 +148,6 @@ const PTSchedulePage = () => {
     try {
       setLoading(true);
 
-      // 디버깅: 사용자 정보 및 권한 확인
-      console.log('🔍 fetchCalendarData - 사용자 정보:', user);
-      console.log('🔍 isCurrentUserTrainer:', isCurrentUserTrainer);
-      console.log('🔍 canViewAllTrainers:', canViewAllTrainers);
-      console.log('🔍 user.id:', user.id);
-
       // API 호출 파라미터 설정 (센터 정보만)
       const params = {
         year: currentYear,
@@ -163,10 +157,7 @@ const PTSchedulePage = () => {
       // 센터 정보 추가 (관리자인 경우)
       if (canViewAllCenters && selectedCenter && selectedCenter !== 'all') {
         params.center_id = selectedCenter;
-        console.log('🔍 센터 정보 설정:', params.center_id);
       }
-
-      console.log('🔍 최종 API 호출 파라미터:', params);
 
       // 백엔드 엔드포인트에 맞게 수정
       let response;
@@ -177,29 +168,30 @@ const PTSchedulePage = () => {
           year: params.year,
           month: params.month,
         });
-        console.log('🔍 트레이너 전용 조회 - 자신의 PT 세션만 조회');
       }
       // 관리자로 로그인한 경우
       else if (canViewAllTrainers) {
         if (selectedTrainer && selectedTrainer !== 'all') {
           // 특정 트레이너 선택: 해당 트레이너의 PT 세션만 조회
-          response = await ptSessionAPI.getSessionsByUser(selectedTrainer, {
-            year: params.year,
-            month: params.month,
-          });
-          console.log('🔍 관리자 조회 - 선택한 트레이너의 PT 세션만 조회');
+                  const trainerParams = {
+          year: params.year,
+          month: params.month,
+        };
+        
+        // 센터 ID가 선택된 경우 쿼리 파라미터에 추가
+        if (canViewAllCenters && selectedCenter && selectedCenter !== 'all') {
+          trainerParams.center_id = selectedCenter;
+        }
+        
+        response = await ptSessionAPI.getSessionsByUser(selectedTrainer, trainerParams);
         } else {
           // 전체 트레이너 선택: 센터의 모든 PT 세션 조회
           response = await ptSessionAPI.getPTSessionsByMonth(params.year, params.month);
-          console.log('🔍 관리자 조회 - 센터의 모든 PT 세션 조회');
         }
       }
 
       if (response.success) {
         const sessions = response.data.pt_sessions || response.data || [];
-        console.log('🔍 API 응답 세션 수:', sessions.length);
-        console.log('🔍 첫 번째 세션:', sessions[0]);
-
         const dailyData = processSessionsForCalendar(sessions);
         setCalendarData(dailyData);
       } else {
@@ -241,10 +233,6 @@ const PTSchedulePage = () => {
   const handleTrainerChange = e => {
     const newTrainer = e.target.value;
     setSelectedTrainer(newTrainer);
-    // 트레이너 변경 시 달력 데이터 새로고침
-    setTimeout(() => {
-      fetchCalendarData();
-    }, 100);
   };
 
   // 세션 데이터를 달력용으로 가공

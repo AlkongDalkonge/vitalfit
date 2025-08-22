@@ -306,16 +306,32 @@ export const ptSessionAPI = {
     return result;
   },
   getSessionsByUser: async (userId, params = {}) => {
-    console.log('🚀 유저 PT 세션 API 호출:', { userId, params });
-    const result = await apiGet(`/pt-sessions/user/${userId}`, { params });
-    console.log('📡 PT 세션 API 응답:', result);
-    return result;
+    const queryParams = new URLSearchParams();
+    
+    // 파라미터들을 쿼리 스트링으로 변환
+    Object.keys(params).forEach(key => {
+      if (params[key] !== undefined && params[key] !== null) {
+        queryParams.append(key, params[key]);
+      }
+    });
+    
+    const queryString = queryParams.toString();
+    const url = `/pt-sessions/user/${userId}${queryString ? `?${queryString}` : ''}`;
+    
+    return await apiGet(url);
   },
-  getPTSessionsByMonth: async (year, month) => {
-    console.log('🚀 월별 PT 세션 API 호출:', { year, month });
-    const result = await apiGet(`/pt-sessions/month/${year}/${month}`);
-    console.log('📡 월별 PT 세션 API 응답:', result);
-    return result;
+  getPTSessionsByMonth: async (year, month, params = {}) => {
+    const queryParams = new URLSearchParams();
+    
+    // 센터 ID가 있는 경우 쿼리 파라미터에 추가
+    if (params.center_id) {
+      queryParams.append('center_id', params.center_id);
+    }
+    
+    const queryString = queryParams.toString();
+    const url = `/pt-sessions/month/${year}/${month}${queryString ? `?${queryString}` : ''}`;
+    
+    return await apiGet(url);
   },
   createSession: async data => {
     return await apiPost('/pt-sessions', data);
@@ -436,6 +452,9 @@ export const settlementAPI = {
   },
   checkDraftSettlements: async userId => {
     return await apiGet('/settlements/check-draft', { params: { user_id: userId } });
+  },
+  getNotifications: async userId => {
+    return await apiGet('/settlements/notifications', { params: { user_id: userId } });
   },
   acknowledge: async (id, userId) => {
     return await apiPost(`/settlements/${id}/acknowledge`, null, { params: { user_id: userId } });

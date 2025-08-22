@@ -274,6 +274,7 @@ const deletePTSession = async (req, res) => {
 // 월별 PT 세션 조회 (새로 추가)
 const getPTSessionsByMonth = async (req, res) => {
   const { year, month } = req.params;
+  const { center_id } = req.query; // 센터 ID 쿼리 파라미터 추가
 
   try {
     // 년월 유효성 검증
@@ -298,13 +299,24 @@ const getPTSessionsByMonth = async (req, res) => {
     const startDate = new Date(yearNum, monthNum - 1, 1);
     const endDate = new Date(yearNum, monthNum, 0, 23, 59, 59);
 
+    // WHERE 조건 구성
+    const whereClause = {
+      session_date: {
+        [Op.between]: [startDate, endDate],
+      },
+    };
+
+    // 센터 ID가 제공된 경우 필터링 추가
+    if (center_id) {
+      const centerIdNum = parseInt(center_id);
+      if (!isNaN(centerIdNum) && centerIdNum > 0) {
+        whereClause.center_id = centerIdNum;
+      }
+    }
+
     // PT 세션 조회
     const ptSessions = await PTSession.findAll({
-      where: {
-        session_date: {
-          [Op.between]: [startDate, endDate],
-        },
-      },
+      where: whereClause,
       attributes: [
         'id',
         'member_id',
@@ -694,7 +706,7 @@ const getPTSessionsByMember = async (req, res) => {
 // 유저별 PT 세션 조회 (새로 추가)
 const getPTSessionsByUser = async (req, res) => {
   const { userId } = req.params;
-  const { year, month } = req.query;
+  const { year, month, center_id } = req.query; // 센터 ID 쿼리 파라미터 추가
 
   try {
     // 파라미터 유효성 검증
@@ -719,6 +731,14 @@ const getPTSessionsByUser = async (req, res) => {
     }
 
     const whereClause = { trainer_id: userIdNum };
+    
+    // 센터 ID가 제공된 경우 필터링 추가
+    if (center_id) {
+      const centerIdNum = parseInt(center_id);
+      if (!isNaN(centerIdNum) && centerIdNum > 0) {
+        whereClause.center_id = centerIdNum;
+      }
+    }
 
     // 월별 필터링 추가
     if (year && month) {
