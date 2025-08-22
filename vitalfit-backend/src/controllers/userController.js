@@ -436,6 +436,7 @@ const getMyAccount = async (req, res, next) => {
         'center_id',
         'team_id',
         'status',
+        // refresh_token은 보안상 별도로 관리
       ],
     });
     if (!user)
@@ -462,6 +463,7 @@ const getMyAccount = async (req, res, next) => {
         center_id: user.center_id,
         team_id: user.team_id,
         status: user.status,
+        // refresh_token은 보안상 별도로 관리
       },
     });
   } catch (err) {
