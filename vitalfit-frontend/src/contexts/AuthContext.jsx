@@ -27,86 +27,19 @@ export const AuthProvider = ({ children }) => {
   const [showReAuthModal, setShowReAuthModal] = useState(false);
   const [reAuthRequired, setReAuthRequired] = useState(false);
 
-  // 자동 로그인 시도 (한 번만 실행)
+  // 자동 로그인 시도 (한 번만 실행) - 임시 비활성화
   useEffect(() => {
     if (initRef.current) {
       return;
     }
 
     initRef.current = true;
-    let isMounted = true;
-
-    const initializeAuth = async () => {
-      try {
-        console.log('🔄 AuthContext: 자동 로그인 시도 시작');
-
-        // 저장된 토큰 확인
-        const token = AuthService.getAccessToken();
-
-        if (token) {
-          try {
-            // 서버에서 최신 사용자 정보 가져오기
-            const { data } = await api.get('/users/me');
-            const userData = data;
-
-            if (!isMounted) return;
-
-            // userData.user를 사용 (백엔드 응답 구조에 맞춤)
-            const actualUser = userData.user || userData;
-            setUser(actualUser);
-            setIsAuthenticated(true);
-
-            // localStorage에 최신 정보 저장
-            localStorage.setItem('user', JSON.stringify(actualUser));
-
-            console.log('✅ 자동 로그인 성공:', actualUser.name);
-          } catch (error) {
-            console.log('⚠️ 서버 연결 실패, localStorage 정보 사용:', error.message);
-
-            // 서버 실패 시 localStorage 복구
-            const storedUser = localStorage.getItem('user');
-            if (storedUser) {
-              try {
-                const userData = JSON.parse(storedUser);
-
-                if (!isMounted) return;
-
-                setUser(userData);
-                setIsAuthenticated(true);
-
-                console.log('✅ localStorage 정보로 자동 로그인 성공');
-              } catch (error) {
-                console.error('사용자 정보 파싱 오류:', error);
-                forceLogout();
-              }
-            } else {
-              console.log('⚠️ 저장된 사용자 정보 없음');
-              forceLogout();
-            }
-          }
-        } else {
-          console.log('✅ 저장된 토큰 없음 - 로그인 페이지 유지');
-          setIsAuthenticated(false);
-          setUser(null);
-        }
-      } catch (error) {
-        if (!isMounted) return;
-
-        console.error('❌ AuthContext: 자동 로그인 중 오류 발생:', error);
-        forceLogout();
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
-    };
-
-    initializeAuth();
-
-    // 클린업 함수
-    return () => {
-      isMounted = false;
-    };
+    console.log('🔄 AuthContext: 자동 로그인 비활성화됨');
+    
+    // 로딩 상태만 false로 설정하고 자동 로그인 시도하지 않음
+    setLoading(false);
+    setIsAuthenticated(false);
+    setUser(null);
   }, []); // 빈 의존성 배열 유지 (한 번만 실행)
 
   // 재인증 필요 여부 확인
