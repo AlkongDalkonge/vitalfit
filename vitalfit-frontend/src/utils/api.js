@@ -93,9 +93,9 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
-      // 토큰 갱신 요청 자체가 401인 경우는 무한 루프 방지
-      if (originalRequest.url === '/users/refresh') {
-        console.log('토큰 갱신 실패 - 로그아웃 처리');
+      // 토큰 갱신 요청이나 /users/me 요청이 401인 경우는 무한 루프 방지
+      if (originalRequest.url === '/users/refresh' || originalRequest.url === '/users/me') {
+        console.log('토큰 갱신 또는 사용자 정보 요청 실패 - 로그아웃 처리');
         AuthService.removeAccessToken();
         AuthService.removeRefreshToken();
         localStorage.removeItem('rememberMe');
