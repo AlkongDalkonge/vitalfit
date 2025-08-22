@@ -27,19 +27,106 @@ export const AuthProvider = ({ children }) => {
   const [showReAuthModal, setShowReAuthModal] = useState(false);
   const [reAuthRequired, setReAuthRequired] = useState(false);
 
-  // 자동 로그인 시도 (한 번만 실행) - 임시 비활성화
+  // 자동 로그인 시도 (한 번만 실행)
   useEffect(() => {
     if (initRef.current) {
       return;
     }
 
     initRef.current = true;
-    console.log('🔄 AuthContext: 자동 로그인 비활성화됨');
-    
-    // 로딩 상태만 false로 설정하고 자동 로그인 시도하지 않음
-    setLoading(false);
-    setIsAuthenticated(false);
-    setUser(null);
+    let isMounted = true;
+
+    const initializeAuth = async () => {
+      try {
+        console.log('🔄 AuthContext: 자동 로그인 시도 시작');
+
+        // 저장된 토큰 확인
+        const token = AuthService.getAccessToken();
+
+        if (token) {
+          // 토큰 만료 여부 먼저 확인
+          if (AuthService.isTokenExpired()) {
+            console.log('⚠️ 토큰이 만료됨 - 자동 로그아웃');
+            forceLogout();
+            return;
+          }
+
+          // localStorage에서 사용자 정보 먼저 확인
+          const storedUser = localStorage.getItem('user');
+          if (storedUser) {
+            try {
+              const userData = JSON.parse(storedUser);
+              if (!isMounted) return;
+
+              // 먼저 localStorage 정보로 빠르게 로그인
+              setUser(userData);
+              setIsAuthenticated(true);
+              console.log('✅ localStorage 정보로 빠른 로그인 성공');
+
+              // 백그라운드에서 서버 검증 시도
+              setTimeout(async () => {
+                try {
+                  const { data } = await api.get('/users/me');
+                  const userData = data;
+                  const actualUser = userData.user || userData;
+                  
+                  if (isMounted) {
+                    setUser(actualUser);
+                    localStorage.setItem('user', JSON.stringify(actualUser));
+                    console.log('✅ 서버 검증 완료 - 최신 정보 업데이트');
+                  }
+                } catch (error) {
+                  console.log('⚠️ 서버 검증 실패 (백그라운드):', error.message);
+                  // 서버 검증 실패해도 localStorage 정보로 계속 사용
+                }
+              }, 100);
+
+            } catch (error) {
+              console.error('사용자 정보 파싱 오류:', error);
+              forceLogout();
+            }
+          } else {
+            // localStorage에 정보가 없으면 서버에서 가져오기 시도
+            try {
+              const { data } = await api.get('/users/me');
+              const userData = data;
+
+              if (!isMounted) return;
+
+              const actualUser = userData.user || userData;
+              setUser(actualUser);
+              setIsAuthenticated(true);
+              localStorage.setItem('user', JSON.stringify(actualUser));
+
+              console.log('✅ 서버에서 사용자 정보 가져오기 성공');
+            } catch (error) {
+              console.log('⚠️ 서버에서 사용자 정보 가져오기 실패:', error.message);
+              forceLogout();
+            }
+          }
+        } else {
+          console.log('✅ 저장된 토큰 없음 - 로그인 페이지 유지');
+          setIsAuthenticated(false);
+          setUser(null);
+        }
+      } catch (error) {
+        if (!isMounted) return;
+
+        console.error('❌ AuthContext: 자동 로그인 중 오류 발생:', error);
+        forceLogout();
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    initializeAuth();
+
+    // 클린업 함수
+    return () => {
+      isMounted = false;
+    };
   }, []); // 빈 의존성 배열 유지 (한 번만 실행)
 
   // 재인증 필요 여부 확인
