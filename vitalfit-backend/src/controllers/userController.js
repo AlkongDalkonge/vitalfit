@@ -242,11 +242,6 @@ const signIn = async (req, res, next) => {
 
     const user = await User.findOne({
       where: { email },
-      include: [
-        { model: Position, as: 'position', attributes: ['name', 'level'] },
-        { model: Center, as: 'center', attributes: ['name'] },
-        { model: Team, as: 'team', attributes: ['name'] },
-      ],
     });
     if (!user || !(await bcrypt.compare(password, user.password))) {
       if (user) {
@@ -324,9 +319,11 @@ const signIn = async (req, res, next) => {
         name: user.name,
         email: user.email,
         profile_image_url: user.profile_image_url,
-        position: user.position,
-        center: user.center,
-        team: user.team,
+        nickname: user.nickname,
+        position_id: user.position_id,
+        center_id: user.center_id,
+        team_id: user.team_id,
+        status: user.status,
       },
     });
   } catch (err) {
@@ -362,11 +359,6 @@ const refreshAccessToken = async (req, res, next) => {
         id: decoded.uid,
         refresh_token: refreshToken,
       },
-      include: [
-        { model: Position, as: 'position', attributes: ['name', 'level'] },
-        { model: Center, as: 'center', attributes: ['name'] },
-        { model: Team, as: 'team', attributes: ['name'] },
-      ],
     });
 
     if (!user) {
@@ -406,9 +398,11 @@ const refreshAccessToken = async (req, res, next) => {
         name: user.name,
         email: user.email,
         profile_image_url: user.profile_image_url,
-        position: user.position,
-        center: user.center,
-        team: user.team,
+        nickname: user.nickname,
+        position_id: user.position_id,
+        center_id: user.center_id,
+        team_id: user.team_id,
+        status: user.status,
       },
     });
   } catch (err) {
@@ -437,15 +431,11 @@ const getMyAccount = async (req, res, next) => {
         'name',
         'email',
         'profile_image_url',
+        'nickname',
         'position_id',
         'center_id',
         'team_id',
-        'nickname',
-      ],
-      include: [
-        { model: Position, as: 'position', attributes: ['name', 'level'] },
-        { model: Center, as: 'center', attributes: ['name'] },
-        { model: Team, as: 'team', attributes: ['name'] },
+        'status',
       ],
     });
     if (!user)
@@ -460,7 +450,20 @@ const getMyAccount = async (req, res, next) => {
       });
     }
 
-    return res.status(200).json({ success: true, user });
+    return res.status(200).json({
+      success: true,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        profile_image_url: user.profile_image_url,
+        nickname: user.nickname,
+        position_id: user.position_id,
+        center_id: user.center_id,
+        team_id: user.team_id,
+        status: user.status,
+      },
+    });
   } catch (err) {
     next(err);
   }

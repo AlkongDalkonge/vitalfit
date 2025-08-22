@@ -5,6 +5,10 @@ console.log('NODE_ENV:', process.env.NODE_ENV);
 console.log('TEST_DB_USERNAME:', process.env.TEST_DB_USERNAME);
 console.log('TEST_DB_HOST:', process.env.TEST_DB_HOST);
 console.log('TEST_DB_NAME:', process.env.TEST_DB_NAME);
+console.log('TEST_DB_NAME:', process.env.TEST_DB_PASSWORD);
+console.log('AZURE_DB_HOST:', process.env.AZURE_DB_HOST);
+console.log('AZURE_DB_USERNAME:', process.env.AZURE_DB_USERNAME);
+console.log('AZURE_DB_NAME:', process.env.AZURE_DB_NAME);
 
 const common = {
   dialect: 'postgres',
@@ -23,27 +27,12 @@ module.exports = {
 
   // 로컬 테스트 DB
   development: {
-    username: process.env.DB_USERNAME || 'postgres',
-    password: process.env.DB_PASSWORD || 'postgres',
-    database: process.env.DB_NAME || 'vitalfit',
-    host: process.env.DB_HOST || 'localhost',
-    dialect: process.env.DB_DIALECT || 'postgres',
-    // dialect: process.env.DB_DIALECT || 'sqlite',
-    // storage: process.env.DB_STORAGE || './database.sqlite',
-    logging: false,
-    use_env_variable: false,
-    // PostgreSQL SSL 설정
-    dialectOptions: {
-      ssl: false, // 개발 환경에서는 SSL 비활성화
-    },
-  },
-  test: {
-    username: process.env.DB_USERNAME || 'postgres',
-    password: process.env.DB_PASSWORD || 'postgres',
-    database: process.env.DB_NAME || 'vitalfit_test',
-    host: process.env.DB_HOST || 'localhost',
-    dialect: 'postgres',
-    logging: false,
+    ...common,
+    host: process.env.TEST_DB_HOST || 'localhost',
+    port: Number(process.env.TEST_DB_PORT) || 5432,
+    username: process.env.TEST_DB_USERNAME || 'postgres',
+    password: process.env.TEST_DB_PASSWORD || 'postgres',
+    database: process.env.TEST_DB_NAME || 'vitalfit_test',
   },
 
   // Azure 운영 DB
@@ -54,9 +43,17 @@ module.exports = {
     username: process.env.AZURE_DB_USERNAME,
     password: process.env.AZURE_DB_PASSWORD,
     database: process.env.AZURE_DB_NAME,
-    ssl: {
-      require: true,
-      rejectUnauthorized: false, // Azure PostgreSQL 연결을 위해 필요
+    dialectOptions: {
+      ssl: {
+        require: true,
+        rejectUnauthorized: false, // Azure PostgreSQL 연결을 위해 필요
+      },
+    },
+    pool: {
+      max: 5,
+      min: 0,
+      acquire: 30000,
+      idle: 10000,
     },
   },
 };

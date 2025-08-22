@@ -29,7 +29,7 @@ const SettlementFilterBar = ({
               setSelectedTeam(null);
               setSelectedTrainer(null);
             }}
-            disabled={user?.position_id === 11} // 센터장은 센터 변경 불가
+            disabled={user?.position_id === 11 || user?.position_id <= 7} // 센터장 또는 position_id 7 이하는 센터 변경 불가
             className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
           >
             <option value="">전체 센터</option>
@@ -42,6 +42,9 @@ const SettlementFilterBar = ({
           {user?.position_id === 11 && (
             <p className="text-xs text-gray-500 mt-1">센터장은 본인 센터만 확인 가능</p>
           )}
+          {user?.position_id <= 7 && (
+            <p className="text-xs text-gray-500 mt-1">본인 정보만 확인 가능</p>
+          )}
         </div>
 
         {/* 팀 선택 */}
@@ -53,7 +56,7 @@ const SettlementFilterBar = ({
               setSelectedTeam(e.target.value || null);
               setSelectedTrainer(null);
             }}
-            disabled={!selectedCenter}
+            disabled={!selectedCenter || user?.position_id <= 7} // position_id 7 이하는 팀 변경 불가
             className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
           >
             <option value="">전체 팀</option>
@@ -71,7 +74,7 @@ const SettlementFilterBar = ({
           <select
             value={selectedTrainer || ''}
             onChange={e => setSelectedTrainer(e.target.value || null)}
-            disabled={!selectedTeam}
+            disabled={!selectedTeam || user?.position_id <= 7} // position_id 7 이하는 트레이너 변경 불가
             className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
           >
             <option value="">트레이너 선택</option>
