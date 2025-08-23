@@ -245,44 +245,6 @@ const MyHistoryPage = ({ onReAuthRequired }) => {
     }
 
     try {
-      // 먼저 FileReader로 로컬 미리보기 추가 (센터 이미지와 동일한 방식)
-      const reader = new FileReader();
-      reader.onload = e => {
-        const previewUrl = e.target.result;
-        setFormData(prev => {
-          const currentData = prev[`${fieldName}Data`] || {};
-          const currentItems = Array.isArray(currentData.items) ? currentData.items : [];
-
-          return {
-            ...prev,
-            [`${fieldName}Data`]: {
-              ...currentData,
-              items:
-                fieldName === 'license'
-                  ? currentItems.map((item, index) =>
-                      index === itemIndex
-                        ? {
-                            ...item,
-                            image_name: file.name,
-                            image_url: previewUrl,
-                            uploaded_at: new Date().toISOString(),
-                            isLocal: true,
-                          }
-                        : item
-                    )
-                  : currentItems,
-              ...(fieldName !== 'license' && {
-                image_name: file.name,
-                image_url: previewUrl,
-                uploaded_at: new Date().toISOString(),
-                isLocal: true,
-              }),
-            },
-          };
-        });
-      };
-      reader.readAsDataURL(file);
-
       // FormData 생성
       const formData = new FormData();
       formData.append('additional_image_url', file);
@@ -293,8 +255,7 @@ const MyHistoryPage = ({ onReAuthRequired }) => {
       const result = response.data;
 
       if (result.success) {
-        // 업로드 성공 시 로컬 이미지를 서버 URL로 교체
-        // 이미지 URL을 절대 경로로 변환 (API_BASE_URL 제거)
+        // 업로드 성공 시 서버 URL로 설정
         const absoluteImageUrl = result.data.image_url.startsWith('http')
           ? result.data.image_url
           : result.data.image_url;
@@ -333,27 +294,6 @@ const MyHistoryPage = ({ onReAuthRequired }) => {
 
         toast.success('이미지가 추가되었습니다.');
       } else {
-        // 업로드 실패 시 로컬 이미지 제거
-        setFormData(prev => ({
-          ...prev,
-          [`${fieldName}Data`]: {
-            ...prev[`${fieldName}Data`],
-            items:
-              fieldName === 'license'
-                ? prev[`${fieldName}Data`].items.map((item, index) =>
-                    index === itemIndex
-                      ? { ...item, image_name: '', image_url: '', uploaded_at: '', isLocal: false }
-                      : item
-                  )
-                : prev[`${fieldName}Data`].items,
-            ...(fieldName !== 'license' && {
-              image_name: '',
-              image_url: '',
-              uploaded_at: '',
-              isLocal: false,
-            }),
-          },
-        }));
         toast.error('이미지 업로드에 실패했습니다.');
       }
     } catch (error) {
@@ -361,28 +301,6 @@ const MyHistoryPage = ({ onReAuthRequired }) => {
       toast.error(
         `이미지 업로드에 실패했습니다: ${error.response?.data?.message || error.message}`
       );
-
-      // 에러 발생 시 로컬 이미지 제거
-      setFormData(prev => ({
-        ...prev,
-        [`${fieldName}Data`]: {
-          ...prev[`${fieldName}Data`],
-          items:
-            fieldName === 'license'
-              ? prev[`${fieldName}Data`].items.map((item, index) =>
-                  index === itemIndex
-                    ? { ...item, image_name: '', image_url: '', uploaded_at: '', isLocal: false }
-                    : item
-                )
-              : prev[`${fieldName}Data`].items,
-          ...(fieldName !== 'license' && {
-            image_name: '',
-            image_url: '',
-            uploaded_at: '',
-            isLocal: false,
-          }),
-        },
-      }));
     }
   };
 

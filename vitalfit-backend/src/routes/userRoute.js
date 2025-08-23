@@ -138,22 +138,49 @@ router.post(
   userController.uploadAdditionalImage
 );
 
-// 휴가 신청 저장 (메모리 기반, 실제로는 데이터베이스 사용)
-const leaveRequests = new Map();
+// User 모델 import
+const { User } = require('../models');
 
 // 휴가 신청 목록 조회
 router.get('/leave/list', async (req, res) => {
   try {
     const { userId } = req.query;
 
-    let requests;
+    let users;
     if (userId) {
       // 특정 사용자의 휴가 신청만 조회
-      requests = Array.from(leaveRequests.values()).filter(req => req.userId == userId);
+      users = await User.findAll({
+        where: { id: userId },
+        attributes: ['id', 'name', 'email', 'shift'],
+      });
     } else {
-      // 모든 휴가 신청 조회 (관리자용)
-      requests = Array.from(leaveRequests.values());
+      // 모든 사용자의 휴가 신청 조회 (관리자용)
+      users = await User.findAll({
+        attributes: ['id', 'name', 'email', 'shift'],
+      });
     }
+
+    // shift 필드에서 휴가 신청 정보 추출
+    const requests = [];
+    users.forEach(user => {
+      if (user.shift) {
+        try {
+          const shiftData = JSON.parse(user.shift);
+          if (shiftData.leaveRequests && Array.isArray(shiftData.leaveRequests)) {
+            shiftData.leaveRequests.forEach(request => {
+              requests.push({
+                ...request,
+                userId: user.id,
+                userName: user.name,
+                userEmail: user.email,
+              });
+            });
+          }
+        } catch (error) {
+          console.error(`사용자 ${user.id}의 shift 데이터 파싱 오류:`, error);
+        }
+      }
+    });
 
     res.json({
       success: true,
@@ -171,9 +198,6 @@ router.get('/leave/list', async (req, res) => {
 // 휴가 신청 제출
 router.post('/leave/submit', async (req, res) => {
   try {
-    console.log('🚀 휴가 신청 제출 시작');
-    console.log('📝 요청 본문:', req.body);
-
     const {
       leaveType,
       startDate,
@@ -186,19 +210,12 @@ router.post('/leave/submit', async (req, res) => {
       userEmail,
     } = req.body;
 
-    // 필수 필드 검증
-    if (!leaveType || !startDate || !startTime || !endTime || !reason || !userId) {
-      console.error('❌ 필수 필드 누락:', {
-        leaveType,
-        startDate,
-        startTime,
-        endTime,
-        reason,
-        userId,
-      });
-      return res.status(400).json({
+    // 사용자 정보 조회
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({
         success: false,
-        message: '필수 필드가 누락되었습니다.',
+        message: '사용자를 찾을 수 없습니다.',
       });
     }
 
@@ -211,61 +228,65 @@ router.post('/leave/submit', async (req, res) => {
       startTime,
       endTime,
       reason,
-      userId,
-      userName,
-      userEmail,
       status: 'pending',
       submittedAt: new Date().toISOString(),
     };
 
+    // 기존 shift 데이터 가져오기
+    let shiftData = {};
+    if (user.shift) {
+      try {
+        shiftData = JSON.parse(user.shift);
+      } catch (error) {
+        console.error('기존 shift 데이터 파싱 오류:', error);
+        shiftData = { schedules: [] };
+      }
+    } else {
+      shiftData = { schedules: [] };
+    }
+
+    // leaveRequests 배열이 없으면 생성
+    if (!shiftData.leaveRequests) {
+      shiftData.leaveRequests = [];
+    }
+
+    // 새로운 휴가 신청 추가
+    shiftData.leaveRequests.push(leaveRequest);
+
+    // User 모델의 shift 필드 업데이트
+    await user.update({ shift: JSON.stringify(shiftData) });
+
     console.log('📋 생성된 휴가 신청:', leaveRequest);
+    console.log('💾 User 모델의 shift 필드에 휴가 신청 저장 완료');
 
-    // 메모리에 저장
-    leaveRequests.set(requestId, leaveRequest);
-    console.log('💾 메모리에 휴가 신청 저장 완료');
-
-    // 관리자에게 이메일 발송
     console.log('📧 이메일 발송 시작...');
     console.log('📝 휴가 신청 데이터:', leaveRequest);
     console.log('🔧 환경 변수 확인:');
     console.log('  - NODE_ENV:', process.env.NODE_ENV);
     console.log('  - EMAIL_PASSWORD 존재:', !!process.env.EMAIL_PASSWORD);
 
+    // 관리자에게 이메일 발송
+    const { sendLeaveRequestEmail } = require('../utils/emailService');
+    console.log('📧 sendLeaveRequestEmail 함수 로드됨');
+
     try {
-      const { sendLeaveRequestEmail } = require('../utils/emailService');
-      console.log('📧 sendLeaveRequestEmail 함수 로드됨');
-
-      // 관리자 이메일 주소 (실제 운영 시에는 환경변수나 설정에서 가져와야 함)
-      const adminEmail = 'vitalfit.dev@gmail.com';
-      console.log('📧 관리자 이메일:', adminEmail);
-
-      const emailResult = await sendLeaveRequestEmail(leaveRequest, adminEmail);
-      console.log('📧 이메일 발송 결과:', emailResult);
-
-      if (emailResult.success) {
-        console.log('✅ 이메일 발송 성공!');
-      } else {
-        console.error('❌ 이메일 발송 실패:', emailResult.error);
-      }
+      await sendLeaveRequestEmail(leaveRequest, 'vitalfit.dev@gmail.com');
+      console.log('✅ 이메일 발송 성공!');
     } catch (emailError) {
-      console.error('❌ 이메일 발송 중 에러 발생:', emailError);
-      console.error('❌ 에러 스택:', emailError.stack);
+      console.error('❌ 이메일 발송 실패:', emailError);
       // 이메일 실패해도 휴가 신청은 성공으로 처리
     }
 
-    console.log('✅ 휴가 신청 완료 - 응답 전송');
     res.json({
       success: true,
       message: '휴가 신청이 완료되었습니다.',
-      requestId,
+      requestId: leaveRequest.id,
     });
   } catch (error) {
-    console.error('❌ 휴가 신청 처리 중 에러 발생:', error);
-    console.error('❌ 에러 스택:', error.stack);
+    console.error('휴가 신청 실패:', error);
     res.status(500).json({
       success: false,
       message: '휴가 신청에 실패했습니다.',
-      error: error.message,
     });
   }
 });
@@ -273,116 +294,226 @@ router.post('/leave/submit', async (req, res) => {
 // 휴가 승인/반려 처리 (이메일에서 직접 처리)
 router.get('/leave/approve/:requestId', async (req, res) => {
   try {
-    console.log('✅ 휴가 승인 처리 시작');
     const { requestId } = req.params;
-    console.log('📋 승인할 휴가 신청 ID:', requestId);
 
-    // 휴가 신청 찾기
-    const leaveRequest = leaveRequests.get(requestId);
-    if (!leaveRequest) {
-      console.error('❌ 휴가 신청을 찾을 수 없음:', requestId);
-      return res.status(404).json({
-        success: false,
-        message: '휴가 신청을 찾을 수 없습니다.',
-      });
+    // 모든 사용자에서 해당 휴가 신청 찾기
+    const users = await User.findAll({
+      attributes: ['id', 'name', 'email', 'shift'],
+    });
+
+    let foundUser = null;
+    let foundRequest = null;
+
+    for (const user of users) {
+      if (user.shift) {
+        try {
+          const shiftData = JSON.parse(user.shift);
+          if (shiftData.leaveRequests && Array.isArray(shiftData.leaveRequests)) {
+            const request = shiftData.leaveRequests.find(req => req.id === requestId);
+            if (request) {
+              foundUser = user;
+              foundRequest = request;
+              break;
+            }
+          }
+        } catch (error) {
+          console.error(`사용자 ${user.id}의 shift 데이터 파싱 오류:`, error);
+        }
+      }
     }
 
-    console.log('📋 승인할 휴가 신청 정보:', leaveRequest);
+    if (!foundRequest || !foundUser) {
+      return res.status(404).send('휴가 신청을 찾을 수 없습니다.');
+    }
 
-    // 상태를 승인으로 변경
-    leaveRequest.status = 'approved';
-    leaveRequest.processedAt = new Date().toISOString();
-    leaveRequest.processedBy = '관리자';
+    // shiftData에서 해당 휴가 신청을 찾아서 상태 변경
+    const shiftData = JSON.parse(foundUser.shift);
+    const requestIndex = shiftData.leaveRequests.findIndex(req => req.id === requestId);
 
-    // 메모리에 업데이트된 상태 저장
-    leaveRequests.set(requestId, leaveRequest);
-    console.log('✅ 휴가 신청 상태 업데이트 완료:', leaveRequest);
+    if (requestIndex !== -1) {
+      // 상태를 승인으로 변경
+      shiftData.leaveRequests[requestIndex].status = 'approved';
+      shiftData.leaveRequests[requestIndex].processedAt = new Date().toISOString();
+      shiftData.leaveRequests[requestIndex].processedBy = '관리자';
+
+      // 데이터베이스에 승인 상태 업데이트
+      await foundUser.update({ shift: JSON.stringify(shiftData) });
+      console.log('✅ 휴가 신청 승인 상태 업데이트 완료');
+    } else {
+      console.error('❌ 휴가 신청을 찾을 수 없음');
+      return res.status(404).send('휴가 신청을 찾을 수 없습니다.');
+    }
 
     // 신청자에게 결과 이메일 발송
-    try {
-      const { sendLeaveResponseEmail } = require('../utils/emailService');
-      await sendLeaveResponseEmail(leaveRequest, 'approved', leaveRequest.userEmail);
-      console.log('✅ 승인 결과 이메일 발송 성공');
-    } catch (emailError) {
-      console.error('❌ 승인 결과 이메일 발송 실패:', emailError);
-      // 이메일 실패해도 승인 처리는 성공으로 간주
-    }
+    const { sendLeaveResponseEmail } = require('../utils/emailService');
+    await sendLeaveResponseEmail(foundRequest, 'approved', foundUser.email);
 
-    // JSON 응답으로 처리 결과 반환
-    res.json({
-      success: true,
-      message: '휴가 신청이 승인되었습니다.',
-      data: {
-        requestId,
-        status: 'approved',
-        processedAt: leaveRequest.processedAt,
-        processedBy: leaveRequest.processedBy,
-      },
-    });
+    // 승인 완료 페이지로 리다이렉트
+    res.send(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>휴가 신청 승인 완료</title>
+        <style>
+          body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
+          .success { color: #28a745; font-size: 24px; margin: 20px 0; }
+          .info { color: #666; margin: 20px 0; }
+        </style>
+      </head>
+      <body>
+        <h1>✅ 휴가 신청이 승인되었습니다</h1>
+        <p class="success">신청 ID: ${requestId}</p>
+        <p class="success">신청자: ${foundUser.name}</p>
+        <p class="info">신청자에게 승인 결과가 자동으로 통보되었습니다.</p>
+        <p class="info">이 창을 닫으셔도 됩니다.</p>
+      </body>
+      </html>
+    `);
   } catch (error) {
-    console.error('❌ 휴가 승인 처리 실패:', error);
-    res.status(500).json({
-      success: false,
-      message: '승인 처리에 실패했습니다.',
-      error: error.message,
-    });
+    console.error('휴가 승인 처리 실패:', error);
+    res.status(500).send('처리에 실패했습니다.');
   }
 });
 
 router.get('/leave/reject/:requestId', async (req, res) => {
   try {
-    console.log('❌ 휴가 반려 처리 시작');
     const { requestId } = req.params;
-    console.log('📋 반려할 휴가 신청 ID:', requestId);
 
-    // 휴가 신청 찾기
-    const leaveRequest = leaveRequests.get(requestId);
-    if (!leaveRequest) {
-      console.error('❌ 휴가 신청을 찾을 수 없음:', requestId);
+    // 모든 사용자에서 해당 휴가 신청 찾기
+    const users = await User.findAll({
+      attributes: ['id', 'name', 'email', 'shift'],
+    });
+
+    let foundUser = null;
+    let foundRequest = null;
+
+    for (const user of users) {
+      if (user.shift) {
+        try {
+          const shiftData = JSON.parse(user.shift);
+          if (shiftData.leaveRequests && Array.isArray(shiftData.leaveRequests)) {
+            const request = shiftData.leaveRequests.find(req => req.id === requestId);
+            if (request) {
+              foundUser = user;
+              foundRequest = request;
+              break;
+            }
+          }
+        } catch (error) {
+          console.error(`사용자 ${user.id}의 shift 데이터 파싱 오류:`, error);
+        }
+      }
+    }
+
+    if (!foundRequest || !foundUser) {
+      return res.status(404).send('휴가 신청을 찾을 수 없습니다.');
+    }
+
+    // shiftData에서 해당 휴가 신청을 찾아서 상태 변경
+    const shiftData = JSON.parse(foundUser.shift);
+    const requestIndex = shiftData.leaveRequests.findIndex(req => req.id === requestId);
+
+    if (requestIndex !== -1) {
+      // 상태를 반려로 변경
+      shiftData.leaveRequests[requestIndex].status = 'rejected';
+      shiftData.leaveRequests[requestIndex].processedAt = new Date().toISOString();
+      shiftData.leaveRequests[requestIndex].processedBy = '관리자';
+
+      // 데이터베이스에 반려 상태 업데이트
+      await foundUser.update({ shift: JSON.stringify(shiftData) });
+      console.log('✅ 휴가 신청 반려 상태 업데이트 완료');
+    } else {
+      console.error('❌ 휴가 신청을 찾을 수 없음');
+      return res.status(404).send('휴가 신청을 찾을 수 없습니다.');
+    }
+
+    // 신청자에게 결과 이메일 발송
+    const { sendLeaveResponseEmail } = require('../utils/emailService');
+    await sendLeaveResponseEmail(foundRequest, 'rejected', foundUser.email);
+
+    // 반려 완료 페이지로 리다이렉트
+    res.send(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>휴가 신청 반려 완료</title>
+        <style>
+          body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
+          .reject { color: #dc3545; font-size: 24px; margin: 20px 0; }
+          .info { color: #666; margin: 20px 0; }
+        </style>
+      </head>
+      <body>
+        <h1>❌ 휴가 신청이 반려되었습니다</h1>
+        <p class="reject">신청 ID: ${requestId}</p>
+        <p class="reject">신청자: ${foundUser.name}</p>
+        <p class="info">신청자에게 반려 결과가 자동으로 통보되었습니다.</p>
+        <p class="info">이 창을 닫으셔도 됩니다.</p>
+      </body>
+      </html>
+    `);
+  } catch (error) {
+    console.error('휴가 반려 처리 실패:', error);
+    res.status(500).send('처리에 실패했습니다.');
+  }
+});
+
+// 휴가 신청 삭제
+router.delete('/leave/delete/:requestId', async (req, res) => {
+  try {
+    const { requestId } = req.params;
+    console.log('🗑️ 휴가 신청 삭제 시작:', requestId);
+
+    // 모든 사용자에서 해당 휴가 신청 찾기
+    const users = await User.findAll({
+      attributes: ['id', 'name', 'email', 'shift'],
+    });
+
+    let foundUser = null;
+    let foundRequestIndex = -1;
+
+    for (const user of users) {
+      if (user.shift) {
+        try {
+          const shiftData = JSON.parse(user.shift);
+          if (shiftData.leaveRequests && Array.isArray(shiftData.leaveRequests)) {
+            const requestIndex = shiftData.leaveRequests.findIndex(req => req.id === requestId);
+            if (requestIndex !== -1) {
+              foundUser = user;
+              foundRequestIndex = requestIndex;
+              break;
+            }
+          }
+        } catch (error) {
+          console.error(`사용자 ${user.id}의 shift 데이터 파싱 오류:`, error);
+        }
+      }
+    }
+
+    if (!foundUser || foundRequestIndex === -1) {
       return res.status(404).json({
         success: false,
         message: '휴가 신청을 찾을 수 없습니다.',
       });
     }
 
-    console.log('📋 반려할 휴가 신청 정보:', leaveRequest);
+    // shiftData에서 해당 휴가 신청 제거
+    const shiftData = JSON.parse(foundUser.shift);
+    shiftData.leaveRequests.splice(foundRequestIndex, 1);
 
-    // 상태를 반려로 변경
-    leaveRequest.status = 'rejected';
-    leaveRequest.processedAt = new Date().toISOString();
-    leaveRequest.processedBy = '관리자';
+    // 데이터베이스에 업데이트된 shift 데이터 저장
+    await foundUser.update({ shift: JSON.stringify(shiftData) });
+    console.log('✅ 휴가 신청 삭제 완료');
 
-    // 메모리에 업데이트된 상태 저장
-    leaveRequests.set(requestId, leaveRequest);
-    console.log('✅ 휴가 신청 상태 업데이트 완료:', leaveRequest);
-
-    // 신청자에게 결과 이메일 발송
-    try {
-      const { sendLeaveResponseEmail } = require('../utils/emailService');
-      await sendLeaveResponseEmail(leaveRequest, 'rejected', leaveRequest.userEmail);
-      console.log('✅ 반려 결과 이메일 발송 성공');
-    } catch (emailError) {
-      console.error('❌ 반려 결과 이메일 발송 실패:', emailError);
-      // 이메일 실패해도 반려 처리는 성공으로 간주
-    }
-
-    // JSON 응답으로 처리 결과 반환
     res.json({
       success: true,
-      message: '휴가 신청이 반려되었습니다.',
-      data: {
-        requestId,
-        status: 'rejected',
-        processedAt: leaveRequest.processedAt,
-        processedBy: leaveRequest.processedBy,
-      },
+      message: '휴가 신청이 삭제되었습니다.',
     });
   } catch (error) {
-    console.error('❌ 휴가 반려 처리 실패:', error);
+    console.error('휴가 신청 삭제 실패:', error);
     res.status(500).json({
       success: false,
-      message: '반려 처리에 실패했습니다.',
-      error: error.message,
+      message: '삭제 처리에 실패했습니다.',
     });
   }
 });
