@@ -195,7 +195,6 @@ module.exports = (sequelize, DataTypes) => {
         { fields: ['team_id'] },
         { fields: ['position_id'] },
         { fields: ['status'] },
-        { fields: ['refresh_token'] }, // Refresh Token 검색 성능 향상
       ],
     }
   );
