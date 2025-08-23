@@ -75,8 +75,8 @@ app.use(errorHandler);
 const PORT = process.env.PORT || 3001;
 
 sequelize
-  .sync({ force: false, alter: true })
-  // .sync({ forces: true })
+  // .sync({ force: false, alter: true })
+  .sync({ forces: true })
   .then(async () => {
     console.log('1️⃣ DB 테이블 생성 완료!');
 
