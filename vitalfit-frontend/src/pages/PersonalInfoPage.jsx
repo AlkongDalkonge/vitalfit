@@ -43,6 +43,10 @@ const PersonalInfoPage = () => {
     position_id: '',
     team_id: '',
     center_id: '',
+    license: '',
+    experience: '',
+    education: '',
+    instagram: '',
   });
 
   // 계좌 정보 관련 상태
@@ -92,6 +96,19 @@ const PersonalInfoPage = () => {
     if (user) {
       console.log('=== 사용자 정보 설정 시작 ===');
       console.log('받은 user 객체:', user);
+      console.log('🔍 user 객체 상세 정보:', {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        phoneType: typeof user.phone,
+        phoneLength: user.phone ? user.phone.length : 'N/A',
+        gender: user.gender,
+        nickname: user.nickname,
+        position_id: user.position_id,
+        team_id: user.team_id,
+        center_id: user.center_id,
+      });
 
       const newFormData = {
         name: user.name || '',
@@ -102,10 +119,29 @@ const PersonalInfoPage = () => {
         position_id: user.position_id || '',
         team_id: user.team_id || '',
         center_id: user.center_id || '',
+        license: user.license || '',
+        experience: user.experience || '',
+        education: user.education || '',
+        instagram: user.instagram || '',
       };
 
       console.log('설정할 formData:', newFormData);
-      setFormData(newFormData);
+      console.log('🔍 phone 필드 상세 정보:', {
+        userPhone: user.phone,
+        userPhoneType: typeof user.phone,
+        userPhoneLength: user.phone ? user.phone.length : 'N/A',
+        formDataPhone: newFormData.phone,
+      });
+
+      // formData 상태 업데이트
+      setFormData(prev => {
+        console.log('🔄 formData 상태 업데이트:', {
+          이전: prev,
+          새로운: newFormData,
+          phone변경: prev.phone !== newFormData.phone,
+        });
+        return newFormData;
+      });
 
       // 센터가 선택된 경우 팀 필터링 적용
       if (newFormData.center_id && centers.length > 0 && allTeams.length > 0) {
@@ -113,17 +149,38 @@ const PersonalInfoPage = () => {
       }
 
       // 계좌 정보 설정
+      console.log('🔍 계좌 정보 설정 시작:', {
+        account_number: user.account_number,
+        account_bank: user.account_bank,
+        account_image_url: user.account_image_url,
+        account_image_name: user.account_image_name,
+      });
+
       if (user.account_number) {
         setAccountNumber(user.account_number);
+        console.log('✅ 계좌번호 설정됨:', user.account_number);
+      } else {
+        setAccountNumber('');
+        console.log('ℹ️ 계좌번호 없음, 빈 문자열로 설정');
       }
+
       if (user.account_bank) {
         setAccountBank(user.account_bank);
+        console.log('✅ 은행명 설정됨:', user.account_bank);
+      } else {
+        setAccountBank('');
+        console.log('ℹ️ 은행명 없음, 빈 문자열로 설정');
       }
+
       if (user.account_image_url) {
         const imageUrl = user.account_image_url.startsWith('http')
           ? user.account_image_url
           : `http://localhost:3001${user.account_image_url}`;
         setAccountImage(imageUrl);
+        console.log('✅ 계좌 이미지 설정됨:', imageUrl);
+      } else {
+        setAccountImage('');
+        console.log('ℹ️ 계좌 이미지 없음, 빈 문자열로 설정');
       }
 
       if (user.profile_image_url) {
@@ -140,7 +197,7 @@ const PersonalInfoPage = () => {
     } else {
       console.log('사용자 정보가 없습니다.');
     }
-  }, [user]);
+  }, [user, centers, allTeams]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -206,11 +263,29 @@ const PersonalInfoPage = () => {
 
   const handleInputChange = e => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
 
-    // 센터가 변경되면 팀 목록 필터링
-    if (name === 'center_id') {
-      filterTeamsByCenter(value);
+    try {
+      // 성별 필드 특별 처리
+      if (name === 'gender') {
+        console.log('성별 변경:', { name, value, type: typeof value });
+
+        // 성별 값 검증
+        if (value && !['male', 'female', ''].includes(value)) {
+          console.error('잘못된 성별 값:', value);
+          toast.error('올바르지 않은 성별 값입니다.');
+          return;
+        }
+      }
+
+      setFormData(prev => ({ ...prev, [name]: value }));
+
+      // 센터가 변경되면 팀 목록 필터링
+      if (name === 'center_id') {
+        filterTeamsByCenter(value);
+      }
+    } catch (error) {
+      console.error('입력 처리 중 에러 발생:', error);
+      toast.error('입력 처리 중 오류가 발생했습니다.');
     }
   };
 
@@ -345,6 +420,18 @@ const PersonalInfoPage = () => {
     try {
       console.log('=== 저장 시작 ===');
       console.log('현재 formData:', formData);
+
+      // 필수 필드 검증
+      if (!formData.position_id || formData.position_id === '') {
+        toast.error('직책을 선택해주세요.');
+        return;
+      }
+
+      if (!formData.center_id || formData.center_id === '') {
+        toast.error('센터를 선택해주세요.');
+        return;
+      }
+
       console.log('현재 gender 값:', formData.gender);
       console.log('gender 타입:', typeof formData.gender);
       console.log('gender가 빈 문자열인가?', formData.gender === '');
@@ -364,23 +451,64 @@ const PersonalInfoPage = () => {
         console.log('❌ 성별 select 요소를 찾을 수 없음');
       }
 
-      // 성별 데이터 전처리
+      // 데이터 전처리
       let processedFormData = { ...formData };
+
+      console.log('🔍 성별 데이터 처리 시작:', {
+        originalGender: formData.gender,
+        type: typeof formData.gender,
+        isEmpty: formData.gender === '',
+        isNull: formData.gender === null,
+        isUndefined: formData.gender === undefined,
+      });
+
+      // 성별 빈 문자열을 null로 변환
       if (processedFormData.gender === '') {
         processedFormData.gender = null;
         console.log('✅ 성별 빈 문자열을 null로 변환');
       }
 
+      console.log('🔍 성별 데이터 처리 완료:', {
+        processedGender: processedFormData.gender,
+        type: typeof processedFormData.gender,
+      });
+
+      // 선택적 필드만 빈 문자열을 null로 변환 (필수 필드는 빈 문자열 유지)
+      if (processedFormData.team_id === '') {
+        processedFormData.team_id = null;
+        console.log('✅ team_id 빈 문자열을 null로 변환 (선택적 필드)');
+      }
+
+      // 필수 필드들은 빈 문자열로 유지 (백엔드에서 검증)
+      console.log('✅ 필수 필드들은 빈 문자열 유지:', {
+        position_id: processedFormData.position_id,
+        center_id: processedFormData.center_id,
+      });
+
       // 계좌번호는 별도로 처리하지 않음 (계좌 정보는 별도 API로 저장)
       console.log('ℹ️ 계좌번호는 별도로 처리됨');
 
+      // 필수 필드들과 선택적 필드들은 항상 포함 (null 값이어도)
+      const alwaysIncludeFields = [
+        'position_id',
+        'center_id',
+        'team_id',
+        'gender',
+        'phone',
+        'license',
+        'experience',
+        'education',
+        'instagram',
+      ];
+
       const cleanFormData = Object.fromEntries(
         Object.entries(processedFormData).filter(([key, value]) => {
-          // gender는 null도 허용 (선택하지 않은 상태)
-          if (key === 'gender') {
-            console.log('✅ gender 필터링 통과:', value);
+          // 항상 포함해야 하는 필드들
+          if (alwaysIncludeFields.includes(key)) {
+            console.log(`✅ 항상 포함 필드 ${key}:`, value);
             return true;
           }
+
           // 다른 필드는 빈 값이 아닐 때만 포함
           const shouldInclude = value !== '' && value !== null && value !== undefined;
           console.log(`${key} 필드:`, value, '포함 여부:', shouldInclude);
@@ -402,8 +530,15 @@ const PersonalInfoPage = () => {
       console.log('response.data:', response.data);
       console.log('response.data.user:', response.data?.user);
 
-      // 계좌 정보가 있으면 별도로 저장 (계좌번호 또는 이미지 중 하나라도 있으면)
-      if (accountNumber.trim() || accountImageFile) {
+      // 계좌 정보 저장 (빈 값이어도 기존 데이터를 지우기 위해 항상 저장)
+      console.log('=== 계좌 정보 저장 시작 ===');
+      console.log('계좌번호:', accountNumber, '길이:', accountNumber.length);
+      console.log('은행명:', accountBank, '길이:', accountBank.length);
+      console.log('이미지 파일:', accountImageFile);
+      console.log('기존 이미지:', accountImage);
+
+      // 계좌 정보가 있거나 기존에 저장된 데이터가 있으면 저장
+      if (accountNumber.trim() || accountBank.trim() || accountImageFile || accountImage) {
         try {
           console.log('=== 계좌 정보 저장 시작 ===');
           console.log('계좌번호:', accountNumber);
@@ -415,32 +550,30 @@ const PersonalInfoPage = () => {
 
           // 계좌 이미지가 있으면 먼저 업로드
           if (accountImageFile) {
-            console.log('🖼️ 이미지 업로드 시작:', accountImageFile);
+            console.log('🖼️ 계좌 이미지 업로드 시작:', accountImageFile);
             const formData = new FormData();
-            formData.append('additional_image_url', accountImageFile);
-            formData.append('field', 'account');
+            formData.append('account_image', accountImageFile);
 
             console.log('📤 FormData 내용:', {
-              field: 'account',
               file: accountImageFile.name,
               size: accountImageFile.size,
             });
 
-            const uploadResponse = await userAPI.uploadAdditionalImage(formData);
-            console.log('📥 이미지 업로드 응답:', uploadResponse.data);
+            const uploadResponse = await userAPI.uploadAccountImage(formData);
+            console.log('📥 계좌 이미지 업로드 응답:', uploadResponse.data);
 
             if (uploadResponse.data.success) {
               accountImageUrl = uploadResponse.data.data.image_url;
               accountImageName = uploadResponse.data.data.image_name;
-              console.log('✅ 이미지 업로드 성공:', { accountImageUrl, accountImageName });
+              console.log('✅ 계좌 이미지 업로드 성공:', { accountImageUrl, accountImageName });
 
               // 로컬 이미지 URL을 서버 URL로 교체
               setAccountImage(accountImageUrl);
             } else {
-              console.error('❌ 이미지 업로드 실패:', uploadResponse.data);
+              console.error('❌ 계좌 이미지 업로드 실패:', uploadResponse.data);
             }
           } else {
-            console.log('ℹ️ 업로드할 이미지 파일이 없음');
+            console.log('ℹ️ 업로드할 계좌 이미지 파일이 없음');
           }
 
           // 계좌 정보 업데이트 (이미지가 없어도 계좌번호만이라도 저장)
@@ -455,8 +588,19 @@ const PersonalInfoPage = () => {
           await userAPI.updateAccountInfo(accountData);
           console.log('✅ 계좌 정보 업데이트 완료');
 
-          // 계좌 정보 저장 성공 후 상태 초기화
+          // 계좌 정보 저장 성공 후 상태 업데이트
           setAccountImageFile(null);
+
+          // 새로 업로드된 이미지가 있으면 로컬 상태 업데이트
+          if (accountImageUrl) {
+            setAccountImage(accountImageUrl);
+            console.log('✅ 새로운 계좌 이미지로 상태 업데이트:', accountImageUrl);
+          }
+
+          // 계좌번호와 은행명 상태 업데이트
+          setAccountNumber(accountNumber.trim() || '');
+          setAccountBank(accountBank.trim() || '');
+          console.log('✅ 계좌 정보 상태 업데이트 완료');
         } catch (uploadError) {
           console.error('계좌 정보 저장 실패:', uploadError);
           toast.warning('개인정보는 저장되었지만 계좌 정보 저장에 실패했습니다.');
@@ -481,6 +625,10 @@ const PersonalInfoPage = () => {
             position_id: updatedUser.position_id || prev.position_id,
             team_id: updatedUser.team_id || prev.team_id,
             center_id: updatedUser.center_id || prev.center_id,
+            license: updatedUser.license || prev.license,
+            experience: updatedUser.experience || prev.experience,
+            education: updatedUser.education || prev.education,
+            instagram: updatedUser.instagram || prev.instagram,
           };
           console.log('✅ 새로운 formData:', newFormData);
           console.log('✅ 새로운 gender 값:', newFormData.gender);
@@ -506,6 +654,16 @@ const PersonalInfoPage = () => {
           console.log('refreshUserInfo 호출 시작...');
           await refreshUserInfo();
           console.log('✅ refreshUserInfo 완료');
+
+          // 사용자 정보 새로고침 후 formData 강제 업데이트
+          setTimeout(() => {
+            if (refreshUserInfo && typeof refreshUserInfo === 'function') {
+              console.log('🔄 formData 강제 업데이트 시작...');
+              refreshUserInfo().then(() => {
+                console.log('✅ formData 강제 업데이트 완료');
+              });
+            }
+          }, 100);
         } catch (error) {
           console.error('❌ refreshUserInfo 호출 실패:', error);
         }
@@ -631,6 +789,14 @@ const PersonalInfoPage = () => {
 
   return (
     <div className="w-full bg-white">
+      {/* 최상단 제목 */}
+      <div className="w-full max-w-7xl mx-auto pt-0 px-6 pb-6">
+        <div className="text-center">
+          <h1 className="text-4xl font-bold text-gray-800">개인정보</h1>
+          <p className="text-lg text-gray-600">자신의 정보를 관리하세요</p>
+        </div>
+      </div>
+
       {/* 프로필 사진 섹션 - 맨 위 중앙 */}
       <section className="w-full flex flex-col items-center gap-5 mb-7">
         <div className="flex items-center gap-7">
@@ -820,6 +986,44 @@ const PersonalInfoPage = () => {
           </select>
         </div>
       </section>
+
+      {/* 자격증/경력/학력/인스타 섹션 - 이력 탭용 (UI 비활성화) */}
+      {/* <section className="w-full max-w-3xl mx-auto mb-7">
+        <h3 className="text-lg font-semibold mb-4 text-gray-700">이력 정보</h3>
+        <div className="grid grid-cols-1 gap-5">
+          <textarea
+            name="license"
+            value={formData.license}
+            onChange={handleInputChange}
+            placeholder="자격증 정보를 입력하세요"
+            className="p-2.5 border rounded text-sm"
+            rows="3"
+          />
+          <textarea
+            name="experience"
+            value={formData.experience}
+            onChange={handleInputChange}
+            placeholder="경력 사항을 입력하세요"
+            className="p-2.5 border rounded text-sm"
+            rows="3"
+          />
+          <textarea
+            name="education"
+            value={formData.education}
+            onChange={handleInputChange}
+            placeholder="학력 정보를 입력하세요"
+            className="p-2.5 border rounded text-sm"
+            rows="3"
+          />
+          <input
+            name="instagram"
+            value={formData.instagram}
+            onChange={handleInputChange}
+            placeholder="인스타그램 계정을 입력하세요"
+            className="p-2.5 border rounded text-sm"
+          />
+        </div>
+      </section> */}
 
       {/* 계좌 정보 섹션 */}
       <section className="w-full max-w-3xl mx-auto mb-7">

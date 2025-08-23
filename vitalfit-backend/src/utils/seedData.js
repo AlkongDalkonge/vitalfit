@@ -318,6 +318,80 @@ const seedUsers = async (centers, teams, positions) => {
         join_date: '2024-01-01',
         status: 'active',
         nickname: 'Admin',
+        // 새로 추가된 프로필 필드들
+        gender: 'male',
+        license: JSON.stringify({
+          items: [
+            {
+              image_name: 'admin_license_1.jpg',
+              image_url: '/uploads/licenses/admin_license_1.jpg',
+              uploaded_at: '2024-01-01T09:00:00Z',
+              licenseName: '체육지도사 2급',
+              issuingOrganization: '한국체육진흥원',
+              issueDate: '2020-03-15',
+            },
+            {
+              image_name: 'admin_license_2.jpg',
+              image_url: '/uploads/licenses/admin_license_2.jpg',
+              uploaded_at: '2024-01-01T09:00:00Z',
+              licenseName: '생활스포츠지도사 2급',
+              issuingOrganization: '한국체육진흥원',
+              issueDate: '2019-06-20',
+            },
+          ],
+        }),
+        experience: JSON.stringify({
+          items: [
+            {
+              startDate: '2020-03-01',
+              endDate: '2024-01-01',
+              content: 'VitalFit - 총괄 매니저',
+              status: '재직',
+            },
+            {
+              startDate: '2018-06-01',
+              endDate: '2020-02-28',
+              content: 'ABC피트니스 - 매니저',
+              status: '재직',
+            },
+          ],
+        }),
+        education: JSON.stringify({
+          items: [
+            {
+              startDate: '2014-03-01',
+              endDate: '2018-02-28',
+              content: '서울대학교 체육교육과',
+              status: '졸업',
+            },
+            {
+              startDate: '2011-03-01',
+              endDate: '2014-02-28',
+              content: '서울체육고등학교',
+              status: '졸업',
+            },
+          ],
+        }),
+        instagram: JSON.stringify({
+          image_name: 'admin_instagram.jpg',
+          image_url: '/uploads/instagram/admin_instagram.jpg',
+          uploaded_at: '2024-01-01T09:00:00Z',
+          accountName: 'vitalfit_admin',
+          instagramLink: 'https://instagram.com/vitalfit_admin',
+          description: 'VitalFit 공식 인스타그램',
+        }),
+        shift: JSON.stringify({
+          schedules: [
+            {
+              days: ['월', '화', '수', '목', '금'],
+              time: { start: '09:00', end: '18:00' },
+            },
+          ],
+        }),
+        account_number: '123-456789-01-234',
+        account_bank: '신한은행',
+        account_image_name: 'admin_account.jpg',
+        account_image_url: '/uploads/accounts/admin_account.jpg',
       },
 
       // 강남센터 (13명) - 강남1팀(4명) + 강남2팀(3명) + 강남3팀(3명) + 강남4팀(3명)
@@ -334,6 +408,78 @@ const seedUsers = async (centers, teams, positions) => {
         join_date: '2024-01-15',
         status: 'active',
         nickname: '김민수',
+        // 새로 추가된 프로필 필드들
+        gender: 'male',
+        license: JSON.stringify({
+          items: [
+            {
+              image_name: 'kim_license_1.jpg',
+              image_url: '/uploads/licenses/kim_license_1.jpg',
+              uploaded_at: '2024-01-15T10:00:00Z',
+              licenseName: '개인트레이너 자격증',
+              issuingOrganization: '한국체육진흥원',
+              issueDate: '2022-05-20',
+            },
+            {
+              image_name: 'kim_license_2.jpg',
+              image_url: '/uploads/licenses/kim_license_2.jpg',
+              uploaded_at: '2024-01-15T10:00:00Z',
+              licenseName: '요가지도사 자격증',
+              issuingOrganization: '한국요가협회',
+              issueDate: '2021-12-10',
+            },
+          ],
+        }),
+        experience: JSON.stringify({
+          items: [
+            {
+              startDate: '2022-06-01',
+              endDate: '2024-01-15',
+              content: 'VitalFit 강남센터 - 팀장',
+              status: '재직',
+            },
+            {
+              startDate: '2020-03-01',
+              endDate: '2022-05-31',
+              content: 'XYZ헬스클럽 - 개인트레이너',
+              status: '재직',
+            },
+          ],
+        }),
+        education: JSON.stringify({
+          items: [
+            {
+              startDate: '2016-03-01',
+              endDate: '2020-02-28',
+              content: '경희대학교 체육학과',
+              status: '졸업',
+            },
+          ],
+        }),
+        instagram: JSON.stringify({
+          image_name: 'kim_instagram.jpg',
+          image_url: '/uploads/instagram/kim_instagram.jpg',
+          uploaded_at: '2024-01-15T10:00:00Z',
+          accountName: 'minsoo_fitness',
+          instagramLink: 'https://instagram.com/minsoo_fitness',
+          description: '개인 맞춤형 피트니스 트레이닝',
+        }),
+        shift: JSON.stringify({
+          schedules: [
+            {
+              days: ['월', '화', '수', '목', '금'],
+              time: { start: '07:00', end: '16:00' },
+            },
+            {
+              days: ['토'],
+              time: { start: '09:00', end: '15:00' },
+            },
+          ],
+        }),
+        account_number: '110-123456-01-001',
+        account_bank: '국민은행',
+        account_image_name: 'kim_account.jpg',
+        account_image_url: '/uploads/accounts/kim_account.jpg',
       },
       {
         name: '이영희',
@@ -347,6 +493,78 @@ const seedUsers = async (centers, teams, positions) => {
         join_date: '2024-02-01',
         status: 'active',
         nickname: '이영희',
+        // 새로 추가된 프로필 필드들
+        gender: 'female',
+        license: JSON.stringify({
+          items: [
+            {
+              image_name: 'lee_license_1.jpg',
+              image_url: '/uploads/licenses/lee_license_1.jpg',
+              uploaded_at: '2024-02-01T11:00:00Z',
+              licenseName: '개인트레이너 자격증',
+              issuingOrganization: '한국체육진흥원',
+              issueDate: '2023-03-15',
+            },
+            {
+              image_name: 'lee_license_2.jpg',
+              image_url: '/uploads/licenses/lee_license_2.jpg',
+              uploaded_at: '2024-02-01T11:00:00Z',
+              licenseName: '필라테스 지도사 자격증',
+              issuingOrganization: '한국필라테스협회',
+              issueDate: '2022-11-20',
+            },
+          ],
+        }),
+        experience: JSON.stringify({
+          items: [
+            {
+              startDate: '2023-04-01',
+              endDate: '2024-02-01',
+              content: 'VitalFit 강남센터 - 개인트레이너',
+              status: '재직',
+            },
+            {
+              startDate: '2022-01-01',
+              endDate: '2023-03-31',
+              content: 'ABC필라테스 - 보조강사',
+              status: '재직',
+            },
+          ],
+        }),
+        education: JSON.stringify({
+          items: [
+            {
+              startDate: '2017-03-01',
+              endDate: '2021-02-28',
+              content: '성신여자대학교 스포츠건강학과',
+              status: '졸업',
+            },
+          ],
+        }),
+        instagram: JSON.stringify({
+          image_name: 'lee_instagram.jpg',
+          image_url: '/uploads/instagram/lee_instagram.jpg',
+          uploaded_at: '2024-02-01T11:00:00Z',
+          accountName: 'younghee_pilates',
+          instagramLink: 'https://instagram.com/younghee_pilates',
+          description: '필라테스 & 개인트레이닝',
+        }),
+        shift: JSON.stringify({
+          schedules: [
+            {
+              days: ['월', '화', '수', '목', '금'],
+              time: { start: '10:00', end: '19:00' },
+            },
+            {
+              days: ['토'],
+              time: { start: '10:00', end: '16:00' },
+            },
+          ],
+        }),
+        account_number: '110-123456-01-002',
+        account_bank: '국민은행',
+        account_image_name: 'lee_account.jpg',
+        account_image_url: '/uploads/accounts/lee_account.jpg',
       },
       {
         name: '박철수',

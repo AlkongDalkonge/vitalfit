@@ -261,6 +261,14 @@ export const userAPI = {
       },
     });
   },
+  // 계좌 이미지 업로드
+  uploadAccountImage: async formData => {
+    return await api.post('/users/upload-account-image', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
 };
 
 // 멤버 API
@@ -307,30 +315,30 @@ export const ptSessionAPI = {
   },
   getSessionsByUser: async (userId, params = {}) => {
     const queryParams = new URLSearchParams();
-    
+
     // 파라미터들을 쿼리 스트링으로 변환
     Object.keys(params).forEach(key => {
       if (params[key] !== undefined && params[key] !== null) {
         queryParams.append(key, params[key]);
       }
     });
-    
+
     const queryString = queryParams.toString();
     const url = `/pt-sessions/user/${userId}${queryString ? `?${queryString}` : ''}`;
-    
+
     return await apiGet(url);
   },
   getPTSessionsByMonth: async (year, month, params = {}) => {
     const queryParams = new URLSearchParams();
-    
+
     // 센터 ID가 있는 경우 쿼리 파라미터에 추가
     if (params.center_id) {
       queryParams.append('center_id', params.center_id);
     }
-    
+
     const queryString = queryParams.toString();
     const url = `/pt-sessions/month/${year}/${month}${queryString ? `?${queryString}` : ''}`;
-    
+
     return await apiGet(url);
   },
   createSession: async data => {
