@@ -8,8 +8,8 @@ on:
     branches:
       - main
     paths:
-    - 'vitalfit-backend/**'
-    - '.github/workflows/main_vitalfit-be3.yml'
+      - "vitalfit-backend/**"
+      - ".github/workflows/main_vitalfit-be3.yml"
   workflow_dispatch:
 
 jobs:
@@ -24,7 +24,7 @@ jobs:
       - name: Set up Node.js version
         uses: actions/setup-node@v3
         with:
-          node-version: '22.x'
+          node-version: "22.x"
 
       - name: npm install, build, and test
         working-directory: vitalfit-backend
@@ -37,7 +37,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: node-app
-          path: vitalfit-backend
+          path: vitalfit-backend/src
     env:
       CI: false
 
@@ -53,7 +53,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: node-app
-      
+
       - name: Login to Azure
         uses: azure/login@v2
         with:
@@ -61,11 +61,10 @@ jobs:
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_92757169F1AA4908B9130C4032C44A2C }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_26C8D61288C64B39845DA40D1E150C94 }}
 
-      - name: 'Deploy to Azure Web App'
+      - name: "Deploy to Azure Web App"
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'vitalfit-be3'
-          slot-name: 'Production'
+          app-name: "vitalfit-be3"
+          slot-name: "Production"
           package: .
-          
