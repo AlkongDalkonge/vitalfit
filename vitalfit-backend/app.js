@@ -19,7 +19,7 @@ const jobRunRouter = require('./src/routes/jobRunRoute');
 const settlementRouter = require('./src/routes/settlementRoute');
 const emailRouter = require('./src/routes/emailRoute');
 const notificationRouter = require('./src/routes/notificationRoute');
-
+//라우터 등록
 const { sequelize } = require('./src/models');
 const errorHandler = require('./src/middlewares/errorHandler');
 const { seedAllData } = require('./src/utils/seedData');
