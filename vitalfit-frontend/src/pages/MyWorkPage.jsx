@@ -46,56 +46,6 @@ const MyWorkPage = ({ onReAuthRequired }) => {
     { value: 'other', label: '근무신청', color: 'bg-gray-100 text-gray-800' },
   ];
 
-  // 휴가 신청 상태 변화 감지 및 로컬 스토리지 동기화
-  useEffect(() => {
-    console.log('🔄 휴가 신청 상태 변화:', {
-      totalRequests: leaveRequests.length,
-      requests: leaveRequests.map(req => ({
-        id: req.id,
-        status: req.status,
-        submittedAt: req.submittedAt,
-        reason: req.reason,
-      })),
-    });
-  }, [leaveRequests]);
-
-  // 백엔드에서 휴가 신청 목록 가져오기
-  const fetchLeaveRequests = async () => {
-    try {
-      const response = await fetch(
-        `http://localhost:3001/api/users/leave/list?userId=${user?.id || user?.uid}`,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
-          },
-        }
-      );
-
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success) {
-          setLeaveRequests(result.data || []);
-          console.log('✅ 휴가 신청 목록 가져오기 성공:', result.data);
-        }
-      }
-    } catch (error) {
-      console.error('❌ 휴가 신청 목록 가져오기 실패:', error);
-    }
-  };
-
-  // 초기 상태 로깅 및 휴가 신청 목록 가져오기
-  useEffect(() => {
-    console.log('🚀 MyWorkPage 초기 상태:', {
-      leaveRequestsLength: leaveRequests.length,
-      leaveRequests: leaveRequests,
-      user: user?.name,
-    });
-
-    if (user?.id || user?.uid) {
-      fetchLeaveRequests();
-    }
-  }, [user]);
-
   // shift 데이터 파싱 함수
   const parseShiftData = shiftString => {
     if (!shiftString || shiftString.trim() === '') {
@@ -229,6 +179,42 @@ const MyWorkPage = ({ onReAuthRequired }) => {
     }
   };
 
+  // 백엔드에서 휴가 신청 목록 가져오기
+  const fetchLeaveRequests = async () => {
+    try {
+      console.log('🔄 휴가 신청 목록 가져오기 시작');
+      const response = await fetch(
+        `http://localhost:3001/api/users/leave/list?userId=${user?.id || user?.uid}`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+          },
+        }
+      );
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          console.log('✅ 휴가 신청 목록 가져오기 성공:', result.data);
+          setLeaveRequests(result.data || []);
+        } else {
+          console.error('❌ 휴가 신청 목록 조회 실패:', result.message);
+        }
+      } else {
+        console.error('❌ HTTP 에러:', response.status);
+      }
+    } catch (error) {
+      console.error('❌ 휴가 신청 목록 가져오기 실패:', error);
+    }
+  };
+
+  // 수동으로 상태 새로고침
+  const refreshLeaveRequests = () => {
+    console.log('🔄 수동 새로고침 시작');
+    fetchLeaveRequests();
+    toast.info('휴가 신청 목록을 새로고침했습니다.');
+  };
+
   // 쉬는 날 신청 폼 변경 핸들러
   const handleLeaveFormChange = (field, value) => {
     setLeaveRequestForm(prev => ({
@@ -261,15 +247,28 @@ const MyWorkPage = ({ onReAuthRequired }) => {
       }
     }
 
-    // 시간 검증 (토스트 없이)
+    // 시간 검증
     if (leaveRequestForm.startTime >= leaveRequestForm.endTime) {
+      toast.error('시작 시간은 종료 시간보다 이전이어야 합니다.');
       return;
     }
 
     try {
-      // 새로운 휴가 신청 생성
+      console.log('🚀 휴가 신청 시작');
+
+      // 백엔드에 휴가 신청 제출
+      const backendRequestId = await submitLeaveRequestToBackend({
+        ...leaveRequestForm,
+        userId: user?.id || user?.uid,
+        userName: user?.name || '사용자',
+        userEmail: user?.email || 'unknown@email.com',
+      });
+
+      console.log('✅ 백엔드 휴가 신청 성공, ID:', backendRequestId);
+
+      // 새로운 휴가 신청 객체 생성
       const newRequest = {
-        id: Date.now(),
+        id: backendRequestId,
         ...leaveRequestForm,
         status: 'pending',
         submittedAt: new Date().toISOString(),
@@ -280,22 +279,8 @@ const MyWorkPage = ({ onReAuthRequired }) => {
         },
       };
 
-      // 오른쪽 승인내역에 추가 (상태 업데이트 강화)
-      const updatedRequests = [newRequest, ...leaveRequests];
-      setLeaveRequests(updatedRequests);
-
-      console.log('🔄 휴가 신청 상태 업데이트:', {
-        newRequest,
-        prevLength: leaveRequests.length,
-        newLength: updatedRequests.length,
-        updatedRequests,
-      });
-
-      // 백엔드에 휴가 신청 제출
-      const backendRequestId = await submitLeaveRequestToBackend(newRequest);
-
-      // 백엔드에서 받은 requestId로 업데이트
-      newRequest.id = backendRequestId;
+      // 로컬 상태 업데이트
+      setLeaveRequests(prev => [newRequest, ...prev]);
 
       // 폼 초기화
       setLeaveRequestForm({
@@ -307,23 +292,12 @@ const MyWorkPage = ({ onReAuthRequired }) => {
         reason: '',
       });
 
-      // 상태 업데이트 확인
-      console.log('✅ 휴가 신청 완료:', {
-        newRequestId: newRequest.id,
-        totalRequests: updatedRequests.length,
-        status: 'pending',
-      });
-
-      // 상태 업데이트 후 실제 상태 확인
-      console.log('🔍 신청 완료 후 실제 상태:', {
-        leaveRequestsLength: updatedRequests.length,
-        newRequestExists: updatedRequests.some(req => req.id === newRequest.id),
-      });
-
-      // 강제 업데이트로 상태 동기화
-      forceUpdateLeaveRequests();
-
       toast.success('휴가 신청이 완료되었습니다. 관리자에게 승인 요청이 전송되었습니다.');
+
+      // 상태 동기화를 위해 목록 새로고침
+      setTimeout(() => {
+        fetchLeaveRequests();
+      }, 1000);
     } catch (error) {
       console.error('휴가 신청 실패:', error);
       toast.error('휴가 신청에 실패했습니다.');
@@ -482,6 +456,30 @@ const MyWorkPage = ({ onReAuthRequired }) => {
     return leaveType ? leaveType.color : 'bg-gray-100 text-gray-800';
   };
 
+  // 휴가 신청 상태 실시간 업데이트를 위한 폴링
+  useEffect(() => {
+    if (user?.id || user?.uid) {
+      // 초기 로드
+      fetchLeaveRequests();
+
+      // 30초마다 상태 업데이트 (실시간성 향상)
+      const interval = setInterval(fetchLeaveRequests, 30000);
+
+      return () => clearInterval(interval);
+    }
+  }, [user]);
+
+  // 승인/반려 상태 변경 감지 및 UI 업데이트
+  useEffect(() => {
+    console.log('🔄 휴가 신청 상태 변화 감지:', {
+      totalRequests: leaveRequests.length,
+      statusCounts: leaveRequests.reduce((acc, req) => {
+        acc[req.status] = (acc[req.status] || 0) + 1;
+        return acc;
+      }, {}),
+    });
+  }, [leaveRequests]);
+
   // 사용자 정보 로드
   useEffect(() => {
     if (user) {
@@ -534,54 +532,6 @@ const MyWorkPage = ({ onReAuthRequired }) => {
       setLoading(false);
     }
   }, [user]);
-
-  // 자동 리다이렉트 로직
-  useEffect(() => {
-    if (!user) return;
-
-    // 사용자 활동 감지 함수들
-    const resetInactivityTimer = () => {
-      // 기존 타이머가 있다면 제거
-      if (inactivityTimeoutRef.current) {
-        clearTimeout(inactivityTimeoutRef.current);
-      }
-
-      // 5분 후 자동으로 대시보드로 이동하는 타이머 설정
-      inactivityTimeoutRef.current = setTimeout(
-        () => {
-          console.log('⏰ 5분 경과, 자동으로 대시보드로 이동');
-          toast.info('보안을 위해 대시보드로 이동합니다.');
-          navigate('/dashboard');
-        },
-        5 * 60 * 1000
-      ); // 5분
-    };
-
-    // 페이지 로드 시 타이머 시작
-    resetInactivityTimer();
-
-    // 사용자 활동 이벤트 리스너들
-    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
-
-    const handleUserActivity = () => {
-      resetInactivityTimer();
-    };
-
-    // 이벤트 리스너 등록
-    events.forEach(event => {
-      document.addEventListener(event, handleUserActivity, true);
-    });
-
-    // 컴포넌트 언마운트 시 정리
-    return () => {
-      if (inactivityTimeoutRef.current) {
-        clearTimeout(inactivityTimeoutRef.current);
-      }
-      events.forEach(event => {
-        document.removeEventListener(event, handleUserActivity, true);
-      });
-    };
-  }, [user, navigate]);
 
   // 요일 체크박스 변경 핸들러
   const handleDayChange = (scheduleIndex, day) => {
@@ -875,9 +825,18 @@ const MyWorkPage = ({ onReAuthRequired }) => {
 
           {/* 오른쪽 1/3: 승인 내역 */}
           <div className="lg:col-span-1 bg-white rounded-lg p-4 border border-gray-200">
-            <h2 className="text-base font-semibold text-gray-800 mb-3">
-              승인 내역 ({leaveRequests.length}건)
-            </h2>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-base font-semibold text-gray-800">
+                승인 내역 ({leaveRequests.length}건)
+              </h2>
+              <button
+                onClick={refreshLeaveRequests}
+                className="text-blue-600 hover:text-blue-800 text-sm font-medium hover:bg-blue-50 px-2 py-1 rounded-md transition-colors border border-blue-300"
+                title="새로고침"
+              >
+                🔄
+              </button>
+            </div>
 
             {leaveRequests.length > 0 ? (
               <div className="space-y-2">
@@ -941,6 +900,14 @@ const MyWorkPage = ({ onReAuthRequired }) => {
                             {new Date(request.submittedAt).toLocaleDateString()}
                           </span>
                         </div>
+                        {request.processedAt && (
+                          <div>
+                            <span className="font-medium text-gray-700">처리일:</span>
+                            <span className="ml-1 text-gray-600">
+                              {new Date(request.processedAt).toLocaleDateString()}
+                            </span>
+                          </div>
+                        )}
                         <div>
                           <span className="font-medium text-gray-700">사유:</span>
                           <span className="ml-1 text-gray-600 truncate block">
@@ -972,6 +939,8 @@ const MyWorkPage = ({ onReAuthRequired }) => {
             )}
           </div>
         </div>
+
+
       </div>
     </div>
   );

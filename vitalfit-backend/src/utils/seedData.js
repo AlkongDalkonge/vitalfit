@@ -324,7 +324,7 @@ const seedUsers = async (centers, teams, positions) => {
           items: [
             {
               image_name: 'admin_license_1.jpg',
-              image_url: '/uploads/licenses/admin_license_1.jpg',
+              image_url: '/img/admin_license_1.jpg',
               uploaded_at: '2024-01-01T09:00:00Z',
               licenseName: '체육지도사 2급',
               issuingOrganization: '한국체육진흥원',
@@ -332,7 +332,7 @@ const seedUsers = async (centers, teams, positions) => {
             },
             {
               image_name: 'admin_license_2.jpg',
-              image_url: '/uploads/licenses/admin_license_2.jpg',
+              image_url: '/img/admin_license_2.jpg',
               uploaded_at: '2024-01-01T09:00:00Z',
               licenseName: '생활스포츠지도사 2급',
               issuingOrganization: '한국체육진흥원',
@@ -374,7 +374,7 @@ const seedUsers = async (centers, teams, positions) => {
         }),
         instagram: JSON.stringify({
           image_name: 'admin_instagram.jpg',
-          image_url: '/uploads/instagram/admin_instagram.jpg',
+          image_url: '/img/admin_instagram.jpg',
           uploaded_at: '2024-01-01T09:00:00Z',
           accountName: 'vitalfit_admin',
           instagramLink: 'https://instagram.com/vitalfit_admin',
@@ -391,7 +391,7 @@ const seedUsers = async (centers, teams, positions) => {
         account_number: '123-456789-01-234',
         account_bank: '신한은행',
         account_image_name: 'admin_account.jpg',
-        account_image_url: '/uploads/accounts/admin_account.jpg',
+        account_image_url: '/img/admin_account.jpg',
       },
 
       // 강남센터 (13명) - 강남1팀(4명) + 강남2팀(3명) + 강남3팀(3명) + 강남4팀(3명)
@@ -414,7 +414,7 @@ const seedUsers = async (centers, teams, positions) => {
           items: [
             {
               image_name: 'kim_license_1.jpg',
-              image_url: '/uploads/licenses/kim_license_1.jpg',
+              image_url: '/img/kim_license_1.jpg',
               uploaded_at: '2024-01-15T10:00:00Z',
               licenseName: '개인트레이너 자격증',
               issuingOrganization: '한국체육진흥원',
@@ -422,7 +422,7 @@ const seedUsers = async (centers, teams, positions) => {
             },
             {
               image_name: 'kim_license_2.jpg',
-              image_url: '/uploads/licenses/kim_license_2.jpg',
+              image_url: '/img/kim_license_2.jpg',
               uploaded_at: '2024-01-15T10:00:00Z',
               licenseName: '요가지도사 자격증',
               issuingOrganization: '한국요가협회',
@@ -458,7 +458,7 @@ const seedUsers = async (centers, teams, positions) => {
         }),
         instagram: JSON.stringify({
           image_name: 'kim_instagram.jpg',
-          image_url: '/uploads/instagram/kim_instagram.jpg',
+          image_url: '/img/kim_instagram.jpg',
           uploaded_at: '2024-01-15T10:00:00Z',
           accountName: 'minsoo_fitness',
           instagramLink: 'https://instagram.com/minsoo_fitness',
@@ -479,7 +479,7 @@ const seedUsers = async (centers, teams, positions) => {
         account_number: '110-123456-01-001',
         account_bank: '국민은행',
         account_image_name: 'kim_account.jpg',
-        account_image_url: '/uploads/accounts/kim_account.jpg',
+        account_image_url: '/img/kim_account.jpg',
       },
       {
         name: '이영희',

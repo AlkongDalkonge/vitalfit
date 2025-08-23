@@ -91,7 +91,6 @@ const createVerificationEmail = (userName, verificationCode) => {
 
 // 비밀번호 재설정 이메일 템플릿
 const createPasswordResetEmail = (userName, resetCode) => {
-
   return `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
       <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
@@ -263,7 +262,7 @@ const sendPasswordResetEmail = async (userEmail, userName, resetCode) => {
     const info = await transporter.sendMail(mailOptions);
     console.log('📧 이메일 발송 성공:', info.messageId);
     console.log('📧 발송자:', 'vitalfit.dev@gmail.com');
-    console.log('�� 수신자:', userEmail);
+    console.log('📧 수신자:', userEmail);
 
     return { success: true, messageId: info.messageId };
   } catch (error) {
@@ -322,6 +321,10 @@ const createLeaveRequestEmail = request => {
     other: '근무신청',
   };
 
+  // request 구조에 맞게 수정
+  const userName = request.userName || request.user?.name || '사용자';
+  const userPosition = request.user?.position || '직원';
+
   return `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
       <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
@@ -337,7 +340,7 @@ const createLeaveRequestEmail = request => {
           <table style="width: 100%; border-collapse: collapse;">
             <tr>
               <td style="padding: 8px 0; font-weight: bold; color: #495057;">신청자:</td>
-              <td style="padding: 8px 0; color: #666;">${request.user.name} (${request.user.position})</td>
+              <td style="padding: 8px 0; color: #666;">${userName} (${userPosition})</td>
             </tr>
             <tr>
               <td style="padding: 8px 0; font-weight: bold; color: #495057;">휴가 유형:</td>
