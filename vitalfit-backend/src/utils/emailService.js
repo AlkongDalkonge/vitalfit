@@ -90,8 +90,7 @@ const createVerificationEmail = (userName, verificationCode) => {
 };
 
 // 비밀번호 재설정 이메일 템플릿
-const createPasswordResetEmail = (userName, resetToken) => {
-  const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password/confirm?token=${resetToken}`;
+const createPasswordResetEmail = (userName, resetCode) => {
 
   return `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -108,14 +107,13 @@ const createPasswordResetEmail = (userName, resetToken) => {
         </p>
         
         <p style="color: #666; line-height: 1.6; margin-bottom: 20px;">
-          비밀번호 재설정을 요청하셨습니다. 아래의 링크를 클릭하여 새로운 비밀번호를 설정해주세요.
+          비밀번호 재설정을 요청하셨습니다. 아래의 6자리 인증 코드를 사용하여 새로운 비밀번호를 설정해주세요.
         </p>
         
         <div style="text-align: center; margin: 30px 0;">
-          <a href="${resetLink}" 
-             style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 40px; text-decoration: none; border-radius: 25px; display: inline-block; font-weight: bold; font-size: 16px;">
-            비밀번호 재설정하기
-          </a>
+          <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 15px; display: inline-block; font-weight: bold; font-size: 24px; letter-spacing: 5px; min-width: 200px;">
+            ${resetCode}
+          </div>
         </div>
         
         <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 15px; margin: 20px 0;">
@@ -235,7 +233,7 @@ const sendVerificationEmail = async (userEmail, userName, verificationCode) => {
 };
 
 // 비밀번호 재설정 이메일 발송 함수
-const sendPasswordResetEmail = async (userEmail, userName, resetToken) => {
+const sendPasswordResetEmail = async (userEmail, userName, resetCode) => {
   try {
     // 개발 환경에서는 실제 이메일 발송 대신 콘솔에 출력
     if (process.env.NODE_ENV === 'development' && !process.env.EMAIL_PASSWORD) {
@@ -244,9 +242,9 @@ const sendPasswordResetEmail = async (userEmail, userName, resetToken) => {
       console.log('📧 수신자:', userEmail);
       console.log('📧 제목: [VitalFit] 비밀번호 재설정 요청');
       console.log('📧 사용자명:', userName);
-      console.log('📧 재설정 토큰:', resetToken);
+      console.log('📧 재설정 코드:', resetCode);
       console.log('📧 이메일 내용:');
-      console.log(createPasswordResetEmail(userName, resetToken));
+      console.log(createPasswordResetEmail(userName, resetCode));
       console.log('📧 === 이메일 내용 끝 ===');
 
       return { success: true, messageId: 'dev-mode-email' };

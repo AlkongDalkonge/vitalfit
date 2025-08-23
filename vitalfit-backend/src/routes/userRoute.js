@@ -51,10 +51,19 @@ router.put(
   userController.updateMyAccount
 );
 
-// 계좌 정보 업데이트
+// 계좌 정보 수정
 router.put('/account', auth, userController.updateAccountInfo);
 
-router.post('/logout', auth, userController.logout);
+// 자격증, 경력, 학력, 인스타그램 정보 수정
+router.put('/additional-info', auth, userController.updateAdditionalInfo);
+
+// 개별 정보 수정
+router.put('/license', auth, userController.updateLicense);
+router.put('/experience', auth, userController.updateExperience);
+router.put('/education', auth, userController.updateEducation);
+router.put('/instagram', auth, userController.updateInstagram);
+
+// 비밀번호 재설정 토큰 발송
 router.post('/reset-password', userController.resetPassword);
 
 // 재인증 관련 라우트

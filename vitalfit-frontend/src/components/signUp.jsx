@@ -415,6 +415,15 @@ export default function SignUp() {
       formDataToSend.append('terms_accepted', formData.terms_accepted);
       formDataToSend.append('privacy_accepted', formData.privacy_accepted);
 
+      // 선택사항 필드들 추가 (빈 값이어도 전송)
+      formDataToSend.append('team_id', formData.team_id || '');
+      formDataToSend.append('nickname', formData.nickname || '');
+      formDataToSend.append('license', formData.license || '');
+      formDataToSend.append('experience', formData.experience || '');
+      formDataToSend.append('education', formData.education || '');
+      formDataToSend.append('instagram', formData.instagram || '');
+      formDataToSend.append('shift', formData.shift || '');
+
       // 프로필 이미지가 있으면 추가
       if (profileImage) {
         formDataToSend.append('profile_image_url', profileImage);
@@ -458,7 +467,7 @@ export default function SignUp() {
           navigate('/login');
         } else if (data.requiresEmailVerification) {
           // 이메일 인증이 필요한 경우
-          // toast.success('회원가입을 위해 이메일 인증을 완료해주세요.'); // 주석처리됨
+          toast.success('회원가입을 위해 이메일 인증을 완료해주세요.');
           navigate('/verify-email', {
             state: {
               email: formData.email,

@@ -34,6 +34,14 @@ module.exports = (sequelize, DataTypes) => {
         validate: {
           len: [10, 20],
         },
+        set(value) {
+          // 빈 문자열을 null로 변환하지 않고 그대로 유지
+          if (value === '') {
+            this.setDataValue('phone', null);
+          } else {
+            this.setDataValue('phone', value);
+          }
+        },
       },
       gender: {
         type: DataTypes.STRING(20),
@@ -74,11 +82,20 @@ module.exports = (sequelize, DataTypes) => {
       join_date: {
         type: DataTypes.DATEONLY,
         allowNull: false,
+        defaultValue: DataTypes.NOW,
+        set(value) {
+          // 빈 값이거나 잘못된 날짜인 경우 현재 날짜로 설정
+          if (!value || value === '') {
+            this.setDataValue('join_date', new Date());
+          } else {
+            this.setDataValue('join_date', value);
+          }
+        },
       },
       status: {
-        type: DataTypes.ENUM('active', 'inactive', 'retired', 'pending_verification'),
+        type: DataTypes.ENUM('pending_verification', 'active', 'retired'),
         allowNull: false,
-        defaultValue: 'active',
+        defaultValue: 'pending_verification', // 회원가입 시 pending_verification으로 시작
       },
       leave_date: {
         type: DataTypes.DATEONLY,

@@ -640,93 +640,74 @@ const MyHistoryPage = ({ onReAuthRequired }) => {
 
   // 실제 저장 로직을 별도 함수로 분리
   const performSave = async () => {
-    // 저장 중 상태 설정
+    console.log('🚀 저장 시작 - formData 상태:', formData);
+    console.log('📝 licenseData:', formData.licenseData);
+    console.log('📝 experienceData:', formData.experienceData);
+    console.log('📝 educationData:', formData.educationData);
+    console.log('📝 instagramData:', formData.instagramData);
+
     setSaving(true);
 
     try {
-      console.log('🚀 이력 정보 저장 시작');
-      console.log('📝 현재 폼 데이터:', formData);
-
-      // 저장할 데이터 준비
-      const saveData = {
-        license: JSON.stringify(formData.licenseData),
-        experience: JSON.stringify(formData.experienceData),
-        education: JSON.stringify(formData.educationData),
-        instagram: JSON.stringify(formData.instagramData),
-      };
-
-      console.log('📤 전송할 데이터:', saveData);
-
-      // API 호출
-      const response = await userAPI.updateMyAccount(saveData);
-      console.log('📥 API 응답:', response);
-
-      // API 응답 구조 확인 및 안전한 처리
-      const responseData = response.data || response;
-      const updatedUser = responseData.user || responseData;
-
-      console.log('📋 처리된 사용자 정보:', updatedUser);
-
-      if (updatedUser) {
-        // 1. 즉시 폼 데이터 업데이트 (DB 응답 데이터 사용)
-        console.log('🔄 폼 데이터 즉시 업데이트');
-        setFormData(prev => ({
-          ...prev,
-          license: updatedUser.license || prev.license,
-          experience: updatedUser.experience || prev.experience,
-          education: updatedUser.education || prev.education,
-          instagram: updatedUser.instagram || prev.instagram,
-          // 추가 데이터 파싱하여 업데이트
-          licenseData: updatedUser.license
-            ? parseAdditionalData(updatedUser.license, 'license')
-            : prev.licenseData,
-          experienceData: updatedUser.experience
-            ? parseAdditionalData(updatedUser.experience, 'experience')
-            : prev.experienceData,
-          educationData: updatedUser.education
-            ? parseAdditionalData(updatedUser.education, 'education')
-            : prev.educationData,
-          instagramData: updatedUser.instagram
-            ? parseAdditionalData(updatedUser.instagram, 'instagram')
-            : prev.instagramData,
-        }));
-
-        // 2. AuthContext의 사용자 정보 즉시 업데이트 (DB 응답 데이터 사용)
-        if (updateUser && typeof updateUser === 'function') {
-          console.log('🔄 AuthContext 사용자 정보 즉시 업데이트');
-          updateUser(updatedUser);
-        }
-
-        // 3. refreshUserInfo() 호출은 백그라운드에서 실행 (사용자 대기 없음)
-        if (refreshUserInfo && typeof refreshUserInfo === 'function') {
-          // 백그라운드에서 서버와 동기화 (사용자 대기 없음)
-          refreshUserInfo()
-            .then(() => {
-              console.log('✅ refreshUserInfo 백그라운드 완료');
-            })
-            .catch(error => {
-              console.error('사용자 정보 새로고침 실패:', error);
-              // 에러가 발생해도 이미 로컬 상태는 업데이트되었으므로 계속 진행
-            });
-        }
+      // 자격증 저장
+      if (formData.licenseData) {
+        console.log('💾 자격증 저장 시작:', formData.licenseData);
+        const licenseResult = await userAPI.updateLicense({
+          license: JSON.stringify(formData.licenseData),
+        });
+        console.log('✅ 자격증 저장 완료:', licenseResult);
+      } else {
+        console.log('⚠️ licenseData가 없음');
       }
 
+      // 경력 저장
+      if (formData.experienceData) {
+        console.log('💾 경력 저장 시작:', formData.experienceData);
+        const experienceResult = await userAPI.updateExperience({
+          experience: JSON.stringify(formData.experienceData),
+        });
+        console.log('✅ 경력 저장 완료:', experienceResult);
+      } else {
+        console.log('⚠️ experienceData가 없음');
+      }
+
+      // 학력 저장
+      if (formData.educationData) {
+        console.log('💾 학력 저장 시작:', formData.educationData);
+        const educationResult = await userAPI.updateEducation({
+          education: JSON.stringify(formData.educationData),
+        });
+        console.log('✅ 학력 저장 완료:', educationResult);
+      } else {
+        console.log('⚠️ educationData가 없음');
+      }
+
+      // 인스타그램 저장
+      if (formData.instagramData) {
+        console.log('💾 인스타그램 저장 시작:', formData.instagramData);
+        const instagramResult = await userAPI.updateInstagram({
+          instagram: JSON.stringify(formData.instagramData),
+        });
+        console.log('✅ 인스타그램 저장 완료:', instagramResult);
+      } else {
+        console.log('⚠️ instagramData가 없음');
+      }
+
+      console.log('🎉 모든 저장 완료!');
       toast.success('이력 정보가 업데이트되었습니다.');
-    } catch (err) {
-      console.error('업데이트 실패:', err.message);
 
-      // 더 자세한 에러 메시지 표시
-      let errorMessage = '업데이트에 실패했습니다.';
-      if (err.response?.data?.message) {
-        errorMessage = err.response.data.message;
-      } else if (err.message) {
-        errorMessage = err.message;
+      // 사용자 정보 새로고침
+      if (refreshUserInfo) {
+        console.log('🔄 사용자 정보 새로고침 시작');
+        await refreshUserInfo();
+        console.log('✅ 사용자 정보 새로고침 완료');
       }
-
-      toast.error(`업데이트 실패: ${errorMessage}`);
+    } catch (err) {
+      console.error('❌ 저장 실패:', err);
+      toast.error('저장에 실패했습니다.');
     } finally {
-      // 저장 완료 후 로딩 상태 해제
       setSaving(false);
+      console.log('🏁 저장 프로세스 종료');
     }
   };
 
