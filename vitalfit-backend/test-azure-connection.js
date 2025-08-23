@@ -8,9 +8,11 @@ const sequelize = new Sequelize({
   password: process.env.AZURE_DB_PASSWORD,
   database: process.env.AZURE_DB_NAME,
   dialect: 'postgres',
-  ssl: {
-    require: true,
-    rejectUnauthorized: false,
+  dialectOptions: {
+    ssl: {
+      require: true,
+      rejectUnauthorized: false,
+    },
   },
   logging: console.log,
 });

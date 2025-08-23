@@ -1738,7 +1738,7 @@ const seedAllData = async () => {
     const noticeTargetCenters = await seedNoticeTargetCenters(notices, centers);
     const noticeTargetRoles = await seedNoticeTargetRoles(notices);
 
-    console.log('🎉 모든 시드 데이터 생성이 완료되었습니다!');
+    console.log('모든 시드 데이터 생성이 완료되었습니다!');
     console.log(`생성된 데이터:
     - 센터: ${centers.length}개
     - 직급: ${positions.length}개 Position
@@ -1753,7 +1753,7 @@ const seedAllData = async () => {
     - 공지 대상 센터: ${noticeTargetCenters.length}개
     - 공지 대상 역할: ${noticeTargetRoles.length}개`);
   } catch (error) {
-    console.error('💥 시드 데이터 생성 중 오류 발생:', error);
+    console.error('시드 데이터 생성 중 오류 발생:', error);
     throw error;
   }
 };
