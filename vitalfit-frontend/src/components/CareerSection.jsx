@@ -49,6 +49,8 @@ const CareerSection = ({
         clearTimeout(debounceTimeoutRef.current);
       }
       debounceTimeoutRef.current = setTimeout(() => {
+        console.log(`🔄 ${fieldName} 부모 상태 업데이트:`, newItems);
+        // 올바른 데이터 구조로 전달
         onContentChange(fieldName, { items: newItems });
       }, 300);
     },

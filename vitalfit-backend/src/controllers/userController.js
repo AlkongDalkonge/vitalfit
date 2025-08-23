@@ -824,16 +824,20 @@ const updateLicense = async (req, res, next) => {
 const updateExperience = async (req, res, next) => {
   try {
     const { experience } = req.body;
+    console.log('🔄 경력 업데이트 요청:', { experience, userId: req.user.uid });
 
     const user = await User.findByPk(req.user.uid);
     if (!user) {
+      console.log('❌ 사용자를 찾을 수 없음:', req.user.uid);
       return res.status(404).json({
         success: false,
         message: '사용자를 찾을 수 없습니다.',
       });
     }
 
+    console.log('✅ 사용자 찾음:', user.id);
     await user.update({ experience });
+    console.log('💾 경력 정보 업데이트 완료');
 
     return res.status(200).json({
       success: true,
@@ -841,7 +845,7 @@ const updateExperience = async (req, res, next) => {
       experience: experience,
     });
   } catch (err) {
-    console.error('updateExperience 에러:', err);
+    console.error('❌ updateExperience 에러:', err);
     next(err);
   }
 };
@@ -850,16 +854,20 @@ const updateExperience = async (req, res, next) => {
 const updateEducation = async (req, res, next) => {
   try {
     const { education } = req.body;
+    console.log('🔄 학력 업데이트 요청:', { education, userId: req.user.uid });
 
     const user = await User.findByPk(req.user.uid);
     if (!user) {
+      console.log('❌ 사용자를 찾을 수 없음:', req.user.uid);
       return res.status(404).json({
         success: false,
         message: '사용자를 찾을 수 없습니다.',
       });
     }
 
+    console.log('✅ 사용자 찾음:', user.id);
     await user.update({ education });
+    console.log('💾 학력 정보 업데이트 완료');
 
     return res.status(200).json({
       success: true,
@@ -867,7 +875,7 @@ const updateEducation = async (req, res, next) => {
       education: education,
     });
   } catch (err) {
-    console.error('updateEducation 에러:', err);
+    console.error('❌ updateEducation 에러:', err);
     next(err);
   }
 };

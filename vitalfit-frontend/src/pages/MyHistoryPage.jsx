@@ -415,13 +415,18 @@ const MyHistoryPage = ({ onReAuthRequired }) => {
 
   // 자격증, 경력, 학력, 인스타그램 내용 변경 핸들러
   const handleAdditionalContentChange = (fieldName, content) => {
-    setFormData(prev => ({
-      ...prev,
-      [`${fieldName}Data`]: {
-        ...prev[`${fieldName}Data`],
-        content,
-      },
-    }));
+    console.log(`🔄 ${fieldName} 데이터 업데이트:`, content);
+    setFormData(prev => {
+      const newData = {
+        ...prev,
+        [`${fieldName}Data`]: {
+          ...prev[`${fieldName}Data`],
+          ...content, // content가 객체인 경우 spread 연산자로 처리
+        },
+      };
+      console.log(`✅ ${fieldName} 업데이트 후 formData:`, newData[`${fieldName}Data`]);
+      return newData;
+    });
   };
 
   // 경력, 학력 항목 추가 핸들러
@@ -663,6 +668,7 @@ const MyHistoryPage = ({ onReAuthRequired }) => {
       // 경력 저장
       if (formData.experienceData) {
         console.log('💾 경력 저장 시작:', formData.experienceData);
+        console.log('📤 경력 데이터 JSON:', JSON.stringify(formData.experienceData));
         const experienceResult = await userAPI.updateExperience({
           experience: JSON.stringify(formData.experienceData),
         });
@@ -674,6 +680,7 @@ const MyHistoryPage = ({ onReAuthRequired }) => {
       // 학력 저장
       if (formData.educationData) {
         console.log('💾 학력 저장 시작:', formData.educationData);
+        console.log('📤 학력 데이터 JSON:', JSON.stringify(formData.educationData));
         const educationResult = await userAPI.updateEducation({
           education: JSON.stringify(formData.educationData),
         });
@@ -820,59 +827,65 @@ const MyHistoryPage = ({ onReAuthRequired }) => {
           </p>
         </div>
 
-        <div className="space-y-4">
-          {/* 자격증 섹션 */}
-          <LicenseSection
-            title="자격증"
-            fieldName="license"
-            data={formData.licenseData}
-            onImageUpload={handleAdditionalImageUpload}
-            onImageDelete={handleAdditionalImageDelete}
-            onImageExpand={openImageModal}
-            onContentChange={handleLicenseContentChange}
-            onAddItem={handleAddLicenseItem}
-            onRemoveItem={handleRemoveLicenseItem}
-          />
+        <div className="space-y-6">
+          {/* 첫 번째 줄: 자격증 - 인스타그램 */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* 자격증 섹션 */}
+            <LicenseSection
+              title="자격증"
+              fieldName="license"
+              data={formData.licenseData}
+              onImageUpload={handleAdditionalImageUpload}
+              onImageDelete={handleAdditionalImageDelete}
+              onImageExpand={openImageModal}
+              onContentChange={handleLicenseContentChange}
+              onAddItem={handleAddLicenseItem}
+              onRemoveItem={handleRemoveLicenseItem}
+            />
 
-          {/* 경력 섹션 */}
-          <CareerSection
-            title="경력"
-            fieldName="experience"
-            data={formData.experienceData}
-            onContentChange={handleAdditionalContentChange}
-            onAddItem={handleAddItem}
-            onRemoveItem={handleRemoveItem}
-            onItemContentChange={handleItemContentChange}
-            onItemDateChange={handleItemDateChange}
-            onItemStatusChange={handleItemStatusChange}
-          />
+            {/* 인스타그램 섹션 */}
+            <InstagramSection
+              title="인스타그램"
+              fieldName="instagram"
+              data={formData.instagramData}
+              onImageUpload={handleAdditionalImageUpload}
+              onImageDelete={handleAdditionalImageDelete}
+              onImageExpand={openImageModal}
+              onContentChange={handleInstagramContentChange}
+              onInstagramLink={openInstagramLink}
+              fetchInstagramThumbnail={fetchInstagramThumbnail}
+              maxLength={200}
+            />
+          </div>
 
-          {/* 학력 섹션 */}
-          <CareerSection
-            title="학력"
-            fieldName="education"
-            data={formData.educationData}
-            onContentChange={handleAdditionalContentChange}
-            onAddItem={handleAddItem}
-            onRemoveItem={handleRemoveItem}
-            onItemContentChange={handleItemContentChange}
-            onItemDateChange={handleItemDateChange}
-            onItemStatusChange={handleItemStatusChange}
-          />
+          {/* 두 번째 줄: 학력 - 경력 */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* 학력 섹션 */}
+            <CareerSection
+              title="학력"
+              fieldName="education"
+              data={formData.educationData}
+              onContentChange={handleAdditionalContentChange}
+              onAddItem={handleAddItem}
+              onRemoveItem={handleRemoveItem}
+              onItemContentChange={handleItemContentChange}
+              onItemDateChange={handleItemDateChange}
+              onItemStatusChange={handleItemStatusChange}
+            />
 
-          {/* 인스타그램 섹션 */}
-          <InstagramSection
-            title="인스타그램"
-            fieldName="instagram"
-            data={formData.instagramData}
-            onImageUpload={handleAdditionalImageUpload}
-            onImageDelete={handleAdditionalImageDelete}
-            onImageExpand={openImageModal}
-            onContentChange={handleInstagramContentChange}
-            onInstagramLink={openInstagramLink}
-            fetchInstagramThumbnail={fetchInstagramThumbnail}
-            maxLength={200}
-          />
+            {/* 경력 섹션 */}
+            <CareerSection
+              title="경력"
+              fieldName="experience"
+              data={formData.experienceData}
+              onContentChange={handleAdditionalContentChange}
+              onAddItem={handleAddItem}
+              onRemoveItem={handleRemoveItem}
+              onItemContentChange={handleItemContentChange}
+              onItemDateChange={handleItemDateChange}
+              onItemStatusChange={handleItemStatusChange}
+            />
+          </div>
         </div>
 
         {/* 저장 버튼 섹션 */}
