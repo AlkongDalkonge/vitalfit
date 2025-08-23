@@ -453,20 +453,32 @@ export const settlementAPI = {
   checkDraftSettlements: async userId => {
     return await apiGet('/settlements/check-draft', { params: { user_id: userId } });
   },
+  checkAcknowledgedSettlements: async userId => {
+    return await apiGet('/settlements/check-acknowledged', { params: { user_id: userId } });
+  },
+  checkCenterApprovedSettlements: async userId => {
+    return await apiGet('/settlements/check-center-approved', { params: { user_id: userId } });
+  },
   getNotifications: async userId => {
     return await apiGet('/settlements/notifications', { params: { user_id: userId } });
   },
   acknowledge: async (id, userId) => {
     return await apiPost(`/settlements/${id}/acknowledge`, null, { params: { user_id: userId } });
   },
-  approve: async id => {
-    return await apiPost(`/settlements/${id}/approve`);
+  approve: async (id, userId, centerId) => {
+    return await apiPost(`/settlements/${id}/approve`, null, { 
+      params: { user_id: userId, center_id: centerId } 
+    });
   },
-  hqApprove: async id => {
-    return await apiPost(`/settlements/${id}/hq-approve`);
+  hqApprove: async (id, userId) => {
+    return await apiPost(`/settlements/${id}/hq-approve`, null, { 
+      params: { user_id: userId } 
+    });
   },
-  hqReject: async (id, rejectReason) => {
-    return await apiPost(`/settlements/${id}/hq-reject`, { reject_reason: rejectReason });
+  hqReject: async (id, rejectReason, userId) => {
+    return await apiPost(`/settlements/${id}/hq-reject`, { reject_reason: rejectReason }, { 
+      params: { user_id: userId } 
+    });
   },
   pay: async (id, data = {}) => {
     return await apiPost(`/settlements/${id}/pay`, data);

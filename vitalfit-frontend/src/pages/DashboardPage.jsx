@@ -28,27 +28,45 @@ const DashboardPage = () => {
   // 무한 로딩 방지를 위한 타임아웃 설정
   const [loadingTimeout, setLoadingTimeout] = useState(null);
 
-  // Draft 정산 확인 함수
-  const checkDraftSettlements = async () => {
+  // 직급별 정산 확인 함수
+  const checkSettlementNotifications = async () => {
     if (hasCheckedDraft) return; // 이미 확인했으면 스킵
 
-    // position_id가 11 이상인 사용자(admin, 회계팀, 센터장)는 draft 정산 확인하지 않음
-    if (user?.position_id >= 11) {
-      console.log('승인자 권한이므로 draft 정산 확인하지 않음:', {
-        position_id: user?.position_id,
-      });
-      setHasCheckedDraft(true);
-      return;
-    }
-
     try {
-      const response = await settlementAPI.checkDraftSettlements(user?.id);
-      if (response.success && response.data.hasDraftSettlements) {
-        setDraftSettlements(response.data.draftSettlements);
+      let response;
+      let settlements = [];
+      let hasSettlements = false;
+
+      // 직급별로 다른 정산 상태 확인
+      if (user?.position_id < 11) {
+        // 일반 직원: draft와 rejected 정산 확인
+        response = await settlementAPI.checkDraftSettlements(user?.id);
+        if (response.success && response.data.hasDraftSettlements) {
+          settlements = response.data.draftSettlements;
+          hasSettlements = true;
+        }
+      } else if (user?.position_id === 11) {
+        // 센터장: acknowledged 정산 확인
+        response = await settlementAPI.checkAcknowledgedSettlements(user?.id);
+        if (response.success && response.data.hasAcknowledgedSettlements) {
+          settlements = response.data.acknowledgedSettlements;
+          hasSettlements = true;
+        }
+      } else if (user?.position_id >= 12) {
+        // 회계팀: center_approved 정산 확인
+        response = await settlementAPI.checkCenterApprovedSettlements(user?.id);
+        if (response.success && response.data.hasCenterApprovedSettlements) {
+          settlements = response.data.centerApprovedSettlements;
+          hasSettlements = true;
+        }
+      }
+
+      if (hasSettlements) {
+        setDraftSettlements(settlements);
         setShowDraftModal(true);
       }
     } catch (error) {
-      console.error('Draft 정산 확인 오류:', error);
+      console.error('정산 확인 오류:', error);
     } finally {
       setHasCheckedDraft(true);
     }
@@ -99,8 +117,8 @@ const DashboardPage = () => {
           setDashboardData(response || {});
         }
 
-        // 대시보드 데이터 로드 완료 후 draft 정산 확인
-        await checkDraftSettlements();
+        // 대시보드 데이터 로드 완료 후 직급별 정산 확인
+        await checkSettlementNotifications();
       } catch (err) {
         console.error('❌ 대시보드 데이터 로딩 실패:', err);
 
@@ -132,7 +150,7 @@ const DashboardPage = () => {
         clearTimeout(loadingTimeout);
       }
     };
-  }, [isAuthenticated, authLoading, user?.id]);
+  }, [isAuthenticated, authLoading, user?.id, user?.position_id]);
 
   // 통계 데이터 포맷팅
   const formatStats = () => {
@@ -617,11 +635,12 @@ const DashboardPage = () => {
         )}
       </div>
 
-      {/* Draft 정산 알림 모달 */}
+      {/* 직급별 정산 알림 모달 */}
       <DraftSettlementModal
         isOpen={showDraftModal}
         onClose={() => setShowDraftModal(false)}
         draftSettlements={draftSettlements}
+        userPositionId={user?.position_id}
       />
     </div>
   );

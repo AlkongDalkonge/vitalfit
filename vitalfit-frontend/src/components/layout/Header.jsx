@@ -3,8 +3,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useState, useEffect } from 'react';
-// import { notificationAPI } from '../../utils/api'; // 주석처리됨
-// import SettlementNotificationModal from '../SettlementNotificationModal'; // 주석처리됨
+import { settlementAPI } from '../../utils/api';
+import SettlementNotificationModal from '../SettlementNotificationModal';
 
 export default function Header({ activeMenu = null, userInfo, className = '' }) {
   const { getMenuIcon } = useIcons();
@@ -13,8 +13,8 @@ export default function Header({ activeMenu = null, userInfo, className = '' }) 
   const navigate = useNavigate();
   const location = useLocation();
   const isDashboard = location.pathname === '/';
-  // const [notificationCount, setNotificationCount] = useState(0); // 주석처리됨
-  // const [showNotificationModal, setShowNotificationModal] = useState(false); // 주석처리됨
+  const [notificationCount, setNotificationCount] = useState(0);
+  const [showNotificationModal, setShowNotificationModal] = useState(false);
 
   const IconComponent = activeMenu ? getMenuIcon(activeMenu) : null;
 
@@ -32,35 +32,54 @@ export default function Header({ activeMenu = null, userInfo, className = '' }) 
     }
   };
 
-  // 알림 개수 로드 (주석처리됨)
-  // useEffect(() => {
-  //   const loadNotificationCount = async () => {
-  //     try {
-  //       const response = await notificationAPI.getSettlementNotifications();
-  //       if (response.success) {
-  //         setNotificationCount(response.data.length);
-  //       }
-  //     } catch (error) {
-  //       console.error('알림 개수 로드 오류:', error);
-  //     }
-  //   };
+  // 알림 개수 로드 함수
+  const loadNotificationCount = async () => {
+    if (!user?.id) return;
+    
+    try {
+      const response = await settlementAPI.getNotifications(user.id);
+      if (response.success && response.data.hasNotifications) {
+        setNotificationCount(response.data.count);
+      } else {
+        setNotificationCount(0);
+      }
+    } catch (error) {
+      console.error('알림 개수 로드 오류:', error);
+      setNotificationCount(0);
+    }
+  };
 
-  //   loadNotificationCount();
+  // 알림 개수 즉시 업데이트 함수 (외부에서 호출 가능)
+  const refreshNotificationCount = () => {
+    loadNotificationCount();
+  };
 
-  //   // 30초마다 알림 개수 새로고침
-  //   const interval = setInterval(loadNotificationCount, 30000);
-  //   return () => clearInterval(interval);
-  // }, []);
+  // 전역에서 refreshNotificationCount 함수 사용 가능하도록 설정
+  useEffect(() => {
+    window.refreshNotificationCount = refreshNotificationCount;
+    return () => {
+      delete window.refreshNotificationCount;
+    };
+  }, [user?.id]);
+
+  // 알림 개수 로드
+  useEffect(() => {
+    loadNotificationCount();
+
+    // 30초마다 알림 개수 새로고침
+    const interval = setInterval(loadNotificationCount, 30000);
+    return () => clearInterval(interval);
+  }, [user?.id]);
 
   // 내 계정 페이지로 이동
   const handleAccountClick = () => {
     navigate('/account');
   };
 
-  // 알림 모달 열기 (주석처리됨)
-  // const handleNotificationClick = () => {
-  //   setShowNotificationModal(true);
-  // };
+  // 알림 모달 열기
+  const handleNotificationClick = () => {
+    setShowNotificationModal(true);
+  };
 
   const textStyle = 'text-sm font-medium text-gray-800 cursor-pointer select-none';
 
@@ -91,27 +110,28 @@ export default function Header({ activeMenu = null, userInfo, className = '' }) 
           {today} ({dayOfWeek})
         </span>
 
-        {/* 알림 버튼 (주석처리됨) */}
-        {/* <div className="relative">
+        {/* 메시지 알림 버튼 */}
+        <div className="relative">
           <button
             onClick={handleNotificationClick}
-            className="relative p-2 text-gray-600 hover:text-gray-800 transition-colors"
+            className="relative p-2 text-gray-600 hover:text-blue-600 transition-colors duration-200"
+            title="알림 확인"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth={2}
-                d="M15 17h5l-5 5v-5zM10 21v-1a4 4 0 00-4-4H6a4 4 0 00-4-4v-1m8 0V7a4 4 0 00-4-4H6a4 4 0 00-4-4v1m8 0v1a4 4 0 004 4h4a4 4 0 004-4V3a4 4 0 00-4-4H6a4 4 0 00-4 4v1"
+                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
               />
             </svg>
             {notificationCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium animate-pulse">
                 {notificationCount > 9 ? '9+' : notificationCount}
               </span>
             )}
           </button>
-        </div> */}
+        </div>
 
         <div className="flex items-center gap-4 font-medium text-gray-800 select-none">
           {/* 프로필 이미지 - 클릭 가능 */}
@@ -169,11 +189,11 @@ export default function Header({ activeMenu = null, userInfo, className = '' }) 
         </div>
       </div>
 
-      {/* 알림 모달 (주석처리됨) */}
-      {/* <SettlementNotificationModal
+      {/* 알림 모달 */}
+      <SettlementNotificationModal
         isOpen={showNotificationModal}
         onClose={() => setShowNotificationModal(false)}
-      /> */}
+      />
     </header>
   );
 }

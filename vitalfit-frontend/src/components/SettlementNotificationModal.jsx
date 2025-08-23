@@ -1,31 +1,42 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { notificationAPI } from '../utils/api';
+import { useAuth } from '../contexts/AuthContext';
+import { settlementAPI } from '../utils/api';
 import { toast } from 'react-toastify';
 
 const SettlementNotificationModal = ({ isOpen, onClose }) => {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(false);
+  const { user } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (isOpen) {
+
+    if (isOpen && user?.id) {
+      console.log('🔍 알림 로드 시작');
       loadNotifications();
+    } else {
+      console.log('🔍 알림 로드 조건 불만족:', { isOpen, hasUserId: !!user?.id });
     }
-  }, [isOpen]);
+  }, [isOpen, user?.id]);
 
   const loadNotifications = async () => {
     try {
+      console.log('🔍 loadNotifications 시작 - user.id:', user.id);
       setLoading(true);
-      const response = await notificationAPI.getSettlementNotifications();
-
+      const response = await settlementAPI.getNotifications(user.id);
+      console.log('🔍 loadNotifications API 응답:', response);
+      
       if (response.success) {
-        setNotifications(response.data);
+        const notifications = response.data.notifications || [];
+        console.log('🔍 설정할 알림 데이터:', notifications);
+        setNotifications(notifications);
       } else {
+        console.error('🔍 API 응답 실패:', response);
         toast.error('알림을 불러오는데 실패했습니다.');
       }
     } catch (error) {
-      console.error('알림 로드 오류:', error);
+      console.error('🔍 알림 로드 오류:', error);
       toast.error('알림을 불러오는데 실패했습니다.');
     } finally {
       setLoading(false);
@@ -34,14 +45,13 @@ const SettlementNotificationModal = ({ isOpen, onClose }) => {
 
   const handleNotificationClick = async notification => {
     try {
-      // 알림 읽음 처리
-      await notificationAPI.markAsRead(notification.id);
-
       // 정산 페이지로 이동
       navigate('/settlement', {
         state: {
-          selectedTrainer: notification.settlement?.user_id,
-          selectedMonth: `${notification.settlement?.settlement_year}-${String(notification.settlement?.settlement_month).padStart(2, '0')}`,
+          selectedTrainer: notification.settlements?.[0]?.user_id,
+          selectedMonth: notification.settlements?.[0] 
+            ? `${notification.settlements[0].settlement_year}-${String(notification.settlements[0].settlement_month).padStart(2, '0')}`
+            : null,
         },
       });
 
@@ -54,8 +64,9 @@ const SettlementNotificationModal = ({ isOpen, onClose }) => {
 
   const handleMarkAllAsRead = async () => {
     try {
-      await notificationAPI.markAllAsRead();
+      // 모든 알림을 읽음 처리 (현재는 단순히 모달만 닫기)
       setNotifications([]);
+      onClose();
       toast.success('모든 알림이 읽음 처리되었습니다.');
     } catch (error) {
       console.error('모든 알림 읽음 처리 오류:', error);
@@ -63,6 +74,7 @@ const SettlementNotificationModal = ({ isOpen, onClose }) => {
     }
   };
 
+  
   if (!isOpen) return null;
 
   return (
@@ -94,24 +106,23 @@ const SettlementNotificationModal = ({ isOpen, onClose }) => {
         ) : (
           <>
             <div className="max-h-96 overflow-y-auto">
-              {notifications.map(notification => (
+              {notifications.map((notification, index) => (
                 <div
-                  key={notification.id}
+                  key={index}
                   onClick={() => handleNotificationClick(notification)}
                   className="border-b border-gray-200 p-3 hover:bg-gray-50 cursor-pointer"
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <p className="text-sm text-gray-900 mb-1">{notification.message}</p>
-                      <p className="text-xs text-gray-500">
-                        {notification.settlement &&
-                          `${notification.settlement.settlement_year}년 ${notification.settlement.settlement_month}월 정산`}
-                      </p>
-                      <p className="text-xs text-gray-400 mt-1">
-                        {new Date(notification.created_at).toLocaleString('ko-KR')}
-                      </p>
+                      <p className="text-sm text-gray-900 mb-1">{notification.title}</p>
+                      <p className="text-xs text-gray-500">{notification.message}</p>
+                      {notification.settlements && notification.settlements.length > 0 && (
+                        <p className="text-xs text-gray-400 mt-1">
+                          {notification.settlements[0].settlement_year}년 {notification.settlements[0].settlement_month}월 정산
+                        </p>
+                      )}
                     </div>
-                    {notification.notification_type === 'rejected' && (
+                    {notification.type === 'rejected' && (
                       <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
                         반려
                       </span>
@@ -138,4 +149,4 @@ const SettlementNotificationModal = ({ isOpen, onClose }) => {
   );
 };
 
-export default SettlementNotificationModal;
+export default SettlementNotificationModal; 

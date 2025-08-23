@@ -1,10 +1,41 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const DraftSettlementModal = ({ isOpen, onClose, draftSettlements }) => {
+const DraftSettlementModal = ({ isOpen, onClose, draftSettlements, userPositionId }) => {
   const navigate = useNavigate();
 
   if (!isOpen) return null;
+
+  // 직급별 메시지 및 제목 설정
+  const getModalContent = () => {
+    if (userPositionId < 11) {
+      return {
+        title: '정산 확인 알림',
+        subtitle: '확인 대기 중인 정산이 있습니다',
+        description: '다음 정산들을 확인해주세요.',
+        statusText: '확인 대기',
+        statusColor: 'bg-gray-100 text-gray-800'
+      };
+    } else if (userPositionId === 11) {
+      return {
+        title: '팀원 정산 승인 알림',
+        subtitle: '승인 대기 중인 팀원 정산이 있습니다',
+        description: '다음 팀원들의 정산을 승인해주세요.',
+        statusText: '승인 대기',
+        statusColor: 'bg-blue-100 text-blue-800'
+      };
+    } else if (userPositionId >= 12) {
+      return {
+        title: '최종 정산 승인 알림',
+        subtitle: '최종 승인 대기 중인 정산이 있습니다',
+        description: '다음 정산들을 최종 승인해주세요.',
+        statusText: '최종 승인 대기',
+        statusColor: 'bg-green-100 text-green-800'
+      };
+    }
+  };
+
+  const modalContent = getModalContent();
 
   const handleGoToSettlement = settlement => {
     const yearMonth = `${settlement.settlement_year}-${String(settlement.settlement_month).padStart(2, '0')}`;
@@ -50,8 +81,8 @@ const DraftSettlementModal = ({ isOpen, onClose, draftSettlements }) => {
               </svg>
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">정산 확인 알림</h3>
-              <p className="text-sm text-gray-600">확인 대기 중인 정산이 있습니다</p>
+              <h3 className="text-lg font-semibold text-gray-900">{modalContent.title}</h3>
+              <p className="text-sm text-gray-600">{modalContent.subtitle}</p>
             </div>
           </div>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
@@ -70,7 +101,7 @@ const DraftSettlementModal = ({ isOpen, onClose, draftSettlements }) => {
         <div className="p-6">
           <div className="mb-4">
             <p className="text-gray-700 mb-4">
-              다음 정산들이 확인 대기 중입니다. 지금 확인하시겠습니까?
+              {modalContent.description}
             </p>
           </div>
 
@@ -91,8 +122,12 @@ const DraftSettlementModal = ({ isOpen, onClose, draftSettlements }) => {
                       {settlement.center?.name || '센터 정보 없음'}
                     </p>
                   </div>
-                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                    승인 대기
+                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                    settlement.status === 'rejected' 
+                      ? 'bg-red-100 text-red-800' 
+                      : modalContent.statusColor
+                  }`}>
+                    {settlement.status === 'rejected' ? '반려됨' : modalContent.statusText}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
@@ -101,6 +136,12 @@ const DraftSettlementModal = ({ isOpen, onClose, draftSettlements }) => {
                     {formatCurrency(settlement.total_settlement)}원
                   </span>
                 </div>
+                {settlement.status === 'rejected' && settlement.reject_reason && (
+                  <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-xs">
+                    <span className="text-red-700 font-medium">반려 사유:</span>
+                    <p className="text-red-600 mt-1">{settlement.reject_reason}</p>
+                  </div>
+                )}
               </div>
             ))}
           </div>

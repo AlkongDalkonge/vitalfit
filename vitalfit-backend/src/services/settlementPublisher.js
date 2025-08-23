@@ -256,6 +256,8 @@ async function getCommissionRate(totalRevenue, positionId, centerId, t) {
 /** 팀 PT 인센티브 계산 (팀장인 경우) */
 async function calculateTeamPTIncentive(userId, year, month, t) {
   try {
+    console.log(`[calculateTeamPTIncentive] 시작 - User ${userId}, ${year}년 ${month}월`);
+    
     // 사용자가 팀장인지 확인
     const user = await User.findByPk(userId, {
       include: [
@@ -270,6 +272,7 @@ async function calculateTeamPTIncentive(userId, year, month, t) {
 
     if (!user || user.position_id !== 7) {
       // 직급 ID 7이 팀장이라고 가정
+      console.log(`[calculateTeamPTIncentive] User ${userId}는 팀장이 아님 (position_id: ${user?.position_id})`);
       return 0;
     }
 
@@ -287,13 +290,17 @@ async function calculateTeamPTIncentive(userId, year, month, t) {
     });
 
     if (!team) {
+      console.log(`[calculateTeamPTIncentive] User ${userId}가 리더인 팀을 찾을 수 없음`);
       return 0;
     }
 
     // 팀원들의 ID 수집 (팀장 제외)
     const teamMemberIds = team.members ? team.members.map(member => member.id) : [];
 
+    console.log(`[calculateTeamPTIncentive] 팀 ID: ${team.id}, 팀원 수: ${teamMemberIds.length}`);
+
     if (teamMemberIds.length === 0) {
+      console.log(`[calculateTeamPTIncentive] 팀원이 없음`);
       return 0;
     }
 
@@ -316,7 +323,11 @@ async function calculateTeamPTIncentive(userId, year, month, t) {
     const teamTotalRevenue = teamPayments.reduce((sum, payment) => sum + payment.payment_amount, 0);
 
     // 팀 PT 인센티브는 팀원 매출의 5%
-    return Math.round(teamTotalRevenue * 0.05);
+    const teamPTIncentive = Math.round(teamTotalRevenue * 0.05);
+    
+    console.log(`[calculateTeamPTIncentive] 팀원 매출: ${teamTotalRevenue}, 팀 PT 인센티브: ${teamPTIncentive}`);
+    
+    return teamPTIncentive;
   } catch (error) {
     console.error('팀 PT 인센티브 계산 오류:', error);
     return 0;
@@ -379,6 +390,9 @@ async function calcNumbers({
     const total_settlement =
       base_salary + pt_commission_total + monthly_commission + team_pt_incentive + bonus;
 
+    // 세후 금액 계산 (3.3% 원천징수)
+    const after_tax_amount = Math.floor(total_settlement * 0.967);
+
     return {
       total_revenue,
       settlement_revenue,
@@ -391,6 +405,7 @@ async function calcNumbers({
       team_pt_incentive,
       bonus,
       total_settlement,
+      after_tax_amount,
     };
   } catch (error) {
     console.error('정산 계산 오류:', error);
@@ -510,9 +525,13 @@ async function publishMonthlySettlements(inputYm) {
           actual_revenue,
           carryover_from_prev,
           ...numbers,
+          after_tax_amount: numbers.after_tax_amount,
           status: 'draft',
           notes: null,
         };
+
+        // 팀 PT 인센티브 로그 추가
+        console.log(`[settlementPublisher] User ${user_id} - Team PT Incentive: ${numbers.team_pt_incentive}`);
 
         await MonthlySettlement.upsert(payload, { transaction: t });
         upserted++;

@@ -58,10 +58,10 @@ export const AuthProvider = ({ children }) => {
               const userData = JSON.parse(storedUser);
               if (!isMounted) return;
 
-              // 먼저 localStorage 정보로 빠르게 로그인
-              setUser(userData);
-              setIsAuthenticated(true);
-              console.log('✅ localStorage 정보로 빠른 로그인 성공');
+                              // 먼저 localStorage 정보로 빠르게 로그인
+                setUser(userData);
+                setIsAuthenticated(true);
+                              console.log('✅ localStorage 정보로 빠른 로그인 성공');
 
               // 백그라운드에서 서버 검증 시도
               setTimeout(async () => {
@@ -357,6 +357,7 @@ export const AuthProvider = ({ children }) => {
     closeReAuthModal,
     handleNavigation,
     checkReAuthRequired,
+
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

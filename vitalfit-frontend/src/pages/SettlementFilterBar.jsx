@@ -39,12 +39,7 @@ const SettlementFilterBar = ({
               </option>
             ))}
           </select>
-          {user?.position_id === 11 && (
-            <p className="text-xs text-gray-500 mt-1">센터장은 본인 센터만 확인 가능</p>
-          )}
-          {user?.position_id <= 7 && (
-            <p className="text-xs text-gray-500 mt-1">본인 정보만 확인 가능</p>
-          )}
+          
         </div>
 
         {/* 팀 선택 */}

@@ -88,6 +88,11 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
         defaultValue: 0,
       },
+      after_tax_amount: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+      },
       status: {
         type: DataTypes.ENUM('draft', 'acknowledged', 'center_approved', 'hq_approved', 'rejected'),
         allowNull: false,
@@ -220,6 +225,12 @@ module.exports = (sequelize, DataTypes) => {
     MonthlySettlement.belongsTo(models.User, {
       foreignKey: 'rejected_by',
       as: 'rejectedBy',
+    });
+
+    // 거절 로그와의 관계 (1:N)
+    MonthlySettlement.hasMany(models.SettlementRejectLog, {
+      foreignKey: 'settlement_id',
+      as: 'rejectLogs',
     });
   };
 
