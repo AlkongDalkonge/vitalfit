@@ -247,11 +247,7 @@ const MyWorkPage = ({ onReAuthRequired }) => {
       }
     }
 
-    // 시간 검증
-    if (leaveRequestForm.startTime >= leaveRequestForm.endTime) {
-      toast.error('시작 시간은 종료 시간보다 이전이어야 합니다.');
-      return;
-    }
+    // 시간 검증 제거 - 사용자가 원하는 시간대로 입력 가능
 
     try {
       console.log('🚀 휴가 신청 시작');
@@ -380,21 +376,50 @@ const MyWorkPage = ({ onReAuthRequired }) => {
   // 휴가 승인/거절 처리 (관리자용)
   const handleLeaveRequestAction = async (requestId, action) => {
     try {
-      const updatedRequests = leaveRequests.map(req => {
-        if (req.id === requestId) {
-          return {
-            ...req,
-            status: action, // 'approved' 또는 'rejected'
-            processedAt: new Date().toISOString(),
-            processedBy: '관리자',
-          };
-        }
-        return req;
+      console.log('🚀 휴가 신청 처리 시작:', { requestId, action });
+
+      const apiUrl = `/api/users/leave/${action === 'approved' ? 'approve' : 'reject'}/${requestId}`;
+      console.log('📡 API URL:', apiUrl);
+
+      // 백엔드 API 호출
+      const response = await fetch(apiUrl, {
+        method: 'GET',
       });
 
-      setLeaveRequests(updatedRequests);
+      console.log('📡 API 응답:', response.status, response.statusText);
 
-      toast.success(`휴가 신청이 ${action === 'approved' ? '승인' : '거절'}되었습니다.`);
+      if (response.ok) {
+        console.log('✅ API 호출 성공');
+
+        // 백엔드에서 성공적으로 처리된 경우에만 로컬 상태 업데이트
+        const updatedRequests = leaveRequests.map(req => {
+          if (req.id === requestId) {
+            console.log('🔄 휴가 신청 상태 업데이트:', req.id, '->', action);
+            return {
+              ...req,
+              status: action, // 'approved' 또는 'rejected'
+              processedAt: new Date().toISOString(),
+              processedBy: '관리자',
+            };
+          }
+          return req;
+        });
+
+        console.log('📝 업데이트된 휴가 신청 목록:', updatedRequests);
+        setLeaveRequests(updatedRequests);
+        toast.success(`휴가 신청이 ${action === 'approved' ? '승인' : '거절'}되었습니다.`);
+
+        // 상태 동기화를 위해 목록 새로고침
+        setTimeout(() => {
+          console.log('🔄 목록 새로고침 시작');
+          fetchLeaveRequests();
+        }, 1000);
+      } else {
+        console.log('❌ API 호출 실패:', response.status, response.statusText);
+        const errorText = await response.text();
+        console.log('❌ 에러 내용:', errorText);
+        toast.error('처리에 실패했습니다.');
+      }
     } catch (error) {
       console.error('휴가 신청 처리 실패:', error);
       toast.error('처리에 실패했습니다.');
@@ -402,9 +427,33 @@ const MyWorkPage = ({ onReAuthRequired }) => {
   };
 
   // 휴가 신청 삭제
-  const handleDeleteLeaveRequest = requestId => {
-    setLeaveRequests(prev => prev.filter(req => req.id !== requestId));
-    toast.success('휴가 신청이 삭제되었습니다.');
+  const handleDeleteLeaveRequest = async requestId => {
+    try {
+      console.log('🗑️ 휴가 신청 삭제 시작:', requestId);
+
+      // 백엔드에서 삭제 처리
+      const response = await fetch(`/api/users/leave/delete/${requestId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        console.log('✅ 백엔드에서 삭제 성공');
+        // 로컬 상태에서도 제거
+        setLeaveRequests(prev => prev.filter(req => req.id !== requestId));
+        toast.success('휴가 신청이 삭제되었습니다.');
+
+        // 상태 동기화를 위해 목록 새로고침
+        setTimeout(() => {
+          fetchLeaveRequests();
+        }, 1000);
+      } else {
+        console.log('❌ 백엔드에서 삭제 실패:', response.status);
+        toast.error('삭제에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('휴가 신청 삭제 실패:', error);
+      toast.error('삭제 중 오류가 발생했습니다.');
+    }
   };
 
   // 휴가 신청 전송 (관리자용)
@@ -939,8 +988,6 @@ const MyWorkPage = ({ onReAuthRequired }) => {
             )}
           </div>
         </div>
-
-
       </div>
     </div>
   );
