@@ -75,32 +75,11 @@ export default function SignIn() {
 
   // 컴포넌트 언마운트 시 모든 토스티 정리
   useEffect(() => {
-    return () => {
-      Object.values(toastIds).forEach(id => {
-        if (id) {
-          toast.dismiss(id);
-        }
-      });
-    };
-  }, [toastIds]);
-
-  // 로그인된 상태에서 로그인 페이지 접속 시 대시보드로 리다이렉트 (뒤로 가기 방지)
-  useEffect(() => {
-    console.log(
-      '🔍 signIn useEffect 실행 - authLoading:',
-      authLoading,
-      'isAuthenticated:',
-      isAuthenticated,
-      'user:',
-      user
-    );
-
-    if (!authLoading && isAuthenticated && user) {
-      console.log('🚀 로그인 성공! 대시보드로 리다이렉트 시작');
-
-      // replace를 사용하여 히스토리에서 로그인 페이지를 대체 (뒤로 가기 방지)
-      console.log('📍 대시보드로 이동 (replace):', '/dashboard');
-      navigate('/', { replace: true });
+    if (!authLoading && isAuthenticated) {
+      // toast.info('로그인중...'); // 주석처리됨
+      setTimeout(() => {
+        navigate('/');
+      }, 1000);
     }
   }, [authLoading, isAuthenticated, user, navigate]);
 
@@ -145,38 +124,30 @@ export default function SignIn() {
 
   const loginSubmit = async e => {
     e.preventDefault();
-    console.log('🔐 로그인 요청 시작:', { email, password, rememberMe });
     setLoading(true);
     setError('');
 
     try {
       // AuthContext의 login 함수 직접 호출
-      console.log('🔐 AuthContext login 호출 시작');
       const result = await login(email, password, rememberMe);
-      console.log('🔐 AuthContext login 결과:', result);
 
       if (result.success) {
-        console.log('✅ 로그인 성공!');
-        showToastOnce('success', '로그인되었습니다.', 'loginSuccess');
+        // showToastOnce('success', '로그인되었습니다.', 'loginSuccess'); // 주석처리됨
 
         // 이메일 저장 설정 (Remember Me가 체크된 경우에만)
         if (rememberMe) {
           localStorage.setItem('savedEmail', email);
-          console.log('💾 이메일 저장됨 (Remember Me):', email);
         } else {
           localStorage.removeItem('savedEmail');
-          console.log('🗑️ 이메일 저장 제거됨');
         }
 
-        // 즉시 대시보드로 이동 (상태 변경 문제 방지)
-        console.log('📍 로그인 성공 후 즉시 대시보드로 이동');
-        navigate('/', { replace: true });
+        // toast.success('로그인되었습니다.'); // 주석처리됨
+        navigate('/');
       } else {
-        console.log('❌ 로그인 실패:', result.message);
         setError(result.message || '로그인에 실패했습니다.');
       }
     } catch (err) {
-      console.error('❌ 로그인 중 오류 발생:', err);
+      console.error('로그인 중 오류 발생:', err);
       setError('로그인 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);

@@ -1,4 +1,4 @@
-const { PTSession, Member, User, Center } = require('../models');
+const { PTSession, Member, User, Center, Payment } = require('../models');
 const { Op } = require('sequelize');
 const Joi = require('joi');
 
@@ -274,6 +274,7 @@ const deletePTSession = async (req, res) => {
 // 월별 PT 세션 조회 (새로 추가)
 const getPTSessionsByMonth = async (req, res) => {
   const { year, month } = req.params;
+  const { center_id } = req.query; // 센터 ID 쿼리 파라미터 추가
 
   try {
     // 년월 유효성 검증
@@ -298,13 +299,24 @@ const getPTSessionsByMonth = async (req, res) => {
     const startDate = new Date(yearNum, monthNum - 1, 1);
     const endDate = new Date(yearNum, monthNum, 0, 23, 59, 59);
 
+    // WHERE 조건 구성
+    const whereClause = {
+      session_date: {
+        [Op.between]: [startDate, endDate],
+      },
+    };
+
+    // 센터 ID가 제공된 경우 필터링 추가
+    if (center_id) {
+      const centerIdNum = parseInt(center_id);
+      if (!isNaN(centerIdNum) && centerIdNum > 0) {
+        whereClause.center_id = centerIdNum;
+      }
+    }
+
     // PT 세션 조회
     const ptSessions = await PTSession.findAll({
-      where: {
-        session_date: {
-          [Op.between]: [startDate, endDate],
-        },
-      },
+      where: whereClause,
       attributes: [
         'id',
         'member_id',
@@ -631,9 +643,25 @@ const getPTSessionsByMember = async (req, res) => {
       session => session.session_type === 'free'
     ).length;
 
-    // 잔여 세션 계산
-    const remainingSessions = Math.max(0, (member.total_sessions || 0) - actualUsedSessions);
-    const remainingFreeSessions = Math.max(0, (member.free_sessions || 0) - actualUsedFreeSessions);
+    // payments 테이블에서 해당 멤버의 총 세션 수 조회
+    const payments = await Payment.findAll({
+      where: { member_id: memberId },
+      attributes: ['session_count', 'free_session_count'],
+    });
+
+    // 총 세션 수 계산 (payments 테이블의 session_count 합계)
+    const totalSessionCount = payments.reduce(
+      (sum, payment) => sum + (payment.session_count || 0),
+      0
+    );
+    const totalFreeSessionCount = payments.reduce(
+      (sum, payment) => sum + (payment.free_session_count || 0),
+      0
+    );
+
+    // 잔여 세션 계산 (payments 테이블 기준)
+    const remainingSessions = Math.max(0, totalSessionCount - actualUsedSessions);
+    const remainingFreeSessions = Math.max(0, totalFreeSessionCount - actualUsedFreeSessions);
 
     return res.status(200).json({
       success: true,
@@ -645,6 +673,8 @@ const getPTSessionsByMember = async (req, res) => {
           remaining_free_sessions: remainingFreeSessions,
           actual_used_sessions: actualUsedSessions,
           actual_used_free_sessions: actualUsedFreeSessions,
+          total_session_count: totalSessionCount,
+          total_free_session_count: totalFreeSessionCount,
         },
         pt_sessions: ptSessions,
         pagination: {
@@ -676,7 +706,7 @@ const getPTSessionsByMember = async (req, res) => {
 // 유저별 PT 세션 조회 (새로 추가)
 const getPTSessionsByUser = async (req, res) => {
   const { userId } = req.params;
-  const { year, month } = req.query;
+  const { year, month, center_id } = req.query; // 센터 ID 쿼리 파라미터 추가
 
   try {
     // 파라미터 유효성 검증
@@ -701,6 +731,14 @@ const getPTSessionsByUser = async (req, res) => {
     }
 
     const whereClause = { trainer_id: userIdNum };
+    
+    // 센터 ID가 제공된 경우 필터링 추가
+    if (center_id) {
+      const centerIdNum = parseInt(center_id);
+      if (!isNaN(centerIdNum) && centerIdNum > 0) {
+        whereClause.center_id = centerIdNum;
+      }
+    }
 
     // 월별 필터링 추가
     if (year && month) {

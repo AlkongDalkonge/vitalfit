@@ -4,6 +4,13 @@ import ImageUploader from '../components/ImageUploader';
 import CenterCreateModal from './CenterCreateModal';
 import CenterEditModal from './CenterEditModal';
 import { useUser } from '../utils/hooks';
+import { useAuth } from '../contexts/AuthContext';
+import {
+  canPerformAction,
+  getPermissionMessage,
+  getDetailedPermissionMessage,
+} from '../utils/permissionUtils';
+import { toast } from 'react-toastify';
 
 // API 기본 URL 환경 변수
 const API_BASE_URL = 'http://localhost:3001';
@@ -33,6 +40,7 @@ const CenterPage = () => {
 
   // 유저 데이터 가져오기
   const { users: allUsers } = useUser();
+  const { user: currentUser } = useAuth();
 
   // 센터와 회원 데이터 가져오기
   useEffect(() => {
@@ -220,6 +228,10 @@ const CenterPage = () => {
 
   // 센터 수정 모달 열기
   const handleEditCenter = center => {
+    if (!canPerformAction(currentUser)) {
+      toast.warning(getPermissionMessage());
+      return;
+    }
     setSelectedCenterForEdit(center);
     setEditModalOpen(true);
   };
@@ -262,11 +274,28 @@ const CenterPage = () => {
     }));
   };
 
+  // 권한 체크 함수들
+  const handleToggleImageManagement = centerId => {
+    if (!canPerformAction(currentUser)) {
+      toast.warning(getPermissionMessage());
+      return;
+    }
+    toggleImageManagement(centerId);
+  };
+
+  const handleCreateCenter = () => {
+    if (!canPerformAction(currentUser)) {
+      toast.warning(getPermissionMessage());
+      return;
+    }
+    setCreateModalOpen(true);
+  };
+
   // 로딩 상태
   if (loading) {
     return (
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-800 mb-6">지점 관리</h1>
+        <h1 className="text-black text-3xl font-extrabold font-['Nunito'] bg-white rounded-lg p-3 mb-6">지점 관리</h1>
         <div className="bg-white rounded-xl p-6 shadow-sm">
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -281,7 +310,7 @@ const CenterPage = () => {
   if (error) {
     return (
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-800 mb-6">지점 관리</h1>
+        <h1 className="text-black text-3xl font-extrabold font-['Nunito'] bg-white rounded-lg p-3 mb-6">지점 관리</h1>
         <div className="bg-white rounded-xl p-6 shadow-sm">
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
@@ -302,8 +331,8 @@ const CenterPage = () => {
 
   return (
     <div className="max-w-7xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-800">지점 관리</h1>
+      <div className="mb-6 py-0">
+        <h1 className="text-black text-3xl font-extrabold font-['Nunito'] bg-white rounded-lg p-3">지점 관리</h1>
       </div>
 
       {/* 센터별 현황 */}
@@ -707,13 +736,23 @@ const CenterPage = () => {
                       <div className="flex gap-3">
                         <button
                           onClick={() => handleEditCenter(center)}
-                          className="px-4 py-2 text-blue-600 border border-blue-300 rounded-lg hover:bg-blue-50 transition-colors duration-200"
+                          disabled={!canPerformAction(currentUser)}
+                          className={`px-4 py-2 text-sm font-medium font-['Nunito'] border rounded-lg transition-colors duration-200 ${
+                            canPerformAction(currentUser)
+                              ? 'text-blue-600 border-blue-300 hover:bg-blue-50'
+                              : 'text-gray-400 border-gray-300 cursor-not-allowed'
+                          }`}
                         >
                           수정
                         </button>
                         <button
-                          onClick={() => toggleImageManagement(center.id)}
-                          className="px-4 py-2 text-purple-600 border border-purple-300 rounded-lg hover:bg-purple-50 transition-colors duration-200"
+                          onClick={() => handleToggleImageManagement(center.id)}
+                          disabled={!canPerformAction(currentUser)}
+                          className={`px-4 py-2 text-sm font-medium font-['Nunito'] border rounded-lg transition-colors duration-200 ${
+                            canPerformAction(currentUser)
+                              ? 'text-purple-600 border-purple-300 hover:bg-purple-50'
+                              : 'text-gray-400 border-gray-300 cursor-not-allowed'
+                          }`}
                         >
                           이미지
                         </button>
@@ -756,13 +795,19 @@ const CenterPage = () => {
                               {/* 새 이미지 업로드 */}
                               <div className="mb-4">
                                 <ImageUploader
-                                  onImageUpload={newImages =>
-                                    handleImageUpload(center.id, newImages)
-                                  }
+                                  onImageUpload={newImages => {
+                                    if (!canPerformAction(currentUser)) {
+                                      toast.warning(getPermissionMessage());
+                                      return;
+                                    }
+                                    handleImageUpload(center.id, newImages);
+                                  }}
                                   currentImages={[]}
                                   maxImages={10}
                                   isMainImageRequired={false}
-                                  disabled={imageUploading[center.id] || false}
+                                  disabled={
+                                    imageUploading[center.id] || !canPerformAction(currentUser)
+                                  }
                                 />
                               </div>
 
@@ -791,16 +836,26 @@ const CenterPage = () => {
                                           <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex gap-2">
                                             {!image.isMain && (
                                               <button
-                                                onClick={() =>
-                                                  handleSetMainImage(center.id, image.id)
-                                                }
+                                                onClick={() => {
+                                                  if (!canPerformAction(currentUser)) {
+                                                    toast.warning(getPermissionMessage());
+                                                    return;
+                                                  }
+                                                  handleSetMainImage(center.id, image.id);
+                                                }}
                                                 className="px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
                                               >
                                                 메인
                                               </button>
                                             )}
                                             <button
-                                              onClick={() => handleRemoveImage(center.id, image.id)}
+                                              onClick={() => {
+                                                if (!canPerformAction(currentUser)) {
+                                                  toast.warning(getPermissionMessage());
+                                                  return;
+                                                }
+                                                handleRemoveImage(center.id, image.id);
+                                              }}
                                               className="px-2 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700"
                                             >
                                               삭제
@@ -840,12 +895,24 @@ const CenterPage = () => {
       </div>
 
       {/* 센터 등록 버튼 */}
-      <div className="flex justify-start mt-6">
+      <div className="flex justify-end mt-6">
         <button
-          onClick={() => setCreateModalOpen(true)}
-          className="px-6 py-3 bg-gradient-to-br from-blue-400 to-blue-600 text-white text-sm rounded-lg hover:from-blue-500 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+          onClick={handleCreateCenter}
+          disabled={!canPerformAction(currentUser)}
+          className={`Button w-40 h-11 p-2.5 rounded-[10px] inline-flex justify-center items-center gap-2.5 transition-all duration-200 shadow-lg relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/15 before:via-transparent before:to-transparent before:pointer-events-none ${
+            canPerformAction(currentUser)
+              ? 'bg-gradient-to-br from-blue-400 to-blue-600 hover:from-blue-500 hover:to-blue-700 hover:shadow-xl'
+              : 'bg-gradient-to-br from-gray-400 to-gray-500 cursor-not-allowed'
+          }`}
         >
-          센터 등록
+          <div
+            data-layer="Primary Button"
+            className={`PrimaryButton justify-start text-sm font-medium font-['Nunito'] leading-normal drop-shadow-xl ${
+              canPerformAction(currentUser) ? 'text-white' : 'text-gray-300'
+            }`}
+          >
+            센터 등록
+          </div>
         </button>
       </div>
 

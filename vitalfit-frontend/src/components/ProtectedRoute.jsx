@@ -1,15 +1,17 @@
 import { Navigate, useLocation } from 'react-router-dom';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, loading, user, handleNavigation } = useAuth();
   const location = useLocation();
+  const prevPathRef = useRef(location.pathname);
 
-  // 페이지 이동 시 재인증 상태 처리
+  // 페이지 이동 시 재인증 상태 처리 (경로가 변경될 때만)
   useEffect(() => {
-    if (isAuthenticated && user) {
+    if (isAuthenticated && user && prevPathRef.current !== location.pathname) {
       handleNavigation(user.id);
+      prevPathRef.current = location.pathname;
     }
   }, [location.pathname, isAuthenticated, user, handleNavigation]);
 

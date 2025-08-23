@@ -93,9 +93,9 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
-      // 토큰 갱신 요청 자체가 401인 경우는 무한 루프 방지
-      if (originalRequest.url === '/users/refresh') {
-        console.log('토큰 갱신 실패 - 로그아웃 처리');
+      // 토큰 갱신 요청이나 /users/me 요청이 401인 경우는 무한 루프 방지
+      if (originalRequest.url === '/users/refresh' || originalRequest.url === '/users/me') {
+        console.log('토큰 갱신 또는 사용자 정보 요청 실패 - 로그아웃 처리');
         AuthService.removeAccessToken();
         AuthService.removeRefreshToken();
         localStorage.removeItem('rememberMe');
@@ -261,6 +261,14 @@ export const userAPI = {
       },
     });
   },
+  // 계좌 이미지 업로드
+  uploadAccountImage: async formData => {
+    return await api.post('/users/upload-account-image', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
 };
 
 // 멤버 API
@@ -306,10 +314,32 @@ export const ptSessionAPI = {
     return result;
   },
   getSessionsByUser: async (userId, params = {}) => {
-    console.log('🚀 유저 PT 세션 API 호출:', { userId, params });
-    const result = await apiGet(`/pt-sessions/user/${userId}`, { params });
-    console.log('📡 유저 PT 세션 API 응답:', result);
-    return result;
+    const queryParams = new URLSearchParams();
+
+    // 파라미터들을 쿼리 스트링으로 변환
+    Object.keys(params).forEach(key => {
+      if (params[key] !== undefined && params[key] !== null) {
+        queryParams.append(key, params[key]);
+      }
+    });
+
+    const queryString = queryParams.toString();
+    const url = `/pt-sessions/user/${userId}${queryString ? `?${queryString}` : ''}`;
+
+    return await apiGet(url);
+  },
+  getPTSessionsByMonth: async (year, month, params = {}) => {
+    const queryParams = new URLSearchParams();
+
+    // 센터 ID가 있는 경우 쿼리 파라미터에 추가
+    if (params.center_id) {
+      queryParams.append('center_id', params.center_id);
+    }
+
+    const queryString = queryParams.toString();
+    const url = `/pt-sessions/month/${year}/${month}${queryString ? `?${queryString}` : ''}`;
+
+    return await apiGet(url);
   },
   createSession: async data => {
     return await apiPost('/pt-sessions', data);
@@ -431,17 +461,32 @@ export const settlementAPI = {
   checkDraftSettlements: async userId => {
     return await apiGet('/settlements/check-draft', { params: { user_id: userId } });
   },
+  checkAcknowledgedSettlements: async userId => {
+    return await apiGet('/settlements/check-acknowledged', { params: { user_id: userId } });
+  },
+  checkCenterApprovedSettlements: async userId => {
+    return await apiGet('/settlements/check-center-approved', { params: { user_id: userId } });
+  },
+  getNotifications: async userId => {
+    return await apiGet('/settlements/notifications', { params: { user_id: userId } });
+  },
   acknowledge: async (id, userId) => {
     return await apiPost(`/settlements/${id}/acknowledge`, null, { params: { user_id: userId } });
   },
-  approve: async id => {
-    return await apiPost(`/settlements/${id}/approve`);
+  approve: async (id, userId, centerId) => {
+    return await apiPost(`/settlements/${id}/approve`, null, { 
+      params: { user_id: userId, center_id: centerId } 
+    });
   },
-  hqApprove: async id => {
-    return await apiPost(`/settlements/${id}/hq-approve`);
+  hqApprove: async (id, userId) => {
+    return await apiPost(`/settlements/${id}/hq-approve`, null, { 
+      params: { user_id: userId } 
+    });
   },
-  hqReject: async (id, rejectReason) => {
-    return await apiPost(`/settlements/${id}/hq-reject`, { reject_reason: rejectReason });
+  hqReject: async (id, rejectReason, userId) => {
+    return await apiPost(`/settlements/${id}/hq-reject`, { reject_reason: rejectReason }, { 
+      params: { user_id: userId } 
+    });
   },
   pay: async (id, data = {}) => {
     return await apiPost(`/settlements/${id}/pay`, data);

@@ -29,6 +29,26 @@ router.post('/:id/pay', controller.pay);
 // GET /api/settlements/check-draft
 router.get('/check-draft', controller.checkDraftSettlements);
 
+// Acknowledged 정산 확인 (센터장용)
+// GET /api/settlements/check-acknowledged
+router.get('/check-acknowledged', controller.checkAcknowledgedSettlements);
+
+// Center Approved 정산 확인 (회계팀용)
+// GET /api/settlements/check-center-approved
+router.get('/check-center-approved', controller.checkCenterApprovedSettlements);
+
+// 정산 알림 확인 (역할별)
+// GET /api/settlements/notifications
+router.get('/notifications', controller.checkSettlementNotifications);
+
+// 거절 이력 조회
+// GET /api/settlements/:settlementId/reject-history
+router.get('/:settlementId/reject-history', controller.getRejectHistory);
+
+// 사용자 거절 이력 조회
+// GET /api/settlements/user/:userId/reject-history
+router.get('/user/:userId/reject-history', controller.getUserRejectHistory);
+
 // 상세/목록 조회
 // GET /api/settlements/:id
 router.get('/:id', controller.getById);

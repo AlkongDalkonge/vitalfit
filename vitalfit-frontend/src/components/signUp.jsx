@@ -131,14 +131,14 @@ export default function SignUp() {
   // 이메일 중복확인 함수
   const checkEmailDuplicate = async () => {
     if (!formData.email) {
-      toast.error('이메일을 먼저 입력해주세요.');
+      // toast.error('이메일을 먼저 입력해주세요.'); // 주석처리됨
       return;
     }
 
     // 이메일 형식 검증
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
-      toast.error('올바른 이메일 형식을 입력해주세요.');
+      // toast.error('올바른 이메일 형식을 입력해주세요.'); // 주석처리됨
       return;
     }
 
@@ -156,19 +156,19 @@ export default function SignUp() {
 
       if (response.ok) {
         if (data.available) {
-          toast.success('사용 가능한 이메일입니다.');
+          // toast.success('사용 가능한 이메일입니다.'); // 주석처리됨
           setEmailChecked(true);
         } else {
-          toast.error('이미 사용 중인 이메일입니다.');
+          // toast.error('이미 사용 중인 이메일입니다.'); // 주석처리됨
           setEmailChecked(false);
         }
       } else {
-        toast.error(data.message || '이메일 중복확인 중 오류가 발생했습니다.');
+        // toast.error(data.message || '이메일 중복확인 중 오류가 발생했습니다.'); // 주석처리됨
         setEmailChecked(false);
       }
     } catch (error) {
       console.error('이메일 중복확인 오류:', error);
-      toast.error('이메일 중복확인 중 오류가 발생했습니다.');
+      // toast.error('이메일 중복확인 중 오류가 발생했습니다.'); // 주석처리됨
       setEmailChecked(false);
     } finally {
       setCheckingEmail(false);
@@ -233,25 +233,25 @@ export default function SignUp() {
       if (passwordMatch !== isMatch) {
         setPasswordMatch(isMatch);
 
-        if (isMatch) {
-          toast.success('비밀번호가 일치합니다!', {
-            position: 'top-center',
-            autoClose: 3000,
-            hideProgressBar: false,
-            closeOnClick: true,
-            pauseOnHover: true,
-            draggable: true,
-          });
-        } else {
-          toast.error('비밀번호가 일치하지 않습니다.', {
-            position: 'top-center',
-            autoClose: 3000,
-            hideProgressBar: false,
-            closeOnClick: true,
-            pauseOnHover: true,
-            draggable: true,
-          });
-        }
+        // if (isMatch) {
+        //   toast.success('비밀번호가 일치합니다!', {
+        //     position: 'top-center',
+        //     autoClose: 3000,
+        //     hideProgressBar: false,
+        //     closeOnClick: true,
+        //     pauseOnHover: true,
+        //     draggable: true,
+        //   });
+        // } else {
+        //   toast.error('비밀번호가 일치하지 않습니다.', {
+        //     position: 'top-center',
+        //     autoClose: 3000,
+        //     hideProgressBar: false,
+        //     closeOnClick: true,
+        //     pauseOnHover: true,
+        //     draggable: true,
+        //   });
+        // } // 주석처리됨
       }
     }
   };
@@ -454,11 +454,11 @@ export default function SignUp() {
       if (response.ok) {
         // 계정 재활성화인지 새 회원가입인지 확인
         if (data.message === '계정이 재활성화되었습니다.') {
-          toast.success('기존 계정이 재활성화되었습니다! 로그인 페이지로 이동합니다.');
+          // toast.success('기존 계정이 재활성화되었습니다! 로그인 페이지로 이동합니다.'); // 주석처리됨
           navigate('/login');
         } else if (data.requiresEmailVerification) {
           // 이메일 인증이 필요한 경우
-          toast.success('회원가입을 위해 이메일 인증을 완료해주세요.');
+          // toast.success('회원가입을 위해 이메일 인증을 완료해주세요.'); // 주석처리됨
           navigate('/verify-email', {
             state: {
               email: formData.email,
@@ -466,7 +466,7 @@ export default function SignUp() {
             },
           });
         } else {
-          toast.success('회원가입이 완료되었습니다! 로그인 페이지로 이동합니다.');
+          // toast.success('회원가입이 완료되었습니다! 로그인 페이지로 이동합니다.'); // 주석처리됨
           navigate('/login');
         }
       } else {
@@ -533,7 +533,7 @@ export default function SignUp() {
                   ) : (
                     <div className="w-20 h-20 rounded-full bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center">
                       <img
-                        src="https://lh3.googleusercontent.com/pw/AP1GczPHYKy-ftX95akuneOtJAq_BTm0oNlL8mLTK7gUbZJqkYXHB1RDR-gseWYT7G9cVjTsIZyconxHncd5Ph1RASfAHtI75Abk4G9eH9HNtkLAUvHcBfloZzlYUNfcxHPQaTLMmbuZfqZ4I0Pkqf4jS43E=w200-h200-s-no-gm?authuser=0"
+                        src="/img/profileDefault.png"
                         alt="기본 프로필"
                         className="w-full h-full rounded-full object-cover"
                       />

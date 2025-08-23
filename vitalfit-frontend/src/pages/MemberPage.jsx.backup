@@ -4,13 +4,28 @@ import MemberEditModal from './MemberEditModal';
 import MemberCreateModal from './MemberCreateModal';
 import { useMember, useFilters } from '../utils/hooks';
 import { getStatusText, statusOptions, getMemberStatusColor } from '../utils/memberUtils';
+import { useAuth } from '../contexts/AuthContext';
+import { 
+  canViewMembers, 
+  canCreateMembers, 
+  canEditMembers,
+  canViewMember,
+  canCreateMemberForTrainer,
+  getMemberViewPermissionMessage
+} from '../utils/permissionUtils';
 
 const MemberPage = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   // 상태 필터 관련 상태
   const [statusFilter, setStatusFilter] = useState('');
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
+
+  // 권한 체크
+  const canView = canViewMembers(user);
+  const canCreate = canCreateMembers(user);
+  const canEdit = canEditMembers(user);
 
   // 커스텀 훅 사용
   const {
@@ -110,13 +125,13 @@ const MemberPage = () => {
   const onStatusFilterChange = value => {
     const newStatusFilter = value === '전체선택' ? '' : value;
     setStatusFilter(newStatusFilter);
-
+    
     // 현재 선택된 센터와 트레이너의 실제 값들을 가져와서 필터링
     const currentCenter = centers.find(c => c.name === centerFilter);
     const centerId = currentCenter ? currentCenter.id : null;
     const currentTrainer = trainers.find(t => t.name === trainerFilter);
     const trainerName = currentTrainer ? currentTrainer.name : trainerFilter;
-
+    
     // 새로운 상태 필터 값으로 즉시 필터링 적용
     filterMembersImmediate(centerId, trainerName, newStatusFilter);
   };
@@ -149,10 +164,10 @@ const MemberPage = () => {
       <div className="flex flex-col gap-6 flex-1 pb-0">
         {/* 최상단 제목 */}
         <div
-          data-layer="고객 관리"
-          className="text-black text-3xl font-extrabold font-['Nunito'] bg-white rounded-lg p-3"
+          data-layer="모든 고객"
+          className="text-black text-3xl font-extrabold font-['Nunito'] bg-white rounded-lg py-0 px-4"
         >
-          고객 관리
+          모든 고객
         </div>
 
         {/* 필터 및 총건수 섹션 */}
@@ -174,11 +189,11 @@ const MemberPage = () => {
             <div
               data-layer="Input Field"
               data-property-1="Small"
-              className="w-[130px] h-[30px] flex flex-col justify-start items-start dropdown-container relative z-50"
+              className="w-[120px] h-[30px] flex flex-col justify-start items-start dropdown-container relative z-50"
             >
               <div
                 data-layer="Rectangle 3"
-                className="w-[130px] h-[30px] bg-sky-50 rounded-[8px] border border-gray-200 relative"
+                className="w-[120px] h-[30px] bg-sky-50 rounded-[8px] border border-gray-200 relative"
               >
                 <button
                   onClick={() => setShowCenterDropdown(!showCenterDropdown)}
@@ -188,7 +203,7 @@ const MemberPage = () => {
                     data-layer="Placeholder"
                     className="Placeholder justify-start text-neutral-400 text-xs font-normal font-['Nunito'] leading-normal"
                   >
-                    {centerFilter && centerFilter !== 'Select option' ? centerFilter : '지점'}
+                    지점
                   </div>
                   <svg
                     className="w-3 h-3 text-neutral-400"
@@ -207,7 +222,7 @@ const MemberPage = () => {
 
                 {/* 드롭다운 메뉴 */}
                 {showCenterDropdown && (
-                  <div className="absolute top-full left-0 w-[130px] bg-white border border-gray-200 rounded-[8px] shadow-lg z-50 mt-1">
+                  <div className="absolute top-full left-0 w-[120px] bg-white border border-gray-200 rounded-[8px] shadow-lg z-50 mt-1">
                     <div className="py-1">
                       <button
                         onClick={() => onCenterFilterChange('Select option')}
@@ -248,7 +263,7 @@ const MemberPage = () => {
                     data-layer="Placeholder"
                     className="Placeholder justify-start text-neutral-400 text-xs font-normal font-['Nunito'] leading-normal"
                   >
-                    {trainerFilter && trainerFilter !== 'Select option' ? trainerFilter : '트레이너'}
+                    트레이너
                   </div>
                   <svg
                     className="w-3 h-3 text-neutral-400"
@@ -306,7 +321,9 @@ const MemberPage = () => {
                 >
                   <div
                     data-layer="Placeholder"
-                    className="Placeholder justify-start text-neutral-400 text-xs font-normal font-['Nunito'] leading-normal"
+                    className={`Placeholder justify-start text-xs font-normal font-['Nunito'] leading-normal ${
+                      statusFilter ? 'text-neutral-900' : 'text-neutral-400'
+                    }`}
                   >
                     {statusFilter
                       ? statusOptions.find(s => s.value === statusFilter)?.label || statusFilter
@@ -388,139 +405,159 @@ const MemberPage = () => {
         {/* 회원 목록 테이블 */}
         <div className="bg-white mt-1 rounded-lg shadow-sm border border-gray-100">
           <div className="flex flex-col">
-            {/* 테이블 컨테이너 */}
-            <div className="overflow-hidden">
-              <div className="overflow-y-auto max-h-[calc(100vh-350px)] relative">
-                {/* 테이블 헤더 */}
-                <div className="border-b border-gray-200 sticky top-0 z-30 bg-white shadow-sm relative">
-                  <div className="flex items-center p-4 min-w-max gap-4">
-                    {/* 좌측 여유 */}
-                    <div className="flex-[0.3]"></div>
-
-                    <div
-                      data-layer="고객명"
-                      className="flex-[1] min-w-[80px] justify-start text-neutral-800 text-sm font-semibold font-['Nunito'] leading-normal"
-                    >
-                      고객명
-                    </div>
-                    <div
-                      data-layer="휴대폰 번호"
-                      className="flex-[2] min-w-[120px] justify-start text-neutral-800 text-sm font-semibold font-['Nunito'] leading-normal"
-                    >
-                      휴대폰 번호
-                    </div>
-                    <div
-                      data-layer="소속"
-                      className="flex-[2.5] min-w-[180px] justify-start text-neutral-800 text-sm font-semibold font-['Nunito'] leading-normal"
-                    >
-                      소속
-                    </div>
-                    <div
-                      data-layer="잔여 PT"
-                      className="flex-[1] min-w-[90px] justify-start text-neutral-800 text-sm font-semibold font-['Nunito'] leading-normal"
-                    >
-                      잔여 PT
-                    </div>
-                    <div
-                      data-layer="상태"
-                      className="flex-[1] min-w-[90px] justify-start text-neutral-800 text-sm font-semibold font-['Nunito'] leading-normal"
-                    >
-                      상태
-                    </div>
-                    <div
-                      data-layer="PT 기록"
-                      className="flex-[1] min-w-[90px] justify-start text-neutral-800 text-sm font-semibold font-['Nunito'] leading-normal"
-                    >
-                      PT 기록
-                    </div>
-
-                    {/* 우측 여유 */}
-                    <div className="flex-[0.3]"></div>
-                  </div>
+            {/* 권한이 없을 때 메시지 */}
+            {!canView && (
+              <div className="p-8 text-center">
+                <div className="text-gray-500 text-lg font-medium mb-2">
+                  멤버 조회 권한이 없습니다
                 </div>
-
-                {/* 테이블 데이터 */}
-                <div>
-                  {filteredMembers.map((member, index) => (
-                    <div
-                      key={member.id}
-                      className="hover:bg-gray-50 transition-colors duration-200 relative z-10"
-                    >
-                      <div className="flex items-center p-4 min-w-max gap-4">
-                        {/* 좌측 여유 */}
-                        <div className="flex-[0.3]"></div>
-
-                        <div data-layer="고객명" className="flex-[1] min-w-[80px] justify-start">
-                          <button
-                            onClick={() => handleViewMore(member.id)}
-                            className="text-cyan-600 text-sm font-normal font-['Nunito'] leading-normal hover:text-cyan-800 hover:underline cursor-pointer transition-colors duration-200"
-                          >
-                            {member.name}
-                          </button>
-                        </div>
-                        <div
-                          data-layer="휴대폰 번호"
-                          className="flex-[2] min-w-[120px] justify-start text-neutral-600 text-sm font-normal font-['Nunito'] leading-normal"
-                        >
-                          {member.phone}
-                        </div>
-                        <div
-                          data-layer="소속"
-                          className="flex-[2.5] min-w-[180px] justify-start text-neutral-600 text-sm font-normal font-['Nunito'] leading-normal"
-                        >
-                          {member.center?.name || '-'}/{member.trainer?.name || '-'}
-                        </div>
-
-                        <div
-                          data-layer="잔여 PT"
-                          className="flex-[1] min-w-[90px] justify-start text-neutral-600 text-sm font-normal font-['Nunito'] leading-normal"
-                        >
-                          {member.remaining_sessions || 0}
-                        </div>
-                        <div data-layer="상태" className="flex-[1] min-w-[90px] justify-start">
-                          <span
-                            className={`px-2 py-1 rounded-full text-xs font-medium ${getMemberStatusColor(member.status)}`}
-                          >
-                            {getStatusText(member.status)}
-                          </span>
-                        </div>
-                        <div data-layer="PT 기록" className="flex-[1] min-w-[90px] justify-start">
-                          <button
-                            onClick={() => handleViewPTSessions(member.id)}
-                            className="text-cyan-600 text-sm font-normal font-['Nunito'] leading-normal hover:text-cyan-800 hover:underline cursor-pointer transition-colors duration-200"
-                          >
-                            조회
-                          </button>
-                        </div>
-
-                        {/* 우측 여유 */}
-                        <div className="flex-[0.3]"></div>
-                      </div>
-                      <div className="h-0 border-b border-gray-50"></div>
-                    </div>
-                  ))}
+                <div className="text-gray-400 text-sm">
+                  {getMemberViewPermissionMessage(user?.position?.level)}
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
+            )}
+            
+            {/* 테이블 컨테이너 */}
+            {canView && (
+              <div className="overflow-hidden">
+                <div className="overflow-y-auto max-h-[calc(100vh-350px)] relative">
+                  {/* 테이블 헤더 */}
+                  <div className="border-b border-gray-200 sticky top-0 z-30 bg-white shadow-sm relative">
+                    <div className="flex items-center p-4 min-w-max gap-4">
+                      {/* 좌측 여유 */}
+                      <div className="flex-[0.3]"></div>
+
+                      <div
+                        data-layer="고객명"
+                        className="flex-[1] min-w-[80px] justify-start text-neutral-800 text-sm font-semibold font-['Nunito'] leading-normal"
+                      >
+                        고객명
+                      </div>
+                      <div
+                        data-layer="휴대폰 번호"
+                        className="flex-[2] min-w-[120px] justify-start text-neutral-800 text-sm font-semibold font-['Nunito'] leading-normal"
+                      >
+                        휴대폰 번호
+                      </div>
+                      <div
+                        data-layer="소속"
+                        className="flex-[2.5] min-w-[180px] justify-start text-neutral-800 text-sm font-semibold font-['Nunito'] leading-normal"
+                      >
+                        소속
+                      </div>
+                      <div
+                        data-layer="잔여 PT"
+                        className="flex-[1] min-w-[90px] justify-start text-neutral-800 text-sm font-semibold font-['Nunito'] leading-normal"
+                      >
+                        잔여 PT
+                      </div>
+                      <div
+                        data-layer="상태"
+                        className="flex-[1] min-w-[90px] justify-start text-neutral-800 text-sm font-semibold font-['Nunito'] leading-normal"
+                      >
+                        상태
+                      </div>
+                      <div
+                        data-layer="PT 기록"
+                        className="flex-[1] min-w-[90px] justify-start text-neutral-800 text-sm font-semibold font-['Nunito'] leading-normal"
+                      >
+                        PT 기록
+                      </div>
+
+                      {/* 우측 여유 */}
+                      <div className="flex-[0.3]"></div>
+                    </div>
+                  </div>
+
+                  {/* 테이블 데이터 */}
+                  <div>
+                    {filteredMembers.map((member, index) => (
+                      <div
+                        key={member.id}
+                        className="hover:bg-gray-50 transition-colors duration-200 relative z-10"
+                      >
+                        <div className="flex items-center p-4 min-w-max gap-4">
+                          {/* 좌측 여유 */}
+                          <div className="flex-[0.3]"></div>
+
+                          <div data-layer="고객명" className="flex-[1] min-w-[80px] justify-start">
+                            <button
+                              onClick={() => handleViewMore(member.id)}
+                              className="text-cyan-600 text-sm font-normal font-['Nunito'] leading-normal hover:text-cyan-800 hover:underline cursor-pointer transition-colors duration-200"
+                            >
+                              {member.name}
+                            </button>
+                          </div>
+                          <div
+                            data-layer="휴대폰 번호"
+                            className="flex-[2] min-w-[120px] justify-start text-neutral-600 text-sm font-normal font-['Nunito'] leading-normal"
+                          >
+                            {member.phone}
+                          </div>
+                          <div
+                            data-layer="소속"
+                            className="flex-[2.5] min-w-[180px] justify-start text-neutral-600 text-sm font-normal font-['Nunito'] leading-normal"
+                          >
+                            {member.center?.name || '-'}/{member.trainer?.name || '-'}
+                          </div>
+
+                          <div
+                            data-layer="잔여 PT"
+                            className="flex-[1] min-w-[90px] justify-start text-neutral-600 text-sm font-normal font-['Nunito'] leading-normal"
+                          >
+                            {member.remaining_sessions || 0}
+                          </div>
+                          <div data-layer="상태" className="flex-[1] min-w-[90px] justify-start">
+                            <span
+                              className={`px-2 py-1 rounded-full text-xs font-medium ${getMemberStatusColor(member.status)}`}
+                            >
+                              {getStatusText(member.status)}
+                            </span>
+                          </div>
+                          <div data-layer="PT 기록" className="flex-[1] min-w-[90px] justify-start">
+                            {canViewMember(user, member) ? (
+                              <button
+                                onClick={() => handleViewPTSessions(member.id)}
+                                className="text-cyan-600 text-sm font-normal font-['Nunito'] leading-normal hover:text-cyan-800 hover:underline cursor-pointer transition-colors duration-200"
+                              >
+                                조회
+                              </button>
+                            ) : (
+                              <span className="text-gray-400 text-sm font-normal font-['Nunito'] leading-normal">
+                                권한 없음
+                              </span>
+                            )}
+                          </div>
+
+                          {/* 우측 여유 */}
+                          <div className="flex-[0.3]"></div>
+                        </div>
+                        <div className="h-0 border-b border-gray-50"></div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
 
         {/* 고객 등록 버튼 */}
-        <div className="flex justify-end mt-4 mb-0">
-          <button
-            onClick={handleRegisterMember}
-            data-layer="Button"
-            data-property-1="Default"
-            className="Button w-40 h-11 p-2.5 bg-gradient-to-br from-blue-400 to-blue-600 rounded-[10px] inline-flex justify-center items-center gap-2.5 hover:from-blue-500 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/15 before:via-transparent before:to-transparent before:pointer-events-none"
-          >
-            <div
-              data-layer="Primary Button"
-              className="PrimaryButton justify-start text-white text-sm font-medium font-['Nunito'] leading-normal drop-shadow-xl"
+        {canCreate && (
+          <div className="flex justify-end mt-4 mb-0">
+            <button
+              onClick={handleRegisterMember}
+              data-layer="Button"
+              data-property-1="Default"
+              className="Button w-40 h-11 p-2.5 bg-gradient-to-br from-blue-400 to-blue-600 rounded-[10px] inline-flex justify-center items-center gap-2.5 hover:from-blue-500 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/15 before:via-transparent before:to-transparent before:pointer-events-none"
             >
-              고객 등록
-            </div>
-          </button>
-        </div>
+              <div
+                data-layer="Primary Button"
+                className="PrimaryButton justify-start text-white text-sm font-medium font-['Nunito'] leading-normal drop-shadow-xl"
+              >
+                고객 등록
+              </div>
+            </button>
+          </div>
+        )}
 
         {/* 멤버 수정 모달 */}
         <MemberEditModal

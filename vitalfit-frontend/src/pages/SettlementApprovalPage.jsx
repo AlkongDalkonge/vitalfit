@@ -46,15 +46,10 @@ const SettlementApprovalPage = () => {
         ...(isEmployee() && !isAdmin() && { user_id: user?.id }),
       };
 
-      console.log('🔍 정산 데이터 로드 파라미터:', params);
-
       const response = await settlementAPI.getSettlements(params);
-
-      console.log('🔍 정산 데이터 로드 응답:', response);
 
       if (response.success) {
         setSettlements(response.data);
-        console.log('🔍 설정된 정산 데이터:', response.data);
       } else {
         setError(response.message || '정산 데이터를 불러오는데 실패했습니다.');
       }
@@ -73,11 +68,15 @@ const SettlementApprovalPage = () => {
   // 센터장 승인 처리
   const handleApprove = async settlementId => {
     try {
-      const response = await settlementAPI.approve(settlementId);
+      const response = await settlementAPI.approve(settlementId, user?.id, user?.center_id);
 
       if (response.success) {
         toast.success('정산 승인이 완료되었습니다.');
         loadSettlements(); // 데이터 새로고침
+        // 헤더 알림 카운트 즉시 업데이트
+        if (window.refreshNotificationCount) {
+          window.refreshNotificationCount();
+        }
       } else {
         toast.error(response.message || '승인 처리 중 오류가 발생했습니다.');
       }
@@ -86,6 +85,8 @@ const SettlementApprovalPage = () => {
       toast.error('승인 처리 중 오류가 발생했습니다.');
     }
   };
+
+
 
   // 승인 처리 후 데이터 새로고침
   const handleActionComplete = () => {
@@ -152,6 +153,7 @@ const SettlementApprovalPage = () => {
                 key={settlement.id}
                 settlement={settlement}
                 userRole="employee"
+                user={user}
                 onActionComplete={handleActionComplete}
               />
             ))}
@@ -213,6 +215,7 @@ const SettlementApprovalPage = () => {
         ) : (
           <SettlementApprovalTable
             settlements={pendingSettlements}
+            user={user}
             onActionComplete={handleActionComplete}
           />
         )}
@@ -433,6 +436,7 @@ const SettlementApprovalPage = () => {
               <h2 className="text-lg font-semibold mb-4">승인 완료</h2>
               <SettlementApprovalTable
                 settlements={settlements.filter(s => s.status === 'confirmed')}
+                user={user}
                 onActionComplete={handleActionComplete}
               />
             </div>
@@ -496,6 +500,7 @@ const SettlementApprovalPage = () => {
               <h2 className="text-lg font-semibold mb-4">승인 대기</h2>
               <SettlementApprovalTable
                 settlements={settlements.filter(s => s.status === 'acknowledged')}
+                user={user}
                 onActionComplete={handleActionComplete}
               />
             </div>

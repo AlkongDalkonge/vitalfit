@@ -4,70 +4,54 @@ import axios from 'axios';
 class AuthService {
   // Access Token 관리 (Remember Me에 따라 다른 저장소 사용)
   static setAccessToken(token, rememberMe = false) {
-    console.log('🔐 setAccessToken 호출:', {
-      token: token ? token.substring(0, 20) + '...' : null,
-      rememberMe,
-    });
-
-    if (rememberMe) {
+    // rememberMe가 명시적으로 false인 경우에만 sessionStorage 사용
+    if (rememberMe === false) {
+      sessionStorage.setItem('accessToken', token);
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('rememberMe');
+    } else {
+      // rememberMe가 true이거나 undefined인 경우 localStorage 사용
       localStorage.setItem('accessToken', token);
       localStorage.setItem('rememberMe', 'true');
-      console.log('💾 localStorage에 토큰 저장 완료');
-    } else {
-      sessionStorage.setItem('accessToken', token);
-      localStorage.setItem('rememberMe', 'false');
-      console.log('💾 sessionStorage에 토큰 저장 완료');
+      sessionStorage.removeItem('accessToken');
     }
-    window.__accessToken = token; // 메모리에도 저장 (성능 향상)
-    console.log('💾 메모리에 토큰 저장 완료');
 
-    // 토큰 만료 시간 설정 (Remember Me에 따라)
-    const expiryTime = rememberMe ? 7 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000; // 7일 또는 24시간
+    // 메모리에 토큰 저장
+    window.__accessToken = token;
+
+    // 토큰 만료 시간 설정
+    const expiryTime = rememberMe ? 7 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
     const expiryDate = new Date(Date.now() + expiryTime);
     localStorage.setItem('tokenExpiry', expiryDate.toISOString());
-    console.log('⏰ 토큰 만료 시간 설정:', expiryDate.toISOString());
 
-    // 자동 갱신 타이머 설정
     this.setupAutoRefresh(token, rememberMe);
-
-    // 저장 확인
-    this.debugTokenStorage();
   }
 
   static getAccessToken() {
-    console.log('🔍 getAccessToken 호출');
-
     // 메모리에서 먼저 확인
     if (window.__accessToken) {
-      console.log('✅ 메모리에서 토큰 발견');
       return window.__accessToken;
     }
 
     // Remember Me 설정 확인
     const rememberMe = localStorage.getItem('rememberMe');
-    console.log('🔍 rememberMe 설정:', rememberMe);
 
     if (rememberMe === 'true') {
       // localStorage에서 토큰 가져오기
       const token = localStorage.getItem('accessToken');
-      console.log('🔍 localStorage에서 토큰 확인:', token ? '토큰 있음' : '토큰 없음');
       if (token) {
         window.__accessToken = token;
-        console.log('✅ localStorage에서 토큰 가져옴');
         return token;
       }
     } else {
       // sessionStorage에서 토큰 가져오기
       const token = sessionStorage.getItem('accessToken');
-      console.log('🔍 sessionStorage에서 토큰 확인:', token ? '토큰 있음' : '토큰 없음');
       if (token) {
         window.__accessToken = token;
-        console.log('✅ sessionStorage에서 토큰 가져옴');
         return token;
       }
     }
 
-    console.log('❌ 토큰을 찾을 수 없음');
     return null;
   }
 
@@ -90,12 +74,7 @@ class AuthService {
 
   // Refresh Token 관리
   static setRefreshToken(token) {
-    console.log('🔐 setRefreshToken 호출:', {
-      token: token ? token.substring(0, 20) + '...' : null,
-    });
     localStorage.setItem('refreshToken', token);
-    console.log('💾 Refresh Token localStorage 저장 완료');
-    this.debugTokenStorage(); // 저장 후 상태 확인
   }
 
   static getRefreshToken() {
@@ -140,8 +119,6 @@ class AuthService {
         this.handleRefreshFailure();
       }
     }, refreshTime);
-
-    console.log(`🔄 자동 갱신 타이머 설정 완료 (${Math.floor(refreshTime / 1000 / 60)}분 후)`);
   }
 
   // 자동 갱신 타이머 정리
@@ -159,8 +136,6 @@ class AuthService {
       if (!refreshToken) {
         throw new Error('Refresh token이 없습니다.');
       }
-
-      console.log('🔄 무음 갱신 시작');
 
       const response = await fetch(
         `${process.env.REACT_APP_API_URL || 'http://localhost:3001/api'}/users/refresh-token`,
@@ -184,13 +159,13 @@ class AuthService {
         const rememberMe = this.getRememberMe();
         this.setAccessToken(data.accessToken, rememberMe);
 
-        console.log('✅ 무음 갱신 성공');
+        console.log('✅ 토큰 자동 갱신 성공');
         return data.accessToken;
       } else {
         throw new Error('토큰 갱신 응답 형식 오류');
       }
     } catch (error) {
-      console.error('❌ 무음 갱신 실패:', error);
+      console.error('❌ 토큰 자동 갱신 실패:', error);
       throw error;
     }
   }
@@ -199,13 +174,13 @@ class AuthService {
   static handleRefreshFailure() {
     console.warn('⚠️ 토큰 갱신 실패 - 사용자에게 알림');
 
-    // 사용자에게 토큰 갱신 실패 알림
-    if (window.showRefreshFailureNotification) {
-      window.showRefreshFailureNotification();
-    } else {
-      // 기본 알림 (Toast 또는 모달)
-      alert('세션이 만료되었습니다. 다시 로그인해주세요.');
-    }
+    // 사용자에게 토큰 갱신 실패 알림 (주석처리됨)
+    // if (window.showRefreshFailureNotification) {
+    //   window.showRefreshFailureNotification();
+    // } else {
+    //   // 기본 알림 (Toast 또는 모달)
+    //   alert('세션이 만료되었습니다. 다시 로그인해주세요.');
+    // }
   }
 
   // Access Token 갱신
@@ -213,7 +188,6 @@ class AuthService {
     try {
       const refreshToken = this.getRefreshToken();
       if (!refreshToken) {
-        console.log('Refresh token이 없어 토큰 갱신을 건너뜁니다.');
         return null;
       }
 
@@ -253,7 +227,6 @@ class AuthService {
 
     // 토큰 만료 확인
     if (this.isTokenExpired()) {
-      console.log('⚠️ 토큰이 만료되었습니다.');
       return false;
     }
 
@@ -265,20 +238,17 @@ class AuthService {
     const accessToken = this.getAccessToken();
 
     if (!accessToken) {
-      console.log('🔍 tryAutoLogin: 토큰이 없습니다.');
       return false;
     }
 
     // 토큰 만료 확인
     if (this.isTokenExpired()) {
-      console.log('🔍 tryAutoLogin: 토큰이 만료되었습니다.');
-
       // 무음 갱신 시도
       try {
         await this.silentRefresh();
         console.log('✅ 토큰 자동 갱신 성공');
       } catch (error) {
-        console.log('❌ 토큰 자동 갱신 실패:', error);
+        console.log('❌ 토큰 자동 갱신 실패:', error.message);
         this.removeAccessToken();
         this.removeRefreshToken();
         return false;
@@ -286,36 +256,32 @@ class AuthService {
     }
 
     try {
-      console.log('🔍 tryAutoLogin: 토큰 유효성 검증 시작');
       // 토큰 유효성 검증
       const response = await api.get('/users/me');
 
       // 응답이 성공적이고 사용자 데이터가 있는 경우에만 true 반환
       if (response.data && response.data.user) {
         const user = response.data.user;
-        console.log('🔍 tryAutoLogin: 사용자 상태 확인:', user.status);
 
         if (user.status === 'active') {
-          console.log('✅ tryAutoLogin: 유효한 활성 사용자입니다.');
           return true;
         } else {
           // 사용자 데이터가 있지만 비활성 상태면 토큰 제거
-          console.warn('⚠️ tryAutoLogin: 비활성 사용자입니다. 상태:', user.status);
+          console.warn('⚠️ 비활성 사용자:', user.status);
           this.removeAccessToken();
           return false;
         }
       } else {
         // 사용자 데이터가 없으면 토큰 제거
-        console.warn('⚠️ tryAutoLogin: 사용자 데이터가 없습니다.');
+        console.warn('⚠️ 사용자 데이터 없음');
         this.removeAccessToken();
         return false;
       }
     } catch (error) {
-      console.error('❌ tryAutoLogin: 토큰 유효성 검증 실패:', error);
+      console.error('❌ 토큰 유효성 검증 실패:', error.message);
 
       // 403 에러 (탈퇴된 계정) 또는 401 에러 (토큰 만료)인 경우
       if (error.response?.status === 403 || error.response?.status === 401) {
-        console.warn('⚠️ tryAutoLogin: 인증 실패로 토큰 제거. 상태:', error.response?.status);
         this.removeAccessToken();
       }
       return false;
@@ -327,11 +293,8 @@ class AuthService {
     const rememberMe = this.getRememberMe();
 
     if (rememberMe) {
-      console.log('🔒 Remember Me가 활성화되어 있어 세션 로그아웃을 설정하지 않습니다.');
       return;
     }
-
-    console.log('🔒 세션 기반 로그인: 자동 로그아웃 비활성화 (새로고침 시 로그인 유지)');
 
     // 30초 타이머 제거하고 새로고침 시에도 로그인 유지
     // 빈 정리 함수 반환
@@ -339,24 +302,49 @@ class AuthService {
       // 정리할 것이 없음
     };
   }
-
-  // 디버깅용: 현재 토큰 저장 상태 출력
-  static debugTokenStorage() {
-    console.log('🔍 === 토큰 저장 상태 디버깅 ===');
-    console.log('localStorage.accessToken:', localStorage.getItem('accessToken') ? '있음' : '없음');
-    console.log(
-      'sessionStorage.accessToken:',
-      sessionStorage.getItem('accessToken') ? '있음' : '없음'
-    );
-    console.log('localStorage.rememberMe:', localStorage.getItem('rememberMe'));
-    console.log(
-      'localStorage.refreshToken:',
-      localStorage.getItem('refreshToken') ? '있음' : '없음'
-    );
-    console.log('localStorage.tokenExpiry:', localStorage.getItem('tokenExpiry'));
-    console.log('window.__accessToken:', window.__accessToken ? '있음' : '없음');
-    console.log('================================');
-  }
 }
+
+// 권한 체크 유틸리티 함수들
+export const hasRole = (user, requiredRole) => {
+  if (!user || !user.position_id) return false;
+  return user.position_id >= requiredRole;
+};
+
+export const isAdmin = user => hasRole(user, 99); // 관리자 (level 99)
+export const isCenterManager = user => hasRole(user, 11); // 센터장 (level 11)
+export const isManager = user => hasRole(user, 9); // 매니저 (level 9)
+export const isTeamLeader = user => hasRole(user, 7); // 팀장 (level 7)
+export const isTrainer = user => hasRole(user, 3); // 트레이너 (level 3)
+export const isStudent = user => hasRole(user, 2); // 교육생 (level 2)
+export const isTrainee = user => hasRole(user, 1); // 연습생 (level 1)
+
+// PT 스케줄 관련 권한 체크
+export const canViewAllPTSchedules = user => {
+  return isAdmin(user) || isCenterManager(user) || isManager(user);
+};
+
+export const canEditPTSessions = user => {
+  return (
+    isTrainer(user) ||
+    isTeamLeader(user) ||
+    isManager(user) ||
+    isCenterManager(user) ||
+    isAdmin(user)
+  );
+};
+
+export const canViewAdminPTSchedule = user => {
+  return isAdmin(user); // 관리자만 접근 가능
+};
+
+export const canViewTrainerPTSchedule = user => {
+  return (
+    isTrainer(user) ||
+    isTeamLeader(user) ||
+    isManager(user) ||
+    isCenterManager(user) ||
+    isAdmin(user)
+  );
+};
 
 export default AuthService;

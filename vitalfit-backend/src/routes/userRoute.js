@@ -3,11 +3,16 @@ const path = require('path');
 const router = express.Router();
 const userController = require('../controllers/userController');
 const { profileUpload, additionalImageUpload } = require('../middlewares/profileUpload');
+const accountImageUpload = require('../middlewares/accountImageUpload');
 const auth = require('../middlewares/authMiddleware');
 const { requireReAuth } = require('../middlewares/reauthMiddleware');
+const {
+  checkUserViewPermission,
+  checkUserListPermission,
+} = require('../middlewares/permissionMiddleware');
 
-// 사용자 목록 조회 (관리자용)
-router.get('/', auth, userController.getAllUsers);
+// 사용자 목록 조회 (권한 체크 적용)
+router.get('/', auth, checkUserListPermission, userController.getAllUsers);
 
 // 회원가입 관련 라우트
 router.post(
@@ -76,6 +81,16 @@ router.post(
   profileUpload.handleError,
   profileUpload.processFile,
   userController.uploadProfileImage
+);
+
+// 계좌 이미지 업로드 라우트
+router.post(
+  '/upload-account-image',
+  auth,
+  accountImageUpload.uploadSingle,
+  accountImageUpload.handleError,
+  accountImageUpload.processFile,
+  userController.uploadAccountImage
 );
 
 // 추가 이미지 업로드 라우트
@@ -302,7 +317,7 @@ router.get('/leave/reject/:requestId', async (req, res) => {
   }
 });
 
-// 특정 사용자 조회 (관리자용) - 파라미터가 있는 라우트를 마지막에 정의
-router.get('/:id', auth, userController.getUserById);
+// 특정 사용자 조회 (권한 체크 적용)
+router.get('/:id', auth, checkUserViewPermission, userController.getUserById);
 
 module.exports = router;

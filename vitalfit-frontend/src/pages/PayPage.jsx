@@ -101,25 +101,25 @@ const PayPage = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
+      <div className="flex justify-center items-center h-48">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500"></div>
       </div>
     );
   }
 
   return (
-    <div className="w-full max-w-7xl mx-auto p-6 min-h-screen flex flex-col">
-      <div className="flex flex-col gap-6 flex-1 pb-0">
+    <div className="w-full max-w-7xl mx-auto p-4 flex flex-col">
+      <div className="flex flex-col gap-4 flex-1 pb-0">
         {/* 최상단 제목 */}
         <div
           data-layer="PT 결제"
-          className="text-black text-3xl font-extrabold font-['Nunito'] bg-white rounded-lg p-4"
+          className="text-black text-3xl font-extrabold font-['Nunito'] bg-white rounded-lg p-3"
         >
           PT 결제
         </div>
 
         {/* 필터 및 총건수 섹션 */}
-        <div className="flex justify-end items-center pr-8 pt-[5px] pl-[30px] flex-shrink-0 bg-white rounded-lg py-2 px-4">
+        <div className="flex justify-end items-center pr-8 pt-[5px] pl-[30px] flex-shrink-0 bg-white rounded-lg py-1 px-3">
           {/* 필터 및 검색 섹션 */}
           <div className="flex gap-4 items-center">
             {/* 검색창 */}
@@ -286,119 +286,90 @@ const PayPage = () => {
         </div>
 
         {/* 회원 목록 테이블 */}
-        <div className="bg-white mt-1 rounded-lg shadow-sm border border-gray-100">
-          <div className="flex flex-col">
-            {/* 테이블 컨테이너 */}
-            <div className="overflow-hidden">
-              <div className="overflow-y-auto max-h-[calc(100vh-350px)] relative">
-                {/* 테이블 헤더 */}
-                <div className="border-b border-gray-200 sticky top-0 z-30 bg-white shadow-sm relative">
-                  <div className="flex items-center p-4 min-w-max gap-4">
-                    {/* 좌측 여유 */}
-                    <div className="flex-[0.3]"></div>
+        <div className="overflow-hidden rounded-lg shadow-sm border border-gray-100">
+          <div className="overflow-y-auto max-h-[calc(100vh-350px)]">
+            {/* 테이블 헤더 */}
+            <div className="border-b border-gray-200 sticky top-0 z-10 bg-white">
+              <div className="flex items-center p-4 min-w-max gap-4">
+                {/* 좌측 여유 */}
+                <div className="flex-[0.3]"></div>
 
-                    <div
-                      data-layer="고객명"
-                      className="flex-[1] min-w-[80px] justify-start text-neutral-800 text-sm font-semibold font-['Nunito'] leading-normal"
-                    >
-                      고객명
-                    </div>
-                    <div
-                      data-layer="휴대폰 번호"
-                      className="flex-[2] min-w-[120px] justify-start text-neutral-800 text-sm font-semibold font-['Nunito'] leading-normal"
-                    >
-                      휴대폰 번호
-                    </div>
-                    <div
-                      data-layer="소속"
-                      className="flex-[2.5] min-w-[180px] justify-start text-neutral-800 text-sm font-semibold font-['Nunito'] leading-normal"
-                    >
-                      소속
-                    </div>
-                    <div
-                      data-layer="잔여 PT"
-                      className="flex-[1] min-w-[90px] justify-start text-neutral-800 text-sm font-semibold font-['Nunito'] leading-normal"
-                    >
-                      잔여 PT
-                    </div>
-                    <div
-                      data-layer="상태"
-                      className="flex-[1] min-w-[90px] justify-start text-neutral-800 text-sm font-semibold font-['Nunito'] leading-normal"
-                    >
-                      상태
-                    </div>
-                    <div
-                      data-layer="결제 내역"
-                      className="flex-[1] min-w-[90px] justify-start text-neutral-800 text-sm font-semibold font-['Nunito'] leading-normal"
-                    >
-                      결제 내역
-                    </div>
+                <div className="flex-[1] min-w-[80px] justify-start text-neutral-800 text-sm font-semibold font-['Nunito'] leading-normal">
+                  고객명
+                </div>
+                <div className="flex-[2] min-w-[120px] justify-start text-neutral-800 text-sm font-semibold font-['Nunito'] leading-normal">
+                  휴대폰 번호
+                </div>
+                <div className="flex-[2.5] min-w-[180px] justify-start text-neutral-800 text-sm font-semibold font-['Nunito'] leading-normal">
+                  소속
+                </div>
+                <div className="flex-[1] min-w-[90px] justify-start text-neutral-800 text-sm font-semibold font-['Nunito'] leading-normal">
+                  잔여 PT
+                </div>
+                <div className="flex-[1] min-w-[90px] justify-start text-neutral-800 text-sm font-semibold font-['Nunito'] leading-normal">
+                  상태
+                </div>
+                <div className="flex-[1] min-w-[90px] justify-start text-neutral-800 text-sm font-semibold font-['Nunito'] leading-normal">
+                  결제 내역
+                </div>
 
-                    {/* 우측 여유 */}
-                    <div className="flex-[0.3]"></div>
+                {/* 우측 여유 */}
+                <div className="flex-[0.3]"></div>
+              </div>
+            </div>
+
+            {/* 테이블 데이터 */}
+            <div className="bg-white">
+              {filteredMembers.length === 0 ? (
+                <div className="flex justify-center items-center h-32">
+                  <div className="text-center text-gray-500">
+                    <p className="text-lg mb-2">등록된 회원이 없습니다</p>
+                    <p className="text-sm">새로운 회원을 등록해보세요</p>
                   </div>
                 </div>
+              ) : (
+                filteredMembers.map((member, index) => (
+                  <div key={member.id} className="hover:bg-gray-50 transition-colors duration-200">
+                    <div className="flex items-center p-4 min-w-max gap-4">
+                      {/* 좌측 여유 */}
+                      <div className="flex-[0.3]"></div>
 
-                {/* 테이블 데이터 */}
-                <div>
-                  {filteredMembers.map((member, index) => (
-                    <div
-                      key={member.id}
-                      className="hover:bg-gray-50 transition-colors duration-200 relative z-10"
-                    >
-                      <div className="flex items-center p-4 min-w-max gap-4">
-                        {/* 좌측 여유 */}
-                        <div className="flex-[0.3]"></div>
-
-                        <div data-layer="고객명" className="flex-[1] min-w-[80px] justify-start">
-                          <button
-                            onClick={() => handleViewMore(member.id)}
-                            className="text-cyan-600 text-sm font-normal font-['Nunito'] leading-normal hover:text-cyan-800 hover:underline cursor-pointer transition-colors duration-200"
-                          >
-                            {member.name}
-                          </button>
-                        </div>
-                        <div
-                          data-layer="휴대폰 번호"
-                          className="flex-[2] min-w-[120px] justify-start text-neutral-600 text-sm font-normal font-['Nunito'] leading-normal"
+                      <div className="flex-[1] min-w-[80px] justify-start">
+                        <button
+                          onClick={() => handleViewMore(member.id)}
+                          className="text-cyan-600 text-sm font-medium hover:text-cyan-800 hover:underline cursor-pointer transition-colors duration-200"
                         >
-                          {member.phone}
-                        </div>
-                        <div
-                          data-layer="소속"
-                          className="flex-[2.5] min-w-[180px] justify-start text-neutral-600 text-sm font-normal font-['Nunito'] leading-normal"
-                        >
-                          {member.center?.name || '-'}/{member.trainer?.name || '-'}
-                        </div>
-
-                        <div
-                          data-layer="잔여 PT"
-                          className="flex-[1] min-w-[90px] justify-start text-neutral-600 text-sm font-normal font-['Nunito'] leading-normal"
-                        >
-                          {member.remaining_sessions || 0}
-                        </div>
-                        <div data-layer="상태" className="flex-[1] min-w-[90px] justify-start">
-                          <span className="text-neutral-600 text-sm font-normal font-['Nunito'] leading-normal">
-                            {getStatusText(member.status)}
-                          </span>
-                        </div>
-                        <div data-layer="결제 내역" className="flex-[1] min-w-[90px] justify-start">
-                          <button
-                            onClick={() => handleViewPaymentHistory(member.id)}
-                            className="text-cyan-600 text-sm font-normal font-['Nunito'] leading-normal hover:text-cyan-800 hover:underline cursor-pointer transition-colors duration-200"
-                          >
-                            조회
-                          </button>
-                        </div>
-
-                        {/* 우측 여유 */}
-                        <div className="flex-[0.3]"></div>
+                          {member.name}
+                        </button>
                       </div>
-                      <div className="h-0 border-b border-gray-50"></div>
+                      <div className="flex-[2] min-w-[120px] justify-start text-neutral-600 text-sm font-normal font-['Nunito'] leading-normal">
+                        {member.phone}
+                      </div>
+                      <div className="flex-[2.5] min-w-[180px] justify-start text-neutral-600 text-sm font-normal font-['Nunito'] leading-normal">
+                        {member.center?.name || '-'}/{member.trainer?.name || '-'}
+                      </div>
+                      <div className="flex-[1] min-w-[90px] justify-start text-neutral-600 text-sm font-normal font-['Nunito'] leading-normal">
+                        {member.remaining_sessions || 0}
+                      </div>
+                      <div className="flex-[1] min-w-[90px] justify-start text-neutral-600 text-sm font-normal font-['Nunito'] leading-normal">
+                        {getStatusText(member.status)}
+                      </div>
+                      <div className="flex-[1] min-w-[90px] justify-start">
+                        <button
+                          onClick={() => handleViewPaymentHistory(member.id)}
+                          className="text-cyan-600 text-sm font-medium hover:text-cyan-800 hover:underline cursor-pointer transition-colors duration-200"
+                        >
+                          조회
+                        </button>
+                      </div>
+
+                      {/* 우측 여유 */}
+                      <div className="flex-[0.3]"></div>
                     </div>
-                  ))}
-                </div>
-              </div>
+                    <div className="h-0 border-b border-gray-50"></div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>

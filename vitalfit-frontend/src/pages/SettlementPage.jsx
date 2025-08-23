@@ -69,6 +69,31 @@ const SettlementPage = () => {
     }
   }, [location.state, user?.position_id]);
 
+  // position_id가 7 이하인 사용자는 본인 정보로 자동 설정
+  useEffect(() => {
+    if (user && user.position_id <= 7 && centers && teams && trainers) {
+      console.log('🔒 position_id 7 이하 사용자: 본인 정보로 자동 설정', {
+        userId: user.id,
+        positionId: user.position_id,
+        centerId: user.center_id,
+        teamId: user.team_id
+      });
+
+      // 본인 센터 설정
+      if (user.center_id) {
+        setSelectedCenter(user.center_id.toString());
+      }
+
+      // 본인 팀 설정
+      if (user.team_id) {
+        setSelectedTeam(user.team_id.toString());
+      }
+
+      // 본인 트레이너 설정
+      setSelectedTrainer(user.id.toString());
+    }
+  }, [user, centers, teams, trainers]);
+
   // 트레이너가 선택되면 해당 트레이너의 팀을 자동으로 설정
   useEffect(() => {
     if (selectedTrainer && trainers && teams) {
@@ -122,7 +147,7 @@ const SettlementPage = () => {
   // 선택된 트레이너의 팀 ID
   const trainerTeamId = useMemo(() => {
     if (!selectedTrainerInfo) return null;
-    return selectedTrainerInfo.teamId || selectedTeam;
+    return selectedTrainerInfo.team_id ?? Number(selectedTeam);
   }, [selectedTrainerInfo, selectedTeam]);
 
   // 팀 매출 통계 정보 (팀장인 경우에만 사용)
@@ -154,65 +179,45 @@ const SettlementPage = () => {
 
   const loadMonthlySettlement = async () => {
     const myReq = ++loadReqRef.current;
-    console.log('🔄 loadMonthlySettlement 호출됨:', {
-      selectedTrainer,
-      year,
-      month,
-      locationState: location.state,
-      user: user ? '로드됨' : '로드안됨',
-      userPositionId: user?.position_id,
-    });
 
     // 사용자 정보가 로드될 때까지 기다림
     if (!user) {
-      console.log('사용자 정보가 로드되지 않음, 정산 데이터 로드 건너뜀');
       return;
-    }
-
-    // 회계팀(position_id === 12)은 모든 정산 확인 가능
-    // 관리자(position_id > 12)는 모든 정산 확인 가능
-    if (user?.position_id >= 12) {
-      console.log('회계팀/관리자 권한이므로 모든 정산 확인 가능:', {
-        position_id: user?.position_id,
-      });
-      // 정산 데이터 로드 계속 진행
     }
 
     // 선택된 트레이너가 있을 때만 정산 데이터를 가져옴
     if (!selectedTrainer || !year || !month) {
-      console.log('정산 데이터 로드 조건 미충족:', { selectedTrainer, year, month });
       setMonthlySettlement(null);
       return;
     }
 
-    const targetUserId = parseInt(selectedTrainer);
+    const targetUserId = Number(selectedTrainer);
+
+    // 회계팀(position_id >= 12)은 모든 정산 확인 가능
+    // 관리자(position_id > 12)는 모든 정산 확인 가능
+
+    // position_id가 7 이하인 사용자는 본인의 정산만 확인 가능
+    if (user?.position_id <= 7) {
+      if (targetUserId !== user.id) {
+        setMonthlySettlement(null);
+        return;
+      }
+    }
 
     try {
-      console.log('정산 데이터 로드 시작:', { targetUserId, year, month });
-
-      // 방어 로그: 쿼리 파라미터 확인
-      console.log('쿼리 파라미터', {
-        user_id: targetUserId,
-        year,
-        month,
-      });
       const response = await settlementAPI.getSettlements({
         user_id: targetUserId,
         year: year,
         month: month,
       });
 
-      console.log('정산 데이터 응답:', response);
-
       // ✅ 최신 요청만 반영
       if (myReq !== loadReqRef.current) {
-        console.log('이전 요청 응답 무시(myReq:', myReq, ', current:', loadReqRef.current, ')');
         return;
       }
 
       if (response.success && response.data.length > 0) {
         const ms = response.data[0];
-        console.log('정산 데이터 설정:', ms);
 
         // (센터장) API 결과의 center_id로 최종 권한 확인
         if (
@@ -221,17 +226,12 @@ const SettlementPage = () => {
           user?.center_id &&
           ms.center_id !== user.center_id
         ) {
-          console.log('센터장: API 결과 상 다른 센터의 정산임. 표시하지 않음.', {
-            msCenter: ms.center_id,
-            userCenter: user.center_id,
-          });
           setMonthlySettlement(null);
           return;
         }
 
         setMonthlySettlement(ms);
       } else {
-        console.log('정산 데이터 없음(빈 결과)');
         setMonthlySettlement(null);
       }
     } catch (error) {
@@ -250,8 +250,13 @@ const SettlementPage = () => {
       const response = await settlementAPI.acknowledge(monthlySettlement.id, user?.id);
 
       if (response.success) {
+        toast.success(response.message || '정산 확인이 완료되었습니다.');
         // 정산 데이터 새로고침
         await loadMonthlySettlement();
+        // 헤더 알림 카운트 즉시 업데이트
+        if (window.refreshNotificationCount) {
+          window.refreshNotificationCount();
+        }
       } else {
         setAcknowledgeError(response.message || '확인 처리에 실패했습니다.');
       }
@@ -263,7 +268,7 @@ const SettlementPage = () => {
     }
   };
 
-  // 센터장 승인 처리
+  // 센터장 ㅜㅜ 처리
   const handleApprove = async () => {
     if (!monthlySettlement) return;
 
@@ -271,12 +276,16 @@ const SettlementPage = () => {
       setAcknowledgeLoading(true);
       setAcknowledgeError(null);
 
-      const response = await settlementAPI.approve(monthlySettlement.id);
+      const response = await settlementAPI.approve(monthlySettlement.id, user?.id, user?.center_id);
 
       if (response.success) {
         toast.success('정산 승인이 완료되었습니다.');
         // 정산 데이터 새로고침
         await loadMonthlySettlement();
+        // 헤더 알림 카운트 즉시 업데이트
+        if (window.refreshNotificationCount) {
+          window.refreshNotificationCount();
+        }
       } else {
         setAcknowledgeError(response.message || '승인 처리에 실패했습니다.');
       }
@@ -296,12 +305,16 @@ const SettlementPage = () => {
       setAcknowledgeLoading(true);
       setAcknowledgeError(null);
 
-      const response = await settlementAPI.hqApprove(monthlySettlement.id);
+      const response = await settlementAPI.hqApprove(monthlySettlement.id, user?.id);
 
       if (response.success) {
         toast.success('최종 승인이 완료되었습니다.');
         // 정산 데이터 새로고침
         await loadMonthlySettlement();
+        // 헤더 알림 카운트 즉시 업데이트
+        if (window.refreshNotificationCount) {
+          window.refreshNotificationCount();
+        }
       } else {
         setAcknowledgeError(response.message || '최종 승인 처리에 실패했습니다.');
       }
@@ -321,12 +334,16 @@ const SettlementPage = () => {
       setAcknowledgeLoading(true);
       setAcknowledgeError(null);
 
-      const response = await settlementAPI.hqReject(monthlySettlement.id, rejectReason);
+      const response = await settlementAPI.hqReject(monthlySettlement.id, rejectReason, user?.id);
 
       if (response.success) {
         toast.success('정산이 반려되었습니다.');
         // 정산 데이터 새로고침
         await loadMonthlySettlement();
+        // 헤더 알림 카운트 즉시 업데이트
+        if (window.refreshNotificationCount) {
+          window.refreshNotificationCount();
+        }
       } else {
         setAcknowledgeError(response.message || '반려 처리에 실패했습니다.');
       }
@@ -422,7 +439,7 @@ const SettlementPage = () => {
       }
 
       const teamLeaderRevenue =
-        teamRevenueStats.members?.find(member => member.id === selectedTrainer)?.stats?.revenue
+        teamRevenueStats.members?.find(member => Number(member.id) === Number(selectedTrainer))?.stats?.revenue
           ?.total || 0;
 
       const totalTeamRevenue = teamRevenueStats.team_statistics?.total_revenue || 0;
@@ -519,7 +536,7 @@ const SettlementPage = () => {
   }
 
   return (
-    <div className="p-6 space-y-8 max-w-[1200px] mx-auto bg-white rounded-xl shadow">
+    <div className="pt-0 px-6 pb-6 space-y-8 max-w-[1200px] mx-auto bg-white rounded-xl shadow">
       {/* 필터 영역 */}
       <SettlementFilterBar
         centers={centers}
@@ -556,7 +573,7 @@ const SettlementPage = () => {
       />
 
       {/* 디버그 정보 */}
-      <div className="bg-gray-100 p-4 mb-4 rounded text-sm">
+      {/* <div className="bg-gray-100 p-4 mb-4 rounded text-sm">
         <h4 className="font-bold mb-2">🔍 버튼 로직 디버그</h4>
         <div className="grid grid-cols-2 gap-4">
           <div>
@@ -573,7 +590,7 @@ const SettlementPage = () => {
           <div>
             <div>is_owner: {monthlySettlement?.user_id === user?.id ? '✅' : '❌'}</div>
             <div>is_center_manager: {user?.position_id === 11 ? '✅' : '❌'}</div>
-            <div>is_accounting: {user?.position_id === 12 ? '✅' : '❌'}</div>
+            <div>is_accounting: {user?.position_id >= 12 ? '✅' : '❌'}</div>
             <div>status_draft: {monthlySettlement?.status === 'draft' ? '✅' : '❌'}</div>
             <div>
               status_acknowledged: {monthlySettlement?.status === 'acknowledged' ? '✅' : '❌'}
@@ -585,7 +602,7 @@ const SettlementPage = () => {
             <div>status_rejected: {monthlySettlement?.status === 'rejected' ? '✅' : '❌'}</div>
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* 정산 승인 섹션 */}
 
@@ -681,9 +698,23 @@ const SettlementPage = () => {
                   </span>
                 </div>
                 <div>
+                  <span className="text-gray-600">세후 금액:</span>
+                  <span className="ml-2 font-semibold text-green-600">
+                    {new Intl.NumberFormat('ko-KR').format(monthlySettlement.after_tax_amount || 0)}
+                    원
+                  </span>
+                </div>
+                <div>
                   <span className="text-gray-600">정산 기간:</span>
                   <span className="ml-2 font-medium">
                     {monthlySettlement.settlement_year}년 {monthlySettlement.settlement_month}월
+                  </span>
+                </div>
+                <div>
+                  <span className="text-gray-600">원천징수:</span>
+                  <span className="ml-2 font-medium text-red-600">
+                    {new Intl.NumberFormat('ko-KR').format((monthlySettlement.total_settlement || 0) - (monthlySettlement.after_tax_amount || 0))}
+                    원 (3.3%)
                   </span>
                 </div>
               </div>
@@ -834,7 +865,7 @@ const SettlementPage = () => {
                 )}
 
                 {/* 회계팀 최종 승인/반려 버튼 (center_approved 상태에서 회계팀) */}
-                {monthlySettlement.status === 'center_approved' && user?.position_id === 12 && (
+                {monthlySettlement.status === 'center_approved' && user?.position_id >= 12 && (
                   <div className="space-y-2">
                     <button
                       onClick={handleHqApprove}
@@ -854,7 +885,7 @@ const SettlementPage = () => {
                 )}
 
                 {/* 센터장 승인 완료 메시지 (center_approved 상태에서 회계팀이 아닌 경우) */}
-                {monthlySettlement.status === 'center_approved' && user?.position_id !== 12 && (
+                {monthlySettlement.status === 'center_approved' && user?.position_id < 12 && (
                   <div className="flex items-center justify-center text-blue-600 bg-blue-50 py-2 px-4 rounded">
                     <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
                       <path

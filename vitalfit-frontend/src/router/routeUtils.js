@@ -9,12 +9,14 @@ export const getPathFromMenu = menuName => {
       return '/members';
     case 'PT 결제':
       return '/pay';
+    case 'PT 일정관리':
+      return '/pt-schedule';
     case '정산시스템':
       return '/settlement';
     case '알림/공지':
       return '/notices';
     case '분석리포트':
-      return '/report';
+      return '/analytics';
     case '내계정':
       return '/account';
     default:
@@ -41,13 +43,16 @@ export const getMenuFromPath = pathname => {
   if (pathname.startsWith('/pay') || pathname.startsWith('/dashboard/pay')) {
     return 'PT 결제';
   }
+  if (pathname.startsWith('/pt-schedule') || pathname.startsWith('/dashboard/pt-schedule')) {
+    return 'PT 일정관리';
+  }
   if (pathname.startsWith('/settlement') || pathname.startsWith('/dashboard/settlement')) {
     return '정산시스템';
   }
   if (pathname.startsWith('/notices') || pathname.startsWith('/dashboard/notices')) {
     return '알림/공지';
   }
-  if (pathname.startsWith('/report') || pathname.startsWith('/dashboard/report')) {
+  if (pathname.startsWith('/analytics') || pathname.startsWith('/dashboard/analytics')) {
     return '분석리포트';
   }
   if (pathname.startsWith('/account') || pathname.startsWith('/dashboard/account')) {
@@ -64,11 +69,12 @@ export const ROUTES = {
   USER: '/users',
   MEMBER: '/members',
   PAY: '/pay',
+  PT_SCHEDULE: '/pt-schedule',
   PAYMENT: '/settlement',
   PAYMENT_HISTORY: '/payment-history',
   PT_SESSIONS: '/members/:id/pt-sessions',
   NOTICE: '/notices',
-  REPORT: '/report',
+  ANALYTICS: '/analytics',
   ACCOUNT: '/account',
   PERSONAL_INFO: '/account/personal-info',
   DELETE_ACCOUNT: '/account/delete-account',
@@ -79,9 +85,10 @@ export const MENU_CONFIG = [
   { name: '직원', path: ROUTES.USER },
   { name: '고객', path: ROUTES.MEMBER },
   { name: 'PT 결제', path: ROUTES.PAY },
+  { name: 'PT 일정관리', path: ROUTES.PT_SCHEDULE },
   { name: '정산시스템', path: ROUTES.PAYMENT },
   { name: '알림/공지', path: ROUTES.NOTICE },
-  { name: '분석리포트', path: ROUTES.REPORT },
+  { name: '분석리포트', path: ROUTES.ANALYTICS },
   { name: '내계정', path: ROUTES.ACCOUNT },
 ];
 

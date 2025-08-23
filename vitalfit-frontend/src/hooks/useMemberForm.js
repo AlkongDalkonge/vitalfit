@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { centerAPI, userAPI } from '../utils/api';
 
 /**
@@ -6,17 +6,20 @@ import { centerAPI, userAPI } from '../utils/api';
  * MemberEditModal과 MemberCreateModal에서 공통으로 사용
  */
 export const useMemberForm = (initialData = null, isOpen = false) => {
-  // 폼 데이터 초기값
-  const defaultFormData = {
-    name: '',
-    phone: '',
-    center_id: '',
-    trainer_id: '',
-    join_date: new Date().toISOString().split('T')[0], // 오늘 날짜를 기본값으로 설정
-    expire_date: '',
-    memo: '',
-    status: 'active',
-  };
+  // 폼 데이터 초기값 - useMemo로 메모이제이션
+  const defaultFormData = useMemo(
+    () => ({
+      name: '',
+      phone: '',
+      center_id: '',
+      trainer_id: '',
+      join_date: new Date().toISOString().split('T')[0], // 오늘 날짜를 기본값으로 설정
+      expire_date: '',
+      memo: '',
+      status: 'active',
+    }),
+    []
+  );
 
   // 상태
   const [formData, setFormData] = useState(defaultFormData);
@@ -25,42 +28,8 @@ export const useMemberForm = (initialData = null, isOpen = false) => {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
 
-  // 폼 데이터 초기화 (편집 모드일 때는 initialData 사용)
-  useEffect(() => {
-    if (isOpen) {
-      if (initialData) {
-        // 편집 모드 - 기존 데이터로 초기화
-        setFormData({
-          name: initialData.name || '',
-          phone: initialData.phone || '',
-          center_id: initialData.center_id || '',
-          trainer_id: initialData.trainer_id || initialData.trainer?.id || '',
-          join_date: initialData.join_date
-            ? new Date(initialData.join_date).toISOString().split('T')[0]
-            : '',
-          expire_date: initialData.expire_date
-            ? new Date(initialData.expire_date).toISOString().split('T')[0]
-            : '',
-          memo: initialData.memo || '',
-          status: initialData.status || 'active',
-        });
-      } else {
-        // 생성 모드 - 기본값으로 초기화
-        setFormData(defaultFormData);
-      }
-      setErrors({});
-    }
-  }, [initialData, isOpen]);
-
-  // 센터와 트레이너 데이터 가져오기
-  useEffect(() => {
-    if (isOpen) {
-      fetchCentersAndTrainers();
-    }
-  }, [isOpen]);
-
-  // API 호출 함수
-  const fetchCentersAndTrainers = async () => {
+  // API 호출 함수 - useCallback으로 메모이제이션
+  const fetchCentersAndTrainers = useCallback(async () => {
     try {
       const [centersData, trainersData] = await Promise.all([
         centerAPI.getAllCenters(),
@@ -68,31 +37,79 @@ export const useMemberForm = (initialData = null, isOpen = false) => {
       ]);
 
       if (centersData.success) setCenters(centersData.data.centers);
-      if (trainersData.success) setTrainers(trainersData.data.users);
+      if (trainersData.success) {
+        // 포지션 레벨 1~7에 해당하는 트레이너만 필터링 (담당 멤버 가능)
+        const filteredTrainers = trainersData.data.users.filter(
+          trainer => trainer.position && trainer.position.level >= 1 && trainer.position.level <= 7
+        );
+        setTrainers(filteredTrainers);
+      }
     } catch (error) {
       console.error('데이터 로드 실패:', error);
     }
-  };
+  }, []);
 
-  // 입력값 변경 핸들러
-  const handleInputChange = e => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value,
-    }));
-
-    // 에러 메시지 초기화
-    if (errors[name]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: '',
-      }));
+  // 폼 데이터 초기화 (편집 모드일 때는 initialData 사용) - useCallback으로 메모이제이션
+  const initializeFormData = useCallback(() => {
+    if (initialData) {
+      // 편집 모드 - 기존 데이터로 초기화
+      setFormData({
+        name: initialData.name || '',
+        phone: initialData.phone || '',
+        center_id: initialData.center_id || '',
+        trainer_id: initialData.trainer_id || initialData.trainer?.id || '',
+        join_date: initialData.join_date
+          ? new Date(initialData.join_date).toISOString().split('T')[0]
+          : '',
+        expire_date: initialData.expire_date
+          ? new Date(initialData.expire_date).toISOString().split('T')[0]
+          : '',
+        memo: initialData.memo || '',
+        status: initialData.status || 'active',
+      });
+    } else {
+      // 생성 모드 - 기본값으로 초기화
+      setFormData(defaultFormData);
     }
-  };
+    setErrors({});
+  }, [initialData, defaultFormData]);
 
-  // 폼 검증
-  const validateForm = () => {
+  // 폼 데이터 초기화 useEffect
+  useEffect(() => {
+    if (isOpen) {
+      initializeFormData();
+    }
+  }, [isOpen, initializeFormData]);
+
+  // 센터와 트레이너 데이터 가져오기 useEffect
+  useEffect(() => {
+    if (isOpen) {
+      fetchCentersAndTrainers();
+    }
+  }, [isOpen, fetchCentersAndTrainers]);
+
+  // 입력값 변경 핸들러 - useCallback으로 메모이제이션
+  const handleInputChange = useCallback(
+    e => {
+      const { name, value } = e.target;
+      setFormData(prev => ({
+        ...prev,
+        [name]: value,
+      }));
+
+      // 에러 메시지 초기화
+      if (errors[name]) {
+        setErrors(prev => ({
+          ...prev,
+          [name]: '',
+        }));
+      }
+    },
+    [errors]
+  );
+
+  // 폼 검증 - useCallback으로 메모이제이션
+  const validateForm = useCallback(() => {
     const newErrors = {};
 
     // 필수 필드 검증
@@ -142,21 +159,21 @@ export const useMemberForm = (initialData = null, isOpen = false) => {
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  };
+  }, [formData]);
 
-  // 폼 데이터 리셋
-  const resetForm = () => {
+  // 폼 데이터 리셋 - useCallback으로 메모이제이션
+  const resetForm = useCallback(() => {
     setFormData(defaultFormData);
     setErrors({});
-  };
+  }, [defaultFormData]);
 
-  // 센터별 트레이너 필터링
-  const getFilteredTrainers = () => {
+  // 센터별 트레이너 필터링 - useMemo로 메모이제이션
+  const getFilteredTrainers = useMemo(() => {
     if (!formData.center_id) {
       return trainers;
     }
     return trainers.filter(trainer => trainer.center_id === parseInt(formData.center_id));
-  };
+  }, [trainers, formData.center_id]);
 
   return {
     // 상태

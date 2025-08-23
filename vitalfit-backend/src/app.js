@@ -75,8 +75,8 @@ app.use(errorHandler);
 const PORT = process.env.PORT || 3001;
 
 sequelize
-  .sync({ force: false, alter: true })
-  // .sync({ force: true })
+  // .sync({ force: false, alter: true })
+  .sync({ forces: true })
   .then(async () => {
     console.log('1️⃣ DB 테이블 생성 완료!');
 
@@ -98,11 +98,9 @@ sequelize
       console.log('시드 데이터를 건너뜁니다. (SEED_DATA=false 또는 production 환경)');
     }
 
-    // ✅ 크론 로드 (개발 환경에서만)
-    if (process.env.NODE_ENV !== 'production') {
-      require('./cron/publish.cron');
-      console.log('[cron] 배치 스케줄러 로드 완료 (dev only)');
-    }
+    // ✅ 크론 로드 (모든 환경에서 실행)
+    require('./cron/publish.cron');
+    console.log('[cron] 배치 스케줄러 로드 완료');
 
     console.log('4️⃣ 서버 실행 준비 완료');
     app.listen(PORT, () => {

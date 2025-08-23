@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { settlementAPI } from '../utils/api';
 import StatusChip from './StatusChip';
 
-const SettlementCard = ({ settlement, userRole, onActionComplete }) => {
+const SettlementCard = ({ settlement, userRole, user, onActionComplete }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -33,10 +33,14 @@ const SettlementCard = ({ settlement, userRole, onActionComplete }) => {
       setLoading(true);
       setError(null);
 
-      const response = await settlementAPI.approve(settlement.id);
+      const response = await settlementAPI.approve(settlement.id, user?.id, user?.center_id);
 
       if (response.success) {
         onActionComplete();
+        // 헤더 알림 카운트 즉시 업데이트
+        if (window.refreshNotificationCount) {
+          window.refreshNotificationCount();
+        }
       } else {
         setError(response.message || '승인 처리에 실패했습니다.');
       }
@@ -142,11 +146,23 @@ const SettlementCard = ({ settlement, userRole, onActionComplete }) => {
           </div>
         </div>
 
-        <div className="border-t pt-3">
+        <div className="border-t pt-3 space-y-2">
           <div className="flex justify-between items-center">
             <span className="text-lg font-semibold text-gray-900">총 정산금액:</span>
             <span className="text-xl font-bold text-blue-600">
               {formatCurrency(settlement.total_settlement)}원
+            </span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-sm font-medium text-gray-700">세후 금액:</span>
+            <span className="text-lg font-bold text-green-600">
+              {formatCurrency(settlement.after_tax_amount || 0)}원
+            </span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-sm font-medium text-gray-700">원천징수:</span>
+            <span className="text-sm font-medium text-red-600">
+              {formatCurrency((settlement.total_settlement || 0) - (settlement.after_tax_amount || 0))}원 (3.3%)
             </span>
           </div>
         </div>
