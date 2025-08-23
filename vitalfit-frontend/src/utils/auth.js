@@ -74,15 +74,42 @@ class AuthService {
 
   // Refresh Token 관리
   static setRefreshToken(token) {
+    console.log('🔐 Refresh Token 저장 시도:', {
+      hasToken: !!token,
+      tokenLength: token ? token.length : 0,
+      timestamp: new Date().toISOString(),
+    });
+
     localStorage.setItem('refreshToken', token);
+
+    // 저장 확인
+    const savedToken = localStorage.getItem('refreshToken');
+    console.log('🔐 Refresh Token 저장 결과:', {
+      saved: !!savedToken,
+      savedLength: savedToken ? savedToken.length : 0,
+      matches: token === savedToken,
+    });
   }
 
   static getRefreshToken() {
-    return localStorage.getItem('refreshToken');
+    const token = localStorage.getItem('refreshToken');
+    console.log('🔍 Refresh Token 조회:', {
+      hasToken: !!token,
+      tokenLength: token ? token.length : 0,
+      timestamp: new Date().toISOString(),
+    });
+    return token;
   }
 
   static removeRefreshToken() {
+    console.log('🗑️ Refresh Token 제거');
     localStorage.removeItem('refreshToken');
+
+    // 제거 확인
+    const remainingToken = localStorage.getItem('refreshToken');
+    console.log('🗑️ Refresh Token 제거 결과:', {
+      remaining: !!remainingToken,
+    });
   }
 
   // 토큰 만료 시간 확인
@@ -134,8 +161,11 @@ class AuthService {
     try {
       const refreshToken = this.getRefreshToken();
       if (!refreshToken) {
-        throw new Error('Refresh token이 없습니다.');
+        console.warn('⚠️ Refresh token이 없습니다. 로그인 상태를 확인해주세요.');
+        throw new Error('Refresh token이 없습니다. 다시 로그인해주세요.');
       }
+
+      console.log('🔄 토큰 갱신 시도 중...');
 
       const response = await fetch(
         `${process.env.REACT_APP_API_URL || 'http://localhost:3001/api'}/users/refresh-token`,
@@ -149,7 +179,11 @@ class AuthService {
       );
 
       if (!response.ok) {
-        throw new Error('토큰 갱신 실패');
+        const errorData = await response.json().catch(() => ({}));
+        console.error('❌ 토큰 갱신 API 응답 오류:', response.status, errorData);
+        throw new Error(
+          `토큰 갱신 실패 (${response.status}): ${errorData.message || '알 수 없는 오류'}`
+        );
       }
 
       const data = await response.json();
@@ -162,10 +196,21 @@ class AuthService {
         console.log('✅ 토큰 자동 갱신 성공');
         return data.accessToken;
       } else {
+        console.error('❌ 토큰 갱신 응답 형식 오류:', data);
         throw new Error('토큰 갱신 응답 형식 오류');
       }
     } catch (error) {
       console.error('❌ 토큰 자동 갱신 실패:', error);
+
+      // Refresh token이 없는 경우 특별 처리
+      if (error.message.includes('Refresh token이 없습니다')) {
+        console.warn('🔄 Refresh token이 없어 로그인 페이지로 리다이렉트합니다.');
+        // 로그인 페이지로 리다이렉트
+        if (window.location.pathname !== '/login' && window.location.pathname !== '/') {
+          window.location.href = '/login';
+        }
+      }
+
       throw error;
     }
   }

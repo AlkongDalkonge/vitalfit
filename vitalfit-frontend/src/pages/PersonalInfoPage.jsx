@@ -496,8 +496,6 @@ const PersonalInfoPage = () => {
         'gender',
         'phone',
         'license',
-        'experience',
-        'education',
         'instagram',
       ];
 
@@ -529,6 +527,30 @@ const PersonalInfoPage = () => {
       console.log('전체 응답:', response);
       console.log('response.data:', response.data);
       console.log('response.data.user:', response.data?.user);
+
+      // 경력/학력 데이터 별도 저장 (JSON 형태로)
+      try {
+        // 경력 데이터 저장
+        if (formData.experience && typeof formData.experience === 'object') {
+          console.log('💾 경력 데이터 저장 시작:', formData.experience);
+          await userAPI.updateExperience({
+            experience: JSON.stringify(formData.experience),
+          });
+          console.log('✅ 경력 데이터 저장 완료');
+        }
+
+        // 학력 데이터 저장
+        if (formData.education && typeof formData.education === 'object') {
+          console.log('💾 학력 데이터 저장 시작:', formData.education);
+          await userAPI.updateEducation({
+            education: JSON.stringify(formData.education),
+          });
+          console.log('✅ 학력 데이터 저장 완료');
+        }
+      } catch (error) {
+        console.error('경력/학력 데이터 저장 실패:', error);
+        toast.warning('개인정보는 저장되었지만 경력/학력 정보 저장에 실패했습니다.');
+      }
 
       // 계좌 정보 저장 (빈 값이어도 기존 데이터를 지우기 위해 항상 저장)
       console.log('=== 계좌 정보 저장 시작 ===');
