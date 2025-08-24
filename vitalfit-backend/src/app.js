@@ -78,7 +78,8 @@ const PORT = process.env.PORT || 3001;
 // sequelize.sync({ logging: console.log })
 
 // DB 연결 확인 후 서버 시작
-sequelize.authenticate()
+sequelize
+  .authenticate()
   .then(async () => {
     console.log('1️⃣ DB 테이블 생성 완료!');
 
