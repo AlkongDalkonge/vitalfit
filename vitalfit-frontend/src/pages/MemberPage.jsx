@@ -18,14 +18,14 @@ const MemberPage = () => {
   // 멤버 관련 권한 체크 함수들 (position_id 직접 비교)
   const hasMemberManagementPermission = () => {
     if (!currentUser || !currentUser.position_id) return false;
-    // 센터장(position_id: 11) 이상 권한
-    return currentUser.position_id >= 11;
+    // 모든 직원이 관리 가능 (position_id: 1 이상)
+    return currentUser.position_id >= 1;
   };
 
   const hasMemberEditPermission = () => {
     if (!currentUser || !currentUser.position_id) return false;
-    // 센터장(position_id: 11) 이상 권한
-    return currentUser.position_id >= 11;
+    // 모든 직원이 수정 가능 (position_id: 1 이상)
+    return currentUser.position_id >= 1;
   };
 
   const hasMemberViewPermission = () => {
@@ -297,7 +297,9 @@ const MemberPage = () => {
                     data-layer="Placeholder"
                     className="Placeholder justify-start text-neutral-400 text-xs font-normal font-['Nunito'] leading-normal"
                   >
-                    {trainerFilter && trainerFilter !== 'Select option' ? trainerFilter : '트레이너'}
+                    {trainerFilter && trainerFilter !== 'Select option'
+                      ? trainerFilter
+                      : '트레이너'}
                   </div>
                   <svg
                     className="w-3 h-3 text-neutral-400"

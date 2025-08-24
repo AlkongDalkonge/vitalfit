@@ -15,8 +15,6 @@ const createPTSessionSchema = Joi.object({
     .pattern(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/)
     .optional(),
   session_type: Joi.string().valid('regular', 'free').default('regular'),
-  signature_data: Joi.string().required(),
-  signature_time: Joi.date().default(() => new Date()),
   notes: Joi.string().optional(),
   idempotency_key: Joi.string().optional(), // 멱등성 키
 });
@@ -31,8 +29,6 @@ const updatePTSessionSchema = Joi.object({
     .pattern(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/)
     .optional(),
   session_type: Joi.string().valid('regular', 'free').optional(),
-  signature_data: Joi.string().optional(),
-  signature_time: Joi.date().optional(),
   notes: Joi.string().optional(),
 });
 
@@ -57,8 +53,6 @@ const createPTSession = async (req, res) => {
       start_time,
       end_time,
       session_type,
-      signature_data,
-      signature_time,
       notes,
       idempotency_key,
     } = value;
@@ -113,8 +107,6 @@ const createPTSession = async (req, res) => {
       start_time,
       end_time,
       session_type,
-      signature_data,
-      signature_time,
       notes,
       idempotency_key,
     });
@@ -181,8 +173,6 @@ const updatePTSession = async (req, res) => {
         'start_time',
         'end_time',
         'session_type',
-        'signature_data',
-        'signature_time',
         'notes',
         'created_at',
         'updated_at',
@@ -379,8 +369,6 @@ const getPTSessionsByMonth = async (req, res) => {
         'start_time',
         'end_time',
         'session_type',
-        'signature_data',
-        'signature_time',
         'notes',
         'created_at',
         'updated_at',
@@ -641,7 +629,7 @@ const getPTSessionsByMember = async (req, res) => {
           message: '팀 정보가 없어 권한을 확인할 수 없습니다.',
         });
       }
-      
+
       // 멤버의 트레이너가 같은 팀에 속하는지 확인
       const memberTrainer = await User.findByPk(member.trainer_id, {
         attributes: ['team_id'],
@@ -711,8 +699,6 @@ const getPTSessionsByMember = async (req, res) => {
         'start_time',
         'end_time',
         'session_type',
-        'signature_data',
-        'signature_time',
         'notes',
         'created_at',
         'updated_at',
@@ -954,8 +940,6 @@ const getPTSessionsByUser = async (req, res) => {
         'start_time',
         'end_time',
         'session_type',
-        'signature_data',
-        'signature_time',
         'notes',
         'created_at',
         'updated_at',

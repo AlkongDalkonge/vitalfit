@@ -1675,9 +1675,6 @@ const seedPTSessions = async (centers, users, members) => {
             start_time: startTime,
             end_time: endTime,
             session_type: Math.random() < 0.9 ? 'regular' : 'free', // 90% regular, 10% free
-            signature_data:
-              'data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCI+CiAgPHRleHQgeD0iNTAiIHk9IjUwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiPuuUjOyWtOygkTwvdGV4dD4KPC9zdmc+Cg==',
-            signature_time: `${sessionDate}T${endTime.substring(0, 5)}:00Z`,
             notes: `PT 세션 ${i + 1}회차`,
             idempotency_key: `pt_session_${member.id}_${month}_${i + 1}`,
           });

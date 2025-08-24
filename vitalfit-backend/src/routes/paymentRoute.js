@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const auth = require('../middlewares/authMiddleware');
-const { requirePaymentPermission } = require('../middlewares/permissionMiddleware');
+const { requirePaymentPermission, requirePaymentManagementPermission } = require('../middlewares/permissionMiddleware');
 
 const {
   createPayment,
@@ -13,7 +13,7 @@ const {
 } = require('../controllers/paymentController');
 
 // 결제 생성
-router.post('/', auth, requirePaymentPermission, createPayment);
+router.post('/', auth, requirePaymentManagementPermission, createPayment);
 
 // 이월 매출 조회 (구체적인 라우트를 먼저 정의)
 router.get('/carryover', auth, requirePaymentPermission, getCarryover);
@@ -25,9 +25,9 @@ router.get('/', auth, requirePaymentPermission, getAllPayments);
 router.get('/:id', auth, requirePaymentPermission, getPayment);
 
 // 결제 수정
-router.put('/:id', auth, requirePaymentPermission, updatePayment);
+router.put('/:id', auth, requirePaymentManagementPermission, updatePayment);
 
 // 결제 삭제
-router.delete('/:id', auth, requirePaymentPermission, deletePayment);
+router.delete('/:id', auth, requirePaymentManagementPermission, deletePayment);
 
 module.exports = router;

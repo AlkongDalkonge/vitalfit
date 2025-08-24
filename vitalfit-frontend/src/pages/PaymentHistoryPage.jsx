@@ -9,16 +9,64 @@ import { toast } from 'react-toastify';
 const PaymentHistoryPage = () => {
   const { memberId } = useParams();
   const navigate = useNavigate();
-  const { currentUser } = useAuth();
+  const { user: currentUser } = useAuth();
 
   console.log('PaymentHistoryPage 렌더링됨, memberId:', memberId);
 
-  // PT 결제 권한 체크 함수
+  // PT 결제 조회 권한 체크 함수
   const hasPaymentPermission = () => {
-    if (!currentUser || !currentUser.position_id) return false;
-    // 트레이너 이상 권한 필요 (position_id: 3, 4, 5, 7, 11, 13)
-    const allowedPositionIds = [3, 4, 5, 7, 11, 13];
-    return allowedPositionIds.includes(currentUser.position_id);
+    if (!currentUser || !member) return false;
+
+    // 관리자(12, 99)는 모든 권한
+    if (currentUser.position_id === 12 || currentUser.position_id === 99) {
+      return true;
+    }
+
+    // 포지션 1~6: 본인 담당 멤버의 PT 결제만 조회 가능
+    if (currentUser.position_id >= 1 && currentUser.position_id <= 6) {
+      return Number(member.trainer_id) === Number(currentUser.id);
+    }
+
+    // 포지션 7~10: 소속 팀 멤버의 PT 결제 조회 가능
+    if (currentUser.position_id >= 7 && currentUser.position_id <= 10) {
+      return true; // 팀 권한은 백엔드에서 처리
+    }
+
+    // 포지션 11: 소속 센터 멤버의 PT 결제 조회 가능
+    if (currentUser.position_id === 11) {
+      return true; // 센터 권한은 백엔드에서 처리
+    }
+
+    return false;
+  };
+
+  // PT 결제 관리 권한 체크 함수 - 담당 트레이너만 관리 가능
+  const hasPaymentManagementPermission = () => {
+    if (!currentUser || !member) return false;
+
+    // 관리자(12, 99)는 모든 권한
+    if (currentUser.position_id === 12 || currentUser.position_id === 99) {
+      return true;
+    }
+
+    // 담당 트레이너인지 확인 (타입 변환하여 비교)
+    const isTrainer = Number(member.trainer_id) === Number(currentUser.id);
+
+    console.log('🔍 PT 결제 관리 권한 체크:', {
+      currentUser: {
+        id: currentUser.id,
+        name: currentUser.name,
+        position_id: currentUser.position_id,
+      },
+      member: {
+        id: member.id,
+        name: member.name,
+        trainer_id: member.trainer_id,
+      },
+      isTrainer: isTrainer,
+    });
+
+    return isTrainer;
   };
 
   const [member, setMember] = useState(null);
@@ -112,7 +160,7 @@ const PaymentHistoryPage = () => {
   // 결제 등록 관련 핸들러들
   const handleRegisterPayment = () => {
     // 권한 체크
-    if (!hasPaymentPermission()) {
+    if (!hasPaymentManagementPermission()) {
       toast.warning('PT 결제 등록 권한이 없습니다.');
       return;
     }
@@ -133,7 +181,7 @@ const PaymentHistoryPage = () => {
   // 결제 수정 관련 핸들러들
   const handleEditPayment = paymentId => {
     // 권한 체크
-    if (!hasPaymentPermission()) {
+    if (!hasPaymentManagementPermission()) {
       toast.warning('PT 결제 수정 권한이 없습니다.');
       return;
     }
@@ -357,9 +405,9 @@ const PaymentHistoryPage = () => {
         <div className="flex justify-end mt-6">
           <button
             onClick={handleRegisterPayment}
-            disabled={!hasPaymentPermission()}
+            disabled={!hasPaymentManagementPermission()}
             className={`Button w-40 h-11 p-2.5 rounded-[10px] inline-flex justify-center items-center gap-2.5 transition-all duration-200 shadow-lg hover:shadow-xl relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/15 before:via-transparent before:to-transparent before:pointer-events-none ${
-              hasPaymentPermission()
+              hasPaymentManagementPermission()
                 ? 'bg-gradient-to-br from-blue-400 to-blue-600 hover:from-blue-500 hover:to-blue-700'
                 : 'bg-gray-400 cursor-not-allowed'
             }`}

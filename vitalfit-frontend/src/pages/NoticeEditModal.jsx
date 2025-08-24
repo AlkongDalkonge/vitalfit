@@ -83,7 +83,7 @@ const NoticeEditModal = ({ isOpen, onClose, onSuccess, notice }) => {
           formDataToSend.append(key, formData[key]);
         }
       });
-      
+
       // 전체 공지 여부 설정
       formDataToSend.append('is_for_all', true);
 

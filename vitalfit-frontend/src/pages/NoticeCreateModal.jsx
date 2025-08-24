@@ -377,9 +377,7 @@ const NoticeCreateModal = ({ isOpen, onClose, onSuccess }) => {
               type="submit"
               className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700 disabled:opacity-50"
               disabled={
-                loading ||
-                !formData.title.trim() ||
-                !formData.content.trim()
+                loading || !formData.title.trim() || !formData.content.trim()
                 // 수신자 선택 주석처리로 인해 관련 조건 제거
                 // (formData.receiver_type === 'center' && selectedCenters.length === 0) ||
                 // (formData.receiver_type === 'role' && selectedRoles.length === 0)

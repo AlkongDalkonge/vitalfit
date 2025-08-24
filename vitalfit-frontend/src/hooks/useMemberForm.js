@@ -44,15 +44,21 @@ export const useMemberForm = (initialData = null, isOpen = false) => {
       if (trainersData.success) {
         // 모든 사용자 데이터 확인
         console.log('첫 번째 사용자 예시:', trainersData.data.users[0]);
-        console.log('포지션 정보가 있는 사용자들:', trainersData.data.users.filter(u => u.position));
-        
-        // 포지션 ID 3, 4, 5, 7에 해당하는 트레이너만 필터링 (담당 멤버 가능)
-        const filteredTrainers = trainersData.data.users.filter(
-          trainer => {
-            console.log(`사용자 ${trainer.name}: position_id=`, trainer.position_id, 'position=', trainer.position);
-            return trainer.position_id && [3, 4, 5, 7].includes(trainer.position_id);
-          }
+        console.log(
+          '포지션 정보가 있는 사용자들:',
+          trainersData.data.users.filter(u => u.position)
         );
+
+        // 포지션 ID 3, 4, 5, 7에 해당하는 트레이너만 필터링 (담당 멤버 가능)
+        const filteredTrainers = trainersData.data.users.filter(trainer => {
+          console.log(
+            `사용자 ${trainer.name}: position_id=`,
+            trainer.position_id,
+            'position=',
+            trainer.position
+          );
+          return trainer.position_id && [3, 4, 5, 7].includes(trainer.position_id);
+        });
         console.log('필터링된 트레이너:', filteredTrainers);
         setTrainers(filteredTrainers);
       }
@@ -200,17 +206,18 @@ export const useMemberForm = (initialData = null, isOpen = false) => {
   const getFilteredTrainers = useMemo(() => {
     console.log('getFilteredTrainers 호출됨, trainers:', trainers);
     console.log('formData.center_id:', formData.center_id);
-    
-    // 센터가 선택되지 않았으면 모든 트레이너 반환
+
+    // 센터가 선택되지 않았으면 빈 배열 반환 (트레이너 선택 불가)
     if (!formData.center_id) {
-      return trainers;
+      console.log('센터가 선택되지 않음 - 빈 배열 반환');
+      return [];
     }
-    
+
     // 선택된 센터에 속한 트레이너들만 필터링
-    const filteredTrainers = trainers.filter(trainer => 
-      trainer.center_id === parseInt(formData.center_id)
+    const filteredTrainers = trainers.filter(
+      trainer => trainer.center_id === parseInt(formData.center_id)
     );
-    
+
     console.log('필터링된 트레이너:', filteredTrainers);
     return filteredTrainers;
   }, [trainers, formData.center_id]);

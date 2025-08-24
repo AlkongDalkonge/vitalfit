@@ -5,14 +5,34 @@ import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-toastify';
 
 const PTSessionEditModal = ({ isOpen, onClose, session, onUpdate }) => {
-  const { currentUser } = useAuth();
+  const { user: currentUser } = useAuth();
 
-  // PT 세션 권한 체크 함수
+  // PT 세션 관리 권한 체크 함수 - 담당 트레이너만 관리 가능
   const hasPTSessionPermission = () => {
-    if (!currentUser || !currentUser.position_id) return false;
-    // 트레이너 이상 권한 필요 (position_id: 3, 4, 5, 7, 11, 13)
-    const allowedPositionIds = [3, 4, 5, 7, 11, 13];
-    return allowedPositionIds.includes(currentUser.position_id);
+    if (!currentUser || !session) return false;
+
+    // 관리자(12, 99)는 모든 권한
+    if (currentUser.position_id === 12 || currentUser.position_id === 99) {
+      return true;
+    }
+
+    // 담당 트레이너인지 확인 (타입 변환하여 비교)
+    const isTrainer = Number(session.trainer_id) === Number(currentUser.id);
+
+    console.log('🔍 PT 세션 수정 권한 체크:', {
+      currentUser: {
+        id: currentUser.id,
+        name: currentUser.name,
+        position_id: currentUser.position_id,
+      },
+      session: {
+        id: session.id,
+        trainer_id: session.trainer_id,
+      },
+      isTrainer: isTrainer,
+    });
+
+    return isTrainer;
   };
 
   // 커스텀 훅 사용 (편집 모드)
@@ -28,7 +48,7 @@ const PTSessionEditModal = ({ isOpen, onClose, session, onUpdate }) => {
 
     // 권한 체크
     if (!hasPTSessionPermission()) {
-      toast.warning('PT 세션 수정 권한이 없습니다.');
+      toast.warning('PT 세션 수정 권한이 없습니다. 담당 트레이너만 수정할 수 있습니다.');
       return;
     }
 
@@ -46,7 +66,7 @@ const PTSessionEditModal = ({ isOpen, onClose, session, onUpdate }) => {
   const handleDelete = async () => {
     // 권한 체크
     if (!hasPTSessionPermission()) {
-      toast.warning('PT 세션 삭제 권한이 없습니다.');
+      toast.warning('PT 세션 삭제 권한이 없습니다. 담당 트레이너만 삭제할 수 있습니다.');
       return;
     }
 

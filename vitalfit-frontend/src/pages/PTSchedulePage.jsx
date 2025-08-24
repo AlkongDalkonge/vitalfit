@@ -173,17 +173,17 @@ const PTSchedulePage = () => {
       else if (canViewAllTrainers) {
         if (selectedTrainer && selectedTrainer !== 'all') {
           // 특정 트레이너 선택: 해당 트레이너의 PT 세션만 조회
-                  const trainerParams = {
-          year: params.year,
-          month: params.month,
-        };
-        
-        // 센터 ID가 선택된 경우 쿼리 파라미터에 추가
-        if (canViewAllCenters && selectedCenter && selectedCenter !== 'all') {
-          trainerParams.center_id = selectedCenter;
-        }
-        
-        response = await ptSessionAPI.getSessionsByUser(selectedTrainer, trainerParams);
+          const trainerParams = {
+            year: params.year,
+            month: params.month,
+          };
+
+          // 센터 ID가 선택된 경우 쿼리 파라미터에 추가
+          if (canViewAllCenters && selectedCenter && selectedCenter !== 'all') {
+            trainerParams.center_id = selectedCenter;
+          }
+
+          response = await ptSessionAPI.getSessionsByUser(selectedTrainer, trainerParams);
         } else {
           // 전체 트레이너 선택: 센터의 모든 PT 세션 조회
           response = await ptSessionAPI.getPTSessionsByMonth(params.year, params.month);

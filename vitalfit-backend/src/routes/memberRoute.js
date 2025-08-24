@@ -1,7 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const auth = require('../middlewares/authMiddleware');
-const { checkMemberListPermission, checkMemberManagementPermission } = require('../middlewares/permissionMiddleware');
+const {
+  checkMemberListPermission,
+  checkMemberManagementPermission,
+  requirePaymentPermission,
+} = require('../middlewares/permissionMiddleware');
 
 const {
   createMember,
@@ -30,6 +34,6 @@ router.get('/:id', getMember);
 
 // ✅ 멤버별 결제 내역 조회
 // GET /api/members/:id/payments
-router.get('/:id/payments', getMemberPayments);
+router.get('/:id/payments', auth, requirePaymentPermission, getMemberPayments);
 
 module.exports = router;

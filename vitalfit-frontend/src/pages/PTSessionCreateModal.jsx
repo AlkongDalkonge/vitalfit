@@ -5,14 +5,35 @@ import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-toastify';
 
 const PTSessionCreateModal = ({ isOpen, onClose, memberId, member, onCreate }) => {
-  const { currentUser } = useAuth();
+  const { user: currentUser } = useAuth();
 
-  // PT 세션 권한 체크 함수
+  // PT 세션 관리 권한 체크 함수 - 담당 트레이너만 관리 가능
   const hasPTSessionPermission = () => {
-    if (!currentUser || !currentUser.position_id) return false;
-    // 트레이너 이상 권한 필요 (position_id: 3, 4, 5, 7, 11, 13)
-    const allowedPositionIds = [3, 4, 5, 7, 11, 13];
-    return allowedPositionIds.includes(currentUser.position_id);
+    if (!currentUser || !member) return false;
+
+    // 관리자(12, 99)는 모든 권한
+    if (currentUser.position_id === 12 || currentUser.position_id === 99) {
+      return true;
+    }
+
+    // 담당 트레이너인지 확인 (타입 변환하여 비교)
+    const isTrainer = Number(member.trainer_id) === Number(currentUser.id);
+
+    console.log('🔍 PT 세션 생성 권한 체크:', {
+      currentUser: {
+        id: currentUser.id,
+        name: currentUser.name,
+        position_id: currentUser.position_id,
+      },
+      member: {
+        id: member.id,
+        name: member.name,
+        trainer_id: member.trainer_id,
+      },
+      isTrainer: isTrainer,
+    });
+
+    return isTrainer;
   };
 
   // 커스텀 훅 사용 (생성 모드)
@@ -28,7 +49,7 @@ const PTSessionCreateModal = ({ isOpen, onClose, memberId, member, onCreate }) =
 
     // 권한 체크
     if (!hasPTSessionPermission()) {
-      toast.warning('PT 세션 등록 권한이 없습니다.');
+      toast.warning('PT 세션 등록 권한이 없습니다. 담당 트레이너만 등록할 수 있습니다.');
       return;
     }
 

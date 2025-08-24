@@ -10,16 +10,13 @@ import { toast } from 'react-toastify';
 
 const MemberPTSessionPage = () => {
   const { id: memberId } = useParams();
-  const { currentUser } = useAuth();
+  const { user: currentUser } = useAuth();
   const yearDropdownRef = useRef(null);
   const monthDropdownRef = useRef(null);
 
-  // PT 세션 권한 체크 함수
+  // PT 세션 조회 권한 체크 함수 - 백엔드에서 권한을 체크하므로 항상 true 반환
   const hasPTSessionPermission = () => {
-    if (!currentUser || !currentUser.position_id) return false;
-    // 트레이너 이상 권한 필요 (position_id: 3, 4, 5, 7, 11, 13)
-    const allowedPositionIds = [3, 4, 5, 7, 11, 13];
-    return allowedPositionIds.includes(currentUser.position_id);
+    return true; // 백엔드에서 권한을 체크하므로 프론트엔드에서는 체크하지 않음
   };
 
   console.log('🔍 MemberPTSessionPage - memberId:', memberId);
@@ -32,6 +29,10 @@ const MemberPTSessionPage = () => {
   const extractedMemberId = pathMatch ? pathMatch[1] : memberId;
 
   console.log('🔍 MemberPTSessionPage - extractedMemberId:', extractedMemberId);
+  console.log('🔍 MemberPTSessionPage - currentUser:', currentUser);
+  console.log('🔍 MemberPTSessionPage - currentUser type:', typeof currentUser);
+  console.log('🔍 MemberPTSessionPage - currentUser id:', currentUser?.id);
+  console.log('🔍 MemberPTSessionPage - currentUser position_id:', currentUser?.position_id);
 
   // 커스텀 훅 사용
   const {
@@ -55,6 +56,53 @@ const MemberPTSessionPage = () => {
     fetchMemberPTSessions,
   } = usePTSession(extractedMemberId);
 
+  // PT 세션 관리 권한 체크 함수 - 담당 트레이너만 관리 가능
+  const hasPTSessionManagementPermission = () => {
+    if (!currentUser || !member) return false;
+    
+    // 관리자(12, 99)는 모든 권한
+    if (currentUser.position_id === 12 || currentUser.position_id === 99) {
+      return true;
+    }
+    
+    // 담당 트레이너인지 확인 (타입 변환하여 비교)
+    const isTrainer = Number(member.trainer_id) === Number(currentUser.id);
+    
+    console.log('🔍 PT 세션 관리 권한 체크:', {
+      currentUser: {
+        id: currentUser.id,
+        name: currentUser.name,
+        position_id: currentUser.position_id
+      },
+      member: {
+        id: member.id,
+        name: member.name,
+        trainer_id: member.trainer_id
+      },
+      isTrainer: isTrainer
+    });
+    
+    return isTrainer;
+  };
+
+  console.log('🔍 MemberPTSessionPage - member:', member);
+  console.log('🔍 MemberPTSessionPage - member type:', typeof member);
+  console.log('🔍 MemberPTSessionPage - member trainer_id:', member?.trainer_id);
+
+  // 권한 체크 디버깅을 위한 useEffect
+  useEffect(() => {
+    console.log('🔍 useEffect - 권한 체크 디버깅');
+    console.log('🔍 useEffect - currentUser:', currentUser);
+    console.log('🔍 useEffect - member:', member);
+    
+    if (currentUser && member) {
+      const hasPermission = hasPTSessionManagementPermission();
+      console.log('🔍 useEffect - 권한 체크 결과:', hasPermission);
+    } else {
+      console.log('🔍 useEffect - currentUser 또는 member가 없음');
+    }
+  }, [currentUser, member]);
+
   const {
     showYearDropdown,
     showMonthDropdown,
@@ -77,10 +125,19 @@ const MemberPTSessionPage = () => {
 
   // PT 세션 등록 모달 열기
   const handleOpenCreateModal = () => {
-    if (!hasPTSessionPermission()) {
-      toast.warning('PT 세션 등록 권한이 없습니다.');
+    console.log('🔍 PT 등록 버튼 클릭됨');
+    console.log('🔍 hasPTSessionManagementPermission() 호출 전');
+    
+    const hasPermission = hasPTSessionManagementPermission();
+    console.log('🔍 hasPTSessionManagementPermission() 결과:', hasPermission);
+    
+    if (!hasPermission) {
+      console.log('🔍 권한 없음 - 토스트 메시지 표시');
+      toast.warning('PT 세션 등록 권한이 없습니다. 담당 트레이너만 등록할 수 있습니다.');
       return;
     }
+    
+    console.log('🔍 권한 있음 - 모달 열기');
     setIsCreateModalOpen(true);
   };
 
@@ -345,9 +402,7 @@ const MemberPTSessionPage = () => {
                 <div className="flex-[1.5] min-w-[150px] justify-start text-neutral-800 text-sm font-semibold font-['Nunito'] leading-normal">
                   내용
                 </div>
-                <div className="flex-[1] min-w-[100px] justify-start text-neutral-800 text-sm font-semibold font-['Nunito'] leading-normal">
-                  서명 일시
-                </div>
+
 
                 {/* 우측 여유 */}
                 <div className="flex-[0.3]"></div>
@@ -373,9 +428,9 @@ const MemberPTSessionPage = () => {
                       <div className="flex-[0.9] min-w-[60px] justify-start">
                         <button
                           onClick={() => handleEditSession(session)}
-                          disabled={!hasPTSessionPermission()}
+                          disabled={!hasPTSessionManagementPermission()}
                           className={`text-sm font-medium transition-colors duration-200 ${
-                            hasPTSessionPermission()
+                            hasPTSessionManagementPermission()
                               ? 'text-cyan-600 hover:text-cyan-800 hover:underline cursor-pointer'
                               : 'text-gray-400 cursor-not-allowed'
                           }`}
@@ -404,9 +459,7 @@ const MemberPTSessionPage = () => {
                           {session.notes || '-'}
                         </div>
                       </div>
-                      <div className="flex-[1] min-w-[100px] justify-start text-neutral-600 text-sm font-normal font-['Nunito'] leading-normal">
-                        {session.signed_at ? formatDateTime(session.signed_at) : '-'}
-                      </div>
+
 
                       {/* 우측 여유 */}
                       <div className="flex-[0.3]"></div>
@@ -421,24 +474,30 @@ const MemberPTSessionPage = () => {
 
         {/* PT 세션 등록 버튼 */}
         <div className="flex justify-end mt-4 mb-0">
-          <button
-            onClick={handleOpenCreateModal}
-            disabled={!hasPTSessionPermission()}
-            data-layer="Button"
-            data-property-1="Default"
-            className={`Button w-40 h-11 p-2.5 rounded-[10px] inline-flex justify-center items-center gap-2.5 transition-all duration-200 shadow-lg hover:shadow-xl relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/15 before:via-transparent before:to-transparent before:pointer-events-none ${
-              hasPTSessionPermission()
-                ? 'bg-gradient-to-br from-blue-400 to-blue-600 hover:from-blue-500 hover:to-blue-700'
-                : 'bg-gray-400 cursor-not-allowed'
-            }`}
-          >
-            <div
-              data-layer="Primary Button"
-              className="PrimaryButton justify-start text-white text-sm font-medium font-['Nunito'] leading-normal drop-shadow-xl"
-            >
-              PT 등록
-            </div>
-          </button>
+          {(() => {
+            const hasPermission = hasPTSessionManagementPermission();
+            console.log('🔍 PT 등록 버튼 렌더링 - 권한:', hasPermission);
+            return (
+              <button
+                onClick={handleOpenCreateModal}
+                disabled={!hasPermission}
+                data-layer="Button"
+                data-property-1="Default"
+                className={`Button w-40 h-11 p-2.5 rounded-[10px] inline-flex justify-center items-center gap-2.5 transition-all duration-200 shadow-lg hover:shadow-xl relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/15 before:via-transparent before:to-transparent before:pointer-events-none ${
+                  hasPermission
+                    ? 'bg-gradient-to-br from-blue-400 to-blue-600 hover:from-blue-500 hover:to-blue-700'
+                    : 'bg-gray-400 cursor-not-allowed'
+                }`}
+              >
+                <div
+                  data-layer="Primary Button"
+                  className="PrimaryButton justify-start text-white text-sm font-medium font-['Nunito'] leading-normal drop-shadow-xl"
+                >
+                  PT 등록
+                </div>
+              </button>
+            );
+          })()}
         </div>
 
         {/* PT 세션 등록 모달 */}
@@ -447,6 +506,7 @@ const MemberPTSessionPage = () => {
           onClose={handleCloseCreateModal}
           onCreate={handleCreateSession}
           memberId={memberId}
+          member={member}
         />
 
         {/* PT 세션 수정 모달 */}

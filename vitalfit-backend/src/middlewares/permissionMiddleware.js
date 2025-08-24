@@ -284,8 +284,6 @@ const checkMemberManagementPermission = async (req, res, next) => {
   }
 };
 
-
-
 // 멤버 생성 권한 체크 미들웨어
 const checkMemberCreatePermission = async (req, res, next) => {
   try {
@@ -513,7 +511,7 @@ const requirePermissionLevel = requiredLevel => {
   };
 };
 
-// PT 결제 권한 체크 미들웨어 (트레이너 이상 권한 필요)
+// PT 결제 조회 권한 체크 미들웨어 (포지션별 권한 범위 적용)
 const requirePaymentPermission = async (req, res, next) => {
   try {
     if (!req.user || !req.user.uid) {
@@ -523,7 +521,7 @@ const requirePaymentPermission = async (req, res, next) => {
       });
     }
 
-    const currentUser = await User.findByPk(req.user.uid, {
+    const currentUser = await User.findByPk(req.user.uid || req.user.id, {
       include: [
         { model: Position, as: 'position', attributes: ['id', 'level'] },
         { model: Team, as: 'team', attributes: ['id'] },
@@ -538,18 +536,143 @@ const requirePaymentPermission = async (req, res, next) => {
       });
     }
 
-    // 트레이너 이상 권한 필요 (position_id: 3, 4, 5, 7, 11, 13)
-    const allowedPositionIds = [3, 4, 5, 7, 11, 13]; // 트레이너, 주니어, 시니어, 팀장, 센터장, 관리자
-    if (!allowedPositionIds.includes(currentUser.position_id)) {
-      return res.status(403).json({
+    const currentUserLevel = currentUser.position.level;
+
+    // 포지션 12, 99는 모든 권한
+    if (currentUserLevel === 12 || currentUserLevel === 99) {
+      return next();
+    }
+
+    // 포지션 1~6: 본인 담당 멤버의 PT 결제만 조회 가능
+    if (currentUserLevel >= 1 && currentUserLevel <= 6) {
+      return next();
+    }
+
+    // 포지션 7~10: 소속 팀 멤버의 PT 결제 조회 가능
+    if (currentUserLevel >= 7 && currentUserLevel <= 10) {
+      if (!currentUser.team_id) {
+        return res.status(403).json({
+          success: false,
+          message: '팀 정보가 없어 권한을 확인할 수 없습니다.',
+        });
+      }
+      return next();
+    }
+
+    // 포지션 11: 소속 센터 멤버의 PT 결제 조회 가능
+    if (currentUserLevel === 11) {
+      if (!currentUser.center_id) {
+        return res.status(403).json({
+          success: false,
+          message: '센터 정보가 없어 권한을 확인할 수 없습니다.',
+        });
+      }
+      return next();
+    }
+
+    return res.status(403).json({
+      success: false,
+      message: 'PT 결제 조회 권한이 없습니다.',
+    });
+  } catch (error) {
+    console.error('PT 결제 조회 권한 체크 오류:', error);
+    return res.status(500).json({
+      success: false,
+      message: '권한 확인 중 오류가 발생했습니다.',
+    });
+  }
+};
+
+// PT 결제 관리 권한 체크 미들웨어 (담당 트레이너만 관리 가능)
+const requirePaymentManagementPermission = async (req, res, next) => {
+  try {
+    if (!req.user || !req.user.uid) {
+      return res.status(401).json({
         success: false,
-        message: 'PT 결제 등록 권한이 없습니다.',
+        message: '인증이 필요합니다.',
       });
     }
 
-    next();
+    const currentUser = await User.findByPk(req.user.uid || req.user.id, {
+      include: [
+        { model: Position, as: 'position', attributes: ['id', 'level'] },
+      ],
+    });
+
+    if (!currentUser || !currentUser.position) {
+      return res.status(403).json({
+        success: false,
+        message: '권한 정보를 찾을 수 없습니다.',
+      });
+    }
+
+    const currentUserLevel = currentUser.position.level;
+
+    // 포지션 12, 99는 모든 권한
+    if (currentUserLevel === 12 || currentUserLevel === 99) {
+      return next();
+    }
+
+    // PT 결제 생성의 경우: 담당 멤버인지 확인
+    if (req.method === 'POST' && req.body.member_id) {
+      console.log('🔍 PT 결제 생성 권한 체크:', {
+        currentUser: {
+          uid: currentUser.uid,
+          id: currentUser.id,
+          name: currentUser.name,
+          position_level: currentUserLevel
+        },
+        requestBody: {
+          member_id: req.body.member_id
+        }
+      });
+
+      const member = await require('../models').Member.findByPk(req.body.member_id);
+      
+      console.log('🔍 멤버 정보:', {
+        member: member ? {
+          id: member.id,
+          name: member.name,
+          trainer_id: member.trainer_id
+        } : null,
+        isTrainer: member ? member.trainer_id === currentUser.id : false
+      });
+
+      if (!member || member.trainer_id !== currentUser.id) {
+        console.log('❌ PT 결제 생성 권한 거부:', {
+          reason: !member ? '멤버를 찾을 수 없음' : '담당 트레이너가 아님',
+          member_trainer_id: member?.trainer_id,
+          current_user_id: currentUser.id
+        });
+        return res.status(403).json({
+          success: false,
+          message: '본인이 담당하는 멤버의 PT 결제만 생성할 수 있습니다.',
+        });
+      }
+      
+      console.log('✅ PT 결제 생성 권한 승인');
+      return next();
+    }
+
+    // PT 결제 수정/삭제의 경우: 담당 트레이너인지 확인
+    if (req.params.id) {
+      const payment = await require('../models').Payment.findByPk(req.params.id);
+      if (!payment || payment.trainer_id !== currentUser.id) {
+        return res.status(403).json({
+          success: false,
+          message: '본인이 담당하는 멤버의 PT 결제만 관리할 수 있습니다.',
+        });
+      }
+      return next();
+    }
+
+    // 기타 경우는 권한 없음
+    return res.status(403).json({
+      success: false,
+      message: 'PT 결제 관리 권한이 없습니다.',
+    });
   } catch (error) {
-    console.error('PT 결제 권한 체크 오류:', error);
+    console.error('PT 결제 관리 권한 체크 오류:', error);
     return res.status(500).json({
       success: false,
       message: '권한 확인 중 오류가 발생했습니다.',
@@ -641,9 +764,7 @@ const requirePTSessionManagementPermission = async (req, res, next) => {
     }
 
     const currentUser = await User.findByPk(req.user.uid || req.user.id, {
-      include: [
-        { model: Position, as: 'position', attributes: ['id', 'level'] },
-      ],
+      include: [{ model: Position, as: 'position', attributes: ['id', 'level'] }],
     });
 
     if (!currentUser || !currentUser.position) {
@@ -667,36 +788,38 @@ const requirePTSessionManagementPermission = async (req, res, next) => {
           uid: currentUser.uid,
           id: currentUser.id,
           name: currentUser.name,
-          position_level: currentUserLevel
+          position_level: currentUserLevel,
         },
         requestBody: {
-          member_id: req.body.member_id
-        }
+          member_id: req.body.member_id,
+        },
       });
 
       const member = await require('../models').Member.findByPk(req.body.member_id);
-      
+
       console.log('🔍 멤버 정보:', {
-        member: member ? {
-          id: member.id,
-          name: member.name,
-          trainer_id: member.trainer_id
-        } : null,
-        isTrainer: member ? member.trainer_id === currentUser.id : false
+        member: member
+          ? {
+              id: member.id,
+              name: member.name,
+              trainer_id: member.trainer_id,
+            }
+          : null,
+        isTrainer: member ? member.trainer_id === currentUser.id : false,
       });
 
       if (!member || member.trainer_id !== currentUser.id) {
         console.log('❌ PT 세션 생성 권한 거부:', {
           reason: !member ? '멤버를 찾을 수 없음' : '담당 트레이너가 아님',
           member_trainer_id: member?.trainer_id,
-          current_user_id: currentUser.id
+          current_user_id: currentUser.id,
         });
         return res.status(403).json({
           success: false,
           message: '본인이 담당하는 멤버의 PT 세션만 생성할 수 있습니다.',
         });
       }
-      
+
       console.log('✅ PT 세션 생성 권한 승인');
       return next();
     }
@@ -736,6 +859,7 @@ module.exports = {
   requireCenterManagerPermission,
   requireCenterManagementPermission,
   requirePaymentPermission,
+  requirePaymentManagementPermission,
   requirePTSessionPermission,
   requirePTSessionManagementPermission,
   requirePermissionLevel,

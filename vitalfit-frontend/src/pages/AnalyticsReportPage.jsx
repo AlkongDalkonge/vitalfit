@@ -84,11 +84,11 @@ const AnalyticsReportPage = () => {
     { month: '7월', rate: 13.3 },
   ];
 
-  const formatCurrency = (value) => {
+  const formatCurrency = value => {
     return new Intl.NumberFormat('ko-KR').format(value);
   };
 
-  const formatPercentage = (value) => {
+  const formatPercentage = value => {
     return `${value > 0 ? '+' : ''}${value.toFixed(1)}%`;
   };
 
@@ -110,9 +110,7 @@ const AnalyticsReportPage = () => {
             <TrendingDown className="w-4 h-4 text-red-500" />
           )}
           <span
-            className={`text-sm font-medium ${
-              change > 0 ? 'text-emerald-600' : 'text-red-500'
-            }`}
+            className={`text-sm font-medium ${change > 0 ? 'text-emerald-600' : 'text-red-500'}`}
           >
             {formatPercentage(change)}
           </span>
@@ -123,12 +121,10 @@ const AnalyticsReportPage = () => {
         {title.includes('매출')
           ? `${formatCurrency(value).slice(0, -4)}만원`
           : title.includes('지연')
-          ? value
-          : formatCurrency(value)}
+            ? value
+            : formatCurrency(value)}
       </p>
-      {subtitle && (
-        <p className="text-sm text-gray-500">{subtitle}</p>
-      )}
+      {subtitle && <p className="text-sm text-gray-500">{subtitle}</p>}
     </motion.div>
   );
 
@@ -168,7 +164,7 @@ const AnalyticsReportPage = () => {
           <div className="flex items-center space-x-4">
             <span className="text-sm font-medium text-gray-700">조회 기간:</span>
             <div className="flex space-x-2">
-              {['6월', '7월'].map((month) => (
+              {['6월', '7월'].map(month => (
                 <button
                   key={month}
                   onClick={() => setSelectedMonth(month)}
@@ -185,84 +181,89 @@ const AnalyticsReportPage = () => {
           </div>
         </motion.div>
 
-                 {/* KPI 카드 */}
-         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-           <KPICard
-             title="이번 달 매출"
-             value={selectedMonth === '6월' ? 364000000 : 385000000}
-             change={selectedMonth === '6월' ? 12.0 : 5.8}
-             icon={DollarSign}
-             color="green"
-           />
-           <KPICard
-             title="신규 회원"
-             value={selectedMonth === '6월' ? 120 : 135}
-             change={selectedMonth === '6월' ? -30.2 : 12.5}
-             icon={UserCheck}
-             color="blue"
-             subtitle="명"
-           />
-           <KPICard
-             title="회원 이탈률"
-             value={selectedMonth === '6월' ? 12.5 : 13.3}
-             change={selectedMonth === '6월' ? 2.5 : 6.4}
-             icon={UserX}
-             color="red"
-             subtitle="%"
-           />
-           <KPICard
-             title="정산 승인 지연"
-             value="신림 (7일)"
-             change={-2}
-             icon={Clock}
-             color="yellow"
-             subtitle="센터별 지연 현황"
-           />
-         </div>
+        {/* KPI 카드 */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <KPICard
+            title="이번 달 매출"
+            value={selectedMonth === '6월' ? 364000000 : 385000000}
+            change={selectedMonth === '6월' ? 12.0 : 5.8}
+            icon={DollarSign}
+            color="green"
+          />
+          <KPICard
+            title="신규 회원"
+            value={selectedMonth === '6월' ? 120 : 135}
+            change={selectedMonth === '6월' ? -30.2 : 12.5}
+            icon={UserCheck}
+            color="blue"
+            subtitle="명"
+          />
+          <KPICard
+            title="회원 이탈률"
+            value={selectedMonth === '6월' ? 12.5 : 13.3}
+            change={selectedMonth === '6월' ? 2.5 : 6.4}
+            icon={UserX}
+            color="red"
+            subtitle="%"
+          />
+          <KPICard
+            title="정산 승인 지연"
+            value="신림 (7일)"
+            change={-2}
+            icon={Clock}
+            color="yellow"
+            subtitle="센터별 지연 현황"
+          />
+        </div>
 
-         {/* 인사이트 섹션 */}
-         <motion.div
-           initial={{ opacity: 0, y: 20 }}
-           animate={{ opacity: 1, y: 0 }}
-           transition={{ duration: 0.5, delay: 0.3 }}
-           className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 shadow-sm border border-blue-100"
-         >
-           <div className="flex items-center mb-4">
-             <div className="p-2 bg-blue-100 rounded-lg mr-3">
-               <AlertTriangle className="w-6 h-6 text-blue-600" />
-             </div>
-             <h3 className="text-xl font-semibold text-gray-900">📊 주요 인사이트</h3>
-           </div>
-           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-             <div className="bg-white rounded-lg p-4 border-l-4 border-green-500">
-               <div className="flex items-center mb-2">
-                 <TrendingUp className="w-4 h-4 text-green-600 mr-2" />
-                 <span className="text-sm font-medium text-green-700">매출 성장</span>
-               </div>
-               <p className="text-sm text-gray-600">
-                 {selectedMonth === '6월' ? '6월 매출이 전월 대비 12% 증가하여 3억 6,400만원 달성' : '7월 매출이 전월 대비 5.8% 증가하여 3억 8,500만원 달성'}
-               </p>
-             </div>
-             <div className="bg-white rounded-lg p-4 border-l-4 border-blue-500">
-               <div className="flex items-center mb-2">
-                 <Building className="w-4 h-4 text-blue-600 mr-2" />
-                 <span className="text-sm font-medium text-blue-700">센터별 성과</span>
-               </div>
-               <p className="text-sm text-gray-600">
-                 {selectedMonth === '6월' ? '강남센터가 1억 2,500만원으로 최고 매출, 홍대센터는 22.8% 성장률 기록' : '홍대센터 트레이너 박준호가 1,580만원으로 개인 최고 매출 달성'}
-               </p>
-             </div>
-             <div className="bg-white rounded-lg p-4 border-l-4 border-yellow-500">
-               <div className="flex items-center mb-2">
-                 <Clock className="w-4 h-4 text-yellow-600 mr-2" />
-                 <span className="text-sm font-medium text-yellow-700">관리 포인트</span>
-               </div>
-               <p className="text-sm text-gray-600">
-                 신림센터 정산 승인 지연 7일로 개선 필요, 회원 이탈률 {selectedMonth === '6월' ? '12.5%' : '13.3%'}로 관리 강화 필요
-               </p>
-             </div>
-           </div>
-         </motion.div>
+        {/* 인사이트 섹션 */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+          className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 shadow-sm border border-blue-100"
+        >
+          <div className="flex items-center mb-4">
+            <div className="p-2 bg-blue-100 rounded-lg mr-3">
+              <AlertTriangle className="w-6 h-6 text-blue-600" />
+            </div>
+            <h3 className="text-xl font-semibold text-gray-900">📊 주요 인사이트</h3>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="bg-white rounded-lg p-4 border-l-4 border-green-500">
+              <div className="flex items-center mb-2">
+                <TrendingUp className="w-4 h-4 text-green-600 mr-2" />
+                <span className="text-sm font-medium text-green-700">매출 성장</span>
+              </div>
+              <p className="text-sm text-gray-600">
+                {selectedMonth === '6월'
+                  ? '6월 매출이 전월 대비 12% 증가하여 3억 6,400만원 달성'
+                  : '7월 매출이 전월 대비 5.8% 증가하여 3억 8,500만원 달성'}
+              </p>
+            </div>
+            <div className="bg-white rounded-lg p-4 border-l-4 border-blue-500">
+              <div className="flex items-center mb-2">
+                <Building className="w-4 h-4 text-blue-600 mr-2" />
+                <span className="text-sm font-medium text-blue-700">센터별 성과</span>
+              </div>
+              <p className="text-sm text-gray-600">
+                {selectedMonth === '6월'
+                  ? '강남센터가 1억 2,500만원으로 최고 매출, 홍대센터는 22.8% 성장률 기록'
+                  : '홍대센터 트레이너 박준호가 1,580만원으로 개인 최고 매출 달성'}
+              </p>
+            </div>
+            <div className="bg-white rounded-lg p-4 border-l-4 border-yellow-500">
+              <div className="flex items-center mb-2">
+                <Clock className="w-4 h-4 text-yellow-600 mr-2" />
+                <span className="text-sm font-medium text-yellow-700">관리 포인트</span>
+              </div>
+              <p className="text-sm text-gray-600">
+                신림센터 정산 승인 지연 7일로 개선 필요, 회원 이탈률{' '}
+                {selectedMonth === '6월' ? '12.5%' : '13.3%'}로 관리 강화 필요
+              </p>
+            </div>
+          </div>
+        </motion.div>
 
         {/* 메인 콘텐츠 영역 */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -276,7 +277,7 @@ const AnalyticsReportPage = () => {
                   <XAxis dataKey="month" stroke="#6b7280" />
                   <YAxis
                     stroke="#6b7280"
-                    tickFormatter={(value) => `${(value / 100000000).toFixed(1)}억`}
+                    tickFormatter={value => `${(value / 100000000).toFixed(1)}억`}
                   />
                   <Tooltip
                     contentStyle={{
@@ -284,7 +285,7 @@ const AnalyticsReportPage = () => {
                       border: '1px solid #e5e7eb',
                       borderRadius: '8px',
                     }}
-                    formatter={(value) => [`${formatCurrency(value).slice(0, -4)}만원`, '매출']}
+                    formatter={value => [`${formatCurrency(value).slice(0, -4)}만원`, '매출']}
                   />
                   <Line
                     type="monotone"
@@ -298,61 +299,69 @@ const AnalyticsReportPage = () => {
               </ResponsiveContainer>
             </ChartCard>
 
-                         {/* 센터별 매출 비교 */}
-             <ChartCard title="🏢 센터별 매출 비교">
-               <ResponsiveContainer width="100%" height={300}>
-                 <BarChart data={centerRevenueData} barSize={40}>
-                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                   <XAxis dataKey="name" stroke="#6b7280" />
-                   <YAxis
-                     stroke="#6b7280"
-                     tickFormatter={(value) => `${(value / 10000000).toFixed(0)}천만`}
-                   />
-                   <Tooltip
-                     contentStyle={{
-                       backgroundColor: '#ffffff',
-                       border: '1px solid #e5e7eb',
-                       borderRadius: '8px',
-                     }}
-                     formatter={(value) => [`${formatCurrency(value).slice(0, -4)}만원`, '매출']}
-                   />
-                   <Bar dataKey="revenue" fill="#10b981" radius={[4, 4, 0, 0]} />
-                 </BarChart>
-               </ResponsiveContainer>
-             </ChartCard>
+            {/* 센터별 매출 비교 */}
+            <ChartCard title="🏢 센터별 매출 비교">
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={centerRevenueData} barSize={40}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis dataKey="name" stroke="#6b7280" />
+                  <YAxis
+                    stroke="#6b7280"
+                    tickFormatter={value => `${(value / 10000000).toFixed(0)}천만`}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#ffffff',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                    }}
+                    formatter={value => [`${formatCurrency(value).slice(0, -4)}만원`, '매출']}
+                  />
+                  <Bar dataKey="revenue" fill="#10b981" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </ChartCard>
 
             {/* 트레이너별 정산 TOP5 */}
             <ChartCard title="👨‍🏫 트레이너별 정산 TOP5">
               <div className="overflow-x-auto">
                 <table className="w-full">
-                                     <thead>
-                     <tr className="border-b border-gray-200">
-                       <th className="text-left py-3 px-4 font-medium text-gray-700">순위</th>
-                       <th className="text-left py-3 px-4 font-medium text-gray-700">트레이너</th>
-                       <th className="text-left py-3 px-4 font-medium text-gray-700">센터</th>
-                       <th className="text-right py-3 px-4 font-medium text-gray-700">매출</th>
-                       <th className="text-right py-3 px-4 font-medium text-gray-700">정산금</th>
-                       <th className="text-right py-3 px-4 font-medium text-gray-700">정산률</th>
-                     </tr>
-                   </thead>
+                  <thead>
+                    <tr className="border-b border-gray-200">
+                      <th className="text-left py-3 px-4 font-medium text-gray-700">순위</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-700">트레이너</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-700">센터</th>
+                      <th className="text-right py-3 px-4 font-medium text-gray-700">매출</th>
+                      <th className="text-right py-3 px-4 font-medium text-gray-700">정산금</th>
+                      <th className="text-right py-3 px-4 font-medium text-gray-700">정산률</th>
+                    </tr>
+                  </thead>
                   <tbody>
-                                         {(selectedMonth === '6월' ? trainerSettlementData6 : trainerSettlementData7).map((trainer, index) => (
+                    {(selectedMonth === '6월'
+                      ? trainerSettlementData6
+                      : trainerSettlementData7
+                    ).map((trainer, index) => (
                       <tr key={trainer.name} className="border-b border-gray-100 hover:bg-gray-50">
                         <td className="py-3 px-4">
-                          <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-sm font-medium ${
-                            index === 0 ? 'bg-yellow-100 text-yellow-800' :
-                            index === 1 ? 'bg-gray-100 text-gray-800' :
-                            index === 2 ? 'bg-orange-100 text-orange-800' :
-                            'bg-blue-100 text-blue-800'
-                          }`}>
+                          <span
+                            className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-sm font-medium ${
+                              index === 0
+                                ? 'bg-yellow-100 text-yellow-800'
+                                : index === 1
+                                  ? 'bg-gray-100 text-gray-800'
+                                  : index === 2
+                                    ? 'bg-orange-100 text-orange-800'
+                                    : 'bg-blue-100 text-blue-800'
+                            }`}
+                          >
                             {index + 1}
                           </span>
                         </td>
-                                                 <td className="py-3 px-4 font-medium text-gray-900">{trainer.name}</td>
-                         <td className="py-3 px-4 text-gray-600">{trainer.center}</td>
-                         <td className="py-3 px-4 text-right text-gray-700">
-                           {formatCurrency(trainer.revenue).slice(0, -4)}만원
-                         </td>
+                        <td className="py-3 px-4 font-medium text-gray-900">{trainer.name}</td>
+                        <td className="py-3 px-4 text-gray-600">{trainer.center}</td>
+                        <td className="py-3 px-4 text-right text-gray-700">
+                          {formatCurrency(trainer.revenue).slice(0, -4)}만원
+                        </td>
                         <td className="py-3 px-4 text-right text-gray-700">
                           {formatCurrency(trainer.settlement).slice(0, -4)}만원
                         </td>
@@ -405,7 +414,7 @@ const AnalyticsReportPage = () => {
                       border: '1px solid #e5e7eb',
                       borderRadius: '8px',
                     }}
-                    formatter={(value) => [`${value}%`, '이탈률']}
+                    formatter={value => [`${value}%`, '이탈률']}
                   />
                   <Line
                     type="monotone"
@@ -419,42 +428,49 @@ const AnalyticsReportPage = () => {
               </ResponsiveContainer>
             </ChartCard>
 
-                         {/* 센터별 성과 요약 */}
-             <ChartCard title="🏆 센터별 성과 요약">
-               <div className="space-y-4 h-[300px] overflow-y-auto">
-                 {centerRevenueData.map((center, index) => (
-                   <div
-                     key={center.name}
-                     className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
-                   >
-                     <div className="flex items-center space-x-3">
-                       <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${
-                         index === 0 ? 'bg-yellow-100 text-yellow-800' :
-                         index === 1 ? 'bg-gray-100 text-gray-800' :
-                         index === 2 ? 'bg-orange-100 text-orange-800' :
-                         'bg-blue-100 text-blue-800'
-                       }`}>
-                         {index + 1}
-                       </span>
-                       <div>
-                         <div className="font-medium text-gray-900">{center.name}</div>
-                         <div className="text-sm text-gray-500">
-                           {formatCurrency(center.revenue).slice(0, -4)}만원
-                         </div>
-                       </div>
-                     </div>
-                     <div className="text-right">
-                       <div className={`text-sm font-medium ${
-                         center.growth > 15 ? 'text-green-600' : 'text-yellow-600'
-                       }`}>
-                         +{center.growth}%
-                       </div>
-                       <div className="text-xs text-gray-500">성장률</div>
-                     </div>
-                   </div>
-                 ))}
-               </div>
-             </ChartCard>
+            {/* 센터별 성과 요약 */}
+            <ChartCard title="🏆 센터별 성과 요약">
+              <div className="space-y-4 h-[300px] overflow-y-auto">
+                {centerRevenueData.map((center, index) => (
+                  <div
+                    key={center.name}
+                    className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
+                  >
+                    <div className="flex items-center space-x-3">
+                      <span
+                        className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${
+                          index === 0
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : index === 1
+                              ? 'bg-gray-100 text-gray-800'
+                              : index === 2
+                                ? 'bg-orange-100 text-orange-800'
+                                : 'bg-blue-100 text-blue-800'
+                        }`}
+                      >
+                        {index + 1}
+                      </span>
+                      <div>
+                        <div className="font-medium text-gray-900">{center.name}</div>
+                        <div className="text-sm text-gray-500">
+                          {formatCurrency(center.revenue).slice(0, -4)}만원
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div
+                        className={`text-sm font-medium ${
+                          center.growth > 15 ? 'text-green-600' : 'text-yellow-600'
+                        }`}
+                      >
+                        +{center.growth}%
+                      </div>
+                      <div className="text-xs text-gray-500">성장률</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </ChartCard>
           </div>
         </div>
       </div>

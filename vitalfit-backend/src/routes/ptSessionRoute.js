@@ -1,7 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const auth = require('../middlewares/authMiddleware');
-const { requirePTSessionPermission, requirePTSessionManagementPermission } = require('../middlewares/permissionMiddleware');
+const {
+  requirePTSessionPermission,
+  requirePTSessionManagementPermission,
+} = require('../middlewares/permissionMiddleware');
 
 const {
   createPTSession,

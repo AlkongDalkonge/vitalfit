@@ -4,14 +4,35 @@ import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-toastify';
 
 const PaymentEditModal = ({ isOpen, onClose, onUpdate, paymentId, memberId }) => {
-  const { currentUser } = useAuth();
+  const { user: currentUser } = useAuth();
 
-  // PT 결제 권한 체크 함수
+  // PT 결제 관리 권한 체크 함수 - 담당 트레이너만 관리 가능
   const hasPaymentPermission = () => {
-    if (!currentUser || !currentUser.position_id) return false;
-    // 트레이너 이상 권한 필요 (position_id: 3, 4, 5, 7, 11, 13)
-    const allowedPositionIds = [3, 4, 5, 7, 11, 13];
-    return allowedPositionIds.includes(currentUser.position_id);
+    if (!currentUser || !member) return false;
+
+    // 관리자(12, 99)는 모든 권한
+    if (currentUser.position_id === 12 || currentUser.position_id === 99) {
+      return true;
+    }
+
+    // 담당 트레이너인지 확인 (타입 변환하여 비교)
+    const isTrainer = Number(member.trainer_id) === Number(currentUser.id);
+
+    console.log('🔍 PT 결제 수정 권한 체크:', {
+      currentUser: {
+        id: currentUser.id,
+        name: currentUser.name,
+        position_id: currentUser.position_id,
+      },
+      member: {
+        id: member.id,
+        name: member.name,
+        trainer_id: member.trainer_id,
+      },
+      isTrainer: isTrainer,
+    });
+
+    return isTrainer;
   };
 
   // 폼 데이터 상태

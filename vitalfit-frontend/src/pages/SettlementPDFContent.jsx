@@ -118,7 +118,7 @@ const SettlementPDFContent = ({ data = {} }) => {
       ).padStart(2, '0')}_${data.employee?.name || '직원'}.pdf`;
 
       pdf.save(fileName);
-              // console.log('PDF 생성 완료');
+      // console.log('PDF 생성 완료');
     } catch (error) {
       console.error('PDF 생성 오류:', error);
     } finally {

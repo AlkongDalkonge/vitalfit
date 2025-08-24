@@ -5,10 +5,7 @@ import CenterCreateModal from './CenterCreateModal';
 import CenterEditModal from './CenterEditModal';
 import { useUser } from '../utils/hooks';
 import { useAuth } from '../contexts/AuthContext';
-import {
-  getPermissionMessage,
-  getDetailedPermissionMessage,
-} from '../utils/permissionUtils';
+import { getPermissionMessage, getDetailedPermissionMessage } from '../utils/permissionUtils';
 import { toast } from 'react-toastify';
 
 // API 기본 URL 환경 변수
@@ -49,31 +46,31 @@ const CenterPage = () => {
 
   const hasCenterEditPermission = (centerId = null) => {
     if (!currentUser || !currentUser.position_id) return false;
-    
+
     // 관리자는 모든 센터 수정 가능
     if (currentUser.position_id === 13) return true;
-    
+
     // 센터장은 소속 센터만 수정 가능
     if (currentUser.position_id === 11) {
       if (!centerId) return true; // 센터 등록은 가능
       return currentUser.center_id === centerId;
     }
-    
+
     return false;
   };
 
   const hasCenterImagePermission = (centerId = null) => {
     if (!currentUser || !currentUser.position_id) return false;
-    
+
     // 관리자는 모든 센터 이미지 관리 가능
     if (currentUser.position_id === 13) return true;
-    
+
     // 센터장은 소속 센터만 이미지 관리 가능
     if (currentUser.position_id === 11) {
       if (!centerId) return true; // 새 센터 등록 시 이미지 업로드는 가능
       return currentUser.center_id === centerId;
     }
-    
+
     return false;
   };
 
@@ -330,7 +327,9 @@ const CenterPage = () => {
   if (loading) {
     return (
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-black text-3xl font-extrabold font-['Nunito'] bg-white rounded-lg p-3 mb-6">지점 관리</h1>
+        <h1 className="text-black text-3xl font-extrabold font-['Nunito'] bg-white rounded-lg p-3 mb-6">
+          지점 관리
+        </h1>
         <div className="bg-white rounded-xl p-6 shadow-sm">
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -345,7 +344,9 @@ const CenterPage = () => {
   if (error) {
     return (
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-black text-3xl font-extrabold font-['Nunito'] bg-white rounded-lg p-3 mb-6">지점 관리</h1>
+        <h1 className="text-black text-3xl font-extrabold font-['Nunito'] bg-white rounded-lg p-3 mb-6">
+          지점 관리
+        </h1>
         <div className="bg-white rounded-xl p-6 shadow-sm">
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
@@ -367,7 +368,9 @@ const CenterPage = () => {
   return (
     <div className="max-w-7xl mx-auto">
       <div className="mb-6 py-0">
-        <h1 className="text-black text-3xl font-extrabold font-['Nunito'] bg-white rounded-lg p-3">지점 관리</h1>
+        <h1 className="text-black text-3xl font-extrabold font-['Nunito'] bg-white rounded-lg p-3">
+          지점 관리
+        </h1>
       </div>
 
       {/* 센터별 현황 */}
@@ -841,7 +844,8 @@ const CenterPage = () => {
                                   maxImages={10}
                                   isMainImageRequired={false}
                                   disabled={
-                                    imageUploading[center.id] || !hasCenterImagePermission(center.id)
+                                    imageUploading[center.id] ||
+                                    !hasCenterImagePermission(center.id)
                                   }
                                 />
                               </div>

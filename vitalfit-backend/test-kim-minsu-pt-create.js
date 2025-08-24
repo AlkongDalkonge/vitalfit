@@ -22,7 +22,6 @@ async function createPTSession(memberId, token) {
       start_time: '10:00',
       end_time: '11:00',
       session_type: 'regular',
-      signature_data: 'test-signature',
       notes: '테스트 PT 세션'
     });
 

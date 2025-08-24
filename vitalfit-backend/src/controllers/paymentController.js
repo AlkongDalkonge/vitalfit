@@ -346,7 +346,7 @@ const getMemberPayments = async (req, res) => {
         {
           model: Member,
           as: 'member',
-          attributes: ['id', 'name', 'phone'],
+          attributes: ['id', 'name', 'phone', 'trainer_id'],
         },
         {
           model: User,

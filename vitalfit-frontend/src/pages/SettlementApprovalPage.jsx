@@ -86,8 +86,6 @@ const SettlementApprovalPage = () => {
     }
   };
 
-
-
   // 승인 처리 후 데이터 새로고침
   const handleActionComplete = () => {
     loadSettlements();
