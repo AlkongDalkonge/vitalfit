@@ -33,16 +33,6 @@ api.interceptors.request.use(
   config => {
     const token = AuthService.getAccessToken();
 
-    // DEBUG 모드일 때만 API 요청 로깅
-    if (process.env.REACT_APP_DEBUG === 'true') {
-      console.log('API 요청 인터셉터:', {
-        url: config.url,
-        method: config.method,
-        hasToken: !!token,
-        token: token ? token.substring(0, 20) + '...' : null,
-      });
-    }
-
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
 
@@ -66,11 +56,10 @@ api.interceptors.request.use(
             const reAuthToken = getReAuthToken(user.id);
             if (reAuthToken) {
               config.headers['x-reauth-token'] = reAuthToken;
-              console.log('🔐 민감 작업 재인증 토큰 자동 포함');
             }
           }
         } catch (error) {
-          console.log('재인증 토큰 가져오기 실패:', error);
+          // 에러 처리
         }
       }
     }
@@ -95,7 +84,6 @@ api.interceptors.response.use(
 
       // 토큰 갱신 요청이나 /users/me 요청이 401인 경우는 무한 루프 방지
       if (originalRequest.url === '/users/refresh' || originalRequest.url === '/users/me') {
-        console.log('토큰 갱신 또는 사용자 정보 요청 실패 - 로그아웃 처리');
         AuthService.removeAccessToken();
         AuthService.removeRefreshToken();
         localStorage.removeItem('rememberMe');
@@ -109,13 +97,10 @@ api.interceptors.response.use(
       }
 
       try {
-        console.log('🔄 401 에러 감지 - 토큰 갱신 시도');
-
         // 무음 갱신 시도
         const newAccessToken = await AuthService.silentRefresh();
 
         if (newAccessToken) {
-          console.log('✅ 토큰 갱신 성공 - 원래 요청 재시도');
           // 새로운 토큰으로 원래 요청 재시도
           originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
           return api(originalRequest);
@@ -123,7 +108,7 @@ api.interceptors.response.use(
           throw new Error('토큰 갱신 실패');
         }
       } catch (refreshError) {
-        console.error('❌ 토큰 갱신 실패:', refreshError);
+        console.error('토큰 갱신 실패:', refreshError);
 
         // 토큰 갱신 실패 시 로그아웃 처리
         AuthService.removeAccessToken();
@@ -325,9 +310,7 @@ export const ptSessionAPI = {
     return await apiDelete(`/pt-sessions/${id}`);
   },
   getSessionsByMember: async (memberId, params = {}) => {
-    console.log('🚀 PT 세션 API 호출:', { memberId, params });
     const result = await apiGet(`/pt-sessions/member/${memberId}`, { params });
-    console.log('📡 PT 세션 API 응답:', result);
     return result;
   },
   getSessionsByUser: async (userId, params = {}) => {

@@ -100,13 +100,6 @@ const ImageUploadField = ({
           <div className="text-gray-600">
             {data.image_url ? (
               <div className="relative group">
-                {console.log('🖼️ 이미지 URL 처리:', {
-                  original: data.image_url,
-                  startsWithHttp: data.image_url.startsWith('http'),
-                  final: data.image_url.startsWith('http')
-                    ? data.image_url
-                    : `${API_BASE_URL}${data.image_url}`,
-                })}
                 <img
                   src={
                     data.image_url.startsWith('http')

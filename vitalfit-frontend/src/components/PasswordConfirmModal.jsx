@@ -29,25 +29,16 @@ const PasswordConfirmModal = ({ isOpen, onClose, onCancel, onSuccess, pagePath =
   const handleClose = () => {
     // 이미 완료된 경우 중복 실행 방지
     if (completedRef.current) {
-      console.log('⚠️ PasswordConfirmModal - 이미 완료됨, handleClose 무시');
       return;
     }
 
-    console.log(
-      '🔒 PasswordConfirmModal - handleClose 호출, isSuccess:',
-      isSuccess,
-      'successProcessed:',
-      successProcessedRef.current
-    );
     completedRef.current = true; // 완료 상태 설정
 
     if (isSuccess && successProcessedRef.current) {
       // 성공 시에는 onClose만 호출 (isAuthenticated 영향 없음)
-      console.log('✅ PasswordConfirmModal - 성공 후 모달 닫기 (onClose만 호출)');
       onClose();
     } else {
       // 취소 시에는 onCancel + onClose 호출
-      console.log('❌ PasswordConfirmModal - 취소 후 모달 닫기 (onCancel + onClose 호출)');
       if (onCancel) {
         onCancel();
       }
@@ -59,11 +50,9 @@ const PasswordConfirmModal = ({ isOpen, onClose, onCancel, onSuccess, pagePath =
   const handleCancel = () => {
     // 이미 완료된 경우 중복 실행 방지
     if (completedRef.current) {
-      console.log('⚠️ PasswordConfirmModal - 이미 완료됨, handleCancel 무시');
       return;
     }
 
-    console.log('❌ PasswordConfirmModal - handleCancel 호출 (사용자 취소)');
     completedRef.current = true; // 완료 상태 설정
     setIsSuccess(false); // 취소 상태 명시적 설정
     successProcessedRef.current = false; // 성공 처리 완료 상태 해제
@@ -76,18 +65,15 @@ const PasswordConfirmModal = ({ isOpen, onClose, onCancel, onSuccess, pagePath =
 
   // 성공 처리 완료 후 모달 닫기 (비동기 안전)
   const handleSuccessClose = () => {
-    console.log('✅ PasswordConfirmModal - 성공 처리 완료 후 모달 닫기');
     // 성공 상태가 확실히 설정된 후에만 닫기
     if (isSuccess && successProcessedRef.current) {
       handleClose();
     } else {
-      console.log('⚠️ PasswordConfirmModal - 성공 상태가 아직 설정되지 않음, 잠시 대기');
       // 상태가 설정될 때까지 잠시 대기
       setTimeout(() => {
         if (isSuccess && successProcessedRef.current) {
           handleClose();
         } else {
-          console.error('❌ PasswordConfirmModal - 성공 상태 설정 실패');
           // 강제로 닫기
           completedRef.current = true;
           onClose();
@@ -124,14 +110,6 @@ const PasswordConfirmModal = ({ isOpen, onClose, onCancel, onSuccess, pagePath =
 
       // 사용자 ID를 여러 방법으로 시도
       const userId = user?.uid || user?.id || user?.userId;
-      console.log('🔐 재인증 시도 중...', {
-        user,
-        userId,
-        hasToken: !!token,
-        tokenLength: token.length,
-        tokenStart: token.substring(0, 20) + '...',
-        pagePath,
-      });
 
       // 먼저 간단한 연결 테스트
       try {
@@ -157,13 +135,6 @@ const PasswordConfirmModal = ({ isOpen, onClose, onCancel, onSuccess, pagePath =
         credentials: 'include', // HTTP-only 쿠키 포함
       });
 
-      console.log('📡 재인증 응답:', {
-        status: response.status,
-        statusText: response.statusText,
-        headers: Object.fromEntries(response.headers.entries()),
-        ok: response.ok,
-      });
-
       if (response.ok) {
         const result = await response.json();
 
@@ -177,48 +148,25 @@ const PasswordConfirmModal = ({ isOpen, onClose, onCancel, onSuccess, pagePath =
             if (pagePath === '/account' || pagePath?.startsWith('/account/')) {
               // 계정 페이지 전체에 대한 재인증 상태 저장
               setPageReAuthStatus(userId, result.reAuthToken, '/account');
-              console.log(
-                '✅ 계정 페이지 전체 재인증 토큰 저장됨, userId:',
-                userId,
-                'pagePath:',
-                '/account'
-              );
             } else {
               // 기존 로직: 특정 페이지에 대한 재인증 상태 저장
               setPageReAuthStatus(userId, result.reAuthToken, pagePath);
-              console.log('✅ 재인증 토큰 저장됨, userId:', userId, 'pagePath:', pagePath);
             }
           }
         }
 
         // 1. 먼저 성공 상태 설정
-        console.log('✅ PasswordConfirmModal - 성공 상태 설정 시작');
         setIsSuccess(true);
         successProcessedRef.current = true; // 성공 처리 완료 상태 설정
-        console.log(
-          '✅ PasswordConfirmModal - 성공 상태 설정 완료, isSuccess:',
-          true,
-          'successProcessed:',
-          true
-        );
 
         // 2. 재인증 성공 시 콜백 실행
         if (onSuccess) {
-          console.log('✅ PasswordConfirmModal - onSuccess 콜백 실행 시작:', onSuccess);
-          console.log('🔍 onSuccess 타입:', typeof onSuccess);
-          console.log('🔍 onSuccess 내용:', onSuccess);
-
           try {
             const successResult = await onSuccess(result); // await로 완료 보장
-            console.log('✅ onSuccess 콜백 실행 완료, 결과:', successResult);
           } catch (error) {
-            console.error('❌ onSuccess 콜백 실행 실패:', error);
             setIsSuccess(false); // 에러 시 실패 상태로 설정
             successProcessedRef.current = false;
           }
-        } else {
-          console.log('⚠️ PasswordConfirmModal - onSuccess 콜백이 없음');
-          console.log('🔍 props 확인:', { onSuccess, onClose, onCancel });
         }
 
         // 3. 토스트 메시지는 한 번만 표시
@@ -235,7 +183,6 @@ const PasswordConfirmModal = ({ isOpen, onClose, onCancel, onSuccess, pagePath =
         }
 
         // 4. 성공 처리 완료 후 모달 닫기 (비동기 안전)
-        console.log('✅ PasswordConfirmModal - 성공 처리 완료, 모달 닫기 시작');
         handleSuccessClose();
       } else {
         const errorData = await response.json();

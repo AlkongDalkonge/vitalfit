@@ -182,7 +182,6 @@ const MyWorkPage = ({ onReAuthRequired }) => {
   // 백엔드에서 휴가 신청 목록 가져오기
   const fetchLeaveRequests = async () => {
     try {
-      console.log('🔄 휴가 신청 목록 가져오기 시작');
       const response = await fetch(
         `http://localhost:3001/api/users/leave/list?userId=${user?.id || user?.uid}`,
         {
@@ -195,22 +194,16 @@ const MyWorkPage = ({ onReAuthRequired }) => {
       if (response.ok) {
         const result = await response.json();
         if (result.success) {
-          console.log('✅ 휴가 신청 목록 가져오기 성공:', result.data);
           setLeaveRequests(result.data || []);
-        } else {
-          console.error('❌ 휴가 신청 목록 조회 실패:', result.message);
         }
-      } else {
-        console.error('❌ HTTP 에러:', response.status);
       }
     } catch (error) {
-      console.error('❌ 휴가 신청 목록 가져오기 실패:', error);
+      // 에러 처리
     }
   };
 
   // 수동으로 상태 새로고침
   const refreshLeaveRequests = () => {
-    console.log('🔄 수동 새로고침 시작');
     fetchLeaveRequests();
     toast.info('휴가 신청 목록을 새로고침했습니다.');
   };
@@ -250,8 +243,6 @@ const MyWorkPage = ({ onReAuthRequired }) => {
     // 시간 검증 제거 - 사용자가 원하는 시간대로 입력 가능
 
     try {
-      console.log('🚀 휴가 신청 시작');
-
       // 백엔드에 휴가 신청 제출
       const backendRequestId = await submitLeaveRequestToBackend({
         ...leaveRequestForm,
@@ -259,8 +250,6 @@ const MyWorkPage = ({ onReAuthRequired }) => {
         userName: user?.name || '사용자',
         userEmail: user?.email || 'unknown@email.com',
       });
-
-      console.log('✅ 백엔드 휴가 신청 성공, ID:', backendRequestId);
 
       // 새로운 휴가 신청 객체 생성
       const newRequest = {
@@ -365,10 +354,8 @@ const MyWorkPage = ({ onReAuthRequired }) => {
         throw new Error(result.message || '백엔드 휴가 신청에 실패했습니다.');
       }
 
-      console.log('백엔드 휴가 신청 성공:', result);
       return result.requestId; // 백엔드에서 생성된 requestId 반환
     } catch (error) {
-      console.error('백엔드 휴가 신청 실패:', error);
       throw error;
     }
   };
@@ -376,25 +363,17 @@ const MyWorkPage = ({ onReAuthRequired }) => {
   // 휴가 승인/거절 처리 (관리자용)
   const handleLeaveRequestAction = async (requestId, action) => {
     try {
-      console.log('🚀 휴가 신청 처리 시작:', { requestId, action });
-
       const apiUrl = `/api/users/leave/${action === 'approved' ? 'approve' : 'reject'}/${requestId}`;
-      console.log('📡 API URL:', apiUrl);
 
       // 백엔드 API 호출
       const response = await fetch(apiUrl, {
         method: 'GET',
       });
 
-      console.log('📡 API 응답:', response.status, response.statusText);
-
       if (response.ok) {
-        console.log('✅ API 호출 성공');
-
         // 백엔드에서 성공적으로 처리된 경우에만 로컬 상태 업데이트
         const updatedRequests = leaveRequests.map(req => {
           if (req.id === requestId) {
-            console.log('🔄 휴가 신청 상태 업데이트:', req.id, '->', action);
             return {
               ...req,
               status: action, // 'approved' 또는 'rejected'
@@ -405,23 +384,17 @@ const MyWorkPage = ({ onReAuthRequired }) => {
           return req;
         });
 
-        console.log('📝 업데이트된 휴가 신청 목록:', updatedRequests);
         setLeaveRequests(updatedRequests);
         toast.success(`휴가 신청이 ${action === 'approved' ? '승인' : '거절'}되었습니다.`);
 
         // 상태 동기화를 위해 목록 새로고침
         setTimeout(() => {
-          console.log('🔄 목록 새로고침 시작');
           fetchLeaveRequests();
         }, 1000);
       } else {
-        console.log('❌ API 호출 실패:', response.status, response.statusText);
-        const errorText = await response.text();
-        console.log('❌ 에러 내용:', errorText);
         toast.error('처리에 실패했습니다.');
       }
     } catch (error) {
-      console.error('휴가 신청 처리 실패:', error);
       toast.error('처리에 실패했습니다.');
     }
   };
@@ -478,7 +451,6 @@ const MyWorkPage = ({ onReAuthRequired }) => {
 
       toast.success('휴가 신청이 전송되었습니다.');
     } catch (error) {
-      console.error('휴가 신청 전송 실패:', error);
       toast.error('휴가 신청 전송에 실패했습니다.');
     }
   };
@@ -520,20 +492,12 @@ const MyWorkPage = ({ onReAuthRequired }) => {
 
   // 승인/반려 상태 변경 감지 및 UI 업데이트
   useEffect(() => {
-    console.log('🔄 휴가 신청 상태 변화 감지:', {
-      totalRequests: leaveRequests.length,
-      statusCounts: leaveRequests.reduce((acc, req) => {
-        acc[req.status] = (acc[req.status] || 0) + 1;
-        return acc;
-      }, {}),
-    });
+    // 휴가 신청 상태 변화 감지
   }, [leaveRequests]);
 
   // 사용자 정보 로드
   useEffect(() => {
     if (user) {
-      console.log('🔍 MyWorkPage - 사용자 정보 로드 시작');
-
       // shift 데이터 안전하게 파싱
       let parsedShiftData;
 
@@ -550,9 +514,7 @@ const MyWorkPage = ({ onReAuthRequired }) => {
           }
 
           // 데이터 구조가 유효함 - 추가 검증이 필요한 경우 여기에 로직 추가
-          console.log('✅ shift 데이터 구조 검증 통과');
         } catch (error) {
-          console.error('❌ shift 데이터 파싱 실패:', error);
           parsedShiftData = {
             schedules: [
               {
@@ -673,26 +635,18 @@ const MyWorkPage = ({ onReAuthRequired }) => {
     setSaving(true);
 
     try {
-      console.log('🚀 근무 정보 저장 시작');
-      console.log('📝 현재 폼 데이터:', formData);
-
       // shift 데이터 직렬화
       const shiftDataString = JSON.stringify(formData.shiftData);
-      console.log('📤 전송할 shift 데이터:', shiftDataString);
 
       // API 호출
       const response = await userAPI.updateMyAccount({ shift: shiftDataString });
-      console.log('📥 API 응답:', response);
 
       // API 응답 구조 확인 및 안전한 처리
       const responseData = response.data || response;
       const updatedUser = responseData.user || responseData;
 
-      console.log('📋 처리된 사용자 정보:', updatedUser);
-
       if (updatedUser) {
         // 1. 즉시 폼 데이터 업데이트 (DB 응답 데이터 사용)
-        console.log('🔄 폼 데이터 즉시 업데이트');
         if (updatedUser.shift) {
           try {
             const parsedShiftData = parseShiftData(updatedUser.shift);
@@ -701,33 +655,26 @@ const MyWorkPage = ({ onReAuthRequired }) => {
               shiftData: parsedShiftData,
             }));
           } catch (error) {
-            console.error('shift 데이터 파싱 실패:', error);
+            // 에러 처리
           }
         }
 
         // 2. AuthContext의 사용자 정보 즉시 업데이트 (DB 응답 데이터 사용)
         if (updateUser && typeof updateUser === 'function') {
-          console.log('🔄 AuthContext 사용자 정보 즉시 업데이트');
           updateUser(updatedUser);
         }
 
         // 3. refreshUserInfo() 호출은 백그라운드에서 실행 (사용자 대기 없음)
         if (refreshUserInfo && typeof refreshUserInfo === 'function') {
           // 백그라운드에서 서버와 동기화 (사용자 대기 없음)
-          refreshUserInfo()
-            .then(() => {
-              console.log('✅ refreshUserInfo 백그라운드 완료');
-            })
-            .catch(error => {
-              console.error('사용자 정보 새로고침 실패:', error);
-              // 에러가 발생해도 이미 로컬 상태는 업데이트되었으므로 계속 진행
-            });
+          refreshUserInfo().catch(error => {
+            // 에러가 발생해도 이미 로컬 상태는 업데이트되었으므로 계속 진행
+          });
         }
       }
 
       toast.success('근무 정보가 저장되었습니다.');
     } catch (error) {
-      console.error('저장 실패:', error);
       toast.error(`저장에 실패했습니다: ${error.response?.data?.message || error.message}`);
     } finally {
       // 저장 완료 후 로딩 상태 해제
