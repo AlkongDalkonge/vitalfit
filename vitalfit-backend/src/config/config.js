@@ -33,6 +33,14 @@ module.exports = {
     username: process.env.TEST_DB_USERNAME || 'postgres',
     password: process.env.TEST_DB_PASSWORD || 'postgres',
     database: process.env.TEST_DB_NAME || 'vitalfit_test',
+    dialectOptions: {
+      ssl: process.env.TEST_DB_HOST?.includes('azure.com')
+        ? {
+            require: true,
+            rejectUnauthorized: false,
+          }
+        : undefined,
+    },
   },
 
   // Azure 운영 DB
