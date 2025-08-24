@@ -13,11 +13,21 @@ const InstagramSection = ({
   fetchInstagramThumbnail,
   maxLength = 200,
 }) => {
+  console.log('🔍 InstagramSection 데이터:', data);
+  console.log('🔍 InstagramSection 이미지 URL:', data?.image_url);
+
   return (
-    <div className="border rounded-lg p-6 bg-gray-50">
+    <div
+      className="rounded-lg p-6 transition-all duration-300 shadow-md hover:-translate-y-1 hover:shadow-lg border-[0.1px]"
+      style={{
+        background:
+          'radial-gradient(circle at center -50%, rgba(235,245,255,0.8) 0%, rgba(235,245,255,0.6) 20%, #a1e1fd 60%, #a1e1fd 100%)',
+        borderColor: '#a1e1fd',
+      }}
+    >
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h4 className="font-medium text-gray-600">{title}</h4>
+          <h4 className="font-medium text-white drop-shadow-md">{title}</h4>
         </div>
       </div>
 

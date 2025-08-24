@@ -325,39 +325,35 @@ const MyWorkPage = ({ onReAuthRequired }) => {
 
   // 백엔드 휴가 신청 API 호출
   const submitLeaveRequestToBackend = async request => {
-    try {
-      const response = await fetch('http://localhost:3001/api/users/leave/submit', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
-        },
-        body: JSON.stringify({
-          leaveType: request.leaveType,
-          startDate: request.startDate,
-          endDate: request.endDate,
-          startTime: request.startTime,
-          endTime: request.endTime,
-          reason: request.reason,
-          userId: user?.id || user?.uid,
-          userName: user?.name || '사용자',
-          userEmail: user?.email || 'unknown@email.com',
-        }),
-      });
+    const response = await fetch('http://localhost:3001/api/users/leave/submit', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+      },
+      body: JSON.stringify({
+        leaveType: request.leaveType,
+        startDate: request.startDate,
+        endDate: request.endDate,
+        startTime: request.startTime,
+        endTime: request.endTime,
+        reason: request.reason,
+        userId: user?.id || user?.uid,
+        userName: user?.name || '사용자',
+        userEmail: user?.email || 'unknown@email.com',
+      }),
+    });
 
-      if (!response.ok) {
-        throw new Error('백엔드 휴가 신청에 실패했습니다.');
-      }
-
-      const result = await response.json();
-      if (!result.success) {
-        throw new Error(result.message || '백엔드 휴가 신청에 실패했습니다.');
-      }
-
-      return result.requestId; // 백엔드에서 생성된 requestId 반환
-    } catch (error) {
-      throw error;
+    if (!response.ok) {
+      throw new Error('백엔드 휴가 신청에 실패했습니다.');
     }
+
+    const result = await response.json();
+    if (!result.success) {
+      throw new Error(result.message || '백엔드 휴가 신청에 실패했습니다.');
+    }
+
+    return result.requestId; // 백엔드에서 생성된 requestId 반환
   };
 
   // 휴가 승인/거절 처리 (관리자용)

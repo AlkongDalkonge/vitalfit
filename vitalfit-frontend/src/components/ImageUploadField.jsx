@@ -18,6 +18,9 @@ const ImageUploadField = ({
   const fileInputRef = useRef(null);
   const [dragOver, setDragOver] = useState(false);
 
+  console.log('🔍 ImageUploadField 데이터:', data);
+  console.log('🔍 ImageUploadField 이미지 URL:', data?.image_url);
+
   const handleFileChange = event => {
     const file = event.target.files[0];
     if (file) {
@@ -100,20 +103,29 @@ const ImageUploadField = ({
           <div className="text-gray-600">
             {data.image_url ? (
               <div className="relative group">
-                <img
-                  src={
-                    data.image_url.startsWith('http')
-                      ? data.image_url
-                      : `${API_BASE_URL}${data.image_url}`
-                  }
-                  alt={`${title} 이미지`}
-                  className="w-32 h-32 object-contain rounded-lg cursor-pointer bg-gray-100"
-                  onClick={e => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    onImageExpand(data.image_url, data.image_name, title);
-                  }}
-                />
+                {(() => {
+                  const imageSrc = data.image_url.startsWith('http')
+                    ? data.image_url
+                    : data.image_url.startsWith('/img/')
+                      ? data.image_url // public 폴더의 이미지는 상대 경로 그대로 사용
+                      : `${API_BASE_URL}${data.image_url}`;
+
+                  console.log('🔍 최종 이미지 URL:', imageSrc);
+                  console.log('🔍 원본 이미지 URL:', data.image_url);
+
+                  return (
+                    <img
+                      src={imageSrc}
+                      alt={`${title} 이미지`}
+                      className="w-32 h-32 object-contain rounded-lg cursor-pointer bg-gray-100"
+                      onClick={e => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        onImageExpand(data.image_url, data.image_name, title);
+                      }}
+                    />
+                  );
+                })()}
                 <button
                   type="button"
                   onClick={e => {

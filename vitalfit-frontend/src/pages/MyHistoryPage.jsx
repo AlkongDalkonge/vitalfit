@@ -137,7 +137,11 @@ const MyHistoryPage = ({ onReAuthRequired }) => {
           return {
             items: (parsed.items || []).map(item => ({
               ...item,
-              image_url: item.image_url || '',
+              // 시드데이터의 이미지 URL이 /img/로 시작하면 public 폴더 참조
+              image_url:
+                item.image_url && item.image_url.startsWith('/img/')
+                  ? item.image_url
+                  : item.image_url || '',
             })) || [
               {
                 image_name: '',
@@ -164,7 +168,8 @@ const MyHistoryPage = ({ onReAuthRequired }) => {
         }
       }
     } catch (error) {
-      console.error(`${fieldName} 파싱 실패:`, error);
+      console.error(`Error parsing ${fieldName} data:`, error);
+      // 파싱 실패 시 기본값 반환
       if (fieldName === 'experience' || fieldName === 'education') {
         return {
           items: [
@@ -176,18 +181,29 @@ const MyHistoryPage = ({ onReAuthRequired }) => {
             },
           ],
         };
+      } else if (fieldName === 'license') {
+        return {
+          items: [
+            {
+              image_name: '',
+              image_url: '',
+              uploaded_at: '',
+              isLocal: false,
+              licenseName: '',
+              issuingOrganization: '',
+              issueDate: '',
+            },
+          ],
+        };
       } else {
         return {
           image_name: '',
           image_url: '',
           uploaded_at: '',
           isLocal: false,
-          accountName: fieldName === 'instagram' ? '' : undefined,
-          instagramLink: fieldName === 'instagram' ? '' : undefined,
-          description: fieldName === 'instagram' ? '' : undefined,
-          licenseName: fieldName === 'license' ? '' : undefined,
-          issuingOrganization: fieldName === 'license' ? '' : undefined,
-          issueDate: fieldName === 'license' ? '' : undefined,
+          accountName: '',
+          instagramLink: '',
+          description: '',
         };
       }
     }
@@ -609,6 +625,19 @@ const MyHistoryPage = ({ onReAuthRequired }) => {
   useEffect(() => {
     if (user) {
       try {
+        console.log('🔍 사용자 데이터:', user);
+        console.log('🔍 인스타그램 원본 데이터:', user.instagram);
+
+        // 시드데이터가 없거나 빈 문자열인 경우 기본값 사용
+        const hasLicenseData = user.license && user.license.trim() !== '';
+        const hasInstagramData = user.instagram && user.instagram.trim() !== '';
+
+        console.log('🔍 자격증 데이터 존재:', hasLicenseData);
+        console.log('🔍 인스타그램 데이터 존재:', hasInstagramData);
+
+        const parsedInstagram = parseAdditionalData(user.instagram, 'instagram');
+        console.log('🔍 파싱된 인스타그램 데이터:', parsedInstagram);
+
         setFormData(prev => ({
           ...prev,
           license: user.license || '',
@@ -616,12 +645,46 @@ const MyHistoryPage = ({ onReAuthRequired }) => {
           education: user.education || '',
           instagram: user.instagram || '',
           // 추가 데이터 파싱 (안전하게 처리)
-          licenseData: parseAdditionalData(user.license, 'license'),
+          licenseData: hasLicenseData
+            ? parseAdditionalData(user.license, 'license')
+            : {
+                items: [
+                  {
+                    image_name: 'license1.png',
+                    image_url: '/img/license1.png',
+                    uploaded_at: new Date().toISOString(),
+                    isLocal: false,
+                    licenseName: '체육지도사 2급',
+                    issuingOrganization: '대한체육회',
+                    issueDate: '',
+                  },
+                  {
+                    image_name: 'license2.png',
+                    image_url: '/img/license2.png',
+                    uploaded_at: new Date().toISOString(),
+                    isLocal: false,
+                    licenseName: '생활스포츠지도사 2급',
+                    issuingOrganization: '대한체육회',
+                    issueDate: '',
+                  },
+                ],
+              },
           experienceData: parseAdditionalData(user.experience, 'experience'),
           educationData: parseAdditionalData(user.education, 'education'),
-          instagramData: parseAdditionalData(user.instagram, 'instagram'),
+          instagramData: hasInstagramData
+            ? parsedInstagram
+            : {
+                image_name: 'instagram.jpg',
+                image_url: '/img/instagram.jpg',
+                uploaded_at: new Date().toISOString(),
+                isLocal: false,
+                accountName: '',
+                instagramLink: '',
+                description: '',
+              },
         }));
       } catch (error) {
+        console.error('❌ 사용자 데이터 파싱 오류:', error);
         // 오류 발생 시 기본값으로 설정
         setFormData(prev => ({
           ...prev,
@@ -632,12 +695,21 @@ const MyHistoryPage = ({ onReAuthRequired }) => {
           licenseData: {
             items: [
               {
-                image_name: '',
-                image_url: '',
-                uploaded_at: '',
+                image_name: 'license1.png',
+                image_url: '/img/license1.png',
+                uploaded_at: new Date().toISOString(),
                 isLocal: false,
-                licenseName: '',
-                issuingOrganization: '',
+                licenseName: '체육지도사 2급',
+                issuingOrganization: '대한체육회',
+                issueDate: '',
+              },
+              {
+                image_name: 'license2.png',
+                image_url: '/img/license2.png',
+                uploaded_at: new Date().toISOString(),
+                isLocal: false,
+                licenseName: '생활스포츠지도사 2급',
+                issuingOrganization: '대한체육회',
                 issueDate: '',
               },
             ],
@@ -663,9 +735,9 @@ const MyHistoryPage = ({ onReAuthRequired }) => {
             ],
           },
           instagramData: {
-            image_name: '',
-            image_url: '',
-            uploaded_at: '',
+            image_name: 'instagram.jpg',
+            image_url: '/img/instagram.jpg',
+            uploaded_at: new Date().toISOString(),
             isLocal: false,
             accountName: '',
             instagramLink: '',

@@ -121,12 +121,19 @@ const PersonalInfoPage = () => {
       }
 
       if (user.account_image_url) {
-        const imageUrl = user.account_image_url.startsWith('http')
-          ? user.account_image_url
-          : `http://localhost:3001${user.account_image_url}`;
+        let imageUrl;
+        if (user.account_image_url.startsWith('http')) {
+          imageUrl = user.account_image_url;
+        } else if (user.account_image_url.startsWith('/img/')) {
+          // public 폴더의 이미지는 상대 경로 그대로 사용
+          imageUrl = user.account_image_url;
+        } else {
+          imageUrl = `http://localhost:3001${user.account_image_url}`;
+        }
         setAccountImage(imageUrl);
       } else {
-        setAccountImage('');
+        // 기본 계좌 이미지 설정
+        setAccountImage('/img/account.png');
       }
 
       if (user.profile_image_url) {
