@@ -550,14 +550,22 @@ const getPTSessionsByMember = async (req, res) => {
       const yearNum = parseInt(year);
       const monthNum = parseInt(month);
 
+      console.log('🔍 PT 세션 필터링:', { year, month, yearNum, monthNum });
+
       if (!isNaN(yearNum) && !isNaN(monthNum) && monthNum >= 1 && monthNum <= 12) {
         const startDate = new Date(yearNum, monthNum - 1, 1);
         const endDate = new Date(yearNum, monthNum, 0, 23, 59, 59);
 
+        console.log('🔍 날짜 범위:', { startDate, endDate });
+
         whereClause.session_date = {
           [Op.between]: [startDate, endDate],
         };
+      } else {
+        console.log('❌ 유효하지 않은 년도/월:', { year, month, yearNum, monthNum });
       }
+    } else {
+      console.log('🔍 년도/월 필터 없음');
     }
 
     // 멤버 정보 조회

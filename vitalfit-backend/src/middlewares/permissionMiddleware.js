@@ -181,10 +181,71 @@ const checkMemberListPermission = async (req, res, next) => {
   }
 };
 
-// 센터장 이상 권한 체크 미들웨어
+// 센터 관리 권한 체크 미들웨어 (관리자만 모든 센터 관리 가능)
+const requireCenterManagementPermission = async (req, res, next) => {
+  try {
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({
+        success: false,
+        message: '인증이 필요합니다.',
+      });
+    }
+
+    const user = await User.findByPk(req.user.id, {
+      include: [
+        { model: Position, as: 'position', attributes: ['id', 'level'] },
+        { model: Center, as: 'center', attributes: ['id'] },
+      ],
+    });
+
+    if (!user || !user.position) {
+      return res.status(403).json({
+        success: false,
+        message: '권한 정보를 찾을 수 없습니다.',
+      });
+    }
+
+    // 관리자 (position_id: 13)는 모든 센터 관리 가능
+    if (user.position_id === 13) {
+      return next();
+    }
+
+    // 센터장 (position_id: 11)은 소속 센터만 관리 가능
+    if (user.position_id === 11) {
+      const centerId = req.params.id || req.body.center_id;
+      if (centerId && user.center_id && parseInt(centerId) !== user.center_id) {
+        return res.status(403).json({
+          success: false,
+          message: '소속 센터만 관리할 수 있습니다.',
+        });
+      }
+      return next();
+    }
+
+    return res.status(403).json({
+      success: false,
+      message: '센터 관리 권한이 없습니다.',
+    });
+  } catch (error) {
+    console.error('권한 체크 오류:', error);
+    return res.status(500).json({
+      success: false,
+      message: '권한 확인 중 오류가 발생했습니다.',
+    });
+  }
+};
+
+// 센터장 이상 권한 체크 미들웨어 (기존 호환성 유지)
 const requireCenterManagerPermission = async (req, res, next) => {
   try {
-    const user = await User.findByPk(req.user.uid, {
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({
+        success: false,
+        message: '인증이 필요합니다.',
+      });
+    }
+
+    const user = await User.findByPk(req.user.id, {
       include: [{ model: Position, as: 'position', attributes: ['level'] }],
     });
 
@@ -216,7 +277,14 @@ const requireCenterManagerPermission = async (req, res, next) => {
 const requirePermissionLevel = requiredLevel => {
   return async (req, res, next) => {
     try {
-      const user = await User.findByPk(req.user.uid, {
+      if (!req.user || !req.user.id) {
+        return res.status(401).json({
+          success: false,
+          message: '인증이 필요합니다.',
+        });
+      }
+
+      const user = await User.findByPk(req.user.id, {
         include: [{ model: Position, as: 'position', attributes: ['level'] }],
       });
 
@@ -338,6 +406,7 @@ module.exports = {
   checkUserListPermission,
   checkMemberListPermission,
   requireCenterManagerPermission,
+  requireCenterManagementPermission,
   requirePaymentPermission,
   requirePTSessionPermission,
   requirePermissionLevel,

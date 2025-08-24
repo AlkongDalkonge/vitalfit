@@ -6,7 +6,6 @@ import CenterEditModal from './CenterEditModal';
 import { useUser } from '../utils/hooks';
 import { useAuth } from '../contexts/AuthContext';
 import {
-  canPerformAction,
   getPermissionMessage,
   getDetailedPermissionMessage,
 } from '../utils/permissionUtils';
@@ -41,6 +40,42 @@ const CenterPage = () => {
   // 유저 데이터 가져오기
   const { users: allUsers } = useUser();
   const { user: currentUser } = useAuth();
+
+  // 센터 관리 권한 체크 함수들
+  const hasCenterManagementPermission = () => {
+    if (!currentUser || !currentUser.position_id) return false;
+    return [11, 13].includes(currentUser.position_id); // 센터장, 관리자
+  };
+
+  const hasCenterEditPermission = (centerId = null) => {
+    if (!currentUser || !currentUser.position_id) return false;
+    
+    // 관리자는 모든 센터 수정 가능
+    if (currentUser.position_id === 13) return true;
+    
+    // 센터장은 소속 센터만 수정 가능
+    if (currentUser.position_id === 11) {
+      if (!centerId) return true; // 센터 등록은 가능
+      return currentUser.center_id === centerId;
+    }
+    
+    return false;
+  };
+
+  const hasCenterImagePermission = (centerId = null) => {
+    if (!currentUser || !currentUser.position_id) return false;
+    
+    // 관리자는 모든 센터 이미지 관리 가능
+    if (currentUser.position_id === 13) return true;
+    
+    // 센터장은 소속 센터만 이미지 관리 가능
+    if (currentUser.position_id === 11) {
+      if (!centerId) return true; // 새 센터 등록 시 이미지 업로드는 가능
+      return currentUser.center_id === centerId;
+    }
+    
+    return false;
+  };
 
   // 센터와 회원 데이터 가져오기
   useEffect(() => {
@@ -228,8 +263,8 @@ const CenterPage = () => {
 
   // 센터 수정 모달 열기
   const handleEditCenter = center => {
-    if (!canPerformAction(currentUser)) {
-      toast.warning(getPermissionMessage());
+    if (!hasCenterEditPermission(center.id)) {
+      toast.warning('센터 수정 권한이 없습니다.');
       return;
     }
     setSelectedCenterForEdit(center);
@@ -276,16 +311,16 @@ const CenterPage = () => {
 
   // 권한 체크 함수들
   const handleToggleImageManagement = centerId => {
-    if (!canPerformAction(currentUser)) {
-      toast.warning(getPermissionMessage());
+    if (!hasCenterImagePermission(centerId)) {
+      toast.warning('이미지 관리 권한이 없습니다.');
       return;
     }
     toggleImageManagement(centerId);
   };
 
   const handleCreateCenter = () => {
-    if (!canPerformAction(currentUser)) {
-      toast.warning(getPermissionMessage());
+    if (!hasCenterEditPermission()) {
+      toast.warning('센터 생성 권한이 없습니다.');
       return;
     }
     setCreateModalOpen(true);
@@ -736,9 +771,9 @@ const CenterPage = () => {
                       <div className="flex gap-3">
                         <button
                           onClick={() => handleEditCenter(center)}
-                          disabled={!canPerformAction(currentUser)}
+                          disabled={!hasCenterEditPermission(center.id)}
                           className={`px-4 py-2 text-sm font-medium font-['Nunito'] border rounded-lg transition-colors duration-200 ${
-                            canPerformAction(currentUser)
+                            hasCenterEditPermission(center.id)
                               ? 'text-blue-600 border-blue-300 hover:bg-blue-50'
                               : 'text-gray-400 border-gray-300 cursor-not-allowed'
                           }`}
@@ -747,9 +782,9 @@ const CenterPage = () => {
                         </button>
                         <button
                           onClick={() => handleToggleImageManagement(center.id)}
-                          disabled={!canPerformAction(currentUser)}
+                          disabled={!hasCenterImagePermission(center.id)}
                           className={`px-4 py-2 text-sm font-medium font-['Nunito'] border rounded-lg transition-colors duration-200 ${
-                            canPerformAction(currentUser)
+                            hasCenterImagePermission(center.id)
                               ? 'text-purple-600 border-purple-300 hover:bg-purple-50'
                               : 'text-gray-400 border-gray-300 cursor-not-allowed'
                           }`}
@@ -796,8 +831,8 @@ const CenterPage = () => {
                               <div className="mb-4">
                                 <ImageUploader
                                   onImageUpload={newImages => {
-                                    if (!canPerformAction(currentUser)) {
-                                      toast.warning(getPermissionMessage());
+                                    if (!hasCenterImagePermission(center.id)) {
+                                      toast.warning('이미지 업로드 권한이 없습니다.');
                                       return;
                                     }
                                     handleImageUpload(center.id, newImages);
@@ -806,7 +841,7 @@ const CenterPage = () => {
                                   maxImages={10}
                                   isMainImageRequired={false}
                                   disabled={
-                                    imageUploading[center.id] || !canPerformAction(currentUser)
+                                    imageUploading[center.id] || !hasCenterImagePermission(center.id)
                                   }
                                 />
                               </div>
@@ -837,8 +872,8 @@ const CenterPage = () => {
                                             {!image.isMain && (
                                               <button
                                                 onClick={() => {
-                                                  if (!canPerformAction(currentUser)) {
-                                                    toast.warning(getPermissionMessage());
+                                                  if (!hasCenterImagePermission(center.id)) {
+                                                    toast.warning('이미지 관리 권한이 없습니다.');
                                                     return;
                                                   }
                                                   handleSetMainImage(center.id, image.id);
@@ -850,8 +885,8 @@ const CenterPage = () => {
                                             )}
                                             <button
                                               onClick={() => {
-                                                if (!canPerformAction(currentUser)) {
-                                                  toast.warning(getPermissionMessage());
+                                                if (!hasCenterImagePermission()) {
+                                                  toast.warning('이미지 관리 권한이 없습니다.');
                                                   return;
                                                 }
                                                 handleRemoveImage(center.id, image.id);
@@ -898,9 +933,9 @@ const CenterPage = () => {
       <div className="flex justify-end mt-6">
         <button
           onClick={handleCreateCenter}
-          disabled={!canPerformAction(currentUser)}
+          disabled={!hasCenterManagementPermission()}
           className={`Button w-40 h-11 p-2.5 rounded-[10px] inline-flex justify-center items-center gap-2.5 transition-all duration-200 shadow-lg relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/15 before:via-transparent before:to-transparent before:pointer-events-none ${
-            canPerformAction(currentUser)
+            hasCenterManagementPermission()
               ? 'bg-gradient-to-br from-blue-400 to-blue-600 hover:from-blue-500 hover:to-blue-700 hover:shadow-xl'
               : 'bg-gradient-to-br from-gray-400 to-gray-500 cursor-not-allowed'
           }`}
@@ -908,7 +943,7 @@ const CenterPage = () => {
           <div
             data-layer="Primary Button"
             className={`PrimaryButton justify-start text-sm font-medium font-['Nunito'] leading-normal drop-shadow-xl ${
-              canPerformAction(currentUser) ? 'text-white' : 'text-gray-300'
+              hasCenterEditPermission() ? 'text-white' : 'text-gray-300'
             }`}
           >
             센터 등록

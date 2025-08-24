@@ -242,7 +242,7 @@ const MemberPTSessionPage = () => {
                 {showYearDropdown && (
                   <div className="absolute top-full left-0 w-[120px] bg-white border border-gray-200 rounded-[8px] shadow-lg z-50 mt-1">
                     <div className="py-1">
-                      {getYearOptions().map(year => (
+                      {getYearOptions.map(year => (
                         <button
                           key={year}
                           onClick={() => handleYearChange(year)}
@@ -299,7 +299,7 @@ const MemberPTSessionPage = () => {
                 {showMonthDropdown && (
                   <div className="absolute top-full left-0 w-[120px] bg-white border border-gray-200 rounded-[8px] shadow-lg z-30 mt-1">
                     <div className="py-1">
-                      {getMonthOptions().map(month => (
+                      {getMonthOptions.map(month => (
                         <button
                           key={month}
                           onClick={() => handleMonthChange(month)}
