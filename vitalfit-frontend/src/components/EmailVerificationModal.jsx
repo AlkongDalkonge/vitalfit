@@ -49,7 +49,6 @@ const EmailVerificationModal = ({ isOpen, onClose, email, onVerificationSuccess 
       });
 
       if (response.ok) {
-        toast.success('이메일 인증이 완료되었습니다!');
         onVerificationSuccess();
         onClose();
       } else {

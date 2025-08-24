@@ -13,16 +13,23 @@ const LicenseSection = ({
   onRemoveItem,
 }) => {
   return (
-    <div className="border rounded-lg p-6 bg-gray-50">
+    <div
+      className="rounded-lg p-6 transition-all duration-300 shadow-md hover:-translate-y-1 hover:shadow-lg border-[0.1px]"
+      style={{
+        background:
+          'radial-gradient(circle at center -50%, rgba(235,245,255,0.8) 0%, rgba(235,245,255,0.6) 20%, #80dfe5 60%, #80dfe5 100%)',
+        borderColor: '#80dfe5',
+      }}
+    >
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h4 className="font-medium text-gray-600">{title}</h4>
+          <h4 className="font-medium text-white drop-shadow-md">{title}</h4>
         </div>
       </div>
 
       <div className="space-y-4">
         {data.items.map((item, index) => (
-          <div key={index} className="border rounded-lg p-4 bg-white">
+          <div key={index} className="border rounded-lg p-4 bg-white shadow-sm">
             <div className="flex items-center justify-end mb-3">
               {data.items.length > 1 && (
                 <button
@@ -93,7 +100,7 @@ const LicenseSection = ({
         <button
           type="button"
           onClick={onAddItem}
-          className="w-full p-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-gray-400 hover:text-gray-600 transition-colors"
+          className="w-full p-3 border-2 border-dashed border-white/50 rounded-lg text-white hover:border-white hover:bg-white/10 transition-colors"
         >
           + 새 자격증 항목 추가
         </button>

@@ -37,7 +37,7 @@ export default function SignUp() {
   // 비밀번호 표시/숨김 상태 추가
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [emailChecked, setEmailChecked] = useState(false);
+  const [emailChecked, setEmailChecked] = useState(null);
   const [checkingEmail, setCheckingEmail] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState({
     length: false,
@@ -615,7 +615,11 @@ export default function SignUp() {
                     onChange={handleEmailChange}
                     placeholder="이메일을 입력하세요"
                     className={`flex-1 px-4 py-3 border rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-colors ${
-                      emailChecked ? 'border-green-500 bg-green-50' : 'border-gray-300'
+                      emailChecked === true
+                        ? 'border-green-500 bg-green-50'
+                        : emailChecked === false
+                          ? 'border-red-500 bg-red-50'
+                          : 'border-gray-300'
                     }`}
                     required
                   />
@@ -624,16 +628,28 @@ export default function SignUp() {
                     onClick={checkEmailDuplicate}
                     disabled={checkingEmail || !formData.email}
                     className={`px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
-                      emailChecked
+                      emailChecked === true
                         ? 'bg-green-500 text-white hover:bg-green-600'
-                        : 'bg-cyan-500 text-white hover:bg-cyan-600 disabled:bg-gray-300 disabled:cursor-not-allowed'
+                        : emailChecked === false
+                          ? 'bg-red-500 text-white hover:bg-red-600'
+                          : 'bg-cyan-500 text-white hover:bg-cyan-600 disabled:bg-gray-300 disabled:cursor-not-allowed'
                     }`}
                   >
-                    {checkingEmail ? '확인중...' : emailChecked ? '확인완료' : '중복확인'}
+                    {checkingEmail
+                      ? '확인중...'
+                      : emailChecked === true
+                        ? '확인완료'
+                        : emailChecked === false
+                          ? '재확인'
+                          : '중복확인'}
                   </button>
                 </div>
-                {emailChecked && (
-                  <p className="mt-1 text-sm text-green-600">✓ 사용 가능한 이메일입니다.</p>
+                {emailChecked !== null && (
+                  <p className={`mt-1 text-sm ${emailChecked ? 'text-green-600' : 'text-red-600'}`}>
+                    {emailChecked
+                      ? '✓ 사용 가능한 이메일입니다.'
+                      : '✗ 이미 사용 중인 이메일입니다.'}
+                  </p>
                 )}
               </div>
 

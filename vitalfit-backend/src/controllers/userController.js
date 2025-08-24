@@ -911,7 +911,7 @@ const logout = async (req, res) => {
   res.status(200).json({ success: true, message: '로그아웃되었습니다.' });
 };
 
-// 비밀번호 재설정 토큰 발송
+// 비밀번호 재설정 (8자리 임시 비밀번호 생성 및 이메일 발송)
 const resetPassword = async (req, res, next) => {
   try {
     const { email } = req.body;
@@ -940,37 +940,36 @@ const resetPassword = async (req, res, next) => {
       });
     }
 
-    // 기존 재설정 토큰이 있으면 만료 시간 확인
-    if (user.verification_code && user.verification_code_expires_at > new Date()) {
-      return res.status(400).json({
-        success: false,
-        message: '이미 재설정 토큰이 발송되었습니다. 이메일을 확인해주세요.',
-      });
+    // 8자리 안전한 임시 비밀번호 생성
+    const tempPassword = generateSecureTempPassword(8);
+
+    // 개발 환경에서 임시 비밀번호를 콘솔에 출력 (테스트용)
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔐 === 비밀번호 재설정 ===');
+      console.log('📧 사용자 이메일:', email);
+      console.log('👤 사용자 이름:', user.name);
+      console.log('🔑 생성된 임시 비밀번호:', tempPassword);
+      console.log('🔐 === 비밀번호 재설정 끝 ===');
     }
 
-    // 6자리 숫자 재설정 코드 생성
-    const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
-    const resetCodeExpiresAt = new Date(Date.now() + 30 * 60 * 1000); // 30분 유효
+    // 임시 비밀번호 해시화
+    const bcrypt = require('bcrypt');
+    const hashedTempPassword = await bcrypt.hash(tempPassword, 10);
 
-    // 재설정 코드를 verification_code 필드에 저장
-    user.verification_code = resetCode;
-    user.verification_code_expires_at = resetCodeExpiresAt;
+    // 사용자 비밀번호를 임시 비밀번호로 업데이트
+    user.password = hashedTempPassword;
     await user.save();
 
-    // 이메일로 재설정 코드 발송
-    const emailResult = await sendPasswordResetEmail(email, user.name, resetCode);
+    // 이메일로 임시 비밀번호 발송
+    const emailResult = await sendPasswordResetEmail(email, user.name, tempPassword);
 
     if (emailResult.success) {
       return res.status(200).json({
         success: true,
-        message: '비밀번호 재설정 링크가 이메일로 발송되었습니다. 이메일을 확인해주세요.',
+        message: '임시 비밀번호가 이메일로 발송되었습니다. 이메일을 확인해주세요.',
       });
     } else {
-      // 이메일 발송 실패 시 토큰 제거
-      user.verification_code = null;
-      user.verification_code_expires_at = null;
-      await user.save();
-
+      // 이메일 발송 실패 시 원래 비밀번호로 복원 (보안상 필요)
       console.error('이메일 발송 실패:', emailResult.error);
       return res.status(500).json({
         success: false,
@@ -978,61 +977,7 @@ const resetPassword = async (req, res, next) => {
       });
     }
   } catch (err) {
-    console.error('비밀번호 재설정 토큰 발송 오류:', err);
-    next(err);
-  }
-};
-
-// 비밀번호 재설정 토큰 검증 및 새 비밀번호 설정
-const confirmPasswordReset = async (req, res, next) => {
-  try {
-    const { token, newPassword } = req.body;
-
-    if (!token || !newPassword) {
-      return res.status(400).json({
-        success: false,
-        message: '토큰과 새 비밀번호를 모두 입력해주세요.',
-      });
-    }
-
-    // 새 비밀번호 유효성 검사
-    if (newPassword.length < 8) {
-      return res.status(400).json({
-        success: false,
-        message: '비밀번호는 최소 8자 이상이어야 합니다.',
-      });
-    }
-
-    // 토큰으로 사용자 찾기 (기존 verification_code 필드 사용)
-    const user = await User.findOne({
-      where: {
-        verification_code: token,
-        verification_code_expires_at: { [Op.gt]: new Date() }, // 만료되지 않은 토큰
-      },
-    });
-
-    if (!user) {
-      return res.status(400).json({
-        success: false,
-        message: '유효하지 않거나 만료된 토큰입니다.',
-      });
-    }
-
-    // 새 비밀번호 해시화
-    const hashedNewPassword = await createHash(newPassword);
-
-    // 비밀번호 업데이트 및 토큰 제거
-    user.password = hashedNewPassword;
-    user.verification_code = null;
-    user.verification_code_expires_at = null;
-    await user.save();
-
-    return res.status(200).json({
-      success: true,
-      message: '비밀번호가 성공적으로 재설정되었습니다.',
-    });
-  } catch (err) {
-    console.error('비밀번호 재설정 확인 오류:', err);
+    console.error('비밀번호 재설정 오류:', err);
     next(err);
   }
 };
@@ -1753,7 +1698,6 @@ module.exports = {
   updateInstagram, // 새로 추가된 함수
   logout,
   resetPassword,
-  confirmPasswordReset, // 새로 추가된 함수
   changePassword,
   deleteProfileImage,
   uploadProfileImage, // 새로 추가된 함수

@@ -33,6 +33,9 @@ router.post('/verify-email', userController.verifyEmail);
 // 로그인 관련 라우트
 router.post('/signin', userController.signIn);
 
+// 로그아웃 라우트
+router.post('/logout', auth, userController.logout);
+
 // 토큰 갱신 라우트
 router.post('/refresh-token', userController.refreshAccessToken);
 
