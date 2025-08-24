@@ -3,12 +3,23 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { paymentAPI, memberAPI, apiGet } from '../utils/api';
 import PaymentCreateModal from './PaymentCreateModal';
 import PaymentEditModal from './PaymentEditModal';
+import { useAuth } from '../contexts/AuthContext';
+import { toast } from 'react-toastify';
 
 const PaymentHistoryPage = () => {
   const { memberId } = useParams();
   const navigate = useNavigate();
+  const { currentUser } = useAuth();
 
   console.log('PaymentHistoryPage 렌더링됨, memberId:', memberId);
+
+  // PT 결제 권한 체크 함수
+  const hasPaymentPermission = () => {
+    if (!currentUser || !currentUser.position_id) return false;
+    // 트레이너 이상 권한 필요 (position_id: 3, 4, 5, 7, 11, 13)
+    const allowedPositionIds = [3, 4, 5, 7, 11, 13];
+    return allowedPositionIds.includes(currentUser.position_id);
+  };
 
   const [member, setMember] = useState(null);
   const [payments, setPayments] = useState([]);
@@ -100,6 +111,11 @@ const PaymentHistoryPage = () => {
 
   // 결제 등록 관련 핸들러들
   const handleRegisterPayment = () => {
+    // 권한 체크
+    if (!hasPaymentPermission()) {
+      toast.warning('PT 결제 등록 권한이 없습니다.');
+      return;
+    }
     setIsPaymentCreateModalOpen(true);
   };
 
@@ -116,6 +132,11 @@ const PaymentHistoryPage = () => {
 
   // 결제 수정 관련 핸들러들
   const handleEditPayment = paymentId => {
+    // 권한 체크
+    if (!hasPaymentPermission()) {
+      toast.warning('PT 결제 수정 권한이 없습니다.');
+      return;
+    }
     setSelectedPaymentId(paymentId);
     setIsPaymentEditModalOpen(true);
   };
@@ -146,6 +167,24 @@ const PaymentHistoryPage = () => {
           <button
             onClick={() => navigate('/pay')}
             className="mt-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+          >
+            돌아가기
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // 권한 체크
+  if (!hasPaymentPermission()) {
+    return (
+      <div className="w-full max-w-7xl mx-auto p-6">
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <p className="text-yellow-800 font-medium">접근 권한이 없습니다</p>
+          <p className="text-yellow-700 mt-1">PT 결제 내역을 조회할 권한이 없습니다.</p>
+          <button
+            onClick={() => navigate('/pay')}
+            className="mt-2 px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors"
           >
             돌아가기
           </button>
@@ -318,7 +357,12 @@ const PaymentHistoryPage = () => {
         <div className="flex justify-end mt-6">
           <button
             onClick={handleRegisterPayment}
-            className="Button w-40 h-11 p-2.5 bg-gradient-to-br from-blue-400 to-blue-600 rounded-[10px] inline-flex justify-center items-center gap-2.5 hover:from-blue-500 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/15 before:via-transparent before:to-transparent before:pointer-events-none"
+            disabled={!hasPaymentPermission()}
+            className={`Button w-40 h-11 p-2.5 rounded-[10px] inline-flex justify-center items-center gap-2.5 transition-all duration-200 shadow-lg hover:shadow-xl relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/15 before:via-transparent before:to-transparent before:pointer-events-none ${
+              hasPaymentPermission()
+                ? 'bg-gradient-to-br from-blue-400 to-blue-600 hover:from-blue-500 hover:to-blue-700'
+                : 'bg-gray-400 cursor-not-allowed'
+            }`}
           >
             <div
               data-layer="Primary Button"

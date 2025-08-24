@@ -1,8 +1,20 @@
 import React, { useState } from 'react';
 import { usePTSessionForm } from '../utils/hooks';
 import { getSessionTypeText } from '../utils/ptSessionUtils';
+import { useAuth } from '../contexts/AuthContext';
+import { toast } from 'react-toastify';
 
 const PTSessionCreateModal = ({ isOpen, onClose, memberId, member, onCreate }) => {
+  const { currentUser } = useAuth();
+
+  // PT 세션 권한 체크 함수
+  const hasPTSessionPermission = () => {
+    if (!currentUser || !currentUser.position_id) return false;
+    // 트레이너 이상 권한 필요 (position_id: 3, 4, 5, 7, 11, 13)
+    const allowedPositionIds = [3, 4, 5, 7, 11, 13];
+    return allowedPositionIds.includes(currentUser.position_id);
+  };
+
   // 커스텀 훅 사용 (생성 모드)
   const { formData, loading, errors, handleInputChange, createPTSession, resetForm } =
     usePTSessionForm(null, isOpen, 'create');
@@ -13,6 +25,12 @@ const PTSessionCreateModal = ({ isOpen, onClose, memberId, member, onCreate }) =
   // 폼 제출 핸들러
   const handleSubmit = async e => {
     e.preventDefault();
+
+    // 권한 체크
+    if (!hasPTSessionPermission()) {
+      toast.warning('PT 세션 등록 권한이 없습니다.');
+      return;
+    }
 
     const result = await createPTSession(memberId, member);
 
@@ -232,10 +250,14 @@ const PTSessionCreateModal = ({ isOpen, onClose, memberId, member, onCreate }) =
           <div className="flex justify-end absolute bottom-6 right-6">
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !hasPTSessionPermission()}
               data-layer="Button"
               data-property-1="Default"
-              className="Button w-40 h-11 p-2.5 bg-gradient-to-br from-blue-400 to-blue-600 rounded-[10px] inline-flex justify-center items-center gap-2.5 hover:from-blue-500 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/15 before:via-transparent before:to-transparent before:pointer-events-none disabled:opacity-50"
+              className={`Button w-40 h-11 p-2.5 rounded-[10px] inline-flex justify-center items-center gap-2.5 transition-all duration-200 shadow-lg hover:shadow-xl relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/15 before:via-transparent before:to-transparent before:pointer-events-none disabled:opacity-50 ${
+                hasPTSessionPermission()
+                  ? 'bg-gradient-to-br from-blue-400 to-blue-600 hover:from-blue-500 hover:to-blue-700'
+                  : 'bg-gray-400 cursor-not-allowed'
+              }`}
             >
               <div
                 data-layer="Primary Button"

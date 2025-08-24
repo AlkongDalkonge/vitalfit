@@ -17,9 +17,16 @@ const createPaymentSchema = Joi.object({
 
 // 결제 생성
 const createPayment = async (req, res) => {
+  console.log('🔍 결제 생성 요청:', {
+    body: req.body,
+    user: req.user,
+    headers: req.headers,
+  });
+
   const { error, value } = createPaymentSchema.validate(req.body);
 
   if (error) {
+    console.error('❌ 결제 생성 검증 오류:', error.details);
     return res.status(400).json({
       success: false,
       message: '입력값이 올바르지 않습니다.',

@@ -22,23 +22,27 @@ const { publishMonthlySettlements } = require('../services/settlementPublisher')
 // 환경에 따른 스케줄 설정
 const cronSchedule = process.env.NODE_ENV === 'production' 
   ? '0 9 1 * *'  // 상용: 매월 1일 09:00
-  : '0 * * * *'; // 개발: 매시간
+  : null; // 개발: cron 비활성화
 
-cron.schedule(cronSchedule, async () => {
-  if (process.env.SCHEDULER_ENABLED !== 'true') return; // 스위치
-  const forced = process.env.FORCE_PERIOD || null; // 테스트용 강제 월
-  try {
-    console.log('[cron] tick: publish job running...', forced ?? '(auto prev month)');
-    const result = await publishMonthlySettlements(forced);
+if (cronSchedule) {
+  cron.schedule(cronSchedule, async () => {
+    if (process.env.SCHEDULER_ENABLED !== 'true') return; // 스위치
+    const forced = process.env.FORCE_PERIOD || null; // 테스트용 강제 월
+    try {
+      console.log('[cron] tick: publish job running...', forced ?? '(auto prev month)');
+      const result = await publishMonthlySettlements(forced);
 
-    if (result.status === 'skipped') {
-      console.log(`[cron] job skipped: ${result.periodYm} (duplicate execution)`);
-    } else if (result.status === 'completed') {
-      console.log(
-        `[cron] job completed: ${result.periodYm}, processed: ${result.upserted} records`
-      );
+      if (result.status === 'skipped') {
+        console.log(`[cron] job skipped: ${result.periodYm} (duplicate execution)`);
+      } else if (result.status === 'completed') {
+        console.log(
+          `[cron] job completed: ${result.periodYm}, processed: ${result.upserted} records`
+        );
+      }
+    } catch (e) {
+      console.error('[cron] job failed:', e?.message || e);
     }
-  } catch (e) {
-    console.error('[cron] job failed:', e?.message || e);
-  }
-});
+  });
+} else {
+  console.log('[cron] 개발 환경에서 cron 작업이 비활성화되었습니다.');
+}

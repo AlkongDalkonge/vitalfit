@@ -5,11 +5,22 @@ import PTSessionEditModal from './PTSessionEditModal';
 import { usePTSession, useDatePicker } from '../utils/hooks';
 import { formatDate, formatDateTime, formatTime, formatYearMonth } from '../utils/dateUtils';
 import { getSessionTypeText, getSessionTypeColor } from '../utils/ptSessionUtils';
+import { useAuth } from '../contexts/AuthContext';
+import { toast } from 'react-toastify';
 
 const MemberPTSessionPage = () => {
   const { id: memberId } = useParams();
+  const { currentUser } = useAuth();
   const yearDropdownRef = useRef(null);
   const monthDropdownRef = useRef(null);
+
+  // PT 세션 권한 체크 함수
+  const hasPTSessionPermission = () => {
+    if (!currentUser || !currentUser.position_id) return false;
+    // 트레이너 이상 권한 필요 (position_id: 3, 4, 5, 7, 11, 13)
+    const allowedPositionIds = [3, 4, 5, 7, 11, 13];
+    return allowedPositionIds.includes(currentUser.position_id);
+  };
 
   console.log('🔍 MemberPTSessionPage - memberId:', memberId);
   console.log('🔍 MemberPTSessionPage - useParams():', useParams());
@@ -66,6 +77,10 @@ const MemberPTSessionPage = () => {
 
   // PT 세션 등록 모달 열기
   const handleOpenCreateModal = () => {
+    if (!hasPTSessionPermission()) {
+      toast.warning('PT 세션 등록 권한이 없습니다.');
+      return;
+    }
     setIsCreateModalOpen(true);
   };
 
@@ -105,6 +120,18 @@ const MemberPTSessionPage = () => {
         <div className="text-red-500 text-center">
           <p className="text-lg font-semibold mb-2">오류가 발생했습니다</p>
           <p>{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // 권한 체크
+  if (!hasPTSessionPermission()) {
+    return (
+      <div className="w-full max-w-7xl mx-auto p-6">
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <p className="text-yellow-800 font-medium">접근 권한이 없습니다</p>
+          <p className="text-yellow-700 mt-1">PT 세션을 조회할 권한이 없습니다.</p>
         </div>
       </div>
     );
@@ -346,7 +373,12 @@ const MemberPTSessionPage = () => {
                       <div className="flex-[0.9] min-w-[60px] justify-start">
                         <button
                           onClick={() => handleEditSession(session)}
-                          className="text-cyan-600 text-sm font-medium hover:text-cyan-800 hover:underline cursor-pointer transition-colors duration-200"
+                          disabled={!hasPTSessionPermission()}
+                          className={`text-sm font-medium transition-colors duration-200 ${
+                            hasPTSessionPermission()
+                              ? 'text-cyan-600 hover:text-cyan-800 hover:underline cursor-pointer'
+                              : 'text-gray-400 cursor-not-allowed'
+                          }`}
                         >
                           {index + 1}
                         </button>
@@ -391,9 +423,14 @@ const MemberPTSessionPage = () => {
         <div className="flex justify-end mt-4 mb-0">
           <button
             onClick={handleOpenCreateModal}
+            disabled={!hasPTSessionPermission()}
             data-layer="Button"
             data-property-1="Default"
-            className="Button w-40 h-11 p-2.5 bg-gradient-to-br from-blue-400 to-blue-600 rounded-[10px] inline-flex justify-center items-center gap-2.5 hover:from-blue-500 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/15 before:via-transparent before:to-transparent before:pointer-events-none"
+            className={`Button w-40 h-11 p-2.5 rounded-[10px] inline-flex justify-center items-center gap-2.5 transition-all duration-200 shadow-lg hover:shadow-xl relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/15 before:via-transparent before:to-transparent before:pointer-events-none ${
+              hasPTSessionPermission()
+                ? 'bg-gradient-to-br from-blue-400 to-blue-600 hover:from-blue-500 hover:to-blue-700'
+                : 'bg-gray-400 cursor-not-allowed'
+            }`}
           >
             <div
               data-layer="Primary Button"

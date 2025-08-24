@@ -82,8 +82,8 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
-      // 토큰 갱신 요청이나 /users/me 요청이 401인 경우는 무한 루프 방지
-      if (originalRequest.url === '/users/refresh' || originalRequest.url === '/users/me') {
+      // 토큰 갱신 요청, 로그인 요청, /users/me 요청이 401인 경우는 무한 루프 방지
+      if (originalRequest.url === '/users/refresh' || originalRequest.url === '/users/me' || originalRequest.url === '/users/signin') {
         AuthService.removeAccessToken();
         AuthService.removeRefreshToken();
         localStorage.removeItem('rememberMe');
