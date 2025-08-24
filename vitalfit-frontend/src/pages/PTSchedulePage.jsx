@@ -286,8 +286,7 @@ const PTSchedulePage = () => {
         setCurrentMonth(1);
         setCurrentYear(currentYear + 1);
       } else {
-        setCurrentMonth(1);
-        setCurrentYear(currentYear + 1);
+        setCurrentMonth(currentMonth + 1);
       }
     }
   };
