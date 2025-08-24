@@ -538,8 +538,8 @@ const requirePaymentPermission = async (req, res, next) => {
 
     const currentUserLevel = currentUser.position.level;
 
-    // 포지션 12, 99는 모든 권한
-    if (currentUserLevel === 12 || currentUserLevel === 99) {
+    // 포지션 12, 13, 99는 모든 권한 (관리자 포함)
+    if (currentUserLevel === 12 || currentUserLevel === 13 || currentUserLevel === 99) {
       return next();
     }
 
@@ -594,9 +594,7 @@ const requirePaymentManagementPermission = async (req, res, next) => {
     }
 
     const currentUser = await User.findByPk(req.user.uid || req.user.id, {
-      include: [
-        { model: Position, as: 'position', attributes: ['id', 'level'] },
-      ],
+      include: [{ model: Position, as: 'position', attributes: ['id', 'level'] }],
     });
 
     if (!currentUser || !currentUser.position) {
@@ -608,8 +606,8 @@ const requirePaymentManagementPermission = async (req, res, next) => {
 
     const currentUserLevel = currentUser.position.level;
 
-    // 포지션 12, 99는 모든 권한
-    if (currentUserLevel === 12 || currentUserLevel === 99) {
+    // 포지션 12, 13, 99는 모든 권한 (관리자 포함)
+    if (currentUserLevel === 12 || currentUserLevel === 13 || currentUserLevel === 99) {
       return next();
     }
 
@@ -620,36 +618,38 @@ const requirePaymentManagementPermission = async (req, res, next) => {
           uid: currentUser.uid,
           id: currentUser.id,
           name: currentUser.name,
-          position_level: currentUserLevel
+          position_level: currentUserLevel,
         },
         requestBody: {
-          member_id: req.body.member_id
-        }
+          member_id: req.body.member_id,
+        },
       });
 
       const member = await require('../models').Member.findByPk(req.body.member_id);
-      
+
       console.log('🔍 멤버 정보:', {
-        member: member ? {
-          id: member.id,
-          name: member.name,
-          trainer_id: member.trainer_id
-        } : null,
-        isTrainer: member ? member.trainer_id === currentUser.id : false
+        member: member
+          ? {
+              id: member.id,
+              name: member.name,
+              trainer_id: member.trainer_id,
+            }
+          : null,
+        isTrainer: member ? member.trainer_id === currentUser.id : false,
       });
 
       if (!member || member.trainer_id !== currentUser.id) {
         console.log('❌ PT 결제 생성 권한 거부:', {
           reason: !member ? '멤버를 찾을 수 없음' : '담당 트레이너가 아님',
           member_trainer_id: member?.trainer_id,
-          current_user_id: currentUser.id
+          current_user_id: currentUser.id,
         });
         return res.status(403).json({
           success: false,
           message: '본인이 담당하는 멤버의 PT 결제만 생성할 수 있습니다.',
         });
       }
-      
+
       console.log('✅ PT 결제 생성 권한 승인');
       return next();
     }
@@ -707,8 +707,8 @@ const requirePTSessionPermission = async (req, res, next) => {
 
     const currentUserLevel = currentUser.position.level;
 
-    // 포지션 12, 99는 모든 권한
-    if (currentUserLevel === 12 || currentUserLevel === 99) {
+    // 포지션 12, 13, 99는 모든 권한 (관리자 포함)
+    if (currentUserLevel === 12 || currentUserLevel === 13 || currentUserLevel === 99) {
       return next();
     }
 
@@ -776,8 +776,8 @@ const requirePTSessionManagementPermission = async (req, res, next) => {
 
     const currentUserLevel = currentUser.position.level;
 
-    // 포지션 12, 99는 모든 권한
-    if (currentUserLevel === 12 || currentUserLevel === 99) {
+    // 포지션 12, 13, 99는 모든 권한 (관리자 포함)
+    if (currentUserLevel === 12 || currentUserLevel === 13 || currentUserLevel === 99) {
       return next();
     }
 

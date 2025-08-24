@@ -59,29 +59,29 @@ const MemberPTSessionPage = () => {
   // PT 세션 관리 권한 체크 함수 - 담당 트레이너만 관리 가능
   const hasPTSessionManagementPermission = () => {
     if (!currentUser || !member) return false;
-    
+
     // 관리자(12, 99)는 모든 권한
-    if (currentUser.position_id === 12 || currentUser.position_id === 99) {
+    if (currentUser.position_id === 12 || currentUser.position_id === 13 || currentUser.position_id === 99) {
       return true;
     }
-    
+
     // 담당 트레이너인지 확인 (타입 변환하여 비교)
     const isTrainer = Number(member.trainer_id) === Number(currentUser.id);
-    
+
     console.log('🔍 PT 세션 관리 권한 체크:', {
       currentUser: {
         id: currentUser.id,
         name: currentUser.name,
-        position_id: currentUser.position_id
+        position_id: currentUser.position_id,
       },
       member: {
         id: member.id,
         name: member.name,
-        trainer_id: member.trainer_id
+        trainer_id: member.trainer_id,
       },
-      isTrainer: isTrainer
+      isTrainer: isTrainer,
     });
-    
+
     return isTrainer;
   };
 
@@ -94,7 +94,7 @@ const MemberPTSessionPage = () => {
     console.log('🔍 useEffect - 권한 체크 디버깅');
     console.log('🔍 useEffect - currentUser:', currentUser);
     console.log('🔍 useEffect - member:', member);
-    
+
     if (currentUser && member) {
       const hasPermission = hasPTSessionManagementPermission();
       console.log('🔍 useEffect - 권한 체크 결과:', hasPermission);
@@ -127,16 +127,16 @@ const MemberPTSessionPage = () => {
   const handleOpenCreateModal = () => {
     console.log('🔍 PT 등록 버튼 클릭됨');
     console.log('🔍 hasPTSessionManagementPermission() 호출 전');
-    
+
     const hasPermission = hasPTSessionManagementPermission();
     console.log('🔍 hasPTSessionManagementPermission() 결과:', hasPermission);
-    
+
     if (!hasPermission) {
       console.log('🔍 권한 없음 - 토스트 메시지 표시');
       toast.warning('PT 세션 등록 권한이 없습니다. 담당 트레이너만 등록할 수 있습니다.');
       return;
     }
-    
+
     console.log('🔍 권한 있음 - 모달 열기');
     setIsCreateModalOpen(true);
   };
@@ -403,7 +403,6 @@ const MemberPTSessionPage = () => {
                   내용
                 </div>
 
-
                 {/* 우측 여유 */}
                 <div className="flex-[0.3]"></div>
               </div>
@@ -459,7 +458,6 @@ const MemberPTSessionPage = () => {
                           {session.notes || '-'}
                         </div>
                       </div>
-
 
                       {/* 우측 여유 */}
                       <div className="flex-[0.3]"></div>

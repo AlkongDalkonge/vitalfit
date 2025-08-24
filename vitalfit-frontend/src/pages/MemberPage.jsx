@@ -195,7 +195,7 @@ const MemberPage = () => {
 
   return (
     <div className="w-full max-w-7xl mx-auto pt-0 px-6 pb-6 flex flex-col">
-      <div className="flex flex-col gap-6 flex-1 pb-0">
+      <div className="flex flex-col gap-2 flex-1 pb-0">
         {/* 최상단 제목 */}
         <div
           data-layer="고객 관리"

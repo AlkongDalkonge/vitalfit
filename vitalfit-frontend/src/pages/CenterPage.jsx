@@ -374,7 +374,7 @@ const CenterPage = () => {
       </div>
 
       {/* 센터별 현황 */}
-      <div className="bg-white rounded-xl p-6 mb-8 mt-12 border border-gray-100">
+      <div className="bg-white rounded-xl p-6 mb-2 mt-2 border border-gray-100">
         <div className="mb-6">
           <h2 className="text-xl font-semibold text-gray-800 m-0">센터별 현황</h2>
         </div>

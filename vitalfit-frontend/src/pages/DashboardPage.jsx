@@ -325,7 +325,9 @@ const DashboardPage = () => {
         <div className="mb-12 pt-8">
           <div className="flex justify-between items-start">
             <div>
-              <h1 className="text-4xl font-bold mb-3 text-black">안녕하세요, {user?.name || '사용자'}님!</h1>
+              <h1 className="text-4xl font-bold mb-3 text-black">
+                안녕하세요, {user?.name || '사용자'}님!
+              </h1>
               <p className="text-black text-sm">오늘의 VitalFit 센터 현황을 확인해보세요.</p>
             </div>
           </div>
@@ -410,7 +412,7 @@ const DashboardPage = () => {
               <div className="space-y-3">
                 <div className="flex items-center gap-2 mb-4">
                   <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                  <h3 className="font-semibold text-gray-800">최근 공지 (최신 3개)</h3>
+                  <h3 className="font-semibold text-gray-800">최근 공지</h3>
                 </div>
                 <div className="space-y-2">
                   {recentActivities.recentNotices?.slice(0, 3).map((notice, index) => (
@@ -448,7 +450,7 @@ const DashboardPage = () => {
                     className="w-3 h-3 rounded-full"
                     style={{ backgroundColor: '#7dd3fc' }}
                   ></div>
-                  <h3 className="font-semibold text-gray-800">최근 직원 (최신 3개)</h3>
+                  <h3 className="font-semibold text-gray-800">최근 직원</h3>
                 </div>
                 <div className="space-y-2">
                   {recentActivities.recentUsers?.slice(0, 3).map((user, index) => (

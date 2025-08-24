@@ -17,8 +17,8 @@ const PaymentHistoryPage = () => {
   const hasPaymentPermission = () => {
     if (!currentUser || !member) return false;
 
-    // 관리자(12, 99)는 모든 권한
-    if (currentUser.position_id === 12 || currentUser.position_id === 99) {
+    // 관리자(12, 13, 99)는 모든 권한
+    if (currentUser.position_id === 12 || currentUser.position_id === 13 || currentUser.position_id === 99) {
       return true;
     }
 
@@ -44,8 +44,8 @@ const PaymentHistoryPage = () => {
   const hasPaymentManagementPermission = () => {
     if (!currentUser || !member) return false;
 
-    // 관리자(12, 99)는 모든 권한
-    if (currentUser.position_id === 12 || currentUser.position_id === 99) {
+    // 관리자(12, 13, 99)는 모든 권한
+    if (currentUser.position_id === 12 || currentUser.position_id === 13 || currentUser.position_id === 99) {
       return true;
     }
 
@@ -242,8 +242,8 @@ const PaymentHistoryPage = () => {
   }
 
   return (
-    <div className="w-full max-w-7xl mx-auto pt-0 px-6 pb-6 min-h-screen flex flex-col">
-      <div className="flex flex-col gap-6 flex-1">
+    <div className="w-full max-w-7xl mx-auto pt-0 px-6 pb-4 flex flex-col">
+      <div className="flex flex-col gap-4 flex-1">
         {/* 헤더 */}
         <div className="flex items-center justify-between bg-white rounded-lg p-4 shadow-sm">
           <div className="flex items-center gap-4">

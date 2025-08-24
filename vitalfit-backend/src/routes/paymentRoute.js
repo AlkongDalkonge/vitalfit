@@ -1,7 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const auth = require('../middlewares/authMiddleware');
-const { requirePaymentPermission, requirePaymentManagementPermission } = require('../middlewares/permissionMiddleware');
+const {
+  requirePaymentPermission,
+  requirePaymentManagementPermission,
+} = require('../middlewares/permissionMiddleware');
 
 const {
   createPayment,

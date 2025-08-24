@@ -110,7 +110,11 @@ const UserPage = () => {
 
     const name = positionName.toLowerCase();
     if (name.includes('관리자') || name.includes('admin')) {
-      return 'text-purple-600 bg-purple-50';
+      return 'text-gray-600 bg-gray-100';
+    } else if (name.includes('센터장') || name.includes('center manager')) {
+      return 'text-yellow-600 bg-yellow-50';
+    } else if (name.includes('팀장') || name.includes('team leader')) {
+      return 'text-blue-600 bg-blue-50';
     } else if (name.includes('매니저') || name.includes('manager')) {
       return 'text-blue-600 bg-blue-50';
     } else if (name.includes('트레이너') || name.includes('trainer')) {
@@ -198,7 +202,7 @@ const UserPage = () => {
 
   return (
     <div className="w-full max-w-7xl mx-auto pt-0 px-6 pb-6 flex flex-col">
-      <div className="flex flex-col gap-6 flex-1 pb-0">
+      <div className="flex flex-col gap-2 flex-1 pb-0">
         {/* 최상단 제목 */}
         <div
           data-layer="직원 관리"
