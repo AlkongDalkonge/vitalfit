@@ -415,6 +415,15 @@ export default function SignUp() {
       formDataToSend.append('terms_accepted', formData.terms_accepted);
       formDataToSend.append('privacy_accepted', formData.privacy_accepted);
 
+      // 선택사항 필드들 추가 (빈 값이어도 전송)
+      formDataToSend.append('team_id', formData.team_id || '');
+      formDataToSend.append('nickname', formData.nickname || '');
+      formDataToSend.append('license', formData.license || '');
+      formDataToSend.append('experience', formData.experience || '');
+      formDataToSend.append('education', formData.education || '');
+      formDataToSend.append('instagram', formData.instagram || '');
+      formDataToSend.append('shift', formData.shift || '');
+
       // 프로필 이미지가 있으면 추가
       if (profileImage) {
         formDataToSend.append('profile_image_url', profileImage);
@@ -458,7 +467,7 @@ export default function SignUp() {
           navigate('/login');
         } else if (data.requiresEmailVerification) {
           // 이메일 인증이 필요한 경우
-          // toast.success('회원가입을 위해 이메일 인증을 완료해주세요.'); // 주석처리됨
+          toast.success('회원가입을 위해 이메일 인증을 완료해주세요.');
           navigate('/verify-email', {
             state: {
               email: formData.email,
@@ -1006,20 +1015,26 @@ export default function SignUp() {
       {/* 약관 모달 */}
       {(showTermsModal || showPrivacyModal) && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-hidden">
-            <div className="flex justify-between items-center p-4 border-b">
-              <h3 className="text-lg font-semibold">{modalTitle}</h3>
-              <button onClick={closeModal} className="text-gray-500 hover:text-gray-700 text-2xl">
+          <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-hidden">
+            <div className="flex justify-between items-center p-4 border-b bg-gray-50">
+              <h3 className="text-lg font-semibold text-gray-800">{modalTitle}</h3>
+              <button
+                onClick={closeModal}
+                className="text-gray-500 hover:text-gray-700 text-2xl hover:bg-gray-200 rounded-full w-8 h-8 flex items-center justify-center transition-colors"
+              >
                 ×
               </button>
             </div>
-            <div className="p-4 overflow-y-auto max-h-[60vh]">
-              <div dangerouslySetInnerHTML={{ __html: modalContent }} />
+            <div className="p-6 overflow-y-auto max-h-[70vh] bg-white">
+              <div
+                className="prose prose-sm max-w-none"
+                dangerouslySetInnerHTML={{ __html: modalContent }}
+              />
             </div>
-            <div className="p-4 border-t">
+            <div className="p-4 border-t bg-gray-50">
               <button
                 onClick={closeModal}
-                className="w-full bg-cyan-500 text-white py-2 px-4 rounded-lg hover:bg-cyan-600 transition-colors"
+                className="w-full bg-cyan-500 text-white py-3 px-6 rounded-lg hover:bg-cyan-600 transition-colors font-medium"
               >
                 확인
               </button>

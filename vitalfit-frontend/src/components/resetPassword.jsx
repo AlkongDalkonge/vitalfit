@@ -1,11 +1,15 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+// API 기본 URL 설정
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+
 export default function ResetPassword() {
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+  const [hasSent, setHasSent] = useState(false);
 
   const navigate = useNavigate();
 
@@ -22,7 +26,9 @@ export default function ResetPassword() {
     }
 
     try {
-      const response = await fetch('/api/users/reset-password', {
+      console.log('🔄 비밀번호 재설정 요청:', email);
+
+      const response = await fetch(`${API_BASE_URL}/api/users/reset-password`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -30,18 +36,22 @@ export default function ResetPassword() {
         body: JSON.stringify({ email }),
       });
 
-      const data = await response.json();
+      console.log('📡 API 응답 상태:', response.status);
 
       if (response.ok) {
+        const data = await response.json();
+        console.log('✅ 비밀번호 재설정 성공:', data);
         setSuccess('임시 비밀번호가 이메일로 발송되었습니다. 이메일을 확인해주세요.');
-        setTimeout(() => {
-          navigate('/login');
-        }, 3000);
+        setHasSent(true);
       } else {
-        setError(data.message || '비밀번호 재설정 중 오류가 발생했습니다.');
+        const errorData = await response
+          .json()
+          .catch(() => ({ message: '알 수 없는 오류가 발생했습니다.' }));
+        console.error('❌ 비밀번호 재설정 실패:', errorData);
+        setError(errorData.message || '비밀번호 재설정 중 오류가 발생했습니다.');
       }
     } catch (err) {
-      console.error('비밀번호 재설정 오류:', err);
+      console.error('❌ 비밀번호 재설정 네트워크 오류:', err);
       setError('비밀번호 재설정 중 오류가 발생했습니다. 네트워크 연결을 확인해주세요.');
     } finally {
       setLoading(false);
@@ -50,6 +60,12 @@ export default function ResetPassword() {
 
   const handleSignIn = () => {
     navigate('/login');
+  };
+
+  const handleResend = () => {
+    setSuccess('');
+    setHasSent(false);
+    setEmail(''); // 이메일 입력 필드 초기화
   };
 
   return (
@@ -73,7 +89,7 @@ export default function ResetPassword() {
             <div className="text-center mb-12">
               <h2 className="text-3xl font-bold text-gray-900 mb-3">비밀번호 재설정</h2>
               <p className="text-sm text-gray-600">
-                이메일 주소를 입력하시면 재설정 링크를 보내드립니다
+                이메일 주소를 입력하시면 임시 비밀번호를 보내드립니다
               </p>
             </div>
 
@@ -88,18 +104,32 @@ export default function ResetPassword() {
                   placeholder="Enter email address"
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-colors"
                   required
+                  disabled={hasSent} // 이미 전송된 경우 비활성화
                 />
               </div>
 
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || hasSent}
                 className="Button w-full h-11 p-2.5 bg-gradient-to-r from-cyan-500 to-indigo-600 rounded-[10px] inline-flex justify-center items-center gap-2.5 hover:from-cyan-600 hover:to-indigo-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
               >
                 <div className="PrimaryButton justify-start text-white text-sm font-normal font-['Nunito'] leading-normal">
-                  {loading ? '전송 중...' : '재설정 링크 전송'}
+                  {loading ? '전송 중...' : hasSent ? '전송 완료' : '임시 비밀번호 전송'}
                 </div>
               </button>
+
+              {/* 재전송 버튼 - 이미 전송된 경우에만 표시 */}
+              {hasSent && (
+                <button
+                  type="button"
+                  onClick={handleResend}
+                  className="Button w-full h-11 p-2.5 bg-gradient-to-r from-gray-500 to-gray-600 rounded-[10px] inline-flex justify-center items-center gap-2.5 hover:from-gray-600 hover:to-gray-700 transition-all duration-200 shadow-lg"
+                >
+                  <div className="PrimaryButton justify-start text-white text-sm font-normal font-['Nunito'] leading-normal">
+                    다시 보내기
+                  </div>
+                </button>
+              )}
 
               <div className="text-center pt-4">
                 <p className="text-sm text-gray-600 mb-4">비밀번호를 기억하셨나요?</p>

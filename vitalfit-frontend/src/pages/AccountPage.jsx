@@ -426,13 +426,7 @@ const AccountPage = () => {
           <div key={`authenticated-${isAuthenticated}-${Date.now()}`}>{renderActiveTab()}</div>
         ) : (
           // 재인증이 필요한 경우 안내 메시지 표시 (배경 화면 유지)
-          <div className="bg-white rounded-lg p-8 text-center">
-            <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-blue-100 mb-4">
-              <span className="text-3xl">🔒</span>
-            </div>
-            <h2 className="text-xl font-bold text-gray-800 mb-2">보안 확인 필요</h2>
-            <p className="text-gray-600">계정 정보에 접근하려면 비밀번호를 다시 입력해주세요</p>
-          </div>
+          <div className="bg-white rounded-lg p-8 text-center"></div>
         )}
       </div>
 

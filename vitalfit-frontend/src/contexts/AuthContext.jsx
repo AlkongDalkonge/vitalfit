@@ -1,11 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import AuthService from '../utils/auth';
 import api from '../utils/api';
-import {
-  clearReAuthStatus,
-  needsReAuth,
-  handlePageNavigation,
-} from '../utils/reAuthUtils';
+import { clearReAuthStatus, needsReAuth, handlePageNavigation } from '../utils/reAuthUtils';
 
 const AuthContext = createContext();
 
@@ -58,10 +54,10 @@ export const AuthProvider = ({ children }) => {
               const userData = JSON.parse(storedUser);
               if (!isMounted) return;
 
-                              // 먼저 localStorage 정보로 빠르게 로그인
-                setUser(userData);
-                setIsAuthenticated(true);
-                              console.log('✅ localStorage 정보로 빠른 로그인 성공');
+              // 먼저 localStorage 정보로 빠르게 로그인
+              setUser(userData);
+              setIsAuthenticated(true);
+              console.log('✅ localStorage 정보로 빠른 로그인 성공');
 
               // 백그라운드에서 서버 검증 시도
               setTimeout(async () => {
@@ -69,7 +65,7 @@ export const AuthProvider = ({ children }) => {
                   const { data } = await api.get('/users/me');
                   const userData = data;
                   const actualUser = userData.user || userData;
-                  
+
                   if (isMounted) {
                     setUser(actualUser);
                     localStorage.setItem('user', JSON.stringify(actualUser));
@@ -80,7 +76,6 @@ export const AuthProvider = ({ children }) => {
                   // 서버 검증 실패해도 localStorage 정보로 계속 사용
                 }
               }, 100);
-
             } catch (error) {
               console.error('사용자 정보 파싱 오류:', error);
               forceLogout();
@@ -231,13 +226,32 @@ export const AuthProvider = ({ children }) => {
       if (response.data && response.data.token && response.data.user) {
         const { token, refreshToken, user: userData } = response.data;
 
+        console.log('🔍 로그인 응답 데이터:', {
+          hasToken: !!token,
+          hasRefreshToken: !!refreshToken,
+          hasUser: !!userData,
+          userEmail: userData?.email,
+        });
+
         // Refresh Token을 먼저 저장
         if (refreshToken) {
           AuthService.setRefreshToken(refreshToken);
+          console.log('✅ Refresh Token 저장 완료');
+
+          // 저장 확인
+          const savedRefreshToken = AuthService.getRefreshToken();
+          console.log('🔍 저장된 Refresh Token 확인:', {
+            hasSavedToken: !!savedRefreshToken,
+            savedTokenLength: savedRefreshToken ? savedRefreshToken.length : 0,
+            matches: refreshToken === savedRefreshToken,
+          });
+        } else {
+          console.warn('⚠️ Refresh Token이 응답에 없습니다');
         }
 
         // Remember Me에 따라 Access Token 저장
         AuthService.setAccessToken(token, rememberMe);
+        console.log('✅ Access Token 저장 완료 (rememberMe:', rememberMe, ')');
 
         // 사용자 정보를 localStorage에 저장 (자동 로그인용)
         localStorage.setItem('user', JSON.stringify(userData));
@@ -256,6 +270,7 @@ export const AuthProvider = ({ children }) => {
         return { success: true, user: userData };
       } else {
         console.log('❌ 로그인 실패:', response.data?.message || '응답 데이터 형식 오류');
+        console.log('🔍 응답 데이터 구조:', response.data);
         return { success: false, message: response.data?.message || '응답 데이터 형식 오류' };
       }
     } catch (error) {
@@ -357,7 +372,6 @@ export const AuthProvider = ({ children }) => {
     closeReAuthModal,
     handleNavigation,
     checkReAuthRequired,
-
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

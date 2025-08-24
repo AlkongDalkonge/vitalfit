@@ -41,38 +41,54 @@ const signUpSchema = Joi.object({
   }),
   phone: Joi.string()
     .pattern(/^01[0-9]-\d{3,4}-\d{4}$/)
-    .optional()
+    .required()
     .messages({
-      'string.pattern.base': '전화번호 형식이 올바르지 않습니다.',
+      'string.pattern.base': '전화번호 형식이 올바르지 않습니다. (예: 010-1234-5678)',
+      'any.required': '전화번호는 필수입니다.',
     }),
-  position_id: Joi.number().required(),
-  center_id: Joi.number().required(),
-  team_id: Joi.number().optional(),
-  nickname: Joi.string().optional(),
-  license: Joi.string().optional(),
-  experience: Joi.string().optional(),
-  education: Joi.string().optional(),
-  instagram: Joi.string().optional(),
-  shift: Joi.string().optional(),
+  position_id: Joi.number().required().messages({
+    'any.required': '직책은 필수입니다.',
+  }),
+  center_id: Joi.number().required().messages({
+    'any.required': '센터는 필수입니다.',
+  }),
+  team_id: Joi.number().optional().allow(null, ''),
+  nickname: Joi.string().optional().allow(''),
+  license: Joi.string().optional().allow(''),
+  experience: Joi.string().optional().allow(''),
+  education: Joi.string().optional().allow(''),
+  instagram: Joi.string().optional().allow(''),
+  shift: Joi.string().optional().allow(''),
 
   terms_accepted: Joi.boolean().valid(true).required().messages({
     'any.only': '약관 동의는 필수입니다.',
+    'any.required': '약관 동의는 필수입니다.',
   }),
 
   privacy_accepted: Joi.boolean().valid(true).required().messages({
     'any.only': '개인정보처리방침 동의는 필수입니다.',
+    'any.required': '개인정보처리방침 동의는 필수입니다.',
   }),
 
-  join_date: Joi.date().optional(), // 필수 아니면 생략 가능
-  profile_image_name: Joi.string().optional(),
-  profile_image_url: Joi.string().optional(),
+  // 웹캠 관련 필드는 선택사항으로 유지
+  profile_image_name: Joi.string().optional().allow('', null),
+  profile_image_url: Joi.string().optional().allow('', null),
 });
 
 // ✅ 회원가입 (이메일 인증 필요, JWT 발급 안함)
 const signUp = async (req, res, next) => {
   try {
+    console.log('회원가입 요청 데이터:', req.body);
     const { error, value } = signUpSchema.validate(req.body);
-    if (error) return res.status(400).json({ success: false, message: error.message });
+    if (error) {
+      console.log('회원가입 검증 오류:', error.details);
+      return res.status(400).json({
+        success: false,
+        message: '입력 정보를 확인해주세요.',
+        details: error.details.map(detail => detail.message),
+      });
+    }
+    console.log('검증된 데이터:', value);
 
     const { email, password, center_id, position_id, team_id, terms_accepted } = value;
 
@@ -90,7 +106,7 @@ const signUp = async (req, res, next) => {
       existingUser.phone = value.phone;
       existingUser.position_id = value.position_id;
       existingUser.center_id = value.center_id;
-      existingUser.team_id = value.team_id;
+      existingUser.team_id = value.team_id || null;
       existingUser.nickname = value.nickname || null;
       existingUser.license = value.license || null;
       existingUser.experience = value.experience || null;
@@ -100,7 +116,7 @@ const signUp = async (req, res, next) => {
       existingUser.terms_accepted = value.terms_accepted;
       existingUser.terms_accepted_at = new Date();
       existingUser.status = 'pending_verification'; // 이메일 인증 대기 상태
-      existingUser.join_date = new Date();
+      existingUser.join_date = new Date(); // 자동으로 현재 날짜 설정
       existingUser.leave_date = null; // 탈퇴일 초기화
 
       if (req.file) {
@@ -133,8 +149,16 @@ const signUp = async (req, res, next) => {
     const userData = {
       ...value,
       password: hashedPassword,
-      status: 'inactive', // 이메일 인증 대기 상태 (inactive로 설정)
-      join_date: new Date(),
+      status: 'pending_verification', // 이메일 인증 대기 상태
+      join_date: new Date(), // 자동으로 현재 날짜 설정
+      // 선택사항 필드들의 빈 문자열을 null로 변환
+      team_id: value.team_id || null,
+      nickname: value.nickname || null,
+      license: value.license || null,
+      experience: value.experience || null,
+      education: value.education || null,
+      instagram: value.instagram || null,
+      shift: value.shift || null,
     };
 
     if (req.file) {
@@ -161,7 +185,32 @@ const signUp = async (req, res, next) => {
       requiresEmailVerification: true,
     });
   } catch (err) {
-    next(err);
+    console.error('회원가입 처리 중 오류 발생:', err);
+    console.error('오류 스택:', err.stack);
+
+    // 데이터베이스 관련 오류인지 확인
+    if (err.name === 'SequelizeValidationError') {
+      return res.status(400).json({
+        success: false,
+        message: '입력 데이터가 올바르지 않습니다.',
+        details: err.errors.map(e => e.message),
+      });
+    }
+
+    if (err.name === 'SequelizeForeignKeyConstraintError') {
+      return res.status(400).json({
+        success: false,
+        message: '존재하지 않는 직책 또는 센터입니다.',
+        details: err.message,
+      });
+    }
+
+    // 기타 오류
+    return res.status(500).json({
+      success: false,
+      message: '서버 오류가 발생했습니다.',
+      details: err.message,
+    });
   }
 };
 
@@ -202,21 +251,9 @@ const verifyEmail = async (req, res, next) => {
     user.verification_code_expires_at = null;
     await user.save();
 
-    // JWT 토큰 생성 (30일)
-    const token = jwt.sign(
-      {
-        userId: user.id,
-        email: user.email,
-        name: user.name,
-      },
-      secret,
-      { expiresIn: '30d' }
-    );
-
     return res.status(200).json({
       success: true,
-      message: '이메일 인증이 완료되었습니다. 자동으로 로그인됩니다.',
-      token: token,
+      message: '이메일 인증이 완료되었습니다. 로그인 페이지로 이동합니다.',
       user: {
         id: user.id,
         name: user.name,
@@ -261,7 +298,7 @@ const signIn = async (req, res, next) => {
       });
 
     // 이메일 인증이 완료되지 않은 사용자는 로그인 차단
-    if (user.status === 'inactive' && !user.email_verified_at) {
+    if (user.status === 'pending_verification') {
       return res.status(403).json({
         success: false,
         message: '이메일 인증을 완료해주세요.',
@@ -269,8 +306,8 @@ const signIn = async (req, res, next) => {
       });
     }
 
-    // 탈퇴된 사용자는 로그인 차단 (email_verified_at이 있지만 status가 inactive인 경우)
-    if (user.status === 'inactive' && user.email_verified_at) {
+    // 탈퇴된 사용자는 로그인 차단
+    if (user.status === 'retired') {
       return res.status(403).json({
         success: false,
         message: '탈퇴된 계정입니다. 회원가입을 다시 진행해주세요.',
@@ -496,6 +533,16 @@ const updateMyAccount = async (req, res, next) => {
   try {
     const updates = req.body;
 
+    // 디버깅을 위한 로깅 추가
+    console.log('🔍 updateMyAccount 호출됨');
+    console.log('📥 받은 데이터:', updates);
+    console.log('📋 position_id:', updates.position_id, 'type:', typeof updates.position_id);
+    console.log('📋 center_id:', updates.center_id, 'type:', typeof updates.center_id);
+    console.log('📋 license:', updates.license ? '있음' : '없음');
+    console.log('📋 experience:', updates.experience ? '있음' : '없음');
+    console.log('📋 education:', updates.education ? '있음' : '없음');
+    console.log('📋 instagram:', updates.instagram ? '있음' : '없음');
+
     // shift 데이터 검증
     if (updates.shift) {
       try {
@@ -558,18 +605,38 @@ const updateMyAccount = async (req, res, next) => {
     }
 
     // 필수 필드 검증 및 전처리
-    if (!updates.position_id || updates.position_id === '') {
-      return res.status(400).json({
-        success: false,
-        message: '직책은 필수 선택 항목입니다.',
-      });
+    // 자격증, 경력, 학력, 인스타그램만 업데이트하는 경우에는 필수 필드 검증 건너뛰기
+    const isOnlyAdditionalInfoUpdate =
+      updates.license !== undefined ||
+      updates.experience !== undefined ||
+      updates.education !== undefined ||
+      updates.instagram !== undefined;
+
+    // position_id나 center_id가 실제로 업데이트되는 경우에만 해당 필드 검증
+    console.log('🔍 position_id 검증 시작:', updates.position_id !== undefined);
+    if (updates.position_id !== undefined) {
+      console.log('⚠️ position_id 검증 실행:', updates.position_id);
+      if (!updates.position_id || updates.position_id === '') {
+        console.log('❌ position_id 검증 실패');
+        return res.status(400).json({
+          success: false,
+          message: '직책은 필수 선택 항목입니다.',
+        });
+      }
+      console.log('✅ position_id 검증 통과');
     }
 
-    if (!updates.center_id || updates.center_id === '') {
-      return res.status(400).json({
-        success: false,
-        message: '센터는 필수 선택 항목입니다.',
-      });
+    console.log('🔍 center_id 검증 시작:', updates.center_id !== undefined);
+    if (updates.center_id !== undefined) {
+      console.log('⚠️ center_id 검증 실행:', updates.center_id);
+      if (!updates.center_id || updates.center_id === '') {
+        console.log('❌ center_id 검증 실패');
+        return res.status(400).json({
+          success: false,
+          message: '센터는 필수 선택 항목입니다.',
+        });
+      }
+      console.log('✅ center_id 검증 통과');
     }
 
     // 빈 문자열을 null로 변환 (선택적 필드만)
@@ -577,10 +644,14 @@ const updateMyAccount = async (req, res, next) => {
       updates.team_id = null;
     }
 
-    // 외래키 검증
-    await validateForeignKey(Center, updates.center_id, '센터');
-    await validateForeignKey(Position, updates.position_id, '직책');
-    if (updates.team_id) {
+    // 외래키 검증 - 각 필드가 실제로 업데이트되는 경우에만 수행
+    if (updates.center_id !== undefined) {
+      await validateForeignKey(Center, updates.center_id, '센터');
+    }
+    if (updates.position_id !== undefined) {
+      await validateForeignKey(Position, updates.position_id, '직책');
+    }
+    if (updates.team_id !== undefined) {
       await validateForeignKey(Team, updates.team_id, '팀');
     }
 
@@ -687,6 +758,154 @@ const updateAccountInfo = async (req, res, next) => {
   }
 };
 
+// 자격증, 경력, 학력, 인스타그램 정보 업데이트
+const updateAdditionalInfo = async (req, res, next) => {
+  try {
+    const { license, experience, education, instagram } = req.body;
+
+    const user = await User.findByPk(req.user.uid);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: '사용자를 찾을 수 없습니다.',
+      });
+    }
+
+    // 추가 정보 업데이트
+    const updateData = {};
+    if (license !== undefined) updateData.license = license;
+    if (experience !== undefined) updateData.experience = experience;
+    if (education !== undefined) updateData.education = education;
+    if (instagram !== undefined) updateData.instagram = instagram;
+
+    await user.update(updateData);
+
+    return res.status(200).json({
+      success: true,
+      message: '추가 정보가 업데이트되었습니다.',
+      license: updateData.license,
+      experience: updateData.experience,
+      education: updateData.education,
+      instagram: updateData.instagram,
+    });
+  } catch (err) {
+    console.error('updateAdditionalInfo 에러:', err);
+    next(err);
+  }
+};
+
+// 자격증 정보만 업데이트
+const updateLicense = async (req, res, next) => {
+  try {
+    const { license } = req.body;
+
+    const user = await User.findByPk(req.user.uid);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: '사용자를 찾을 수 없습니다.',
+      });
+    }
+
+    await user.update({ license });
+
+    return res.status(200).json({
+      success: true,
+      message: '자격증 정보가 업데이트되었습니다.',
+      license: license,
+    });
+  } catch (err) {
+    console.error('updateLicense 에러:', err);
+    next(err);
+  }
+};
+
+// 경력 정보만 업데이트
+const updateExperience = async (req, res, next) => {
+  try {
+    const { experience } = req.body;
+    console.log('🔄 경력 업데이트 요청:', { experience, userId: req.user.uid });
+
+    const user = await User.findByPk(req.user.uid);
+    if (!user) {
+      console.log('❌ 사용자를 찾을 수 없음:', req.user.uid);
+      return res.status(404).json({
+        success: false,
+        message: '사용자를 찾을 수 없습니다.',
+      });
+    }
+
+    console.log('✅ 사용자 찾음:', user.id);
+    await user.update({ experience });
+    console.log('💾 경력 정보 업데이트 완료');
+
+    return res.status(200).json({
+      success: true,
+      message: '경력 정보가 업데이트되었습니다.',
+      experience: experience,
+    });
+  } catch (err) {
+    console.error('❌ updateExperience 에러:', err);
+    next(err);
+  }
+};
+
+// 학력 정보만 업데이트
+const updateEducation = async (req, res, next) => {
+  try {
+    const { education } = req.body;
+    console.log('🔄 학력 업데이트 요청:', { education, userId: req.user.uid });
+
+    const user = await User.findByPk(req.user.uid);
+    if (!user) {
+      console.log('❌ 사용자를 찾을 수 없음:', req.user.uid);
+      return res.status(404).json({
+        success: false,
+        message: '사용자를 찾을 수 없습니다.',
+      });
+    }
+
+    console.log('✅ 사용자 찾음:', user.id);
+    await user.update({ education });
+    console.log('💾 학력 정보 업데이트 완료');
+
+    return res.status(200).json({
+      success: true,
+      message: '학력 정보가 업데이트되었습니다.',
+      education: education,
+    });
+  } catch (err) {
+    console.error('❌ updateEducation 에러:', err);
+    next(err);
+  }
+};
+
+// 인스타그램 정보만 업데이트
+const updateInstagram = async (req, res, next) => {
+  try {
+    const { instagram } = req.body;
+
+    const user = await User.findByPk(req.user.uid);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: '사용자를 찾을 수 없습니다.',
+      });
+    }
+
+    await user.update({ instagram });
+
+    return res.status(200).json({
+      success: true,
+      message: '인스타그램 정보가 업데이트되었습니다.',
+      instagram: instagram,
+    });
+  } catch (err) {
+    console.error('updateInstagram 에러:', err);
+    next(err);
+  }
+};
+
 // 로그아웃 (프론트에서 토큰 삭제로 처리)
 const logout = async (req, res) => {
   res.status(200).json({ success: true, message: '로그아웃되었습니다.' });
@@ -729,17 +948,17 @@ const resetPassword = async (req, res, next) => {
       });
     }
 
-    // 안전한 재설정 토큰 생성 (32자리 랜덤 문자열)
-    const resetToken = crypto.randomBytes(32).toString('hex');
-    const resetTokenExpiresAt = new Date(Date.now() + 30 * 60 * 1000); // 30분 유효
+    // 6자리 숫자 재설정 코드 생성
+    const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const resetCodeExpiresAt = new Date(Date.now() + 30 * 60 * 1000); // 30분 유효
 
-    // 재설정 토큰을 기존 verification_code 필드에 저장
-    user.verification_code = resetToken;
-    user.verification_code_expires_at = resetTokenExpiresAt;
+    // 재설정 코드를 verification_code 필드에 저장
+    user.verification_code = resetCode;
+    user.verification_code_expires_at = resetCodeExpiresAt;
     await user.save();
 
-    // 이메일로 재설정 링크 발송
-    const emailResult = await sendPasswordResetEmail(email, user.name, resetToken);
+    // 이메일로 재설정 코드 발송
+    const emailResult = await sendPasswordResetEmail(email, user.name, resetCode);
 
     if (emailResult.success) {
       return res.status(200).json({
@@ -1527,6 +1746,11 @@ module.exports = {
   getMyAccount,
   updateMyAccount,
   updateAccountInfo,
+  updateAdditionalInfo, // 새로 추가된 함수
+  updateLicense, // 새로 추가된 함수
+  updateExperience, // 새로 추가된 함수
+  updateEducation, // 새로 추가된 함수
+  updateInstagram, // 새로 추가된 함수
   logout,
   resetPassword,
   confirmPasswordReset, // 새로 추가된 함수

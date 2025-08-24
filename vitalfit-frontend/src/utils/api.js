@@ -240,6 +240,23 @@ export const userAPI = {
   updateAccountInfo: async data => {
     return await apiPut('/users/account', data);
   },
+  // 자격증, 경력, 학력, 인스타그램 정보 업데이트
+  updateAdditionalInfo: async data => {
+    return await apiPut('/users/additional-info', data);
+  },
+  // 개별 정보 업데이트
+  updateLicense: async data => {
+    return await apiPut('/users/license', data);
+  },
+  updateExperience: async data => {
+    return await apiPut('/users/experience', data);
+  },
+  updateEducation: async data => {
+    return await apiPut('/users/education', data);
+  },
+  updateInstagram: async data => {
+    return await apiPut('/users/instagram', data);
+  },
   // 프로필 이미지 업로드
   uploadProfileImage: async (userId, formData, onProgress) => {
     return await api.post('/users/profile-image', formData, {
@@ -474,19 +491,23 @@ export const settlementAPI = {
     return await apiPost(`/settlements/${id}/acknowledge`, null, { params: { user_id: userId } });
   },
   approve: async (id, userId, centerId) => {
-    return await apiPost(`/settlements/${id}/approve`, null, { 
-      params: { user_id: userId, center_id: centerId } 
+    return await apiPost(`/settlements/${id}/approve`, null, {
+      params: { user_id: userId, center_id: centerId },
     });
   },
   hqApprove: async (id, userId) => {
-    return await apiPost(`/settlements/${id}/hq-approve`, null, { 
-      params: { user_id: userId } 
+    return await apiPost(`/settlements/${id}/hq-approve`, null, {
+      params: { user_id: userId },
     });
   },
   hqReject: async (id, rejectReason, userId) => {
-    return await apiPost(`/settlements/${id}/hq-reject`, { reject_reason: rejectReason }, { 
-      params: { user_id: userId } 
-    });
+    return await apiPost(
+      `/settlements/${id}/hq-reject`,
+      { reject_reason: rejectReason },
+      {
+        params: { user_id: userId },
+      }
+    );
   },
   pay: async (id, data = {}) => {
     return await apiPost(`/settlements/${id}/pay`, data);

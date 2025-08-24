@@ -34,10 +34,11 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-      {/* 레이아웃 없이 독립적으로 보여질 페이지들 */}
-      <Route path="/login" element={<SignIn />} />
-      <Route path="/signup" element={<SignUp />} />
-      <Route path="/reset-password" element={<ResetPassword />} />
+        {/* 레이아웃 없이 독립적으로 보여질 페이지들 */}
+        <Route path="/login" element={<SignIn />} />
+        <Route path="/signup" element={<SignUp />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/verify-email" element={<EmailVerification />} />
 
       {/* 보호된 라우트 */}
       <Route

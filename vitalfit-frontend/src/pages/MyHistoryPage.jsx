@@ -245,44 +245,6 @@ const MyHistoryPage = ({ onReAuthRequired }) => {
     }
 
     try {
-      // 먼저 FileReader로 로컬 미리보기 추가 (센터 이미지와 동일한 방식)
-      const reader = new FileReader();
-      reader.onload = e => {
-        const previewUrl = e.target.result;
-        setFormData(prev => {
-          const currentData = prev[`${fieldName}Data`] || {};
-          const currentItems = Array.isArray(currentData.items) ? currentData.items : [];
-
-          return {
-            ...prev,
-            [`${fieldName}Data`]: {
-              ...currentData,
-              items:
-                fieldName === 'license'
-                  ? currentItems.map((item, index) =>
-                      index === itemIndex
-                        ? {
-                            ...item,
-                            image_name: file.name,
-                            image_url: previewUrl,
-                            uploaded_at: new Date().toISOString(),
-                            isLocal: true,
-                          }
-                        : item
-                    )
-                  : currentItems,
-              ...(fieldName !== 'license' && {
-                image_name: file.name,
-                image_url: previewUrl,
-                uploaded_at: new Date().toISOString(),
-                isLocal: true,
-              }),
-            },
-          };
-        });
-      };
-      reader.readAsDataURL(file);
-
       // FormData 생성
       const formData = new FormData();
       formData.append('additional_image_url', file);
@@ -293,8 +255,7 @@ const MyHistoryPage = ({ onReAuthRequired }) => {
       const result = response.data;
 
       if (result.success) {
-        // 업로드 성공 시 로컬 이미지를 서버 URL로 교체
-        // 이미지 URL을 절대 경로로 변환 (API_BASE_URL 제거)
+        // 업로드 성공 시 서버 URL로 설정
         const absoluteImageUrl = result.data.image_url.startsWith('http')
           ? result.data.image_url
           : result.data.image_url;
@@ -333,27 +294,6 @@ const MyHistoryPage = ({ onReAuthRequired }) => {
 
         toast.success('이미지가 추가되었습니다.');
       } else {
-        // 업로드 실패 시 로컬 이미지 제거
-        setFormData(prev => ({
-          ...prev,
-          [`${fieldName}Data`]: {
-            ...prev[`${fieldName}Data`],
-            items:
-              fieldName === 'license'
-                ? prev[`${fieldName}Data`].items.map((item, index) =>
-                    index === itemIndex
-                      ? { ...item, image_name: '', image_url: '', uploaded_at: '', isLocal: false }
-                      : item
-                  )
-                : prev[`${fieldName}Data`].items,
-            ...(fieldName !== 'license' && {
-              image_name: '',
-              image_url: '',
-              uploaded_at: '',
-              isLocal: false,
-            }),
-          },
-        }));
         toast.error('이미지 업로드에 실패했습니다.');
       }
     } catch (error) {
@@ -361,28 +301,6 @@ const MyHistoryPage = ({ onReAuthRequired }) => {
       toast.error(
         `이미지 업로드에 실패했습니다: ${error.response?.data?.message || error.message}`
       );
-
-      // 에러 발생 시 로컬 이미지 제거
-      setFormData(prev => ({
-        ...prev,
-        [`${fieldName}Data`]: {
-          ...prev[`${fieldName}Data`],
-          items:
-            fieldName === 'license'
-              ? prev[`${fieldName}Data`].items.map((item, index) =>
-                  index === itemIndex
-                    ? { ...item, image_name: '', image_url: '', uploaded_at: '', isLocal: false }
-                    : item
-                )
-              : prev[`${fieldName}Data`].items,
-          ...(fieldName !== 'license' && {
-            image_name: '',
-            image_url: '',
-            uploaded_at: '',
-            isLocal: false,
-          }),
-        },
-      }));
     }
   };
 
@@ -415,13 +333,18 @@ const MyHistoryPage = ({ onReAuthRequired }) => {
 
   // 자격증, 경력, 학력, 인스타그램 내용 변경 핸들러
   const handleAdditionalContentChange = (fieldName, content) => {
-    setFormData(prev => ({
-      ...prev,
-      [`${fieldName}Data`]: {
-        ...prev[`${fieldName}Data`],
-        content,
-      },
-    }));
+    console.log(`🔄 ${fieldName} 데이터 업데이트:`, content);
+    setFormData(prev => {
+      const newData = {
+        ...prev,
+        [`${fieldName}Data`]: {
+          ...prev[`${fieldName}Data`],
+          ...content, // content가 객체인 경우 spread 연산자로 처리
+        },
+      };
+      console.log(`✅ ${fieldName} 업데이트 후 formData:`, newData[`${fieldName}Data`]);
+      return newData;
+    });
   };
 
   // 경력, 학력 항목 추가 핸들러
@@ -640,93 +563,76 @@ const MyHistoryPage = ({ onReAuthRequired }) => {
 
   // 실제 저장 로직을 별도 함수로 분리
   const performSave = async () => {
-    // 저장 중 상태 설정
+    console.log('🚀 저장 시작 - formData 상태:', formData);
+    console.log('📝 licenseData:', formData.licenseData);
+    console.log('📝 experienceData:', formData.experienceData);
+    console.log('📝 educationData:', formData.educationData);
+    console.log('📝 instagramData:', formData.instagramData);
+
     setSaving(true);
 
     try {
-      console.log('🚀 이력 정보 저장 시작');
-      console.log('📝 현재 폼 데이터:', formData);
-
-      // 저장할 데이터 준비
-      const saveData = {
-        license: JSON.stringify(formData.licenseData),
-        experience: JSON.stringify(formData.experienceData),
-        education: JSON.stringify(formData.educationData),
-        instagram: JSON.stringify(formData.instagramData),
-      };
-
-      console.log('📤 전송할 데이터:', saveData);
-
-      // API 호출
-      const response = await userAPI.updateMyAccount(saveData);
-      console.log('📥 API 응답:', response);
-
-      // API 응답 구조 확인 및 안전한 처리
-      const responseData = response.data || response;
-      const updatedUser = responseData.user || responseData;
-
-      console.log('📋 처리된 사용자 정보:', updatedUser);
-
-      if (updatedUser) {
-        // 1. 즉시 폼 데이터 업데이트 (DB 응답 데이터 사용)
-        console.log('🔄 폼 데이터 즉시 업데이트');
-        setFormData(prev => ({
-          ...prev,
-          license: updatedUser.license || prev.license,
-          experience: updatedUser.experience || prev.experience,
-          education: updatedUser.education || prev.education,
-          instagram: updatedUser.instagram || prev.instagram,
-          // 추가 데이터 파싱하여 업데이트
-          licenseData: updatedUser.license
-            ? parseAdditionalData(updatedUser.license, 'license')
-            : prev.licenseData,
-          experienceData: updatedUser.experience
-            ? parseAdditionalData(updatedUser.experience, 'experience')
-            : prev.experienceData,
-          educationData: updatedUser.education
-            ? parseAdditionalData(updatedUser.education, 'education')
-            : prev.educationData,
-          instagramData: updatedUser.instagram
-            ? parseAdditionalData(updatedUser.instagram, 'instagram')
-            : prev.instagramData,
-        }));
-
-        // 2. AuthContext의 사용자 정보 즉시 업데이트 (DB 응답 데이터 사용)
-        if (updateUser && typeof updateUser === 'function') {
-          console.log('🔄 AuthContext 사용자 정보 즉시 업데이트');
-          updateUser(updatedUser);
-        }
-
-        // 3. refreshUserInfo() 호출은 백그라운드에서 실행 (사용자 대기 없음)
-        if (refreshUserInfo && typeof refreshUserInfo === 'function') {
-          // 백그라운드에서 서버와 동기화 (사용자 대기 없음)
-          refreshUserInfo()
-            .then(() => {
-              console.log('✅ refreshUserInfo 백그라운드 완료');
-            })
-            .catch(error => {
-              console.error('사용자 정보 새로고침 실패:', error);
-              // 에러가 발생해도 이미 로컬 상태는 업데이트되었으므로 계속 진행
-            });
-        }
+      // 자격증 저장
+      if (formData.licenseData) {
+        console.log('💾 자격증 저장 시작:', formData.licenseData);
+        const licenseResult = await userAPI.updateLicense({
+          license: JSON.stringify(formData.licenseData),
+        });
+        console.log('✅ 자격증 저장 완료:', licenseResult);
+      } else {
+        console.log('⚠️ licenseData가 없음');
       }
 
+      // 경력 저장
+      if (formData.experienceData) {
+        console.log('💾 경력 저장 시작:', formData.experienceData);
+        console.log('📤 경력 데이터 JSON:', JSON.stringify(formData.experienceData));
+        const experienceResult = await userAPI.updateExperience({
+          experience: JSON.stringify(formData.experienceData),
+        });
+        console.log('✅ 경력 저장 완료:', experienceResult);
+      } else {
+        console.log('⚠️ experienceData가 없음');
+      }
+
+      // 학력 저장
+      if (formData.educationData) {
+        console.log('💾 학력 저장 시작:', formData.educationData);
+        console.log('📤 학력 데이터 JSON:', JSON.stringify(formData.educationData));
+        const educationResult = await userAPI.updateEducation({
+          education: JSON.stringify(formData.educationData),
+        });
+        console.log('✅ 학력 저장 완료:', educationResult);
+      } else {
+        console.log('⚠️ educationData가 없음');
+      }
+
+      // 인스타그램 저장
+      if (formData.instagramData) {
+        console.log('💾 인스타그램 저장 시작:', formData.instagramData);
+        const instagramResult = await userAPI.updateInstagram({
+          instagram: JSON.stringify(formData.instagramData),
+        });
+        console.log('✅ 인스타그램 저장 완료:', instagramResult);
+      } else {
+        console.log('⚠️ instagramData가 없음');
+      }
+
+      console.log('🎉 모든 저장 완료!');
       toast.success('이력 정보가 업데이트되었습니다.');
-    } catch (err) {
-      console.error('업데이트 실패:', err.message);
 
-      // 더 자세한 에러 메시지 표시
-      let errorMessage = '업데이트에 실패했습니다.';
-      if (err.response?.data?.message) {
-        errorMessage = err.response.data.message;
-      } else if (err.message) {
-        errorMessage = err.message;
+      // 사용자 정보 새로고침
+      if (refreshUserInfo) {
+        console.log('🔄 사용자 정보 새로고침 시작');
+        await refreshUserInfo();
+        console.log('✅ 사용자 정보 새로고침 완료');
       }
-
-      toast.error(`업데이트 실패: ${errorMessage}`);
+    } catch (err) {
+      console.error('❌ 저장 실패:', err);
+      toast.error('저장에 실패했습니다.');
     } finally {
-      // 저장 완료 후 로딩 상태 해제
       setSaving(false);
+      console.log('🏁 저장 프로세스 종료');
     }
   };
 
@@ -839,59 +745,65 @@ const MyHistoryPage = ({ onReAuthRequired }) => {
           </p>
         </div>
 
-        <div className="space-y-4">
-          {/* 자격증 섹션 */}
-          <LicenseSection
-            title="자격증"
-            fieldName="license"
-            data={formData.licenseData}
-            onImageUpload={handleAdditionalImageUpload}
-            onImageDelete={handleAdditionalImageDelete}
-            onImageExpand={openImageModal}
-            onContentChange={handleLicenseContentChange}
-            onAddItem={handleAddLicenseItem}
-            onRemoveItem={handleRemoveLicenseItem}
-          />
+        <div className="space-y-6">
+          {/* 첫 번째 줄: 자격증 - 인스타그램 */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* 자격증 섹션 */}
+            <LicenseSection
+              title="자격증"
+              fieldName="license"
+              data={formData.licenseData}
+              onImageUpload={handleAdditionalImageUpload}
+              onImageDelete={handleAdditionalImageDelete}
+              onImageExpand={openImageModal}
+              onContentChange={handleLicenseContentChange}
+              onAddItem={handleAddLicenseItem}
+              onRemoveItem={handleRemoveLicenseItem}
+            />
 
-          {/* 경력 섹션 */}
-          <CareerSection
-            title="경력"
-            fieldName="experience"
-            data={formData.experienceData}
-            onContentChange={handleAdditionalContentChange}
-            onAddItem={handleAddItem}
-            onRemoveItem={handleRemoveItem}
-            onItemContentChange={handleItemContentChange}
-            onItemDateChange={handleItemDateChange}
-            onItemStatusChange={handleItemStatusChange}
-          />
+            {/* 인스타그램 섹션 */}
+            <InstagramSection
+              title="인스타그램"
+              fieldName="instagram"
+              data={formData.instagramData}
+              onImageUpload={handleAdditionalImageUpload}
+              onImageDelete={handleAdditionalImageDelete}
+              onImageExpand={openImageModal}
+              onContentChange={handleInstagramContentChange}
+              onInstagramLink={openInstagramLink}
+              fetchInstagramThumbnail={fetchInstagramThumbnail}
+              maxLength={200}
+            />
+          </div>
 
-          {/* 학력 섹션 */}
-          <CareerSection
-            title="학력"
-            fieldName="education"
-            data={formData.educationData}
-            onContentChange={handleAdditionalContentChange}
-            onAddItem={handleAddItem}
-            onRemoveItem={handleRemoveItem}
-            onItemContentChange={handleItemContentChange}
-            onItemDateChange={handleItemDateChange}
-            onItemStatusChange={handleItemStatusChange}
-          />
+          {/* 두 번째 줄: 학력 - 경력 */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* 학력 섹션 */}
+            <CareerSection
+              title="학력"
+              fieldName="education"
+              data={formData.educationData}
+              onContentChange={handleAdditionalContentChange}
+              onAddItem={handleAddItem}
+              onRemoveItem={handleRemoveItem}
+              onItemContentChange={handleItemContentChange}
+              onItemDateChange={handleItemDateChange}
+              onItemStatusChange={handleItemStatusChange}
+            />
 
-          {/* 인스타그램 섹션 */}
-          <InstagramSection
-            title="인스타그램"
-            fieldName="instagram"
-            data={formData.instagramData}
-            onImageUpload={handleAdditionalImageUpload}
-            onImageDelete={handleAdditionalImageDelete}
-            onImageExpand={openImageModal}
-            onContentChange={handleInstagramContentChange}
-            onInstagramLink={openInstagramLink}
-            fetchInstagramThumbnail={fetchInstagramThumbnail}
-            maxLength={200}
-          />
+            {/* 경력 섹션 */}
+            <CareerSection
+              title="경력"
+              fieldName="experience"
+              data={formData.experienceData}
+              onContentChange={handleAdditionalContentChange}
+              onAddItem={handleAddItem}
+              onRemoveItem={handleRemoveItem}
+              onItemContentChange={handleItemContentChange}
+              onItemDateChange={handleItemDateChange}
+              onItemStatusChange={handleItemStatusChange}
+            />
+          </div>
         </div>
 
         {/* 저장 버튼 섹션 */}
