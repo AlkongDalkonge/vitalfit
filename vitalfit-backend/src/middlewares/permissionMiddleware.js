@@ -37,16 +37,16 @@ const checkUserViewPermission = async (req, res, next) => {
       return next();
     }
 
-    // 포지션 1~7은 본인만 조회 가능
-    if (currentUserLevel >= 1 && currentUserLevel <= 7) {
+    // 포지션 1~6은 본인만 조회 가능
+    if (currentUserLevel >= 1 && currentUserLevel <= 6) {
       return res.status(403).json({
         success: false,
         message: '본인 정보만 조회할 수 있습니다.',
       });
     }
 
-    // 포지션 8~10은 소속 팀 유저 조회 가능
-    if (currentUserLevel >= 8 && currentUserLevel <= 10) {
+    // 포지션 7~10은 소속 팀 유저 조회 가능 (팀장 포함)
+    if (currentUserLevel >= 7 && currentUserLevel <= 10) {
       if (!currentUser.team_id) {
         return res.status(403).json({
           success: false,

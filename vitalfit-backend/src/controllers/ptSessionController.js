@@ -739,7 +739,7 @@ const getPTSessionsByUser = async (req, res) => {
     }
 
     const whereClause = { trainer_id: userIdNum };
-    
+
     // 센터 ID가 제공된 경우 필터링 추가
     if (center_id) {
       const centerIdNum = parseInt(center_id);

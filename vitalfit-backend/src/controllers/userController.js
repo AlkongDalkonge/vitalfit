@@ -1324,12 +1324,12 @@ const getAllUsers = async (req, res, next) => {
     const currentUserLevel = currentUser.position.level;
 
     // 권한에 따른 필터링 적용
-    // 포지션 1~7: 본인만 조회
-    if (currentUserLevel >= 1 && currentUserLevel <= 7) {
+    // 포지션 1~6: 본인만 조회
+    if (currentUserLevel >= 1 && currentUserLevel <= 6) {
       whereClause.id = req.user.uid;
     }
-    // 포지션 8~10: 소속 팀 유저만 조회
-    else if (currentUserLevel >= 8 && currentUserLevel <= 10) {
+    // 포지션 7~10: 소속 팀 유저만 조회 (팀장 포함)
+    else if (currentUserLevel >= 7 && currentUserLevel <= 10) {
       if (!currentUser.team_id) {
         return res.status(403).json({
           success: false,

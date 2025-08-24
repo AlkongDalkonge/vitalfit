@@ -50,7 +50,12 @@ router.delete(
 
 // ✅ 메인 이미지 설정 (ID 라우트보다 먼저 정의)
 // PUT /api/centers/images/:imageId/main
-router.put('/images/:imageId/main', auth, requireCenterManagementPermission, centerController.setMainImage);
+router.put(
+  '/images/:imageId/main',
+  auth,
+  requireCenterManagementPermission,
+  centerController.setMainImage
+);
 
 // ✅ 특정 센터 상세 조회
 // GET /api/centers/:id
