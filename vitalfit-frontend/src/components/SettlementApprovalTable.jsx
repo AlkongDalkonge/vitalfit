@@ -192,7 +192,7 @@ const SettlementApprovalTable = ({ settlements, user, onActionComplete }) => {
                       {loadingStates[settlement.id] ? '처리 중...' : '승인'}
                     </button>
                     {/* 센터장(position_id=11) 또는 회계팀(position_id>=12)만 반려 버튼 표시 */}
-                    {(user?.position_id === 11 || user?.position_id >= 12) && (
+                    {(user?.position_id === 11 || user?.position_id === 12) && (
                       <button
                         onClick={() => handleRejectClick(settlement.id)}
                         disabled={loadingStates[settlement.id]}

@@ -117,9 +117,16 @@ const NoticePage = () => {
 
   return (
     <div className="max-w-7xl mx-auto pt-0 px-6 pb-6">
+      {/* 최상단 제목 */}
+      <div
+        data-layer="알림/공지"
+        className="text-black text-3xl font-extrabold font-['Nunito'] bg-white rounded-lg p-3 mb-6"
+      >
+        알림/공지
+      </div>
+
       <div className="bg-white rounded-xl p-6 shadow-sm">
         <div className="flex justify-between items-center mb-4 py-0">
-          <h2 className="text-xl font-extrabold text-gray-800">알림/공지</h2>
           <div className="text-sm text-gray-600">
             총 {pagination.totalItems}건 (페이지 {pagination.currentPage}/{pagination.totalPages})
           </div>

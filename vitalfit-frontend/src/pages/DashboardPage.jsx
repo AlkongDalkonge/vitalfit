@@ -52,7 +52,7 @@ const DashboardPage = () => {
           settlements = response.data.acknowledgedSettlements;
           hasSettlements = true;
         }
-      } else if (user?.position_id >= 12) {
+      } else if (user?.position_id === 12) {
         // 회계팀: center_approved 정산 확인
         response = await settlementAPI.checkCenterApprovedSettlements(user?.id);
         if (response.success && response.data.hasCenterApprovedSettlements) {

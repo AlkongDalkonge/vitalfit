@@ -536,9 +536,18 @@ const SettlementPage = () => {
   }
 
   return (
-    <div className="pt-0 px-6 pb-6 space-y-8 max-w-[1200px] mx-auto bg-white rounded-xl shadow">
-      {/* 필터 영역 */}
-      <SettlementFilterBar
+    <div className="w-full max-w-7xl mx-auto pt-0 px-6 pb-6 flex flex-col">
+      <div className="flex flex-col gap-6 flex-1 pb-0">
+        {/* 최상단 제목 */}
+        <div
+          data-layer="정산시스템"
+          className="text-black text-3xl font-extrabold font-['Nunito'] bg-white rounded-lg p-3"
+        >
+          정산시스템
+        </div>
+
+        {/* 필터 영역 */}
+        <SettlementFilterBar
         centers={centers}
         teams={teams}
         trainers={trainers}
@@ -1073,8 +1082,9 @@ const SettlementPage = () => {
           </div>
         </div>
       )}
-    </div>
-  );
-};
+        </div>
+      </div>
+    );
+  };
 
-export default SettlementPage;
+  export default SettlementPage;
