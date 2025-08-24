@@ -12,7 +12,11 @@ const PTSessionCreateModal = ({ isOpen, onClose, memberId, member, onCreate }) =
     if (!currentUser || !member) return false;
 
     // 관리자(12, 99)는 모든 권한
-    if (currentUser.position_id === 12 || currentUser.position_id === 13 || currentUser.position_id === 99) {
+    if (
+      currentUser.position_id === 12 ||
+      currentUser.position_id === 13 ||
+      currentUser.position_id === 99
+    ) {
       return true;
     }
 

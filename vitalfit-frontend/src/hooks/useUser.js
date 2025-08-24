@@ -70,36 +70,36 @@ export const useUser = () => {
       const response = await userAPI.getAllUsers({ limit: 1000, ...filters });
       if (response.success) {
         const userList = response.data.users;
-        
+
         // 직급 순서에 따라 정렬 (높은 순서대로), 같은 직급 내에서는 이름 순
         const sortedUserList = userList.sort((a, b) => {
           const positionA = a.position?.name || '';
           const positionB = b.position?.name || '';
-          
+
           // 직급 우선순위 정의
           const priority = {
-            '관리자': 1,
-            '센터장': 2,
-            '팀장': 3,
-            '매니저': 4,
-            '트레이너': 5,
-            '직원': 6
+            관리자: 1,
+            센터장: 2,
+            팀장: 3,
+            매니저: 4,
+            트레이너: 5,
+            직원: 6,
           };
-          
+
           const priorityA = priority[positionA] || 999;
           const priorityB = priority[positionB] || 999;
-          
+
           // 먼저 직급 우선순위로 정렬
           if (priorityA !== priorityB) {
             return priorityA - priorityB; // 오름차순 정렬 (높은 우선순위가 먼저)
           }
-          
+
           // 같은 직급 내에서는 이름 순으로 정렬
           const nameA = a.name || '';
           const nameB = b.name || '';
           return nameA.localeCompare(nameB, 'ko'); // 한글 이름 순 정렬
         });
-        
+
         setUsers(sortedUserList);
         setFilteredUsers(sortedUserList);
 
