@@ -13,23 +13,23 @@ const SettlementNotificationModal = ({ isOpen, onClose }) => {
   useEffect(() => {
 
     if (isOpen && user?.id) {
-      console.log('🔍 알림 로드 시작');
+      // console.log('🔍 알림 로드 시작');
       loadNotifications();
     } else {
-      console.log('🔍 알림 로드 조건 불만족:', { isOpen, hasUserId: !!user?.id });
+              // console.log('🔍 알림 로드 조건 불만족:', { isOpen, hasUserId: !!user?.id });
     }
   }, [isOpen, user?.id]);
 
   const loadNotifications = async () => {
     try {
-      console.log('🔍 loadNotifications 시작 - user.id:', user.id);
+      // console.log('🔍 loadNotifications 시작 - user.id:', user.id);
       setLoading(true);
       const response = await settlementAPI.getNotifications(user.id);
-      console.log('🔍 loadNotifications API 응답:', response);
+              // console.log('🔍 loadNotifications API 응답:', response);
       
       if (response.success) {
         const notifications = response.data.notifications || [];
-        console.log('🔍 설정할 알림 데이터:', notifications);
+                  // console.log('🔍 설정할 알림 데이터:', notifications);
         setNotifications(notifications);
       } else {
         console.error('🔍 API 응답 실패:', response);

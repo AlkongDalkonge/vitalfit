@@ -23,15 +23,15 @@ const SettlementApprovalPage = () => {
   const isAdmin = () => user?.position_id === 9;
 
   // 권한 디버그 로그
-  console.log('🔍 권한 체크 디버그:', {
-    user_position_id: user?.position_id,
-    isEmployee: isEmployee(),
-    isTeamLeader: isTeamLeader(),
-    isCenterManager: isCenterManager(),
-    isManager: isManager(),
-    isFinance: isFinance(),
-    isAdmin: isAdmin(),
-  });
+  // console.log('🔍 권한 체크 디버그:', {
+  //   user_position_id: user?.position_id,
+  //   isEmployee: isEmployee(),
+  //   isTeamLeader: isTeamLeader(),
+  //   isCenterManager: isCenterManager(),
+  //   isManager: isManager(),
+  //   isFinance: isFinance(),
+  //   isAdmin: isAdmin(),
+  // });
 
   // 정산 데이터 로드
   const loadSettlements = async () => {

@@ -48,7 +48,7 @@ const SettlementPage = () => {
   // URL state에서 전달받은 값들 처리 및 정산 데이터 로드
   useEffect(() => {
     if (location.state) {
-      console.log('📍 location.state 변경됨:', location.state);
+      // console.log('📍 location.state 변경됨:', location.state);
 
       // 상태 업데이트
       if (location.state.selectedMonth) {
@@ -72,12 +72,12 @@ const SettlementPage = () => {
   // position_id가 7 이하인 사용자는 본인 정보로 자동 설정
   useEffect(() => {
     if (user && user.position_id <= 7 && centers && teams && trainers) {
-      console.log('🔒 position_id 7 이하 사용자: 본인 정보로 자동 설정', {
-        userId: user.id,
-        positionId: user.position_id,
-        centerId: user.center_id,
-        teamId: user.team_id
-      });
+      // console.log('🔒 position_id 7 이하 사용자: 본인 정보로 자동 설정', {
+      //   userId: user.id,
+      //   positionId: user.position_id,
+      //   centerId: user.center_id,
+      //   teamId: user.team_id
+      // });
 
       // 본인 센터 설정
       if (user.center_id) {
@@ -839,15 +839,24 @@ const SettlementPage = () => {
                   </div>
                 )}
 
-                {/* 센터장 승인 버튼 (acknowledged 상태에서 센터장) */}
+                {/* 센터장 승인/반려 버튼 (acknowledged 상태에서 센터장) */}
                 {monthlySettlement.status === 'acknowledged' && user?.position_id === 11 && (
-                  <button
-                    onClick={handleApprove}
-                    disabled={acknowledgeLoading}
-                    className="w-full bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {acknowledgeLoading ? '처리 중...' : '승인'}
-                  </button>
+                  <div className="space-y-2">
+                    <button
+                      onClick={handleApprove}
+                      disabled={acknowledgeLoading}
+                      className="w-full bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {acknowledgeLoading ? '처리 중...' : '승인'}
+                    </button>
+                    <button
+                      onClick={() => setShowRejectModal(true)}
+                      disabled={acknowledgeLoading}
+                      className="w-full bg-red-600 text-white py-2 px-4 rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      반려
+                    </button>
+                  </div>
                 )}
 
                 {/* 확인 완료 메시지 (acknowledged 상태에서 센터장이 아닌 경우) */}

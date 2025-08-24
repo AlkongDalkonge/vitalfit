@@ -117,44 +117,44 @@ const NoticePage = () => {
 
   return (
     <div className="max-w-7xl mx-auto pt-0 px-6 pb-6">
-      <div className="flex items-center mb-6">
-        <div className="flex gap-4 items-center w-full max-w-3xl">
-          <select
-            className="border border-gray-300 rounded-md p-2 text-sm"
-            value={searchType}
-            onChange={e => setSearchType(e.target.value)}
-          >
-            <option value="전체">전체</option>
-            <option value="제목">제목</option>
-            <option value="내용">내용</option>
-          </select>
-          <input
-            type="text"
-            placeholder="검색어를 입력하세요"
-            className="flex-1 border border-gray-300 rounded-md p-2 text-sm"
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            onKeyDown={e => {
-              if (e.key === 'Enter') {
-                e.preventDefault(); // 폼 전송 막기
-                handleSearch();
-              }
-            }}
-          />
-          <button
-            onClick={handleSearch}
-            className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm hover:bg-blue-700"
-          >
-            검색
-          </button>
-        </div>
-      </div>
-
       <div className="bg-white rounded-xl p-6 shadow-sm">
         <div className="flex justify-between items-center mb-4 py-0">
-          <h2 className="text-xl font-extrabold text-gray-800">공지사항/알림</h2>
+          <h2 className="text-xl font-extrabold text-gray-800">알림/공지</h2>
           <div className="text-sm text-gray-600">
             총 {pagination.totalItems}건 (페이지 {pagination.currentPage}/{pagination.totalPages})
+          </div>
+        </div>
+
+        <div className="flex items-center mb-6">
+          <div className="flex gap-4 items-center w-full max-w-3xl">
+            <select
+              className="border border-gray-300 rounded-md p-2 text-sm"
+              value={searchType}
+              onChange={e => setSearchType(e.target.value)}
+            >
+              <option value="전체">전체</option>
+              <option value="제목">제목</option>
+              <option value="내용">내용</option>
+            </select>
+            <input
+              type="text"
+              placeholder="검색어를 입력하세요"
+              className="flex-1 border border-gray-300 rounded-md p-2 text-sm"
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter') {
+                  e.preventDefault(); // 폼 전송 막기
+                  handleSearch();
+                }
+              }}
+            />
+            <button
+              onClick={handleSearch}
+              className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm hover:bg-blue-700"
+            >
+              검색
+            </button>
           </div>
         </div>
 
@@ -166,11 +166,11 @@ const NoticePage = () => {
               <thead className="bg-gray-100 text-center [&>tr>th]:align-middle">
                 <tr>
                   <th className="px-4 py-2 border w-[8%]"></th>
-                  <th className="px-4 py-2 border w-[50%]">제목</th>
+                  <th className="px-4 py-2 border w-[47%]">제목</th>
                   <th className="px-4 py-2 border w-[12%]">작성자</th>
                   <th className="px-4 py-2 border w-[10%]">조회수</th>
-                  <th className="px-4 py-2 border w-[10%]">작성일</th>
-                  <th className="px-4 py-2 border w-[10%]">첨부</th>
+                  <th className="px-4 py-2 border w-[15%]">작성일</th>
+                  <th className="px-4 py-2 border w-[8%]">첨부</th>
                 </tr>
               </thead>
               <tbody>

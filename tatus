@@ -1,0 +1,40 @@
+[1mdiff --git a/vitalfit-frontend/src/pages/SettlementPDFContent.jsx b/vitalfit-frontend/src/pages/SettlementPDFContent.jsx[m
+[1mindex d20fd8e..ed697be 100644[m
+[1m--- a/vitalfit-frontend/src/pages/SettlementPDFContent.jsx[m
+[1m+++ b/vitalfit-frontend/src/pages/SettlementPDFContent.jsx[m
+[36m@@ -74,7 +74,7 @@[m [mconst SettlementPDFContent = ({ data = {} }) => {[m
+ [m
+   // ref가 설정되었는지 확인[m
+   React.useEffect(() => {[m
+[31m-    console.log('componentRef 설정됨:', componentRef.current);[m
+[32m+[m[32m    // console.log('componentRef 설정됨:', componentRef.current);[m
+   }, []);[m
+ [m
+   const handlePrint = async () => {[m
+[36m@@ -85,7 +85,7 @@[m [mconst SettlementPDFContent = ({ data = {} }) => {[m
+ [m
+     setIsGeneratingPDF(true);[m
+     try {[m
+[31m-      console.log('PDF 생성 시작');[m
+[32m+[m[32m      // console.log('PDF 생성 시작');[m
+ [m
+       const canvas = await html2canvas(componentRef.current, {[m
+         scale: 2,[m
+[36m@@ -118,7 +118,7 @@[m [mconst SettlementPDFContent = ({ data = {} }) => {[m
+       ).padStart(2, '0')}_${data.employee?.name || '직원'}.pdf`;[m
+ [m
+       pdf.save(fileName);[m
+[31m-      console.log('PDF 생성 완료');[m
+[32m+[m[32m              // console.log('PDF 생성 완료');[m
+     } catch (error) {[m
+       console.error('PDF 생성 오류:', error);[m
+     } finally {[m
+[36m@@ -138,7 +138,7 @@[m [mconst SettlementPDFContent = ({ data = {} }) => {[m
+       <div className="no-print fixed right-6 top-6 z-10 flex gap-2">[m
+         <button[m
+           onClick={() => {[m
+[31m-            console.log('PDF 저장 버튼 클릭됨');[m
+[32m+[m[32m            // console.log('PDF 저장 버튼 클릭됨');[m
+             handlePrint();[m
+           }}[m
+           disabled={isGeneratingPDF}[m

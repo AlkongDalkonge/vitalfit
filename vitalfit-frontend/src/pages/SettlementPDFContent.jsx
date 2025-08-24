@@ -74,7 +74,7 @@ const SettlementPDFContent = ({ data = {} }) => {
 
   // ref가 설정되었는지 확인
   React.useEffect(() => {
-    console.log('componentRef 설정됨:', componentRef.current);
+    // console.log('componentRef 설정됨:', componentRef.current);
   }, []);
 
   const handlePrint = async () => {
@@ -85,7 +85,7 @@ const SettlementPDFContent = ({ data = {} }) => {
 
     setIsGeneratingPDF(true);
     try {
-      console.log('PDF 생성 시작');
+      // console.log('PDF 생성 시작');
 
       const canvas = await html2canvas(componentRef.current, {
         scale: 2,
@@ -118,7 +118,7 @@ const SettlementPDFContent = ({ data = {} }) => {
       ).padStart(2, '0')}_${data.employee?.name || '직원'}.pdf`;
 
       pdf.save(fileName);
-      console.log('PDF 생성 완료');
+              // console.log('PDF 생성 완료');
     } catch (error) {
       console.error('PDF 생성 오류:', error);
     } finally {
@@ -138,7 +138,7 @@ const SettlementPDFContent = ({ data = {} }) => {
       <div className="no-print fixed right-6 top-6 z-10 flex gap-2">
         <button
           onClick={() => {
-            console.log('PDF 저장 버튼 클릭됨');
+            // console.log('PDF 저장 버튼 클릭됨');
             handlePrint();
           }}
           disabled={isGeneratingPDF}

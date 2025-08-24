@@ -149,8 +149,8 @@ exports.getNotices = async (req, res) => {
  * POST /api/notices
  */
 exports.createNotice = async (req, res) => {
-  console.log(':::공지사항작성:::');
-  console.log('req.body:::', req.body);
+  // console.log(':::공지사항작성:::');
+  // console.log('req.body:::', req.body);
 
   //트렌젝션 시작
   const t = await sequelize.transaction();
@@ -166,10 +166,10 @@ exports.createNotice = async (req, res) => {
       });
     }
 
-    console.log('✅ Joi 검사 통과. target_centers:', body.target_centers);
+          // console.log('✅ Joi 검사 통과. target_centers:', body.target_centers);
 
     // 전체발송여부
-    console.log('전체발송여부::::', body.receiver_type);
+          // console.log('전체발송여부::::', body.receiver_type);
 
     if (body.receiver_type === 'all') {
       body.is_for_all = true;
@@ -183,15 +183,15 @@ exports.createNotice = async (req, res) => {
     if (!body.is_for_all) {
       //센터 타겟 추가
       if (body.target_centers?.length > 0) {
-        console.log('target_centers:::', body.target_centers);
-        console.log('notice.id:::', notice.id);
+        // console.log('target_centers:::', body.target_centers);
+        // console.log('notice.id:::', notice.id);
 
         const centerTargets = body.target_centers.map(center_id => ({
           notice_id: notice.id,
           center_id,
         }));
 
-        console.log('centerTargets:::', centerTargets);
+        // console.log('centerTargets:::', centerTargets);
 
         //bulkCreate : 여러 개의 객체를 한 번에 insert
         await NoticeTargetCenter.bulkCreate(centerTargets, {
@@ -233,17 +233,17 @@ exports.createNotice = async (req, res) => {
  * GET /api/notices/:id
  */
 exports.getNoticeById = async (req, res) => {
-  console.log(':::공지사항상세조회:::');
+  // console.log(':::공지사항상세조회:::');
 
   const id = req.params.id;
-  console.log('id::::', id);
+  // console.log('id::::', id);
 
   try {
     const notice = await Notice.findByPk(req.params.id, {
       attributes: { exclude: ['updatedAt'] }, //해당컬럼은 제외
     });
 
-    console.log('notice:::', notice);
+    // console.log('notice:::', notice);
 
     if (!notice) {
       return res.status(404).json({
@@ -253,7 +253,7 @@ exports.getNoticeById = async (req, res) => {
     }
 
     //조회수 증가
-    console.log('조회수증가');
+    // console.log('조회수증가');
 
     await Notice.update(
       { view_count: notice.view_count + 1 },

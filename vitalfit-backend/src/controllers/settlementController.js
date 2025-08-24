@@ -95,7 +95,7 @@ exports.checkSettlementNotifications = async (req, res) => {
     let hasNotifications = false;
 
     // 1. 팀원: 본인의 draft와 rejected 정산 확인
-    if (user.position_id < 7) { // 일반 직원
+    if (user.position_id <= 7) { // 일반 직원
       const draftSettlements = await MonthlySettlement.findAll({
         where: {
           user_id: actingUserId,

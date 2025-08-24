@@ -116,23 +116,24 @@ const NoticeCreateModal = ({ isOpen, onClose, onSuccess }) => {
       submitData.append('content', formData.content.trim());
       submitData.append('receiver_type', formData.receiver_type);
 
-      // 전체 공지 여부 설정
-      submitData.append('is_for_all', formData.receiver_type === 'all');
+      // 전체 공지 여부 설정 (수신자 선택 주석처리로 인해 항상 전체로 설정)
+      submitData.append('is_for_all', true);
+      submitData.append('receiver_type', 'all');
 
-      // 선택 필드
-      if (formData.receiver_type === 'center' && selectedCenters.length > 0) {
-        // 센터별 선택 시 선택된 센터 ID들 전송
-        selectedCenters.forEach(centerId => {
-          submitData.append('target_centers[]', centerId);
-        });
-      } else if (formData.receiver_type === 'role' && selectedRoles.length > 0) {
-        // 직급별 선택 시 선택된 직급 전송
-        selectedRoles.forEach(roleId => {
-          submitData.append('target_roles[]', roleId);
-        });
-      } else if (formData.receiver_id) {
-        submitData.append('receiver_id', formData.receiver_id);
-      }
+      // 선택 필드 - 주석처리됨
+      // if (formData.receiver_type === 'center' && selectedCenters.length > 0) {
+      //   // 센터별 선택 시 선택된 센터 ID들 전송
+      //   selectedCenters.forEach(centerId => {
+      //     submitData.append('target_centers[]', centerId);
+      //   });
+      // } else if (formData.receiver_type === 'role' && selectedRoles.length > 0) {
+      //   // 직급별 선택 시 선택된 직급 전송
+      //   selectedRoles.forEach(roleId => {
+      //     submitData.append('target_roles[]', roleId);
+      //   });
+      // } else if (formData.receiver_id) {
+      //   submitData.append('receiver_id', formData.receiver_id);
+      // }
       submitData.append('is_important', formData.is_important);
       if (formData.pin_until) {
         submitData.append('pin_until', formData.pin_until);
@@ -230,8 +231,8 @@ const NoticeCreateModal = ({ isOpen, onClose, onSuccess }) => {
             />
           </div>
 
-          {/* 수신자 타입 */}
-          <div className="mb-4">
+          {/* 수신자 타입 - 주석처리됨 */}
+          {/* <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               수신자 <span className="text-red-500">*</span>
             </label>
@@ -247,10 +248,10 @@ const NoticeCreateModal = ({ isOpen, onClose, onSuccess }) => {
               <option value="center">센터별</option>
               <option value="role">직급별</option>
             </select>
-          </div>
+          </div> */}
 
-          {/* 센터 선택 (센터별일 때) */}
-          {formData.receiver_type === 'center' && (
+          {/* 센터 선택 (센터별일 때) - 주석처리됨 */}
+          {/* {formData.receiver_type === 'center' && (
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 센터 선택 <span className="text-red-500">*</span>
@@ -275,10 +276,10 @@ const NoticeCreateModal = ({ isOpen, onClose, onSuccess }) => {
                 </div>
               )}
             </div>
-          )}
+          )} */}
 
-          {/* 수신자 역할 (직급별일 때) */}
-          {formData.receiver_type === 'role' && (
+          {/* 수신자 역할 (직급별일 때) - 주석처리됨 */}
+          {/* {formData.receiver_type === 'role' && (
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 직급 선택 <span className="text-red-500">*</span>
@@ -307,7 +308,7 @@ const NoticeCreateModal = ({ isOpen, onClose, onSuccess }) => {
                 </div>
               )}
             </div>
-          )}
+          )} */}
 
           {/* 옵션들 */}
           <div className="mb-4 space-y-3">
@@ -378,9 +379,10 @@ const NoticeCreateModal = ({ isOpen, onClose, onSuccess }) => {
               disabled={
                 loading ||
                 !formData.title.trim() ||
-                !formData.content.trim() ||
-                (formData.receiver_type === 'center' && selectedCenters.length === 0) ||
-                (formData.receiver_type === 'role' && selectedRoles.length === 0)
+                !formData.content.trim()
+                // 수신자 선택 주석처리로 인해 관련 조건 제거
+                // (formData.receiver_type === 'center' && selectedCenters.length === 0) ||
+                // (formData.receiver_type === 'role' && selectedRoles.length === 0)
               }
             >
               {loading ? '등록 중...' : '등록하기'}

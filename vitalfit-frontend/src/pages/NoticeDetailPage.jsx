@@ -308,7 +308,7 @@ const NoticeDetailPage = () => {
 
               <div className="flex items-center gap-4 text-sm text-gray-600">
                 <span>작성자: 사용자{notice?.sender_id}</span>
-                <span>
+                {/* <span>
                   받는사람:{' '}
                   {notice?.is_for_all
                     ? '전체'
@@ -317,7 +317,7 @@ const NoticeDetailPage = () => {
                       : notice?.receiver_type === 'role'
                         ? '직급별'
                         : '기타'}
-                </span>
+                </span> */}
                 <span>작성일: {formatDate(notice?.createdAt)}</span>
                 <span>조회수: {notice?.view_count || 0}</span>
               </div>

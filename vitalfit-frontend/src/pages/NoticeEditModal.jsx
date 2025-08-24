@@ -75,10 +75,17 @@ const NoticeEditModal = ({ isOpen, onClose, onSuccess, notice }) => {
     try {
       const formDataToSend = new FormData();
 
-      // 기본 폼 데이터 추가
+      // 기본 폼 데이터 추가 (받는사람은 항상 전체로 설정)
       Object.keys(formData).forEach(key => {
-        formDataToSend.append(key, formData[key]);
+        if (key === 'receiver_type') {
+          formDataToSend.append(key, 'all');
+        } else {
+          formDataToSend.append(key, formData[key]);
+        }
       });
+      
+      // 전체 공지 여부 설정
+      formDataToSend.append('is_for_all', true);
 
       // 파일 처리
       if (filesToRemove.length > 0) {
@@ -140,7 +147,8 @@ const NoticeEditModal = ({ isOpen, onClose, onSuccess, notice }) => {
             />
           </div>
 
-          <div className="mb-4">
+          {/* 받는사람 선택 - 주석처리됨 */}
+          {/* <div className="mb-4">
             <label className="block text-sm font-medium mb-2">받는사람</label>
             <select
               name="receiver_type"
@@ -153,7 +161,7 @@ const NoticeEditModal = ({ isOpen, onClose, onSuccess, notice }) => {
               <option value="role">직급별</option>
               <option value="team">팀별</option>
             </select>
-          </div>
+          </div> */}
 
           {/* 첨부파일 섹션 */}
           <div className="mb-4">
