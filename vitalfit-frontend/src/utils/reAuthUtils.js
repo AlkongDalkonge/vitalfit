@@ -26,7 +26,6 @@ export const setReAuthStatus = (userId, reAuthToken, pagePath = null) => {
       pagePath, // 페이지별 독립 재인증을 위한 경로 저장
     };
     sessionStorage.setItem(REAUTH_KEY, JSON.stringify(reAuthData));
-    console.log('✅ 재인증 상태 저장됨:', { userId, hasToken: !!reAuthToken, pagePath });
   } catch (error) {
     console.error('❌ 재인증 상태 저장 실패:', error);
   }
@@ -42,27 +41,18 @@ export const isReAuthValid = (userId, pagePath = null) => {
   try {
     const reAuthData = sessionStorage.getItem(REAUTH_KEY);
     if (!reAuthData) {
-      console.log('❌ 재인증 데이터 없음');
       return false;
     }
 
     const data = JSON.parse(reAuthData);
-    console.log('🔍 재인증 데이터 확인:', {
-      userId: data.userId,
-      hasToken: !!data.reAuthToken,
-      pagePath: data.pagePath,
-      requestedPath: pagePath,
-    });
 
     // 사용자 ID가 다르거나 데이터가 유효하지 않으면 false
     if (data.userId !== userId || !data.isValid || !data.reAuthToken) {
-      console.log('❌ 사용자 ID 불일치, 유효하지 않음, 또는 토큰 없음');
       return false;
     }
 
     // 페이지별 독립 재인증: 특정 페이지 경로가 지정된 경우 해당 경로와 일치해야 함
     if (pagePath && data.pagePath && data.pagePath !== pagePath) {
-      console.log('❌ 페이지 경로 불일치:', { stored: data.pagePath, requested: pagePath });
       return false;
     }
 
@@ -71,19 +61,15 @@ export const isReAuthValid = (userId, pagePath = null) => {
     const timeDiff = now - data.timestamp;
     const remainingTime = Math.max(0, REAUTH_DURATION - timeDiff);
 
-    console.log(`⏰ 재인증 남은 시간: ${Math.ceil(remainingTime / 1000)}초`);
-
     if (timeDiff > REAUTH_DURATION) {
       // 만료된 경우 상태 제거
-      console.log('⏰ 재인증 시간 만료 (2분)');
       clearReAuthStatus();
       return false;
     }
 
-    console.log('✅ 재인증 유효함');
     return true;
   } catch (error) {
-    console.error('❌ 재인증 상태 확인 실패:', error);
+    console.error('재인증 상태 확인 실패:', error);
     return false;
   }
 };
@@ -109,26 +95,22 @@ export const getReAuthToken = (userId, pagePath = null) => {
     if (pagePath && data.pagePath) {
       // 1. 정확히 일치하는 경우
       if (data.pagePath === pagePath) {
-        console.log('✅ 정확한 페이지 경로 매칭');
+        // 정확한 페이지 경로 매칭
       }
       // 2. 계정 페이지에 대한 재인증이 있으면 모든 하위 경로 허용
       else if (data.pagePath === '/account' && pagePath.startsWith('/account/')) {
-        console.log('✅ 계정 재인증으로 하위 경로 접근 허용:', {
-          parent: data.pagePath,
-          child: pagePath,
-        });
+        // 계정 재인증으로 하위 경로 접근 허용
       }
       // 3. 하위 경로인 경우
       else if (data.pagePath.startsWith(pagePath + '/')) {
-        console.log('✅ 하위 경로 매칭:', { parent: data.pagePath, child: pagePath });
+        // 하위 경로 매칭
       }
       // 4. 상위 경로인 경우
       else if (pagePath.startsWith(data.pagePath + '/')) {
-        console.log('✅ 상위 경로 매칭:', { child: data.pagePath, parent: pagePath });
+        // 상위 경로 매칭
       }
       // 5. 경로가 일치하지 않는 경우
       else {
-        console.log('❌ 페이지 경로 매칭 실패:', { stored: data.pagePath, requested: pagePath });
         return null;
       }
     }
@@ -144,7 +126,7 @@ export const getReAuthToken = (userId, pagePath = null) => {
 
     return data.reAuthToken;
   } catch (error) {
-    console.error('❌ 재인증 토큰 가져오기 실패:', error);
+    console.error('재인증 토큰 가져오기 실패:', error);
     return null;
   }
 };
@@ -155,9 +137,8 @@ export const getReAuthToken = (userId, pagePath = null) => {
 export const clearReAuthStatus = () => {
   try {
     sessionStorage.removeItem(REAUTH_KEY);
-    console.log('🗑️ 재인증 상태 제거됨');
   } catch (error) {
-    console.error('❌ 재인증 상태 제거 실패:', error);
+    // 에러 처리
   }
 };
 
@@ -230,9 +211,8 @@ export const refreshReAuthStatus = (userId, reAuthToken, pagePath = null) => {
 export const saveAccountTab = tabId => {
   try {
     localStorage.setItem(ACCOUNT_TAB_KEY, tabId);
-    console.log('💾 계정 페이지 활성 탭 저장:', tabId);
   } catch (error) {
-    console.error('❌ 계정 페이지 탭 저장 실패:', error);
+    console.error('계정 페이지 탭 저장 실패:', error);
   }
 };
 

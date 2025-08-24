@@ -75,10 +75,14 @@ class AuthService {
   // Refresh Token 관리
   static setRefreshToken(token) {
     localStorage.setItem('refreshToken', token);
+
+    // 저장 확인
+    const savedToken = localStorage.getItem('refreshToken');
   }
 
   static getRefreshToken() {
-    return localStorage.getItem('refreshToken');
+    const token = localStorage.getItem('refreshToken');
+    return token;
   }
 
   static removeRefreshToken() {
@@ -110,11 +114,9 @@ class AuthService {
     const refreshTime = expiryTime - 5 * 60 * 1000; // 5분 전
 
     this.autoRefreshTimer = setTimeout(async () => {
-      console.log('🔄 토큰 자동 갱신 시작');
       try {
         await this.silentRefresh();
       } catch (error) {
-        console.error('자동 토큰 갱신 실패:', error);
         // 자동 갱신 실패 시 사용자에게 알림
         this.handleRefreshFailure();
       }
@@ -134,7 +136,8 @@ class AuthService {
     try {
       const refreshToken = this.getRefreshToken();
       if (!refreshToken) {
-        throw new Error('Refresh token이 없습니다.');
+        console.warn('⚠️ Refresh token이 없습니다. 로그인 상태를 확인해주세요.');
+        throw new Error('Refresh token이 없습니다. 다시 로그인해주세요.');
       }
 
       const response = await fetch(
@@ -149,7 +152,11 @@ class AuthService {
       );
 
       if (!response.ok) {
-        throw new Error('토큰 갱신 실패');
+        const errorData = await response.json().catch(() => ({}));
+        console.error('❌ 토큰 갱신 API 응답 오류:', response.status, errorData);
+        throw new Error(
+          `토큰 갱신 실패 (${response.status}): ${errorData.message || '알 수 없는 오류'}`
+        );
       }
 
       const data = await response.json();
@@ -159,13 +166,23 @@ class AuthService {
         const rememberMe = this.getRememberMe();
         this.setAccessToken(data.accessToken, rememberMe);
 
-        console.log('✅ 토큰 자동 갱신 성공');
         return data.accessToken;
       } else {
+        console.error('❌ 토큰 갱신 응답 형식 오류:', data);
         throw new Error('토큰 갱신 응답 형식 오류');
       }
     } catch (error) {
       console.error('❌ 토큰 자동 갱신 실패:', error);
+
+      // Refresh token이 없는 경우 특별 처리
+      if (error.message.includes('Refresh token이 없습니다')) {
+        console.warn('🔄 Refresh token이 없어 로그인 페이지로 리다이렉트합니다.');
+        // 로그인 페이지로 리다이렉트
+        if (window.location.pathname !== '/login' && window.location.pathname !== '/') {
+          window.location.href = '/login';
+        }
+      }
+
       throw error;
     }
   }
@@ -210,10 +227,12 @@ class AuthService {
   // 로그아웃
   static async logout() {
     try {
+      // 백엔드에 로그아웃 요청
       await api.post('/users/logout');
     } catch (error) {
-      console.error('로그아웃 중 오류:', error);
+      // 에러가 발생해도 로컬 상태는 정리
     } finally {
+      // 로컬 상태 정리
       this.removeAccessToken();
       this.removeRefreshToken();
       this.clearAutoRefreshTimer();
@@ -246,9 +265,7 @@ class AuthService {
       // 무음 갱신 시도
       try {
         await this.silentRefresh();
-        console.log('✅ 토큰 자동 갱신 성공');
       } catch (error) {
-        console.log('❌ 토큰 자동 갱신 실패:', error.message);
         this.removeAccessToken();
         this.removeRefreshToken();
         return false;

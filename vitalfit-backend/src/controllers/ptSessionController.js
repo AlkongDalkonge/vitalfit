@@ -1,4 +1,4 @@
-const { PTSession, Member, User, Center, Payment } = require('../models');
+const { PTSession, Member, User, Center, Payment, Position, Team } = require('../models');
 const { Op } = require('sequelize');
 const Joi = require('joi');
 
@@ -15,8 +15,6 @@ const createPTSessionSchema = Joi.object({
     .pattern(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/)
     .optional(),
   session_type: Joi.string().valid('regular', 'free').default('regular'),
-  signature_data: Joi.string().required(),
-  signature_time: Joi.date().default(() => new Date()),
   notes: Joi.string().optional(),
   idempotency_key: Joi.string().optional(), // 멱등성 키
 });
@@ -31,8 +29,6 @@ const updatePTSessionSchema = Joi.object({
     .pattern(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/)
     .optional(),
   session_type: Joi.string().valid('regular', 'free').optional(),
-  signature_data: Joi.string().optional(),
-  signature_time: Joi.date().optional(),
   notes: Joi.string().optional(),
 });
 
@@ -57,8 +53,6 @@ const createPTSession = async (req, res) => {
       start_time,
       end_time,
       session_type,
-      signature_data,
-      signature_time,
       notes,
       idempotency_key,
     } = value;
@@ -113,8 +107,6 @@ const createPTSession = async (req, res) => {
       start_time,
       end_time,
       session_type,
-      signature_data,
-      signature_time,
       notes,
       idempotency_key,
     });
@@ -181,8 +173,6 @@ const updatePTSession = async (req, res) => {
         'start_time',
         'end_time',
         'session_type',
-        'signature_data',
-        'signature_time',
         'notes',
         'created_at',
         'updated_at',
@@ -295,6 +285,24 @@ const getPTSessionsByMonth = async (req, res) => {
       });
     }
 
+    // 현재 로그인한 사용자 정보 조회 (권한 필터링용)
+    const currentUser = await User.findByPk(req.user.uid, {
+      include: [
+        { model: Position, as: 'position', attributes: ['id', 'level'] },
+        { model: Team, as: 'team', attributes: ['id'] },
+        { model: Center, as: 'center', attributes: ['id'] },
+      ],
+    });
+
+    if (!currentUser || !currentUser.position) {
+      return res.status(403).json({
+        success: false,
+        message: '권한 정보를 찾을 수 없습니다.',
+      });
+    }
+
+    const currentUserLevel = currentUser.position.level;
+
     // 해당 월의 시작일과 종료일 계산
     const startDate = new Date(yearNum, monthNum - 1, 1);
     const endDate = new Date(yearNum, monthNum, 0, 23, 59, 59);
@@ -306,8 +314,43 @@ const getPTSessionsByMonth = async (req, res) => {
       },
     };
 
-    // 센터 ID가 제공된 경우 필터링 추가
-    if (center_id) {
+    // 권한에 따른 필터링 적용
+    // 포지션 1~6: 본인이 담당하는 멤버의 PT 세션만 조회
+    if (currentUserLevel >= 1 && currentUserLevel <= 6) {
+      whereClause.trainer_id = req.user.uid;
+    }
+    // 포지션 7~10: 소속 팀 멤버의 PT 세션 조회
+    else if (currentUserLevel >= 7 && currentUserLevel <= 10) {
+      if (!currentUser.team_id) {
+        return res.status(403).json({
+          success: false,
+          message: '팀 정보가 없어 권한을 확인할 수 없습니다.',
+        });
+      }
+
+      // 팀에 속한 트레이너들의 ID를 조회
+      const teamTrainers = await User.findAll({
+        where: { team_id: currentUser.team_id },
+        attributes: ['id'],
+      });
+
+      const trainerIds = teamTrainers.map(trainer => trainer.id);
+      whereClause.trainer_id = { [Op.in]: trainerIds };
+    }
+    // 포지션 11: 소속 센터 멤버의 PT 세션 조회
+    else if (currentUserLevel === 11) {
+      if (!currentUser.center_id) {
+        return res.status(403).json({
+          success: false,
+          message: '센터 정보가 없어 권한을 확인할 수 없습니다.',
+        });
+      }
+      whereClause.center_id = currentUser.center_id;
+    }
+    // 포지션 12, 99: 모든 PT 세션 조회 가능 (필터링 없음)
+
+    // 센터 ID가 제공된 경우 필터링 추가 (권한이 있는 경우에만)
+    if (center_id && (currentUserLevel === 12 || currentUserLevel === 99)) {
       const centerIdNum = parseInt(center_id);
       if (!isNaN(centerIdNum) && centerIdNum > 0) {
         whereClause.center_id = centerIdNum;
@@ -326,8 +369,6 @@ const getPTSessionsByMonth = async (req, res) => {
         'start_time',
         'end_time',
         'session_type',
-        'signature_data',
-        'signature_time',
         'notes',
         'created_at',
         'updated_at',
@@ -542,6 +583,77 @@ const getPTSessionsByMember = async (req, res) => {
   });
 
   try {
+    // 현재 로그인한 사용자 정보 조회 (권한 필터링용)
+    const currentUser = await User.findByPk(req.user.uid, {
+      include: [
+        { model: Position, as: 'position', attributes: ['id', 'level'] },
+        { model: Team, as: 'team', attributes: ['id'] },
+        { model: Center, as: 'center', attributes: ['id'] },
+      ],
+    });
+
+    if (!currentUser || !currentUser.position) {
+      return res.status(403).json({
+        success: false,
+        message: '권한 정보를 찾을 수 없습니다.',
+      });
+    }
+
+    const currentUserLevel = currentUser.position.level;
+
+    // 멤버 정보 조회
+    const member = await Member.findByPk(memberId);
+    if (!member) {
+      return res.status(404).json({
+        success: false,
+        message: '존재하지 않는 멤버입니다.',
+      });
+    }
+
+    // 권한 체크
+    let hasPermission = false;
+
+    // 포지션 12, 99는 모든 권한
+    if (currentUserLevel === 12 || currentUserLevel === 99) {
+      hasPermission = true;
+    }
+    // 포지션 1~6: 본인이 담당하는 멤버만 조회 가능
+    else if (currentUserLevel >= 1 && currentUserLevel <= 6) {
+      hasPermission = member.trainer_id === currentUser.uid;
+    }
+    // 포지션 7~10: 소속 팀 멤버만 조회 가능
+    else if (currentUserLevel >= 7 && currentUserLevel <= 10) {
+      if (!currentUser.team_id) {
+        return res.status(403).json({
+          success: false,
+          message: '팀 정보가 없어 권한을 확인할 수 없습니다.',
+        });
+      }
+
+      // 멤버의 트레이너가 같은 팀에 속하는지 확인
+      const memberTrainer = await User.findByPk(member.trainer_id, {
+        attributes: ['team_id'],
+      });
+      hasPermission = memberTrainer && memberTrainer.team_id === currentUser.team_id;
+    }
+    // 포지션 11: 소속 센터 멤버만 조회 가능
+    else if (currentUserLevel === 11) {
+      if (!currentUser.center_id) {
+        return res.status(403).json({
+          success: false,
+          message: '센터 정보가 없어 권한을 확인할 수 없습니다.',
+        });
+      }
+      hasPermission = member.center_id === currentUser.center_id;
+    }
+
+    if (!hasPermission) {
+      return res.status(403).json({
+        success: false,
+        message: '해당 멤버의 PT 세션을 조회할 권한이 없습니다.',
+      });
+    }
+
     const offset = (page - 1) * limit;
     const whereClause = { member_id: memberId };
 
@@ -550,30 +662,25 @@ const getPTSessionsByMember = async (req, res) => {
       const yearNum = parseInt(year);
       const monthNum = parseInt(month);
 
+      console.log('🔍 PT 세션 필터링:', { year, month, yearNum, monthNum });
+
       if (!isNaN(yearNum) && !isNaN(monthNum) && monthNum >= 1 && monthNum <= 12) {
         const startDate = new Date(yearNum, monthNum - 1, 1);
         const endDate = new Date(yearNum, monthNum, 0, 23, 59, 59);
 
+        console.log('🔍 날짜 범위:', { startDate, endDate });
+
         whereClause.session_date = {
           [Op.between]: [startDate, endDate],
         };
+      } else {
+        console.log('❌ 유효하지 않은 년도/월:', { year, month, yearNum, monthNum });
       }
+    } else {
+      console.log('🔍 년도/월 필터 없음');
     }
 
-    // 멤버 정보 조회
-    const member = await Member.findByPk(memberId, {
-      attributes: [
-        'id',
-        'name',
-        'phone',
-        'join_date',
-        'expire_date',
-        'total_sessions',
-        'used_sessions',
-        'free_sessions',
-      ],
-    });
-
+    // 멤버 정보 조회 (이미 위에서 조회했으므로 추가 조회 불필요)
     if (!member) {
       return res.status(404).json({
         success: false,
@@ -592,8 +699,6 @@ const getPTSessionsByMember = async (req, res) => {
         'start_time',
         'end_time',
         'session_type',
-        'signature_data',
-        'signature_time',
         'notes',
         'created_at',
         'updated_at',
@@ -668,7 +773,18 @@ const getPTSessionsByMember = async (req, res) => {
       message: '멤버별 PT 세션 조회 성공',
       data: {
         member: {
-          ...member.toJSON(),
+          id: member.id,
+          name: member.name,
+          phone: member.phone,
+          center_id: member.center_id,
+          trainer_id: member.trainer_id,
+          join_date: member.join_date,
+          expire_date: member.expire_date,
+          total_sessions: member.total_sessions,
+          used_sessions: member.used_sessions,
+          free_sessions: member.free_sessions,
+          memo: member.memo,
+          status: member.status,
           remaining_sessions: remainingSessions,
           remaining_free_sessions: remainingFreeSessions,
           actual_used_sessions: actualUsedSessions,
@@ -718,9 +834,27 @@ const getPTSessionsByUser = async (req, res) => {
       });
     }
 
+    // 현재 로그인한 사용자 정보 조회 (권한 필터링용)
+    const currentUser = await User.findByPk(req.user.uid, {
+      include: [
+        { model: Position, as: 'position', attributes: ['id', 'level'] },
+        { model: Team, as: 'team', attributes: ['id'] },
+        { model: Center, as: 'center', attributes: ['id'] },
+      ],
+    });
+
+    if (!currentUser || !currentUser.position) {
+      return res.status(403).json({
+        success: false,
+        message: '권한 정보를 찾을 수 없습니다.',
+      });
+    }
+
+    const currentUserLevel = currentUser.position.level;
+
     // 유저 정보 조회
     const user = await User.findByPk(userIdNum, {
-      attributes: ['id', 'name', 'nickname', 'email'],
+      attributes: ['id', 'name', 'nickname', 'email', 'team_id', 'center_id'],
     });
 
     if (!user) {
@@ -730,10 +864,49 @@ const getPTSessionsByUser = async (req, res) => {
       });
     }
 
+    // 권한 체크
+    let hasPermission = false;
+
+    // 포지션 12, 99는 모든 권한
+    if (currentUserLevel === 12 || currentUserLevel === 99) {
+      hasPermission = true;
+    }
+    // 포지션 1~6: 본인만 조회 가능
+    else if (currentUserLevel >= 1 && currentUserLevel <= 6) {
+      hasPermission = userIdNum === currentUser.uid;
+    }
+    // 포지션 7~10: 소속 팀 유저만 조회 가능
+    else if (currentUserLevel >= 7 && currentUserLevel <= 10) {
+      if (!currentUser.team_id) {
+        return res.status(403).json({
+          success: false,
+          message: '팀 정보가 없어 권한을 확인할 수 없습니다.',
+        });
+      }
+      hasPermission = user.team_id === currentUser.team_id;
+    }
+    // 포지션 11: 소속 센터 유저만 조회 가능
+    else if (currentUserLevel === 11) {
+      if (!currentUser.center_id) {
+        return res.status(403).json({
+          success: false,
+          message: '센터 정보가 없어 권한을 확인할 수 없습니다.',
+        });
+      }
+      hasPermission = user.center_id === currentUser.center_id;
+    }
+
+    if (!hasPermission) {
+      return res.status(403).json({
+        success: false,
+        message: '해당 유저의 PT 세션을 조회할 권한이 없습니다.',
+      });
+    }
+
     const whereClause = { trainer_id: userIdNum };
-    
-    // 센터 ID가 제공된 경우 필터링 추가
-    if (center_id) {
+
+    // 센터 ID가 제공된 경우 필터링 추가 (권한이 있는 경우에만)
+    if (center_id && (currentUserLevel === 12 || currentUserLevel === 99)) {
       const centerIdNum = parseInt(center_id);
       if (!isNaN(centerIdNum) && centerIdNum > 0) {
         whereClause.center_id = centerIdNum;
@@ -767,8 +940,6 @@ const getPTSessionsByUser = async (req, res) => {
         'start_time',
         'end_time',
         'session_type',
-        'signature_data',
-        'signature_time',
         'notes',
         'created_at',
         'updated_at',

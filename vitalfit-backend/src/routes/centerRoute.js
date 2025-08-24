@@ -2,7 +2,8 @@ const express = require('express');
 const router = express.Router();
 const centerController = require('../controllers/centerController');
 const { validateRequest, createCenterSchema } = require('../middlewares/validation');
-const { requireCenterManagerPermission } = require('../middlewares/permissionMiddleware');
+const { requireCenterManagementPermission } = require('../middlewares/permissionMiddleware');
+const auth = require('../middlewares/authMiddleware');
 
 // 디버깅을 위한 미들웨어 추가
 router.use((req, res, next) => {
@@ -18,7 +19,8 @@ router.get('/', centerController.getAllCenters);
 // POST /api/centers
 router.post(
   '/',
-  requireCenterManagerPermission,
+  auth,
+  requireCenterManagementPermission,
   validateRequest(createCenterSchema),
   centerController.createCenter
 );
@@ -31,7 +33,8 @@ router.get('/search', centerController.searchCenters);
 // POST /api/centers/images
 router.post(
   '/images',
-  requireCenterManagerPermission,
+  auth,
+  requireCenterManagementPermission,
   centerController.upload.single('image'),
   centerController.uploadCenterImage
 );
@@ -40,13 +43,19 @@ router.post(
 // DELETE /api/centers/images/:imageId
 router.delete(
   '/images/:imageId',
-  requireCenterManagerPermission,
+  auth,
+  requireCenterManagementPermission,
   centerController.deleteCenterImage
 );
 
 // ✅ 메인 이미지 설정 (ID 라우트보다 먼저 정의)
 // PUT /api/centers/images/:imageId/main
-router.put('/images/:imageId/main', requireCenterManagerPermission, centerController.setMainImage);
+router.put(
+  '/images/:imageId/main',
+  auth,
+  requireCenterManagementPermission,
+  centerController.setMainImage
+);
 
 // ✅ 특정 센터 상세 조회
 // GET /api/centers/:id
@@ -54,10 +63,10 @@ router.get('/:id', centerController.getCenterById);
 
 // ✅ 센터 업데이트
 // PUT /api/centers/:id
-router.put('/:id', requireCenterManagerPermission, centerController.updateCenter);
+router.put('/:id', auth, requireCenterManagementPermission, centerController.updateCenter);
 
 // ✅ 센터 삭제
 // DELETE /api/centers/:id
-router.delete('/:id', requireCenterManagerPermission, centerController.deleteCenter);
+router.delete('/:id', auth, requireCenterManagementPermission, centerController.deleteCenter);
 
 module.exports = router;

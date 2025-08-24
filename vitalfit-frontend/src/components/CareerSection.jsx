@@ -49,6 +49,8 @@ const CareerSection = ({
         clearTimeout(debounceTimeoutRef.current);
       }
       debounceTimeoutRef.current = setTimeout(() => {
+        console.log(`🔄 ${fieldName} 부모 상태 업데이트:`, newItems);
+        // 올바른 데이터 구조로 전달
         onContentChange(fieldName, { items: newItems });
       }, 300);
     },
@@ -138,10 +140,19 @@ const CareerSection = ({
   }, [localItems.length]);
 
   return (
-    <div className="border rounded-lg p-6 bg-gray-50">
+    <div
+      className="rounded-lg p-6 transition-all duration-300 shadow-md hover:-translate-y-1 hover:shadow-lg border-[0.1px]"
+      style={{
+        background:
+          fieldName === 'education'
+            ? 'radial-gradient(circle at center -50%, rgba(235,245,255,0.8) 0%, rgba(235,245,255,0.6) 20%, #b6ecf1 60%, #b6ecf1 100%)'
+            : 'radial-gradient(circle at center -50%, rgba(235,245,255,0.8) 0%, rgba(235,245,255,0.6) 20%, #4d6be6 60%, #4d6be6 100%)',
+        borderColor: fieldName === 'education' ? '#b6ecf1' : '#4d6be6',
+      }}
+    >
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h4 className="font-medium text-gray-600">{title}</h4>
+          <h4 className="font-medium text-white drop-shadow-md">{title}</h4>
         </div>
       </div>
 
@@ -243,7 +254,7 @@ const CareerSection = ({
         <button
           type="button"
           onClick={handleAddItem}
-          className="w-full p-2 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-gray-400 hover:text-gray-600 transition-colors text-sm"
+          className="w-full p-2 border-2 border-dashed border-white/50 rounded-lg text-white hover:border-white hover:bg-white/10 transition-colors text-sm"
         >
           + 새 {title} 항목 추가
         </button>

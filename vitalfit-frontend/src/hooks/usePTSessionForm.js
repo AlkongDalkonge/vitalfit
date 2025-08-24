@@ -98,16 +98,7 @@ export const usePTSessionForm = (initialData = null, isOpen = false, mode = 'cre
       }
     }
 
-    // 과거 날짜 검증 (생성 모드인 경우)
-    if (mode === 'create' && formData.session_date) {
-      const sessionDate = new Date(formData.session_date);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      if (sessionDate < today) {
-        newErrors.session_date = '과거 날짜는 선택할 수 없습니다.';
-      }
-    }
+    // 과거 날짜 검증 제거 - 과거 날짜도 선택 가능하도록 함
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -131,7 +122,6 @@ export const usePTSessionForm = (initialData = null, isOpen = false, mode = 'cre
         start_time: formData.start_time ? formData.start_time.substring(0, 5) : '',
         end_time: formData.end_time ? formData.end_time.substring(0, 5) : '',
         session_type: formData.session_type,
-        signature_data: 'temp_signature',
         notes: formData.notes.trim() || undefined,
       };
 

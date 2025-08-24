@@ -46,56 +46,6 @@ const MyWorkPage = ({ onReAuthRequired }) => {
     { value: 'other', label: '근무신청', color: 'bg-gray-100 text-gray-800' },
   ];
 
-  // 휴가 신청 상태 변화 감지 및 로컬 스토리지 동기화
-  useEffect(() => {
-    console.log('🔄 휴가 신청 상태 변화:', {
-      totalRequests: leaveRequests.length,
-      requests: leaveRequests.map(req => ({
-        id: req.id,
-        status: req.status,
-        submittedAt: req.submittedAt,
-        reason: req.reason,
-      })),
-    });
-  }, [leaveRequests]);
-
-  // 백엔드에서 휴가 신청 목록 가져오기
-  const fetchLeaveRequests = async () => {
-    try {
-      const response = await fetch(
-        `http://localhost:3001/api/users/leave/list?userId=${user?.id || user?.uid}`,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
-          },
-        }
-      );
-
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success) {
-          setLeaveRequests(result.data || []);
-          console.log('✅ 휴가 신청 목록 가져오기 성공:', result.data);
-        }
-      }
-    } catch (error) {
-      console.error('❌ 휴가 신청 목록 가져오기 실패:', error);
-    }
-  };
-
-  // 초기 상태 로깅 및 휴가 신청 목록 가져오기
-  useEffect(() => {
-    console.log('🚀 MyWorkPage 초기 상태:', {
-      leaveRequestsLength: leaveRequests.length,
-      leaveRequests: leaveRequests,
-      user: user?.name,
-    });
-
-    if (user?.id || user?.uid) {
-      fetchLeaveRequests();
-    }
-  }, [user]);
-
   // shift 데이터 파싱 함수
   const parseShiftData = shiftString => {
     if (!shiftString || shiftString.trim() === '') {
@@ -229,6 +179,35 @@ const MyWorkPage = ({ onReAuthRequired }) => {
     }
   };
 
+  // 백엔드에서 휴가 신청 목록 가져오기
+  const fetchLeaveRequests = async () => {
+    try {
+      const response = await fetch(
+        `http://localhost:3001/api/users/leave/list?userId=${user?.id || user?.uid}`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+          },
+        }
+      );
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          setLeaveRequests(result.data || []);
+        }
+      }
+    } catch (error) {
+      // 에러 처리
+    }
+  };
+
+  // 수동으로 상태 새로고침
+  const refreshLeaveRequests = () => {
+    fetchLeaveRequests();
+    toast.info('스케줄 신청 목록을 새로고침했습니다.');
+  };
+
   // 쉬는 날 신청 폼 변경 핸들러
   const handleLeaveFormChange = (field, value) => {
     setLeaveRequestForm(prev => ({
@@ -261,15 +240,20 @@ const MyWorkPage = ({ onReAuthRequired }) => {
       }
     }
 
-    // 시간 검증 (토스트 없이)
-    if (leaveRequestForm.startTime >= leaveRequestForm.endTime) {
-      return;
-    }
+    // 시간 검증 제거 - 사용자가 원하는 시간대로 입력 가능
 
     try {
-      // 새로운 휴가 신청 생성
+      // 백엔드에 휴가 신청 제출
+      const backendRequestId = await submitLeaveRequestToBackend({
+        ...leaveRequestForm,
+        userId: user?.id || user?.uid,
+        userName: user?.name || '사용자',
+        userEmail: user?.email || 'unknown@email.com',
+      });
+
+      // 새로운 휴가 신청 객체 생성
       const newRequest = {
-        id: Date.now(),
+        id: backendRequestId,
         ...leaveRequestForm,
         status: 'pending',
         submittedAt: new Date().toISOString(),
@@ -280,22 +264,8 @@ const MyWorkPage = ({ onReAuthRequired }) => {
         },
       };
 
-      // 오른쪽 승인내역에 추가 (상태 업데이트 강화)
-      const updatedRequests = [newRequest, ...leaveRequests];
-      setLeaveRequests(updatedRequests);
-
-      console.log('🔄 휴가 신청 상태 업데이트:', {
-        newRequest,
-        prevLength: leaveRequests.length,
-        newLength: updatedRequests.length,
-        updatedRequests,
-      });
-
-      // 백엔드에 휴가 신청 제출
-      const backendRequestId = await submitLeaveRequestToBackend(newRequest);
-
-      // 백엔드에서 받은 requestId로 업데이트
-      newRequest.id = backendRequestId;
+      // 로컬 상태 업데이트
+      setLeaveRequests(prev => [newRequest, ...prev]);
 
       // 폼 초기화
       setLeaveRequestForm({
@@ -307,26 +277,14 @@ const MyWorkPage = ({ onReAuthRequired }) => {
         reason: '',
       });
 
-      // 상태 업데이트 확인
-      console.log('✅ 휴가 신청 완료:', {
-        newRequestId: newRequest.id,
-        totalRequests: updatedRequests.length,
-        status: 'pending',
-      });
+      toast.success('스케줄 신청이 완료되었습니다. 관리자에게 승인 요청이 전송되었습니다.');
 
-      // 상태 업데이트 후 실제 상태 확인
-      console.log('🔍 신청 완료 후 실제 상태:', {
-        leaveRequestsLength: updatedRequests.length,
-        newRequestExists: updatedRequests.some(req => req.id === newRequest.id),
-      });
-
-      // 강제 업데이트로 상태 동기화
-      forceUpdateLeaveRequests();
-
-      toast.success('휴가 신청이 완료되었습니다. 관리자에게 승인 요청이 전송되었습니다.');
+      // 상태 동기화를 위해 목록 새로고침
+      setTimeout(() => {
+        fetchLeaveRequests();
+      }, 1000);
     } catch (error) {
-      console.error('휴가 신청 실패:', error);
-      toast.error('휴가 신청에 실패했습니다.');
+      toast.error('스케줄 신청에 실패했습니다.');
     }
   };
 
@@ -340,7 +298,7 @@ const MyWorkPage = ({ onReAuthRequired }) => {
         try {
           await performLeaveRequest(e);
         } catch (error) {
-          console.error('재인증 후 휴가 신청 실패:', error);
+          console.error('재인증 후 스케줄 신청 실패:', error);
         }
       });
       return;
@@ -360,77 +318,105 @@ const MyWorkPage = ({ onReAuthRequired }) => {
     setLeaveRequests(prev =>
       prev.map(req => (req.id === requestId ? { ...req, status: newStatus } : req))
     );
-
-    console.log(`✅ 휴가 신청 ${requestId} 상태 업데이트: ${newStatus}`);
   };
 
   // 백엔드 휴가 신청 API 호출
   const submitLeaveRequestToBackend = async request => {
-    try {
-      const response = await fetch('http://localhost:3001/api/users/leave/submit', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
-        },
-        body: JSON.stringify({
-          leaveType: request.leaveType,
-          startDate: request.startDate,
-          endDate: request.endDate,
-          startTime: request.startTime,
-          endTime: request.endTime,
-          reason: request.reason,
-          userId: user?.id || user?.uid,
-          userName: user?.name || '사용자',
-          userEmail: user?.email || 'unknown@email.com',
-        }),
-      });
+    const response = await fetch('http://localhost:3001/api/users/leave/submit', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+      },
+      body: JSON.stringify({
+        leaveType: request.leaveType,
+        startDate: request.startDate,
+        endDate: request.endDate,
+        startTime: request.startTime,
+        endTime: request.endTime,
+        reason: request.reason,
+        userId: user?.id || user?.uid,
+        userName: user?.name || '사용자',
+        userEmail: user?.email || 'unknown@email.com',
+      }),
+    });
 
-      if (!response.ok) {
-        throw new Error('백엔드 휴가 신청에 실패했습니다.');
-      }
-
-      const result = await response.json();
-      if (!result.success) {
-        throw new Error(result.message || '백엔드 휴가 신청에 실패했습니다.');
-      }
-
-      console.log('백엔드 휴가 신청 성공:', result);
-      return result.requestId; // 백엔드에서 생성된 requestId 반환
-    } catch (error) {
-      console.error('백엔드 휴가 신청 실패:', error);
-      throw error;
+    if (!response.ok) {
+      throw new Error('백엔드 스케줄 신청에 실패했습니다.');
     }
+
+    const result = await response.json();
+    if (!result.success) {
+      throw new Error(result.message || '백엔드 스케줄 신청에 실패했습니다.');
+    }
+
+    return result.requestId; // 백엔드에서 생성된 requestId 반환
   };
 
   // 휴가 승인/거절 처리 (관리자용)
   const handleLeaveRequestAction = async (requestId, action) => {
     try {
-      const updatedRequests = leaveRequests.map(req => {
-        if (req.id === requestId) {
-          return {
-            ...req,
-            status: action, // 'approved' 또는 'rejected'
-            processedAt: new Date().toISOString(),
-            processedBy: '관리자',
-          };
-        }
-        return req;
+      const apiUrl = `/api/users/leave/${action === 'approved' ? 'approve' : 'reject'}/${requestId}`;
+
+      // 백엔드 API 호출
+      const response = await fetch(apiUrl, {
+        method: 'GET',
       });
 
-      setLeaveRequests(updatedRequests);
+      if (response.ok) {
+        // 백엔드에서 성공적으로 처리된 경우에만 로컬 상태 업데이트
+        const updatedRequests = leaveRequests.map(req => {
+          if (req.id === requestId) {
+            return {
+              ...req,
+              status: action, // 'approved' 또는 'rejected'
+              processedAt: new Date().toISOString(),
+              processedBy: '관리자',
+            };
+          }
+          return req;
+        });
 
-      toast.success(`휴가 신청이 ${action === 'approved' ? '승인' : '거절'}되었습니다.`);
+        setLeaveRequests(updatedRequests);
+        toast.success(`스케줄 신청이 ${action === 'approved' ? '승인' : '거절'}되었습니다.`);
+
+        // 상태 동기화를 위해 목록 새로고침
+        setTimeout(() => {
+          fetchLeaveRequests();
+        }, 1000);
+      } else {
+        toast.error('처리에 실패했습니다.');
+      }
     } catch (error) {
-      console.error('휴가 신청 처리 실패:', error);
       toast.error('처리에 실패했습니다.');
     }
   };
 
   // 휴가 신청 삭제
-  const handleDeleteLeaveRequest = requestId => {
-    setLeaveRequests(prev => prev.filter(req => req.id !== requestId));
-    toast.success('휴가 신청이 삭제되었습니다.');
+  const handleDeleteLeaveRequest = async requestId => {
+    try {
+      // 백엔드에서 삭제 처리
+      const response = await fetch(`/api/users/leave/delete/${requestId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        console.log('✅ 백엔드에서 삭제 성공');
+        // 로컬 상태에서도 제거
+        setLeaveRequests(prev => prev.filter(req => req.id !== requestId));
+        toast.success('스케줄 신청이 삭제되었습니다.');
+
+        // 상태 동기화를 위해 목록 새로고침
+        setTimeout(() => {
+          fetchLeaveRequests();
+        }, 1000);
+      } else {
+        console.log('❌ 백엔드에서 삭제 실패:', response.status);
+        toast.error('삭제에 실패했습니다.');
+      }
+    } catch (error) {
+      toast.error('삭제 중 오류가 발생했습니다.');
+    }
   };
 
   // 휴가 신청 전송 (관리자용)
@@ -453,10 +439,9 @@ const MyWorkPage = ({ onReAuthRequired }) => {
       });
       setLeaveRequests(updatedRequests);
 
-      toast.success('휴가 신청이 전송되었습니다.');
+      toast.success('스케줄 신청이 전송되었습니다.');
     } catch (error) {
-      console.error('휴가 신청 전송 실패:', error);
-      toast.error('휴가 신청 전송에 실패했습니다.');
+      toast.error('스케줄 신청 전송에 실패했습니다.');
     }
   };
 
@@ -482,11 +467,27 @@ const MyWorkPage = ({ onReAuthRequired }) => {
     return leaveType ? leaveType.color : 'bg-gray-100 text-gray-800';
   };
 
+  // 휴가 신청 상태 실시간 업데이트를 위한 폴링
+  useEffect(() => {
+    if (user?.id || user?.uid) {
+      // 초기 로드
+      fetchLeaveRequests();
+
+      // 30초마다 상태 업데이트 (실시간성 향상)
+      const interval = setInterval(fetchLeaveRequests, 30000);
+
+      return () => clearInterval(interval);
+    }
+  }, [user]);
+
+  // 승인/반려 상태 변경 감지 및 UI 업데이트
+  useEffect(() => {
+    // 휴가 신청 상태 변화 감지
+  }, [leaveRequests]);
+
   // 사용자 정보 로드
   useEffect(() => {
     if (user) {
-      console.log('🔍 MyWorkPage - 사용자 정보 로드 시작');
-
       // shift 데이터 안전하게 파싱
       let parsedShiftData;
 
@@ -503,9 +504,7 @@ const MyWorkPage = ({ onReAuthRequired }) => {
           }
 
           // 데이터 구조가 유효함 - 추가 검증이 필요한 경우 여기에 로직 추가
-          console.log('✅ shift 데이터 구조 검증 통과');
         } catch (error) {
-          console.error('❌ shift 데이터 파싱 실패:', error);
           parsedShiftData = {
             schedules: [
               {
@@ -534,54 +533,6 @@ const MyWorkPage = ({ onReAuthRequired }) => {
       setLoading(false);
     }
   }, [user]);
-
-  // 자동 리다이렉트 로직
-  useEffect(() => {
-    if (!user) return;
-
-    // 사용자 활동 감지 함수들
-    const resetInactivityTimer = () => {
-      // 기존 타이머가 있다면 제거
-      if (inactivityTimeoutRef.current) {
-        clearTimeout(inactivityTimeoutRef.current);
-      }
-
-      // 5분 후 자동으로 대시보드로 이동하는 타이머 설정
-      inactivityTimeoutRef.current = setTimeout(
-        () => {
-          console.log('⏰ 5분 경과, 자동으로 대시보드로 이동');
-          toast.info('보안을 위해 대시보드로 이동합니다.');
-          navigate('/dashboard');
-        },
-        5 * 60 * 1000
-      ); // 5분
-    };
-
-    // 페이지 로드 시 타이머 시작
-    resetInactivityTimer();
-
-    // 사용자 활동 이벤트 리스너들
-    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
-
-    const handleUserActivity = () => {
-      resetInactivityTimer();
-    };
-
-    // 이벤트 리스너 등록
-    events.forEach(event => {
-      document.addEventListener(event, handleUserActivity, true);
-    });
-
-    // 컴포넌트 언마운트 시 정리
-    return () => {
-      if (inactivityTimeoutRef.current) {
-        clearTimeout(inactivityTimeoutRef.current);
-      }
-      events.forEach(event => {
-        document.removeEventListener(event, handleUserActivity, true);
-      });
-    };
-  }, [user, navigate]);
 
   // 요일 체크박스 변경 핸들러
   const handleDayChange = (scheduleIndex, day) => {
@@ -674,26 +625,18 @@ const MyWorkPage = ({ onReAuthRequired }) => {
     setSaving(true);
 
     try {
-      console.log('🚀 근무 정보 저장 시작');
-      console.log('📝 현재 폼 데이터:', formData);
-
       // shift 데이터 직렬화
       const shiftDataString = JSON.stringify(formData.shiftData);
-      console.log('📤 전송할 shift 데이터:', shiftDataString);
 
       // API 호출
       const response = await userAPI.updateMyAccount({ shift: shiftDataString });
-      console.log('📥 API 응답:', response);
 
       // API 응답 구조 확인 및 안전한 처리
       const responseData = response.data || response;
       const updatedUser = responseData.user || responseData;
 
-      console.log('📋 처리된 사용자 정보:', updatedUser);
-
       if (updatedUser) {
         // 1. 즉시 폼 데이터 업데이트 (DB 응답 데이터 사용)
-        console.log('🔄 폼 데이터 즉시 업데이트');
         if (updatedUser.shift) {
           try {
             const parsedShiftData = parseShiftData(updatedUser.shift);
@@ -702,33 +645,26 @@ const MyWorkPage = ({ onReAuthRequired }) => {
               shiftData: parsedShiftData,
             }));
           } catch (error) {
-            console.error('shift 데이터 파싱 실패:', error);
+            // 에러 처리
           }
         }
 
         // 2. AuthContext의 사용자 정보 즉시 업데이트 (DB 응답 데이터 사용)
         if (updateUser && typeof updateUser === 'function') {
-          console.log('🔄 AuthContext 사용자 정보 즉시 업데이트');
           updateUser(updatedUser);
         }
 
         // 3. refreshUserInfo() 호출은 백그라운드에서 실행 (사용자 대기 없음)
         if (refreshUserInfo && typeof refreshUserInfo === 'function') {
           // 백그라운드에서 서버와 동기화 (사용자 대기 없음)
-          refreshUserInfo()
-            .then(() => {
-              console.log('✅ refreshUserInfo 백그라운드 완료');
-            })
-            .catch(error => {
-              console.error('사용자 정보 새로고침 실패:', error);
-              // 에러가 발생해도 이미 로컬 상태는 업데이트되었으므로 계속 진행
-            });
+          refreshUserInfo().catch(error => {
+            // 에러가 발생해도 이미 로컬 상태는 업데이트되었으므로 계속 진행
+          });
         }
       }
 
       toast.success('근무 정보가 저장되었습니다.');
     } catch (error) {
-      console.error('저장 실패:', error);
       toast.error(`저장에 실패했습니다: ${error.response?.data?.message || error.message}`);
     } finally {
       // 저장 완료 후 로딩 상태 해제
@@ -755,11 +691,18 @@ const MyWorkPage = ({ onReAuthRequired }) => {
         {/* 시간을 정해서 휴가를 신청하는 폼과 승인내역을 좌우로 배치 */}
         <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* 왼쪽 2/3: 시간을 정해서 휴가를 신청하는 폼 */}
-          <div className="lg:col-span-2 bg-white rounded-lg p-4 border border-gray-200">
-            <form onSubmit={handleLeaveRequestSubmit} className="space-y-4">
+          <div
+            className="lg:col-span-2 bg-white rounded-lg p-4 transition-all duration-300 shadow-md hover:-translate-y-1 hover:shadow-lg border-[0.1px]"
+            style={{
+              background:
+                'radial-gradient(circle at center -50%, rgba(235,245,255,0.8) 0%, rgba(235,245,255,0.6) 20%, #87CEEB 60%, #87CEEB 100%)',
+              borderColor: '#87CEEB',
+            }}
+          >
+            <form id="leaveRequestForm" onSubmit={handleLeaveRequestSubmit} className="space-y-4">
               {/* 휴가 유형 선택 */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xl font-medium text-white mb-2">
                   신청 유형 <span className="text-red-500">*</span>
                 </label>
                 <div className="flex flex-wrap gap-3">
@@ -773,7 +716,7 @@ const MyWorkPage = ({ onReAuthRequired }) => {
                         onChange={e => handleLeaveFormChange('leaveType', e.target.value)}
                         className="mr-2 text-blue-600 focus:ring-blue-500"
                       />
-                      <span className="text-sm font-medium text-gray-700">{type.label}</span>
+                      <span className="text-xl font-medium text-white">{type.label}</span>
                     </label>
                   ))}
                 </div>
@@ -782,7 +725,7 @@ const MyWorkPage = ({ onReAuthRequired }) => {
               {/* 날짜 선택 */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="relative">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-xl font-medium text-white mb-1">
                     시작일 <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -790,94 +733,81 @@ const MyWorkPage = ({ onReAuthRequired }) => {
                     value={leaveRequestForm.startDate}
                     onChange={e => handleLeaveFormChange('startDate', e.target.value)}
                     min={new Date().toISOString().split('T')[0]}
-                    className="w-full p-3 pt-7 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
                     required
                   />
-                  <span className="absolute left-3 top-8 text-gray-400 text-sm pointer-events-none select-none">
-                    시작일
-                  </span>
                 </div>
                 <div className="relative">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">종료일</label>
+                  <label className="block text-xl font-medium text-white mb-1">종료일</label>
                   <input
                     type="date"
                     value={leaveRequestForm.endDate}
                     onChange={e => handleLeaveFormChange('endDate', e.target.value)}
                     min={leaveRequestForm.startDate || new Date().toISOString().split('T')[0]}
-                    className="w-full p-3 pt-7 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
                   />
-                  <span className="absolute left-3 top-8 text-gray-400 text-sm pointer-events-none select-none">
-                    종료일
-                  </span>
                 </div>
               </div>
 
               {/* 시간 선택 */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="relative">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-xl font-medium text-white mb-1">
                     시작 시간 <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="time"
                     value={leaveRequestForm.startTime || ''}
                     onChange={e => handleLeaveFormChange('startTime', e.target.value)}
-                    className="w-full p-3 pt-7 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
                     required
                   />
-                  <span className="absolute left-3 top-8 text-gray-400 text-sm pointer-events-none select-none">
-                    시작 시간
-                  </span>
                 </div>
                 <div className="relative">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-xl font-medium text-white mb-1">
                     종료 시간 <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="time"
                     value={leaveRequestForm.endTime || ''}
                     onChange={e => handleLeaveFormChange('endTime', e.target.value)}
-                    className="w-full p-3 pt-7 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
                     required
                   />
-                  <span className="absolute left-3 top-8 text-gray-400 text-sm pointer-events-none select-none">
-                    종료 시간
-                  </span>
                 </div>
               </div>
 
               {/* 사유 입력 */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-xl font-medium text-white mb-1">
                   사유 <span className="text-red-500">*</span>
                 </label>
                 <textarea
                   value={leaveRequestForm.reason}
                   onChange={e => handleLeaveFormChange('reason', e.target.value)}
                   rows="2"
-                  placeholder="휴가 신청 사유를 입력해주세요"
-                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none text-sm"
+                  placeholder="스케줄 신청 사유를 입력해주세요"
+                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none text-xl"
                   required
                 />
-              </div>
-
-              {/* 신청 버튼 */}
-              <div className="text-center">
-                <button
-                  type="submit"
-                  className="w-96 mt-1 bg-gradient-to-r from-cyan-500 to-indigo-600 text-white py-2 px-4 rounded-[10px] hover:from-cyan-600 hover:to-indigo-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
-                >
-                  신청
-                </button>
               </div>
             </form>
           </div>
 
           {/* 오른쪽 1/3: 승인 내역 */}
           <div className="lg:col-span-1 bg-white rounded-lg p-4 border border-gray-200">
-            <h2 className="text-base font-semibold text-gray-800 mb-3">
-              승인 내역 ({leaveRequests.length}건)
-            </h2>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-base font-semibold text-gray-800">
+                승인 내역 ({leaveRequests.length}건)
+              </h2>
+              <button
+                onClick={refreshLeaveRequests}
+                className="text-blue-600 hover:text-blue-800 text-sm font-medium hover:bg-blue-50 px-2 py-1 rounded-md transition-colors border border-blue-300"
+                title="새로고침"
+              >
+                🔄
+              </button>
+            </div>
 
             {leaveRequests.length > 0 ? (
               <div className="space-y-2">
@@ -886,7 +816,15 @@ const MyWorkPage = ({ onReAuthRequired }) => {
                   const leaveTypeInfo = leaveTypes.find(lt => lt.value === request.leaveType);
 
                   return (
-                    <div key={request.id} className="border rounded-lg p-2 bg-gray-50">
+                    <div
+                      key={request.id}
+                      className="bg-white rounded-lg p-3 transition-all duration-300 shadow-md hover:-translate-y-1 hover:shadow-lg border-[0.1px]"
+                      style={{
+                        background:
+                          'radial-gradient(circle at center -50%, rgba(235,245,255,0.8) 0%, rgba(235,245,255,0.6) 20%, #87CEEB 60%, #87CEEB 100%)',
+                        borderColor: '#87CEEB',
+                      }}
+                    >
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-1">
                           <span
@@ -919,31 +857,39 @@ const MyWorkPage = ({ onReAuthRequired }) => {
                         </div>
                       </div>
 
-                      <div className="space-y-1 text-xs">
+                      <div className="space-y-1 text-base">
                         <div>
-                          <span className="font-medium text-gray-700">기간:</span>
-                          <span className="ml-1 text-gray-600">
+                          <span className="font-bold text-blue-900">기간:</span>
+                          <span className="ml-1 text-blue-900">
                             {request.startDate}
                             {request.endDate && ` ~ ${request.endDate}`}
                           </span>
                         </div>
                         {request.startTime && request.endTime && (
                           <div>
-                            <span className="font-medium text-gray-700">시간:</span>
-                            <span className="ml-1 text-gray-600">
+                            <span className="font-bold text-blue-900">시간:</span>
+                            <span className="ml-1 text-blue-900">
                               {request.startTime} ~ {request.endTime}
                             </span>
                           </div>
                         )}
                         <div>
-                          <span className="font-medium text-gray-700">신청일:</span>
-                          <span className="ml-1 text-gray-600">
+                          <span className="font-bold text-blue-900">신청일:</span>
+                          <span className="ml-1 text-blue-900">
                             {new Date(request.submittedAt).toLocaleDateString()}
                           </span>
                         </div>
+                        {request.processedAt && (
+                          <div>
+                            <span className="font-bold text-blue-900">처리일:</span>
+                            <span className="ml-1 text-blue-900">
+                              {new Date(request.processedAt).toLocaleDateString()}
+                            </span>
+                          </div>
+                        )}
                         <div>
-                          <span className="font-medium text-gray-700">사유:</span>
-                          <span className="ml-1 text-gray-600 truncate block">
+                          <span className="font-bold text-blue-900">사유:</span>
+                          <span className="ml-1 text-blue-900 truncate block">
                             {request.reason}
                           </span>
                         </div>
@@ -967,10 +913,21 @@ const MyWorkPage = ({ onReAuthRequired }) => {
                     d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                   />
                 </svg>
-                <p className="text-xs">아직 신청한 휴가가 없습니다</p>
+                <p className="text-xs">아직 신청한 스케줄이 없습니다</p>
               </div>
             )}
           </div>
+        </div>
+
+        {/* 신청 버튼 - 박스 밖으로 빼서 아래에 배치 */}
+        <div className="mt-8 text-center">
+          <button
+            type="submit"
+            form="leaveRequestForm"
+            className="w-96 bg-gradient-to-r from-cyan-500 to-indigo-600 text-white py-2 px-4 rounded-[10px] hover:from-cyan-600 hover:to-indigo-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+          >
+            신청
+          </button>
         </div>
       </div>
     </div>

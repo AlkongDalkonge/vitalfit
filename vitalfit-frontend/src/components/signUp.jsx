@@ -37,7 +37,7 @@ export default function SignUp() {
   // 비밀번호 표시/숨김 상태 추가
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [emailChecked, setEmailChecked] = useState(false);
+  const [emailChecked, setEmailChecked] = useState(null);
   const [checkingEmail, setCheckingEmail] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState({
     length: false,
@@ -52,15 +52,11 @@ export default function SignUp() {
 
   // 드롭다운 토글 함수들
   const togglePositionDropdown = () => {
-    console.log('직책 드롭다운 토글:', !showPositionDropdown);
-    // 센터 드롭다운을 먼저 닫고 직책 드롭다운 토글
     setShowCenterDropdown(false);
     setShowPositionDropdown(!showPositionDropdown);
   };
 
   const toggleCenterDropdown = () => {
-    console.log('센터 드롭다운 토글:', !showCenterDropdown);
-    // 직책 드롭다운을 먼저 닫고 센터 드롭다운 토글
     setShowPositionDropdown(false);
     setShowCenterDropdown(!showCenterDropdown);
   };
@@ -96,12 +92,9 @@ export default function SignUp() {
 
   const loadPositions = async () => {
     try {
-      console.log('포지션 데이터 로드 시작...');
       const response = await fetch('/api/users/positions');
-      console.log('포지션 응답 상태:', response.status);
       if (response.ok) {
         const data = await response.json();
-        console.log('포지션 데이터:', data);
         setPositions(data.data);
       } else {
         console.error('포지션 응답 오류:', response.status, response.statusText);
@@ -113,12 +106,9 @@ export default function SignUp() {
 
   const loadCenters = async () => {
     try {
-      console.log('센터 데이터 로드 시작...');
       const response = await fetch('/api/users/centers');
-      console.log('센터 응답 상태:', response.status);
       if (response.ok) {
         const data = await response.json();
-        console.log('센터 데이터:', data);
         setCenters(data.data);
       } else {
         console.error('센터 응답 오류:', response.status, response.statusText);
@@ -143,6 +133,7 @@ export default function SignUp() {
     }
 
     setCheckingEmail(true);
+
     try {
       const response = await fetch('/api/users/check-email', {
         method: 'POST',
@@ -156,19 +147,15 @@ export default function SignUp() {
 
       if (response.ok) {
         if (data.available) {
-          // toast.success('사용 가능한 이메일입니다.'); // 주석처리됨
           setEmailChecked(true);
         } else {
-          // toast.error('이미 사용 중인 이메일입니다.'); // 주석처리됨
           setEmailChecked(false);
         }
       } else {
-        // toast.error(data.message || '이메일 중복확인 중 오류가 발생했습니다.'); // 주석처리됨
         setEmailChecked(false);
       }
     } catch (error) {
       console.error('이메일 중복확인 오류:', error);
-      // toast.error('이메일 중복확인 중 오류가 발생했습니다.'); // 주석처리됨
       setEmailChecked(false);
     } finally {
       setCheckingEmail(false);
@@ -177,8 +164,18 @@ export default function SignUp() {
 
   // 이메일 변경 시 중복확인 상태 초기화
   const handleEmailChange = e => {
-    setFormData({ ...formData, email: e.target.value });
-    setEmailChecked(false);
+    const newEmail = e.target.value;
+    setFormData({ ...formData, email: newEmail });
+
+    // 이메일이 변경되면 중복확인 상태 초기화
+    if (emailChecked !== null) {
+      setEmailChecked(null);
+    }
+  };
+
+  // 이메일 중복확인 상태 수동 초기화
+  const resetEmailCheck = () => {
+    setEmailChecked(null);
   };
 
   // 비밀번호 강도 검증 함수
@@ -395,7 +392,7 @@ export default function SignUp() {
     }
 
     // 이메일 중복확인 확인
-    if (!emailChecked) {
+    if (emailChecked !== true) {
       setError('이메일 중복확인을 완료해주세요.');
       setLoading(false);
       return;
@@ -415,26 +412,24 @@ export default function SignUp() {
       formDataToSend.append('terms_accepted', formData.terms_accepted);
       formDataToSend.append('privacy_accepted', formData.privacy_accepted);
 
+      // 선택사항 필드들 추가 (빈 값이어도 전송)
+      formDataToSend.append('team_id', formData.team_id || '');
+      formDataToSend.append('nickname', formData.nickname || '');
+      formDataToSend.append('license', formData.license || '');
+      formDataToSend.append('experience', formData.experience || '');
+      formDataToSend.append('education', formData.education || '');
+      formDataToSend.append('instagram', formData.instagram || '');
+      formDataToSend.append('shift', formData.shift || '');
+
       // 프로필 이미지가 있으면 추가
       if (profileImage) {
         formDataToSend.append('profile_image_url', profileImage);
       }
 
-      console.log('전송할 데이터:', {
-        email: formData.email,
-        name: formData.name,
-        phone: formData.phone,
-        position_id: formData.position_id,
-        center_id: formData.center_id,
-        hasImage: !!profileImage,
-      });
-
       const response = await fetch('/api/users/signup', {
         method: 'POST',
         body: formDataToSend,
       });
-
-      console.log('응답 상태:', response.status);
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -449,7 +444,6 @@ export default function SignUp() {
       }
 
       const data = await response.json();
-      console.log('응답 데이터:', data);
 
       if (response.ok) {
         // 계정 재활성화인지 새 회원가입인지 확인
@@ -458,7 +452,7 @@ export default function SignUp() {
           navigate('/login');
         } else if (data.requiresEmailVerification) {
           // 이메일 인증이 필요한 경우
-          // toast.success('회원가입을 위해 이메일 인증을 완료해주세요.'); // 주석처리됨
+          toast.success('회원가입을 위해 이메일 인증을 완료해주세요.');
           navigate('/verify-email', {
             state: {
               email: formData.email,
@@ -605,9 +599,7 @@ export default function SignUp() {
                     value={formData.email}
                     onChange={handleEmailChange}
                     placeholder="이메일을 입력하세요"
-                    className={`flex-1 px-4 py-3 border rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-colors ${
-                      emailChecked ? 'border-green-500 bg-green-50' : 'border-gray-300'
-                    }`}
+                    className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-colors"
                     required
                   />
                   <button
@@ -615,16 +607,35 @@ export default function SignUp() {
                     onClick={checkEmailDuplicate}
                     disabled={checkingEmail || !formData.email}
                     className={`px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
-                      emailChecked
+                      emailChecked === true
                         ? 'bg-green-500 text-white hover:bg-green-600'
-                        : 'bg-cyan-500 text-white hover:bg-cyan-600 disabled:bg-gray-300 disabled:cursor-not-allowed'
+                        : emailChecked === false
+                          ? 'bg-red-500 text-white hover:bg-red-600'
+                          : 'bg-cyan-500 text-white hover:bg-cyan-600 disabled:bg-gray-300 disabled:cursor-not-allowed'
                     }`}
                   >
-                    {checkingEmail ? '확인중...' : emailChecked ? '확인완료' : '중복확인'}
+                    {checkingEmail
+                      ? '확인중...'
+                      : emailChecked === true
+                        ? '확인완료'
+                        : emailChecked === false
+                          ? '재확인'
+                          : '중복확인'}
                   </button>
                 </div>
-                {emailChecked && (
-                  <p className="mt-1 text-sm text-green-600">✓ 사용 가능한 이메일입니다.</p>
+                {emailChecked !== null && (
+                  <div className="mt-1">
+                    <p className={`text-sm ${emailChecked ? 'text-green-600' : 'text-red-600'}`}>
+                      {emailChecked
+                        ? '✓ 사용 가능한 이메일입니다.'
+                        : '✗ 이미 사용 중인 이메일입니다.'}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {emailChecked
+                        ? '이제 회원가입을 진행할 수 있습니다.'
+                        : '다른 이메일을 사용하거나 중복확인을 다시 시도해주세요.'}
+                    </p>
+                  </div>
                 )}
               </div>
 
@@ -1006,20 +1017,26 @@ export default function SignUp() {
       {/* 약관 모달 */}
       {(showTermsModal || showPrivacyModal) && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-hidden">
-            <div className="flex justify-between items-center p-4 border-b">
-              <h3 className="text-lg font-semibold">{modalTitle}</h3>
-              <button onClick={closeModal} className="text-gray-500 hover:text-gray-700 text-2xl">
+          <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-hidden">
+            <div className="flex justify-between items-center p-4 border-b bg-gray-50">
+              <h3 className="text-lg font-semibold text-gray-800">{modalTitle}</h3>
+              <button
+                onClick={closeModal}
+                className="text-gray-500 hover:text-gray-700 text-2xl hover:bg-gray-200 rounded-full w-8 h-8 flex items-center justify-center transition-colors"
+              >
                 ×
               </button>
             </div>
-            <div className="p-4 overflow-y-auto max-h-[60vh]">
-              <div dangerouslySetInnerHTML={{ __html: modalContent }} />
+            <div className="p-6 overflow-y-auto max-h-[70vh] bg-white">
+              <div
+                className="prose prose-sm max-w-none"
+                dangerouslySetInnerHTML={{ __html: modalContent }}
+              />
             </div>
-            <div className="p-4 border-t">
+            <div className="p-4 border-t bg-gray-50">
               <button
                 onClick={closeModal}
-                className="w-full bg-cyan-500 text-white py-2 px-4 rounded-lg hover:bg-cyan-600 transition-colors"
+                className="w-full bg-cyan-500 text-white py-3 px-6 rounded-lg hover:bg-cyan-600 transition-colors font-medium"
               >
                 확인
               </button>
@@ -1035,3 +1052,4 @@ export default function SignUp() {
     </div>
   );
 }
+//

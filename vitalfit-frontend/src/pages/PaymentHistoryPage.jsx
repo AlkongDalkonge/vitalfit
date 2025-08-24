@@ -3,12 +3,79 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { paymentAPI, memberAPI, apiGet } from '../utils/api';
 import PaymentCreateModal from './PaymentCreateModal';
 import PaymentEditModal from './PaymentEditModal';
+import { useAuth } from '../contexts/AuthContext';
+import { toast } from 'react-toastify';
 
 const PaymentHistoryPage = () => {
   const { memberId } = useParams();
   const navigate = useNavigate();
+  const { user: currentUser } = useAuth();
 
   console.log('PaymentHistoryPage 렌더링됨, memberId:', memberId);
+
+  // PT 결제 조회 권한 체크 함수
+  const hasPaymentPermission = () => {
+    if (!currentUser || !member) return false;
+
+    // 관리자(12, 13, 99)는 모든 권한
+    if (
+      currentUser.position_id === 12 ||
+      currentUser.position_id === 13 ||
+      currentUser.position_id === 99
+    ) {
+      return true;
+    }
+
+    // 포지션 1~6: 본인 담당 멤버의 PT 결제만 조회 가능
+    if (currentUser.position_id >= 1 && currentUser.position_id <= 6) {
+      return Number(member.trainer_id) === Number(currentUser.id);
+    }
+
+    // 포지션 7~10: 소속 팀 멤버의 PT 결제 조회 가능
+    if (currentUser.position_id >= 7 && currentUser.position_id <= 10) {
+      return true; // 팀 권한은 백엔드에서 처리
+    }
+
+    // 포지션 11: 소속 센터 멤버의 PT 결제 조회 가능
+    if (currentUser.position_id === 11) {
+      return true; // 센터 권한은 백엔드에서 처리
+    }
+
+    return false;
+  };
+
+  // PT 결제 관리 권한 체크 함수 - 담당 트레이너만 관리 가능
+  const hasPaymentManagementPermission = () => {
+    if (!currentUser || !member) return false;
+
+    // 관리자(12, 13, 99)는 모든 권한
+    if (
+      currentUser.position_id === 12 ||
+      currentUser.position_id === 13 ||
+      currentUser.position_id === 99
+    ) {
+      return true;
+    }
+
+    // 담당 트레이너인지 확인 (타입 변환하여 비교)
+    const isTrainer = Number(member.trainer_id) === Number(currentUser.id);
+
+    console.log('🔍 PT 결제 관리 권한 체크:', {
+      currentUser: {
+        id: currentUser.id,
+        name: currentUser.name,
+        position_id: currentUser.position_id,
+      },
+      member: {
+        id: member.id,
+        name: member.name,
+        trainer_id: member.trainer_id,
+      },
+      isTrainer: isTrainer,
+    });
+
+    return isTrainer;
+  };
 
   const [member, setMember] = useState(null);
   const [payments, setPayments] = useState([]);
@@ -100,6 +167,11 @@ const PaymentHistoryPage = () => {
 
   // 결제 등록 관련 핸들러들
   const handleRegisterPayment = () => {
+    // 권한 체크
+    if (!hasPaymentManagementPermission()) {
+      toast.warning('PT 결제 등록 권한이 없습니다.');
+      return;
+    }
     setIsPaymentCreateModalOpen(true);
   };
 
@@ -116,6 +188,11 @@ const PaymentHistoryPage = () => {
 
   // 결제 수정 관련 핸들러들
   const handleEditPayment = paymentId => {
+    // 권한 체크
+    if (!hasPaymentManagementPermission()) {
+      toast.warning('PT 결제 수정 권한이 없습니다.');
+      return;
+    }
     setSelectedPaymentId(paymentId);
     setIsPaymentEditModalOpen(true);
   };
@@ -154,9 +231,27 @@ const PaymentHistoryPage = () => {
     );
   }
 
+  // 권한 체크
+  if (!hasPaymentPermission()) {
+    return (
+      <div className="w-full max-w-7xl mx-auto p-6">
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <p className="text-yellow-800 font-medium">접근 권한이 없습니다</p>
+          <p className="text-yellow-700 mt-1">PT 결제 내역을 조회할 권한이 없습니다.</p>
+          <button
+            onClick={() => navigate('/pay')}
+            className="mt-2 px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors"
+          >
+            돌아가기
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="w-full max-w-7xl mx-auto pt-0 px-6 pb-6 min-h-screen flex flex-col">
-      <div className="flex flex-col gap-6 flex-1">
+    <div className="w-full max-w-7xl mx-auto pt-0 px-6 pb-4 flex flex-col">
+      <div className="flex flex-col gap-4 flex-1">
         {/* 헤더 */}
         <div className="flex items-center justify-between bg-white rounded-lg p-4 shadow-sm">
           <div className="flex items-center gap-4">
@@ -318,7 +413,12 @@ const PaymentHistoryPage = () => {
         <div className="flex justify-end mt-6">
           <button
             onClick={handleRegisterPayment}
-            className="Button w-40 h-11 p-2.5 bg-gradient-to-br from-blue-400 to-blue-600 rounded-[10px] inline-flex justify-center items-center gap-2.5 hover:from-blue-500 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/15 before:via-transparent before:to-transparent before:pointer-events-none"
+            disabled={!hasPaymentManagementPermission()}
+            className={`Button w-40 h-11 p-2.5 rounded-[10px] inline-flex justify-center items-center gap-2.5 transition-all duration-200 shadow-lg hover:shadow-xl relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/15 before:via-transparent before:to-transparent before:pointer-events-none ${
+              hasPaymentManagementPermission()
+                ? 'bg-gradient-to-br from-blue-400 to-blue-600 hover:from-blue-500 hover:to-blue-700'
+                : 'bg-gray-400 cursor-not-allowed'
+            }`}
           >
             <div
               data-layer="Primary Button"

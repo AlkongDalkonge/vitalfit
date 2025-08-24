@@ -4,13 +4,35 @@ import MemberEditModal from './MemberEditModal';
 import MemberCreateModal from './MemberCreateModal';
 import { useMember, useFilters } from '../utils/hooks';
 import { getStatusText, statusOptions, getMemberStatusColor } from '../utils/memberUtils';
+import { useAuth } from '../contexts/AuthContext';
+import { toast } from 'react-toastify';
 
 const MemberPage = () => {
   const navigate = useNavigate();
+  const { user: currentUser } = useAuth();
 
   // 상태 필터 관련 상태
   const [statusFilter, setStatusFilter] = useState('');
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
+
+  // 멤버 관련 권한 체크 함수들 (position_id 직접 비교)
+  const hasMemberManagementPermission = () => {
+    if (!currentUser || !currentUser.position_id) return false;
+    // 모든 직원이 관리 가능 (position_id: 1 이상)
+    return currentUser.position_id >= 1;
+  };
+
+  const hasMemberEditPermission = () => {
+    if (!currentUser || !currentUser.position_id) return false;
+    // 모든 직원이 수정 가능 (position_id: 1 이상)
+    return currentUser.position_id >= 1;
+  };
+
+  const hasMemberViewPermission = () => {
+    if (!currentUser || !currentUser.position_id) return false;
+    // 모든 직원이 조회 가능 (position_id: 1 이상)
+    return currentUser.position_id >= 1;
+  };
 
   // 커스텀 훅 사용
   const {
@@ -122,10 +144,18 @@ const MemberPage = () => {
   };
   // 기타 핸들러들
   const handleRegisterMember = () => {
+    if (!hasMemberManagementPermission()) {
+      toast.warning('멤버 등록 권한이 없습니다.');
+      return;
+    }
     setIsCreateModalOpen(true);
   };
 
   const handleViewMore = memberId => {
+    if (!hasMemberEditPermission()) {
+      toast.warning('멤버 수정 권한이 없습니다.');
+      return;
+    }
     const member = members.find(m => m.id === memberId);
     if (member) {
       handleEditMember(member);
@@ -144,9 +174,28 @@ const MemberPage = () => {
     );
   }
 
+  // 권한이 없는 경우 메시지 표시
+  if (!hasMemberViewPermission()) {
+    return (
+      <div className="w-full max-w-7xl mx-auto pt-0 px-6 pb-6 flex flex-col">
+        <div className="flex flex-col gap-6 flex-1 pb-0">
+          <div className="text-black text-3xl font-extrabold font-['Nunito'] bg-white rounded-lg p-3">
+            고객 관리
+          </div>
+          <div className="flex justify-center items-center h-64 bg-white rounded-lg">
+            <div className="text-center">
+              <div className="text-gray-500 text-lg font-medium mb-2">접근 권한이 없습니다</div>
+              <div className="text-gray-400 text-sm">멤버 조회 권한이 필요합니다.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full max-w-7xl mx-auto pt-0 px-6 pb-6 flex flex-col">
-      <div className="flex flex-col gap-6 flex-1 pb-0">
+      <div className="flex flex-col gap-2 flex-1 pb-0">
         {/* 최상단 제목 */}
         <div
           data-layer="고객 관리"
@@ -248,7 +297,9 @@ const MemberPage = () => {
                     data-layer="Placeholder"
                     className="Placeholder justify-start text-neutral-400 text-xs font-normal font-['Nunito'] leading-normal"
                   >
-                    {trainerFilter && trainerFilter !== 'Select option' ? trainerFilter : '트레이너'}
+                    {trainerFilter && trainerFilter !== 'Select option'
+                      ? trainerFilter
+                      : '트레이너'}
                   </div>
                   <svg
                     className="w-3 h-3 text-neutral-400"
@@ -453,7 +504,12 @@ const MemberPage = () => {
                         <div data-layer="고객명" className="flex-[1] min-w-[80px] justify-start">
                           <button
                             onClick={() => handleViewMore(member.id)}
-                            className="text-cyan-600 text-sm font-normal font-['Nunito'] leading-normal hover:text-cyan-800 hover:underline cursor-pointer transition-colors duration-200"
+                            disabled={!hasMemberEditPermission()}
+                            className={`text-sm font-normal font-['Nunito'] leading-normal transition-colors duration-200 ${
+                              hasMemberEditPermission()
+                                ? 'text-cyan-600 hover:text-cyan-800 hover:underline cursor-pointer'
+                                : 'text-gray-400 cursor-not-allowed'
+                            }`}
                           >
                             {member.name}
                           </button>
@@ -509,13 +565,20 @@ const MemberPage = () => {
         <div className="flex justify-end mt-4 mb-0">
           <button
             onClick={handleRegisterMember}
+            disabled={!hasMemberManagementPermission()}
             data-layer="Button"
             data-property-1="Default"
-            className="Button w-40 h-11 p-2.5 bg-gradient-to-br from-blue-400 to-blue-600 rounded-[10px] inline-flex justify-center items-center gap-2.5 hover:from-blue-500 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/15 before:via-transparent before:to-transparent before:pointer-events-none"
+            className={`Button w-40 h-11 p-2.5 rounded-[10px] inline-flex justify-center items-center gap-2.5 transition-all duration-200 shadow-lg relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/15 before:via-transparent before:to-transparent before:pointer-events-none ${
+              hasMemberManagementPermission()
+                ? 'bg-gradient-to-br from-blue-400 to-blue-600 hover:from-blue-500 hover:to-blue-700 hover:shadow-xl'
+                : 'bg-gradient-to-br from-gray-400 to-gray-500 cursor-not-allowed'
+            }`}
           >
             <div
               data-layer="Primary Button"
-              className="PrimaryButton justify-start text-white text-sm font-medium font-['Nunito'] leading-normal drop-shadow-xl"
+              className={`PrimaryButton justify-start text-sm font-medium font-['Nunito'] leading-normal drop-shadow-xl ${
+                hasMemberManagementPermission() ? 'text-white' : 'text-gray-300'
+              }`}
             >
               고객 등록
             </div>
@@ -528,6 +591,7 @@ const MemberPage = () => {
           onClose={handleCloseEditModal}
           member={editingMember}
           onUpdate={handleUpdateMember}
+          hasPermission={hasMemberEditPermission()}
         />
 
         {/* 멤버 등록 모달 */}
@@ -535,6 +599,7 @@ const MemberPage = () => {
           isOpen={isCreateModalOpen}
           onClose={handleCloseCreateModal}
           onCreate={handleCreateMember}
+          hasPermission={hasMemberManagementPermission()}
         />
       </div>
     </div>

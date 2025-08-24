@@ -95,7 +95,7 @@ exports.checkSettlementNotifications = async (req, res) => {
     let hasNotifications = false;
 
     // 1. 팀원: 본인의 draft와 rejected 정산 확인
-    if (user.position_id < 7) { // 일반 직원
+    if (user.position_id <= 7) { // 일반 직원
       const draftSettlements = await MonthlySettlement.findAll({
         where: {
           user_id: actingUserId,
@@ -176,7 +176,7 @@ exports.checkSettlementNotifications = async (req, res) => {
     }
 
     // 3. 회계팀: center_approved 정산 확인
-    if (user.position_id >= 12) { // 회계팀 이상
+    if (user.position_id === 12) { // 회계팀 이상
       const centerApprovedSettlements = await MonthlySettlement.findAll({
         where: {
           status: 'center_approved',
@@ -907,7 +907,7 @@ exports.hqReject = async (req, res) => {
         // 센터장: acknowledged 상태만 반려 가능
         allowedStatus = 'acknowledged';
         rejectedRole = 'center_manager';
-      } else if (actingUser.position_id >= 12) {
+      } else if (actingUser.position_id === 12) {
         // 회계팀: center_approved 상태만 반려 가능
         allowedStatus = 'center_approved';
         rejectedRole = 'hq';

@@ -36,14 +36,6 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
         defaultValue: 'regular',
       },
-      signature_data: {
-        type: DataTypes.TEXT,
-        allowNull: false,
-      },
-      signature_time: {
-        type: DataTypes.DATE,
-        allowNull: false,
-      },
       notes: {
         type: DataTypes.TEXT,
         allowNull: true,

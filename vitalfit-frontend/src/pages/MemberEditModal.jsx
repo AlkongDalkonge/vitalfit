@@ -3,7 +3,7 @@ import { memberAPI } from '../utils/api';
 import { useMemberForm } from '../utils/hooks';
 import { statusOptions } from '../utils/memberUtils';
 
-const MemberEditModal = ({ isOpen, onClose, member, onUpdate }) => {
+const MemberEditModal = ({ isOpen, onClose, member, onUpdate, hasPermission = true }) => {
   // 커스텀 훅 사용
   const {
     formData,
@@ -71,7 +71,7 @@ const MemberEditModal = ({ isOpen, onClose, member, onUpdate }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="w-[750px] h-[720px] bg-white rounded-[20px] relative overflow-hidden">
+      <div className="w-[750px] h-[720px] bg-white rounded-[20px] relative overflow-visible">
         {/* 로딩 오버레이 */}
         {loading && (
           <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center z-10">
@@ -238,7 +238,7 @@ const MemberEditModal = ({ isOpen, onClose, member, onUpdate }) => {
                 <button
                   type="button"
                   onClick={() => setShowTrainerDropdown(!showTrainerDropdown)}
-                  disabled={loading || !formData.center_id}
+                  disabled={loading}
                   className={`w-72 h-12 rounded-[10px] outline outline-1 outline-offset-[-0.50px] outline-stone-300 px-3 text-sm font-['Nunito'] focus:outline-cyan-500 bg-white flex items-center justify-between ${
                     !formData.trainer_id ? 'text-neutral-400' : 'text-neutral-900'
                   }`}
@@ -251,14 +251,11 @@ const MemberEditModal = ({ isOpen, onClose, member, onUpdate }) => {
                           );
                           if (trainer) {
                             const positionName = trainer.position?.name || '';
-                            const nickname = trainer.nickname ? ` (${trainer.nickname})` : '';
-                            return `${trainer.name} ${positionName}${nickname}`;
+                            return `${trainer.name} ${positionName}`;
                           }
                           return '';
                         })()
-                      : formData.center_id
-                        ? '트레이너를 선택하세요'
-                        : '먼저 센터를 선택하세요'}
+                      : '트레이너를 선택하세요'}
                   </span>
                   <svg
                     width="16"
@@ -279,7 +276,7 @@ const MemberEditModal = ({ isOpen, onClose, member, onUpdate }) => {
 
                 {/* 커스텀 드롭다운 */}
                 {showTrainerDropdown && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-stone-300 rounded-[10px] shadow-lg z-10">
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-stone-300 rounded-[10px] shadow-lg z-50 max-h-48 overflow-y-auto">
                     <div className="py-1">
                       {filteredTrainers.map(trainer => (
                         <button
@@ -293,8 +290,7 @@ const MemberEditModal = ({ isOpen, onClose, member, onUpdate }) => {
                           }}
                           className="w-full px-3 py-2 text-left text-sm font-['Nunito'] hover:bg-gray-50 transition-colors duration-200"
                         >
-                          {trainer.name} {trainer.position?.name || ''}{' '}
-                          {trainer.nickname ? `(${trainer.nickname})` : ''}
+                          {trainer.name} {trainer.position?.name || ''}
                         </button>
                       ))}
                     </div>
@@ -308,15 +304,12 @@ const MemberEditModal = ({ isOpen, onClose, member, onUpdate }) => {
                   onChange={handleInputChange}
                   required
                   className="hidden"
-                  disabled={loading || !formData.center_id}
+                  disabled={loading}
                 >
-                  <option value="">
-                    {formData.center_id ? '트레이너를 선택하세요' : '먼저 센터를 선택하세요'}
-                  </option>
+                  <option value="">트레이너를 선택하세요</option>
                   {filteredTrainers.map(trainer => (
                     <option key={trainer.id} value={trainer.id}>
-                      {trainer.name} {trainer.position?.name || ''}{' '}
-                      {trainer.nickname ? `(${trainer.nickname})` : ''}
+                      {trainer.name} {trainer.position?.name || ''}
                     </option>
                   ))}
                 </select>
@@ -482,8 +475,12 @@ const MemberEditModal = ({ isOpen, onClose, member, onUpdate }) => {
           <div className="flex justify-end absolute bottom-6 right-6">
             <button
               type="submit"
-              disabled={loading}
-              className="px-12 py-3 bg-gradient-to-br from-blue-400 to-blue-600 text-white text-sm rounded-lg hover:from-blue-500 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50"
+              disabled={loading || !hasPermission}
+              className={`px-12 py-3 text-sm rounded-lg transition-all duration-200 shadow-lg disabled:opacity-50 ${
+                hasPermission
+                  ? 'bg-gradient-to-br from-blue-400 to-blue-600 text-white hover:from-blue-500 hover:to-blue-700 hover:shadow-xl'
+                  : 'bg-gradient-to-br from-gray-400 to-gray-500 text-gray-300 cursor-not-allowed'
+              }`}
             >
               {loading ? '수정 중...' : '수정'}
             </button>

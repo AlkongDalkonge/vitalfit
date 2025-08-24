@@ -35,7 +35,7 @@ export default function Header({ activeMenu = null, userInfo, className = '' }) 
   // 알림 개수 로드 함수
   const loadNotificationCount = async () => {
     if (!user?.id) return;
-    
+
     try {
       const response = await settlementAPI.getNotifications(user.id);
       if (response.success && response.data.hasNotifications) {

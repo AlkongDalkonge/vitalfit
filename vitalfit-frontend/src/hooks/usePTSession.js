@@ -27,24 +27,34 @@ export const usePTSession = memberId => {
       setLoading(true);
       setError(null);
 
+      console.log('🔍 PT 세션 조회 요청:', {
+        memberId,
+        year: currentYear,
+        month: currentMonth,
+      });
+
       const response = await ptSessionAPI.getSessionsByMember(memberId, {
         year: currentYear,
         month: currentMonth,
       });
 
+      console.log('🔍 PT 세션 API 응답:', response);
+
       if (response.success) {
-        console.log('🔍 PT 세션 API 응답:', response.data);
+        console.log('🔍 PT 세션 API 응답 데이터:', response.data);
         console.log('🔍 멤버 정보:', response.data.member);
         console.log('🔍 잔여 세션:', response.data.member.remaining_sessions);
         console.log('🔍 잔여 보너스 세션:', response.data.member.remaining_free_sessions);
         setMember(response.data.member);
         setPtSessions(response.data.pt_sessions);
       } else {
+        console.error('❌ PT 세션 API 오류:', response.message);
         setError(response.message);
       }
     } catch (err) {
       console.error('❌ PT 세션 조회 오류:', err);
-      setError(err.message);
+      console.error('❌ 오류 상세:', err.response?.data);
+      setError(err.message || 'PT 세션 조회 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
     }

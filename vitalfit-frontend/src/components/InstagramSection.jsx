@@ -13,16 +13,26 @@ const InstagramSection = ({
   fetchInstagramThumbnail,
   maxLength = 200,
 }) => {
+  console.log('🔍 InstagramSection 데이터:', data);
+  console.log('🔍 InstagramSection 이미지 URL:', data?.image_url);
+
   return (
-    <div className="border rounded-lg p-6 bg-gray-50">
+    <div
+      className="rounded-lg p-6 transition-all duration-300 shadow-md hover:-translate-y-1 hover:shadow-lg border-[0.1px]"
+      style={{
+        background:
+          'radial-gradient(circle at center -50%, rgba(235,245,255,0.8) 0%, rgba(235,245,255,0.6) 20%, #a1e1fd 60%, #a1e1fd 100%)',
+        borderColor: '#a1e1fd',
+      }}
+    >
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h4 className="font-medium text-gray-600">{title}</h4>
+          <h4 className="font-medium text-white drop-shadow-md">{title}</h4>
         </div>
       </div>
 
       <div className="flex gap-4">
-        {/* 왼쪽: 이미지 업로드 및 가져온 썸네일 */}
+        {/* 왼쪽: 이미지 업로드 */}
         <div className="w-40">
           <ImageUploadField
             fieldName={fieldName}
@@ -32,34 +42,6 @@ const InstagramSection = ({
             onImageDelete={onImageDelete}
             onImageExpand={onImageExpand}
           />
-
-          {/* 가져온 썸네일 표시 (확대 기능 없음) */}
-          {data.image_url && (
-            <div className="mt-3">
-              <div className="relative">
-                <img
-                  src={data.image_url}
-                  alt="Instagram thumbnail"
-                  className="w-full h-32 object-cover rounded-lg border cursor-default"
-                  onError={e => {
-                    // 404 에러 시 대체 이미지 표시
-                    if (data.fallbackImage) {
-                      e.target.src = data.fallbackImage;
-                      e.target.onerror = null; // 무한 루프 방지
-                    } else {
-                      e.target.style.display = 'none';
-                    }
-                  }}
-                  style={{ pointerEvents: 'none' }} // 클릭 이벤트 비활성화
-                />
-                {data.note && (
-                  <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-1 rounded-b-lg">
-                    {data.note}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
         </div>
 
         {/* 오른쪽: 계정 정보 입력 */}

@@ -162,7 +162,10 @@ const SettlementCard = ({ settlement, userRole, user, onActionComplete }) => {
           <div className="flex justify-between items-center">
             <span className="text-sm font-medium text-gray-700">원천징수:</span>
             <span className="text-sm font-medium text-red-600">
-              {formatCurrency((settlement.total_settlement || 0) - (settlement.after_tax_amount || 0))}원 (3.3%)
+              {formatCurrency(
+                (settlement.total_settlement || 0) - (settlement.after_tax_amount || 0)
+              )}
+              원 (3.3%)
             </span>
           </div>
         </div>

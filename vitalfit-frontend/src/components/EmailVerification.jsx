@@ -1,16 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import AuthService from '../utils/auth';
 import { toast } from 'react-toastify';
 
 // API 기본 URL
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
 
 export default function EmailVerification() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { login, setUser, setIsAuthenticated } = useAuth();
 
   // 회원가입 후 전달받은 이메일과 메시지
   const [email, setEmail] = useState('');
@@ -22,24 +19,28 @@ export default function EmailVerification() {
 
   // 회원가입 후 전달받은 데이터 설정
   useEffect(() => {
-    console.log('📍 EmailVerification 컴포넌트 마운트, location.state:', location.state);
-
     if (location.state) {
       setEmail(location.state.email || '');
       setMessage(location.state.message || '');
       // 회원가입 후에는 이미 이메일이 발송되었으므로 바로 인증 화면 표시
       setIsVerifying(true);
-      console.log('✅ 회원가입 후 데이터 설정 완료:', {
-        email: location.state.email,
-        message: location.state.message,
-      });
-    } else {
-      console.log('⚠️ location.state가 없음 - 직접 접근한 경우');
+
+      // 첫 번째 인증 코드 입력 필드에 자동 포커스
+      setTimeout(() => {
+        const firstInput = document.querySelector('input[data-index="0"]');
+        if (firstInput) {
+          firstInput.focus();
+          firstInput.select(); // 텍스트 선택
+        }
+      }, 100);
     }
   }, [location.state]);
 
   // 6자리 인증 코드 입력 처리
   const handleCodeChange = (index, value) => {
+    // 에러 상태 초기화
+    if (error) setError('');
+
     // 붙여넣기 처리 (6자리 숫자가 붙여넣어진 경우)
     if (value.length === 6 && /^\d{6}$/.test(value)) {
       const digits = value.split('');
@@ -62,6 +63,14 @@ export default function EmailVerification() {
         const nextInput = document.querySelector(`input[data-index="${index + 1}"]`);
         if (nextInput) nextInput.focus();
       }
+
+      // 모든 필드가 채워졌는지 확인
+      if (index === 5 && value) {
+        // 마지막 필드까지 채워졌으면 자동으로 인증 시도
+        setTimeout(() => {
+          handleVerifyCode(new Event('submit'));
+        }, 500);
+      }
     }
   };
 
@@ -76,23 +85,33 @@ export default function EmailVerification() {
     if (pastedData.length === 6 && /^\d{6}$/.test(pastedData)) {
       const digits = pastedData.split('');
       setVerificationCode(digits);
-      console.log('✅ 6자리 코드 붙여넣기 성공:', digits);
 
       // 마지막 입력 필드에 포커스
       const lastInput = document.querySelector(`input[data-index="5"]`);
       if (lastInput) lastInput.focus();
+
+      // 자동으로 인증 시도
+      setTimeout(() => {
+        handleVerifyCode(new Event('submit'));
+      }, 500);
     } else {
-      console.log('❌ 붙여넣기 실패: 6자리 숫자가 아님');
-      // 사용자에게 알림
       toast.error('6자리 숫자 코드를 복사해서 붙여넣어주세요.');
     }
   };
 
   // 백스페이스로 이전 입력 필드로 이동
   const handleKeyDown = (index, e) => {
-    if (e.key === 'Backspace' && !verificationCode[index] && index > 0) {
-      const prevInput = document.querySelector(`input[data-index="${index - 1}"]`);
-      if (prevInput) prevInput.focus();
+    if (e.key === 'Backspace') {
+      if (!verificationCode[index] && index > 0) {
+        // 현재 필드가 비어있으면 이전 필드로 이동
+        const prevInput = document.querySelector(`input[data-index="${index - 1}"]`);
+        if (prevInput) prevInput.focus();
+      } else if (verificationCode[index]) {
+        // 현재 필드에 값이 있으면 현재 필드만 비우기
+        const newCode = [...verificationCode];
+        newCode[index] = '';
+        setVerificationCode(newCode);
+      }
     }
   };
 
@@ -107,10 +126,6 @@ export default function EmailVerification() {
       return;
     }
 
-    // 디버깅을 위한 로그
-    console.log('🔍 API 호출 시작:', `${API_BASE_URL}/users/send-verification`);
-    console.log('📧 전송할 이메일:', email);
-
     try {
       const response = await fetch(`${API_BASE_URL}/users/send-verification`, {
         method: 'POST',
@@ -120,11 +135,7 @@ export default function EmailVerification() {
         body: JSON.stringify({ email }),
       });
 
-      console.log('📡 응답 상태:', response.status);
-      console.log('📡 응답 헤더:', response.headers);
-
       const data = await response.json();
-      console.log('📄 응답 데이터:', data);
 
       if (response.ok) {
         toast.success('인증 코드가 이메일로 발송되었습니다. 이메일을 확인해주세요.');
@@ -133,7 +144,6 @@ export default function EmailVerification() {
         setError(data.message || '인증 코드 발송 중 오류가 발생했습니다.');
       }
     } catch (err) {
-      console.error('❌ 인증 코드 발송 오류:', err);
       setError('인증 코드 발송 중 오류가 발생했습니다. 네트워크 연결을 확인해주세요.');
     } finally {
       setLoading(false);
@@ -166,35 +176,16 @@ export default function EmailVerification() {
       const data = await response.json();
 
       if (response.ok) {
-        const { token, user: userData } = data;
-
-        if (token && userData) {
-          // 토큰을 받았으면 직접 저장하고 자동 로그인
-          toast.success('이메일 인증이 완료되었습니다. 로그인 화면으로 이동합니다.');
-
-          // 토큰을 AuthService에 저장
-          AuthService.setAccessToken(token, false);
-
-          // 사용자 정보를 AuthContext에 설정
-          setUser(userData);
-          setIsAuthenticated(true);
-
-          // 대시보드로 이동
-          setTimeout(() => {
-            navigate('/');
-          }, 2000);
-        } else {
-          // 토큰이 없으면 로그인 페이지로 이동
-          toast.success('이메일 인증이 완료되었습니다. 로그인 페이지로 이동합니다.');
-          setTimeout(() => {
-            navigate('/login');
-          }, 3000);
-        }
+        // 이메일 인증 완료 - 신원 확인만 하고 로그인 페이지로 이동
+        toast.success('이메일 인증이 완료되었습니다.');
+        // 로그인 페이지로 이동 (이메일 인증 완료 상태를 URL 파라미터로 전달)
+        setTimeout(() => {
+          navigate(`/login?emailVerified=true&email=${encodeURIComponent(email)}`);
+        }, 500);
       } else {
         setError(data.message || '인증 코드가 올바르지 않습니다.');
       }
     } catch (err) {
-      console.error('이메일 인증 오류:', err);
       setError('이메일 인증 중 오류가 발생했습니다. 네트워크 연결을 확인해주세요.');
     } finally {
       setLoading(false);
@@ -279,19 +270,19 @@ export default function EmailVerification() {
                         onKeyDown={e => handleKeyDown(index, e)}
                         onPaste={handlePaste}
                         maxLength={1}
-                        className="w-12 h-12 text-center text-lg font-semibold border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors"
+                        className={`w-12 h-12 text-center text-lg font-semibold border-2 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 hover:border-cyan-400 focus:outline-none shadow-sm ${
+                          error ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                        }`}
                         placeholder=""
                         required
                         inputMode="numeric"
                         pattern="[0-9]*"
+                        autoComplete="one-time-code"
                       />
                     ))}
                   </div>
                   <p className="text-xs text-gray-500 text-center mb-2">
                     이메일로 발송된 6자리 인증 코드를 입력해주세요.
-                  </p>
-                  <p className="text-xs text-cyan-600 text-center">
-                    💡 팁: 6자리 코드를 복사해서 아무 입력 필드에 붙여넣으면 자동으로 입력됩니다!
                   </p>
                 </div>
                 <button
@@ -307,19 +298,21 @@ export default function EmailVerification() {
             )}
 
             {/* 이메일 다시 전송 버튼 */}
-            <div className="text-center pt-6">
-              <p className="text-sm text-gray-600 mb-4">이메일을 받지 못하셨나요?</p>
-              <button
-                type="button"
-                onClick={handleSendVerificationCode}
-                disabled={loading}
-                className="w-full h-11 p-2.5 bg-gray-100 text-gray-700 rounded-[10px] inline-flex justify-center items-center gap-2.5 hover:bg-gray-200 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed border border-gray-300"
-              >
-                <div className="text-sm font-normal">
-                  {loading ? '전송 중...' : '이메일 다시 전송'}
-                </div>
-              </button>
-            </div>
+            {isVerifying && (
+              <div className="text-center pt-6">
+                <p className="text-sm text-gray-600 mb-4">이메일을 받지 못하셨나요?</p>
+                <button
+                  type="button"
+                  onClick={handleSendVerificationCode}
+                  disabled={loading}
+                  className="w-full h-11 p-2.5 bg-gray-100 text-gray-700 rounded-[10px] inline-flex justify-center items-center gap-2.5 hover:bg-gray-200 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed border border-gray-300"
+                >
+                  <div className="text-sm font-normal">
+                    {loading ? '전송 중...' : '이메일 다시 전송'}
+                  </div>
+                </button>
+              </div>
+            )}
 
             {/* 로그인 버튼 */}
             <div className="text-center pt-6">
@@ -336,13 +329,6 @@ export default function EmailVerification() {
                 </div>
               </button>
             </div>
-
-            {/* 에러 메시지 */}
-            {error && (
-              <div className="mt-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-xs">
-                {error}
-              </div>
-            )}
           </div>
         </div>
       </div>

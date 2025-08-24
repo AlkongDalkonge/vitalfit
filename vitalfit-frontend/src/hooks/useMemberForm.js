@@ -33,15 +33,33 @@ export const useMemberForm = (initialData = null, isOpen = false) => {
     try {
       const [centersData, trainersData] = await Promise.all([
         centerAPI.getAllCenters(),
-        userAPI.getAllUsers({ role: 'trainer' }),
+        userAPI.getAllUsers(), // role 파라미터 제거
       ]);
+
+      console.log('센터 데이터:', centersData);
+      console.log('트레이너 데이터:', trainersData);
+      console.log('전체 사용자 수:', trainersData.data?.users?.length || 0);
 
       if (centersData.success) setCenters(centersData.data.centers);
       if (trainersData.success) {
-        // 포지션 레벨 1~7에 해당하는 트레이너만 필터링 (담당 멤버 가능)
-        const filteredTrainers = trainersData.data.users.filter(
-          trainer => trainer.position && trainer.position.level >= 1 && trainer.position.level <= 7
+        // 모든 사용자 데이터 확인
+        console.log('첫 번째 사용자 예시:', trainersData.data.users[0]);
+        console.log(
+          '포지션 정보가 있는 사용자들:',
+          trainersData.data.users.filter(u => u.position)
         );
+
+        // 포지션 ID 3, 4, 5, 7에 해당하는 트레이너만 필터링 (담당 멤버 가능)
+        const filteredTrainers = trainersData.data.users.filter(trainer => {
+          console.log(
+            `사용자 ${trainer.name}: position_id=`,
+            trainer.position_id,
+            'position=',
+            trainer.position
+          );
+          return trainer.position_id && [3, 4, 5, 7].includes(trainer.position_id);
+        });
+        console.log('필터링된 트레이너:', filteredTrainers);
         setTrainers(filteredTrainers);
       }
     } catch (error) {
@@ -97,6 +115,15 @@ export const useMemberForm = (initialData = null, isOpen = false) => {
         [name]: value,
       }));
 
+      // 센터가 변경되면 트레이너 초기화
+      if (name === 'center_id') {
+        setFormData(prev => ({
+          ...prev,
+          [name]: value,
+          trainer_id: '', // 트레이너 초기화
+        }));
+      }
+
       // 에러 메시지 초기화
       if (errors[name]) {
         setErrors(prev => ({
@@ -133,6 +160,14 @@ export const useMemberForm = (initialData = null, isOpen = false) => {
 
     if (!formData.trainer_id) {
       newErrors.trainer_id = '트레이너를 선택해주세요';
+    } else {
+      // 센터가 선택된 경우, 해당 센터의 트레이너인지 확인
+      if (formData.center_id) {
+        const selectedTrainer = trainers.find(t => t.id === parseInt(formData.trainer_id));
+        if (selectedTrainer && selectedTrainer.center_id !== parseInt(formData.center_id)) {
+          newErrors.trainer_id = '선택한 센터의 트레이너를 선택해주세요';
+        }
+      }
     }
 
     if (!formData.status) {
@@ -169,10 +204,22 @@ export const useMemberForm = (initialData = null, isOpen = false) => {
 
   // 센터별 트레이너 필터링 - useMemo로 메모이제이션
   const getFilteredTrainers = useMemo(() => {
+    console.log('getFilteredTrainers 호출됨, trainers:', trainers);
+    console.log('formData.center_id:', formData.center_id);
+
+    // 센터가 선택되지 않았으면 빈 배열 반환 (트레이너 선택 불가)
     if (!formData.center_id) {
-      return trainers;
+      console.log('센터가 선택되지 않음 - 빈 배열 반환');
+      return [];
     }
-    return trainers.filter(trainer => trainer.center_id === parseInt(formData.center_id));
+
+    // 선택된 센터에 속한 트레이너들만 필터링
+    const filteredTrainers = trainers.filter(
+      trainer => trainer.center_id === parseInt(formData.center_id)
+    );
+
+    console.log('필터링된 트레이너:', filteredTrainers);
+    return filteredTrainers;
   }, [trainers, formData.center_id]);
 
   return {

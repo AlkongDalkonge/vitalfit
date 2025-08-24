@@ -1,11 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import AuthService from '../utils/auth';
 import api from '../utils/api';
-import {
-  clearReAuthStatus,
-  needsReAuth,
-  handlePageNavigation,
-} from '../utils/reAuthUtils';
+import { clearReAuthStatus, needsReAuth, handlePageNavigation } from '../utils/reAuthUtils';
 
 const AuthContext = createContext();
 
@@ -38,15 +34,12 @@ export const AuthProvider = ({ children }) => {
 
     const initializeAuth = async () => {
       try {
-        console.log('🔄 AuthContext: 자동 로그인 시도 시작');
-
         // 저장된 토큰 확인
         const token = AuthService.getAccessToken();
 
         if (token) {
           // 토큰 만료 여부 먼저 확인
           if (AuthService.isTokenExpired()) {
-            console.log('⚠️ 토큰이 만료됨 - 자동 로그아웃');
             forceLogout();
             return;
           }
@@ -58,10 +51,9 @@ export const AuthProvider = ({ children }) => {
               const userData = JSON.parse(storedUser);
               if (!isMounted) return;
 
-                              // 먼저 localStorage 정보로 빠르게 로그인
-                setUser(userData);
-                setIsAuthenticated(true);
-                              console.log('✅ localStorage 정보로 빠른 로그인 성공');
+              // 먼저 localStorage 정보로 빠르게 로그인
+              setUser(userData);
+              setIsAuthenticated(true);
 
               // 백그라운드에서 서버 검증 시도
               setTimeout(async () => {
@@ -69,18 +61,15 @@ export const AuthProvider = ({ children }) => {
                   const { data } = await api.get('/users/me');
                   const userData = data;
                   const actualUser = userData.user || userData;
-                  
+
                   if (isMounted) {
                     setUser(actualUser);
                     localStorage.setItem('user', JSON.stringify(actualUser));
-                    console.log('✅ 서버 검증 완료 - 최신 정보 업데이트');
                   }
                 } catch (error) {
-                  console.log('⚠️ 서버 검증 실패 (백그라운드):', error.message);
                   // 서버 검증 실패해도 localStorage 정보로 계속 사용
                 }
               }, 100);
-
             } catch (error) {
               console.error('사용자 정보 파싱 오류:', error);
               forceLogout();
@@ -97,22 +86,18 @@ export const AuthProvider = ({ children }) => {
               setUser(actualUser);
               setIsAuthenticated(true);
               localStorage.setItem('user', JSON.stringify(actualUser));
-
-              console.log('✅ 서버에서 사용자 정보 가져오기 성공');
             } catch (error) {
-              console.log('⚠️ 서버에서 사용자 정보 가져오기 실패:', error.message);
               forceLogout();
             }
           }
         } else {
-          console.log('✅ 저장된 토큰 없음 - 로그인 페이지 유지');
           setIsAuthenticated(false);
           setUser(null);
         }
       } catch (error) {
         if (!isMounted) return;
 
-        console.error('❌ AuthContext: 자동 로그인 중 오류 발생:', error);
+        console.error('AuthContext: 자동 로그인 중 오류 발생:', error);
         forceLogout();
       } finally {
         if (isMounted) {
@@ -144,7 +129,6 @@ export const AuthProvider = ({ children }) => {
   const handleReAuthSuccess = (userId, pagePath = null) => {
     setReAuthRequired(false);
     setShowReAuthModal(false);
-    console.log('✅ 재인증 성공 - 4분간 유효', pagePath ? `(경로: ${pagePath})` : '');
   };
 
   // 재인증 실패 처리
@@ -176,7 +160,6 @@ export const AuthProvider = ({ children }) => {
 
       // 탈퇴된 계정인 경우 자동 로그아웃
       if (error.response?.status === 403 && error.response?.data?.code === 'ACCOUNT_DEACTIVATED') {
-        console.log('🚫 탈퇴된 계정 감지, 자동 로그아웃 실행');
         await logout();
         return null;
       }
@@ -197,15 +180,14 @@ export const AuthProvider = ({ children }) => {
 
         return userInfo;
       } else {
-        console.warn('⚠️ 사용자 정보를 가져올 수 없음');
+        console.warn(' 사용자 정보를 가져올 수 없음');
         return null;
       }
     } catch (error) {
-      console.error('❌ refreshUserInfo 실패:', error);
+      console.error('refreshUserInfo 실패:', error);
 
       // 탈퇴된 계정인 경우 자동 로그아웃
       if (error.response?.status === 403 && error.response?.data?.code === 'ACCOUNT_DEACTIVATED') {
-        console.log('🚫 탈퇴된 계정 감지, 자동 로그아웃 실행');
         await logout();
         return null;
       }
@@ -217,8 +199,6 @@ export const AuthProvider = ({ children }) => {
   // 로그인 (Remember Me 지원)
   const login = async (email, password, rememberMe = false) => {
     try {
-      console.log('🔐 로그인 시도:', email);
-
       const requestData = {
         email,
         password,
@@ -234,6 +214,11 @@ export const AuthProvider = ({ children }) => {
         // Refresh Token을 먼저 저장
         if (refreshToken) {
           AuthService.setRefreshToken(refreshToken);
+
+          // 저장 확인
+          const savedRefreshToken = AuthService.getRefreshToken();
+        } else {
+          console.warn('Refresh Token이 응답에 없습니다');
         }
 
         // Remember Me에 따라 Access Token 저장
@@ -251,15 +236,12 @@ export const AuthProvider = ({ children }) => {
         setReAuthRequired(false);
         setShowReAuthModal(false);
 
-        console.log('✅ 로그인 성공:', userData.name);
-
         return { success: true, user: userData };
       } else {
-        console.log('❌ 로그인 실패:', response.data?.message || '응답 데이터 형식 오류');
         return { success: false, message: response.data?.message || '응답 데이터 형식 오류' };
       }
     } catch (error) {
-      console.error('❌ AuthContext login 오류:', error);
+      console.error('AuthContext login 오류:', error);
       const message = error.response?.data?.message || '로그인에 실패했습니다.';
       return { success: false, message };
     }
@@ -269,8 +251,6 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     try {
       await AuthService.logout();
-    } catch (error) {
-      console.error('로그아웃 중 오류:', error);
     } finally {
       setUser(null);
       setIsAuthenticated(false);
@@ -283,7 +263,6 @@ export const AuthProvider = ({ children }) => {
 
   // 강제 로그아웃 (백엔드 API 호출 없이 로컬 상태만 정리)
   const forceLogout = () => {
-    console.log('🔒 강제 로그아웃 실행');
     AuthService.removeAccessToken();
     AuthService.removeRefreshToken();
     localStorage.removeItem('user');
@@ -303,14 +282,14 @@ export const AuthProvider = ({ children }) => {
 
     // 토큰이 없는데 인증 상태가 true인 경우
     if (!hasToken && isAuthStateTrue) {
-      console.warn('⚠️ 인증 상태 불일치: 토큰 없음 + 인증 상태 true');
+      console.warn('인증 상태 불일치: 토큰 없음 + 인증 상태 true');
       forceLogout();
       return false;
     }
 
     // 토큰이 있는데 인증 상태가 false인 경우
     if (hasToken && !isAuthStateTrue) {
-      console.warn('⚠️ 인증 상태 불일치: 토큰 있음 + 인증 상태 false');
+      console.warn('인증 상태 불일치: 토큰 있음 + 인증 상태 false');
       return false;
     }
 
@@ -357,7 +336,6 @@ export const AuthProvider = ({ children }) => {
     closeReAuthModal,
     handleNavigation,
     checkReAuthRequired,
-
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

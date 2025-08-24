@@ -73,6 +73,20 @@ export default function SignIn() {
     }
   }, []);
 
+  // 이메일 인증 완료 후 로그인 페이지로 이동한 경우 처리
+  useEffect(() => {
+    const location = window.location;
+    const urlParams = new URLSearchParams(location.search);
+
+    // URL에서 이메일 인증 완료 상태 확인
+    if (urlParams.get('emailVerified') === 'true') {
+      const email = urlParams.get('email');
+      if (email) {
+        setEmail(email);
+      }
+    }
+  }, []);
+
   // 컴포넌트 언마운트 시 모든 토스티 정리
   useEffect(() => {
     if (!authLoading && isAuthenticated) {

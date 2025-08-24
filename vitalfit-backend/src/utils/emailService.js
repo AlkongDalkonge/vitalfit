@@ -1,8 +1,8 @@
 const nodemailer = require('nodemailer');
 const crypto = require('crypto');
 
-// 안전한 임시 비밀번호 생성 함수
-const generateSecureTempPassword = (length = 12) => {
+// 안전한 임시 비밀번호 생성 함수 (8자리)
+const generateSecureTempPassword = (length = 8) => {
   const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
   let password = '';
 
@@ -89,10 +89,8 @@ const createVerificationEmail = (userName, verificationCode) => {
   `;
 };
 
-// 비밀번호 재설정 이메일 템플릿
-const createPasswordResetEmail = (userName, resetToken) => {
-  const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password/confirm?token=${resetToken}`;
-
+// 비밀번호 재설정 이메일 템플릿 (8자리 임시 비밀번호)
+const createPasswordResetEmail = (userName, tempPassword) => {
   return `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
       <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
@@ -108,33 +106,38 @@ const createPasswordResetEmail = (userName, resetToken) => {
         </p>
         
         <p style="color: #666; line-height: 1.6; margin-bottom: 20px;">
-          비밀번호 재설정을 요청하셨습니다. 아래의 링크를 클릭하여 새로운 비밀번호를 설정해주세요.
+          비밀번호 재설정이 완료되었습니다. 아래의 임시 비밀번호로 로그인해주세요.
         </p>
         
         <div style="text-align: center; margin: 30px 0;">
-          <a href="${resetLink}" 
-             style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 40px; text-decoration: none; border-radius: 25px; display: inline-block; font-weight: bold; font-size: 16px;">
-            비밀번호 재설정하기
-          </a>
+          <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 15px; display: inline-block; font-weight: bold; font-size: 24px; letter-spacing: 5px; min-width: 200px;">
+            ${tempPassword}
+          </div>
         </div>
         
         <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 15px; margin: 20px 0;">
           <p style="margin: 0; color: #856404; font-size: 14px;">
-            <strong>⚠️ 보안 주의사항:</strong><br>
-            • 이 링크는 30분 동안만 유효합니다<br>
-            • 본인이 요청하지 않은 경우 이 이메일을 무시하세요<br>
-            • 타인과 이 링크를 공유하지 마세요
+            <strong>🔐 로그인 방법:</strong><br>
+            • VitalFit 앱의 로그인 화면으로 이동하세요<br>
+            • 이메일 주소와 위의 임시 비밀번호를 입력하세요<br>
+            • 로그인 후 보안을 위해 새 비밀번호로 변경하세요
           </p>
         </div>
         
-        <p style="color: #666; line-height: 1.6; margin-bottom: 20px;">
-          링크가 작동하지 않는 경우, 아래 주소를 브라우저에 복사하여 붙여넣기 해주세요:
-        </p>
-        
-        <div style="background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; padding: 15px; margin: 20px 0; word-break: break-all;">
-          <p style="margin: 0; color: #495057; font-size: 12px; font-family: monospace;">
-            ${resetLink}
+        <div style="background: #d1ecf1; border: 1px solid #bee5eb; border-radius: 8px; padding: 15px; margin: 20px 0;">
+          <p style="margin: 0; color#0c5460; font-size: 14px;">
+            <strong>보안 주의사항:</strong><br>
+            • 이 임시 비밀번호는 안전하게 보관하세요<br>
+            • 타인과 공유하지 마세요<br>
+            • 로그인 후 즉시 새 비밀번호로 변경하세요
           </p>
+        </div>
+        
+        <div style="text-align: center; margin-top: 30px;">
+          <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/login" 
+             style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 25px; display: inline-block; font-weight: bold;">
+            로그인하기
+          </a>
         </div>
         
         <hr style="border: none; border-top: 1px solid #e9ecef; margin: 30px 0;">
@@ -199,16 +202,6 @@ const sendVerificationEmail = async (userEmail, userName, verificationCode) => {
   try {
     // 개발 환경에서는 실제 이메일 발송 대신 콘솔에 출력
     if (process.env.NODE_ENV === 'development' && !process.env.EMAIL_PASSWORD) {
-      console.log('📧 === 이메일 인증 이메일 (개발 모드) ===');
-      console.log('📧 발송자: vitalfit.dev@gmail.com');
-      console.log('📧 수신자:', userEmail);
-      console.log('📧 제목: [VitalFit] 이메일 인증');
-      console.log('📧 사용자명:', userName);
-      console.log('📧 인증 코드:', verificationCode);
-      console.log('📧 이메일 내용:');
-      console.log(createVerificationEmail(userName, verificationCode));
-      console.log('📧 === 이메일 내용 끝 ===');
-
       return { success: true, messageId: 'dev-mode-verification-email' };
     }
 
@@ -223,9 +216,6 @@ const sendVerificationEmail = async (userEmail, userName, verificationCode) => {
     };
 
     const info = await transporter.sendMail(mailOptions);
-    console.log('📧 이메일 인증 이메일 발송 성공:', info.messageId);
-    console.log('📧 발송자:', 'vitalfit.dev@gmail.com');
-    console.log('📧 수신자:', userEmail);
 
     return { success: true, messageId: info.messageId };
   } catch (error) {
@@ -234,22 +224,12 @@ const sendVerificationEmail = async (userEmail, userName, verificationCode) => {
   }
 };
 
-// 비밀번호 재설정 이메일 발송 함수
-const sendPasswordResetEmail = async (userEmail, userName, resetToken) => {
+// 비밀번호 재설정 이메일 발송 함수 (8자리 임시 비밀번호)
+const sendPasswordResetEmail = async (userEmail, userName, tempPassword) => {
   try {
     // 개발 환경에서는 실제 이메일 발송 대신 콘솔에 출력
     if (process.env.NODE_ENV === 'development' && !process.env.EMAIL_PASSWORD) {
-      console.log('📧 === 비밀번호 재설정 이메일 (개발 모드) ===');
-      console.log('📧 발송자: vitalfit.dev@gmail.com');
-      console.log('📧 수신자:', userEmail);
-      console.log('📧 제목: [VitalFit] 비밀번호 재설정 요청');
-      console.log('📧 사용자명:', userName);
-      console.log('📧 재설정 토큰:', resetToken);
-      console.log('📧 이메일 내용:');
-      console.log(createPasswordResetEmail(userName, resetToken));
-      console.log('📧 === 이메일 내용 끝 ===');
-
-      return { success: true, messageId: 'dev-mode-email' };
+      return { success: true, messageId: 'dev-mode-password-reset-email' };
     }
 
     // 실제 Gmail 발송
@@ -258,18 +238,15 @@ const sendPasswordResetEmail = async (userEmail, userName, resetToken) => {
     const mailOptions = {
       from: `"VitalFit" <vitalfit.dev@gmail.com>`,
       to: userEmail,
-      subject: '[VitalFit] 비밀번호 재설정 요청',
-      html: createPasswordResetEmail(userName, resetToken),
+      subject: '[VitalFit] 비밀번호 재설정 완료',
+      html: createPasswordResetEmail(userName, tempPassword),
     };
 
     const info = await transporter.sendMail(mailOptions);
-    console.log('📧 이메일 발송 성공:', info.messageId);
-    console.log('📧 발송자:', 'vitalfit.dev@gmail.com');
-    console.log('�� 수신자:', userEmail);
 
     return { success: true, messageId: info.messageId };
   } catch (error) {
-    console.error('이메일 발송 실패:', error);
+    console.error('비밀번호 재설정 이메일 발송 실패:', error);
     return { success: false, error: error.message };
   }
 };
@@ -279,16 +256,6 @@ const sendLoginVerificationCode = async (userEmail, userName, verificationCode) 
   try {
     // 개발 환경에서는 실제 이메일 발송 대신 콘솔에 출력
     if (process.env.NODE_ENV === 'development' && !process.env.EMAIL_PASSWORD) {
-      console.log('📧 === 로그인 인증 코드 이메일 (개발 모드) ===');
-      console.log('📧 발송자: vitalfit.dev@gmail.com');
-      console.log('📧 수신자:', userEmail);
-      console.log('📧 제목: [VitalFit] 로그인 인증 코드');
-      console.log('📧 사용자명:', userName);
-      console.log('📧 인증 코드:', verificationCode);
-      console.log('📧 이메일 내용:');
-      console.log(createLoginVerificationEmail(userName, verificationCode));
-      console.log('📧 === 이메일 내용 끝 ===');
-
       return { success: true, messageId: 'dev-mode-login-verification-email' };
     }
 
@@ -303,9 +270,6 @@ const sendLoginVerificationCode = async (userEmail, userName, verificationCode) 
     };
 
     const info = await transporter.sendMail(mailOptions);
-    console.log('📧 로그인 인증 코드 이메일 발송 성공:', info.messageId);
-    console.log('📧 발송자:', 'vitalfit.dev@gmail.com');
-    console.log('📧 수신자:', userEmail);
 
     return { success: true, messageId: info.messageId };
   } catch (error) {
@@ -324,6 +288,10 @@ const createLeaveRequestEmail = request => {
     other: '근무신청',
   };
 
+  // request 구조에 맞게 수정
+  const userName = request.userName || request.user?.name || '사용자';
+  const userPosition = request.user?.position || '직원';
+
   return `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
       <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
@@ -339,7 +307,7 @@ const createLeaveRequestEmail = request => {
           <table style="width: 100%; border-collapse: collapse;">
             <tr>
               <td style="padding: 8px 0; font-weight: bold; color: #495057;">신청자:</td>
-              <td style="padding: 8px 0; color: #666;">${request.user.name} (${request.user.position})</td>
+              <td style="padding: 8px 0; color: #666;">${userName} (${userPosition})</td>
             </tr>
             <tr>
               <td style="padding: 8px 0; font-weight: bold; color: #495057;">휴가 유형:</td>
@@ -471,14 +439,6 @@ const sendLeaveRequestEmail = async (request, adminEmail) => {
   try {
     // 개발 환경에서는 실제 이메일 발송 대신 콘솔에 출력
     if (process.env.NODE_ENV === 'development' && !process.env.EMAIL_PASSWORD) {
-      console.log('📧 === 휴가 신청 이메일 (개발 모드) ===');
-      console.log('📧 발송자: vitalfit.dev@gmail.com');
-      console.log('📧 수신자:', adminEmail);
-      console.log('📧 제목: [VitalFit] 새로운 휴가 신청 알림');
-      console.log('📧 이메일 내용:');
-      console.log(createLeaveRequestEmail(request));
-      console.log('📧 === 이메일 내용 끝 ===');
-
       return { success: true, messageId: 'dev-mode-leave-request-email' };
     }
 
@@ -493,9 +453,6 @@ const sendLeaveRequestEmail = async (request, adminEmail) => {
     };
 
     const info = await transporter.sendMail(mailOptions);
-    console.log('📧 휴가 신청 이메일 발송 성공:', info.messageId);
-    console.log('📧 발송자:', 'vitalfit.dev@gmail.com');
-    console.log('📧 수신자:', adminEmail);
 
     return { success: true, messageId: info.messageId };
   } catch (error) {
@@ -509,15 +466,6 @@ const sendLeaveResponseEmail = async (request, action, userEmail) => {
   try {
     // 개발 환경에서는 실제 이메일 발송 대신 콘솔에 출력
     if (process.env.NODE_ENV === 'development' && !process.env.EMAIL_PASSWORD) {
-      console.log('📧 === 휴가 응답 이메일 (개발 모드) ===');
-      console.log('📧 발송자: vitalfit.dev@gmail.com');
-      console.log('📧 수신자:', userEmail);
-      console.log('📧 제목: [VitalFit] 휴가 신청 결과');
-      console.log('📧 액션:', action);
-      console.log('📧 이메일 내용:');
-      console.log(createLeaveResponseEmail(request, action));
-      console.log('📧 === 이메일 내용 끝 ===');
-
       return { success: true, messageId: 'dev-mode-leave-response-email' };
     }
 
@@ -532,9 +480,6 @@ const sendLeaveResponseEmail = async (request, action, userEmail) => {
     };
 
     const info = await transporter.sendMail(mailOptions);
-    console.log('📧 휴가 응답 이메일 발송 성공:', info.messageId);
-    console.log('📧 발송자:', 'vitalfit.dev@gmail.com');
-    console.log('📧 수신자:', userEmail);
 
     return { success: true, messageId: info.messageId };
   } catch (error) {
