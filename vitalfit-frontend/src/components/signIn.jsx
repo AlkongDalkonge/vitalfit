@@ -77,13 +77,12 @@ export default function SignIn() {
   useEffect(() => {
     const location = window.location;
     const urlParams = new URLSearchParams(location.search);
-    
+
     // URL에서 이메일 인증 완료 상태 확인
     if (urlParams.get('emailVerified') === 'true') {
       const email = urlParams.get('email');
       if (email) {
         setEmail(email);
-        toast.success('이메일 인증이 완료되었습니다. 로그인해주세요.');
       }
     }
   }, []);

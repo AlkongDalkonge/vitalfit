@@ -697,8 +697,15 @@ const MyWorkPage = ({ onReAuthRequired }) => {
         {/* 시간을 정해서 휴가를 신청하는 폼과 승인내역을 좌우로 배치 */}
         <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* 왼쪽 2/3: 시간을 정해서 휴가를 신청하는 폼 */}
-          <div className="lg:col-span-2 bg-white rounded-lg p-4 border border-gray-200">
-            <form onSubmit={handleLeaveRequestSubmit} className="space-y-4">
+          <div
+            className="lg:col-span-2 bg-white rounded-lg p-4 transition-all duration-300 shadow-md hover:-translate-y-1 hover:shadow-lg border-[0.1px]"
+            style={{
+              background:
+                'radial-gradient(circle at center -50%, rgba(235,245,255,0.8) 0%, rgba(235,245,255,0.6) 20%, #87CEEB 60%, #87CEEB 100%)',
+              borderColor: '#87CEEB',
+            }}
+          >
+            <form id="leaveRequestForm" onSubmit={handleLeaveRequestSubmit} className="space-y-4">
               {/* 휴가 유형 선택 */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -801,16 +808,6 @@ const MyWorkPage = ({ onReAuthRequired }) => {
                   className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none text-sm"
                   required
                 />
-              </div>
-
-              {/* 신청 버튼 */}
-              <div className="text-center">
-                <button
-                  type="submit"
-                  className="w-96 mt-1 bg-gradient-to-r from-cyan-500 to-indigo-600 text-white py-2 px-4 rounded-[10px] hover:from-cyan-600 hover:to-indigo-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
-                >
-                  신청
-                </button>
               </div>
             </form>
           </div>
@@ -930,6 +927,17 @@ const MyWorkPage = ({ onReAuthRequired }) => {
               </div>
             )}
           </div>
+        </div>
+
+        {/* 신청 버튼 - 박스 밖으로 빼서 아래에 배치 */}
+        <div className="mt-8 text-center">
+          <button
+            type="submit"
+            form="leaveRequestForm"
+            className="w-96 bg-gradient-to-r from-cyan-500 to-indigo-600 text-white py-2 px-4 rounded-[10px] hover:from-cyan-600 hover:to-indigo-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+          >
+            신청
+          </button>
         </div>
       </div>
     </div>
