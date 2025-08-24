@@ -651,7 +651,7 @@ const updateMyAccount = async (req, res, next) => {
     if (updates.position_id !== undefined) {
       await validateForeignKey(Position, updates.position_id, '직책');
     }
-    if (updates.team_id !== undefined) {
+    if (updates.team_id !== undefined && updates.team_id !== null) {
       await validateForeignKey(Team, updates.team_id, '팀');
     }
 
