@@ -364,7 +364,7 @@ router.get('/leave/approve/:requestId', async (req, res) => {
         </style>
       </head>
       <body>
-        <h1>✅ 휴가 신청이 승인되었습니다</h1>
+        <h1>스케줄 신청이 승인되었습니다</h1>
         <p class="success">신청 ID: ${requestId}</p>
         <p class="success">신청자: ${foundUser.name}</p>
         <p class="info">신청자에게 승인 결과가 자동으로 통보되었습니다.</p>
@@ -447,7 +447,7 @@ router.get('/leave/reject/:requestId', async (req, res) => {
         </style>
       </head>
       <body>
-        <h1>❌ 휴가 신청이 반려되었습니다</h1>
+        <h1>스케줄 신청이 반려되었습니다</h1>
         <p class="reject">신청 ID: ${requestId}</p>
         <p class="reject">신청자: ${foundUser.name}</p>
         <p class="info">신청자에게 반려 결과가 자동으로 통보되었습니다.</p>
