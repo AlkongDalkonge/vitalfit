@@ -177,6 +177,7 @@ export default function EmailVerification() {
 
       if (response.ok) {
         // 이메일 인증 완료 - 신원 확인만 하고 로그인 페이지로 이동
+        toast.success('이메일 인증이 완료되었습니다.');
         // 로그인 페이지로 이동 (이메일 인증 완료 상태를 URL 파라미터로 전달)
         setTimeout(() => {
           navigate(`/login?emailVerified=true&email=${encodeURIComponent(email)}`);
