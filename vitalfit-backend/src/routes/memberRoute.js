@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const auth = require('../middlewares/authMiddleware');
-const { checkMemberListPermission } = require('../middlewares/permissionMiddleware');
+const { checkMemberListPermission, checkMemberManagementPermission } = require('../middlewares/permissionMiddleware');
 
 const {
   createMember,
@@ -14,11 +14,11 @@ const { getMemberPayments } = require('../controllers/paymentController');
 
 // ✅ 멤버 생성
 // POST /api/members
-router.post('/', createMember);
+router.post('/', auth, checkMemberManagementPermission, createMember);
 
 // ✅ 멤버 수정
 // PUT /api/members/:id
-router.put('/:id', updateMember);
+router.put('/:id', auth, checkMemberManagementPermission, updateMember);
 
 // ✅ 멤버 목록 조회 (필터링 기능 포함)
 // GET /api/members?centerId=1&trainerId=2&status=active&search=김철수&page=1&limit=1000

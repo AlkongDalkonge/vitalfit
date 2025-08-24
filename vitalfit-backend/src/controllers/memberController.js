@@ -255,11 +255,11 @@ const getAllMembers = async (req, res) => {
     const currentUserLevel = currentUser.position.level;
 
     // 권한에 따른 필터링 적용
-    // 포지션 1~6: 본인이 담당하는 멤버만 조회
+    // 포지션 1~6: 본인이 담당하는 멤버만 조회/관리
     if (currentUserLevel >= 1 && currentUserLevel <= 6) {
       whereClause.trainer_id = req.user.uid;
     }
-    // 포지션 7~10: 소속 팀 유저가 담당인 모든 멤버 조회
+    // 포지션 7~10: 소속 팀 멤버 조회/관리
     else if (currentUserLevel >= 7 && currentUserLevel <= 10) {
       if (!currentUser.team_id) {
         return res.status(403).json({
@@ -277,7 +277,7 @@ const getAllMembers = async (req, res) => {
       const trainerIds = teamTrainers.map(trainer => trainer.id);
       whereClause.trainer_id = { [require('sequelize').Op.in]: trainerIds };
     }
-    // 포지션 11: 소속 센터의 모든 멤버 조회
+    // 포지션 11: 소속 센터 멤버 조회/관리
     else if (currentUserLevel === 11) {
       if (!currentUser.center_id) {
         return res.status(403).json({
@@ -287,7 +287,7 @@ const getAllMembers = async (req, res) => {
       }
       whereClause.center_id = currentUser.center_id;
     }
-    // 포지션 12, 99: 모든 멤버 조회 가능 (필터링 없음)
+    // 포지션 12, 99: 모든 멤버 조회/관리 가능 (필터링 없음)
 
     // 센터별 필터링 (권한이 있는 경우에만)
     if (centerId && (currentUserLevel === 12 || currentUserLevel === 99)) {

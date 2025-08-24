@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const auth = require('../middlewares/authMiddleware');
-const { requirePTSessionPermission } = require('../middlewares/permissionMiddleware');
+const { requirePTSessionPermission, requirePTSessionManagementPermission } = require('../middlewares/permissionMiddleware');
 
 const {
   createPTSession,
@@ -20,15 +20,15 @@ const {
 
 // ✅ PT 세션 생성
 // POST /api/pt-sessions
-router.post('/', auth, requirePTSessionPermission, createPTSession);
+router.post('/', auth, requirePTSessionManagementPermission, createPTSession);
 
 // ✅ PT 세션 수정
 // PUT /api/pt-sessions/:id
-router.put('/:id', auth, requirePTSessionPermission, updatePTSession);
+router.put('/:id', auth, requirePTSessionManagementPermission, updatePTSession);
 
 // ✅ PT 세션 삭제
 // DELETE /api/pt-sessions/:id
-router.delete('/:id', auth, requirePTSessionPermission, deletePTSession);
+router.delete('/:id', auth, requirePTSessionManagementPermission, deletePTSession);
 
 // ✅ 월별 PT 세션 조회 (새로 추가)
 // GET /api/pt-sessions/month/:year/:month
