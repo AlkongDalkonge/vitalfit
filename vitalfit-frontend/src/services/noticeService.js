@@ -4,6 +4,10 @@ import axios from 'axios';
 // eslint-disable-next-line no-undef
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
+// axios 기본 설정
+axios.defaults.baseURL = API_BASE_URL;
+axios.defaults.timeout = 10000; // 10초 타임아웃
+
 // 공지사항 API 서비스
 export const noticeService = {
   // 공지사항 목록 조회
@@ -42,15 +46,33 @@ export const noticeService = {
           console.log(`[FormData] ${key}:`, value);
         }
       }
-      const response = await axios.post(`${API_BASE_URL}/api/notices`, noticeData, {
+      
+      console.log('API 요청 URL:', `${API_BASE_URL}/api/notices`);
+      console.log('요청 데이터 타입:', noticeData instanceof FormData ? 'FormData' : 'Object');
+      
+      const response = await axios.post('/api/notices', noticeData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
+        timeout: 15000, // 15초 타임아웃
       });
+      
+      console.log('API 응답 성공:', response.data);
       return response.data;
     } catch (error) {
       console.error('공지사항 생성 실패:', error);
-      throw error;
+      console.error('에러 응답:', error.response?.data);
+      console.error('에러 상태:', error.response?.status);
+      console.error('에러 메시지:', error.message);
+      
+      // 더 자세한 에러 정보 제공
+      if (error.response) {
+        throw new Error(`서버 오류 (${error.response.status}): ${error.response.data?.message || error.message}`);
+      } else if (error.request) {
+        throw new Error('서버에 연결할 수 없습니다. 서버가 실행 중인지 확인해주세요.');
+      } else {
+        throw new Error(`요청 설정 오류: ${error.message}`);
+      }
     }
   },
 

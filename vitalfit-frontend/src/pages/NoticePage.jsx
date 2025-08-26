@@ -20,7 +20,7 @@ const NoticePage = () => {
   const navigate = useNavigate();
 
   const goToNoticeDetail = id => {
-    navigate(`/notice/${id}`);
+    navigate(`/notices/${id}`);
   };
 
   // 공지사항 목록 조회
@@ -198,7 +198,9 @@ const NoticePage = () => {
                         </span>
                       </div>
                     </td>
-                    <td className="px-4 py-2 border text-center">사용자{notice.sender_id}</td>
+                    <td className="px-4 py-2 border text-center">
+                      {notice.sender_name || `사용자${notice.sender_id}`}
+                    </td>
                     <td className="px-4 py-2 border text-center">{notice.view_count || 0}</td>
                     <td className="px-4 py-2 border text-center">{formatDate(notice.createdAt)}</td>
                     <td className="px-4 py-2 border text-center">

@@ -103,20 +103,22 @@ const AnalyticsReportPage = () => {
         <div className={`p-3 rounded-lg bg-${color}-100`}>
           <Icon className={`w-6 h-6 text-${color}-600`} />
         </div>
-        <div className="flex items-center space-x-1">
-          {change > 0 ? (
-            <TrendingUp className="w-4 h-4 text-emerald-500" />
-          ) : (
-            <TrendingDown className="w-4 h-4 text-red-500" />
-          )}
-          <span
-            className={`text-sm font-medium ${
-              change > 0 ? 'text-emerald-600' : 'text-red-500'
-            }`}
-          >
-            {formatPercentage(change)}
-          </span>
-        </div>
+        {title !== "정산 승인 지연" && (
+          <div className="flex items-center space-x-1">
+            {change > 0 ? (
+              <TrendingUp className="w-4 h-4 text-emerald-500" />
+            ) : (
+              <TrendingDown className="w-4 h-4 text-red-500" />
+            )}
+            <span
+              className={`text-sm font-medium ${
+                change > 0 ? 'text-emerald-600' : 'text-red-500'
+              }`}
+            >
+              {formatPercentage(change)}
+            </span>
+          </div>
+        )}
       </div>
       <h3 className="text-gray-600 text-sm font-medium mb-1">{title}</h3>
       <p className="text-2xl font-bold text-gray-900 mb-1">
@@ -213,7 +215,7 @@ const AnalyticsReportPage = () => {
            <KPICard
              title="정산 승인 지연"
              value="신림 (7일)"
-             change={-2}
+             change={0}
              icon={Clock}
              color="yellow"
              subtitle="센터별 지연 현황"

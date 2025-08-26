@@ -1,17 +1,19 @@
 import { useState, useEffect } from 'react';
 import { noticeService } from '../services/noticeService';
 import { toast } from 'react-toastify';
+import { useAuth } from '../contexts/AuthContext';
 
 const NoticeCreateModal = ({ isOpen, onClose, onSuccess }) => {
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
-    title: '',
-    content: '',
-    receiver_type: 'all',
-    receiver_id: null,
-    receiver_role: '',
-    is_important: false,
-    pin_until: '',
-  });
+     title: '',
+     content: '',
+     receiver_type: 'all', // 항상 'all'로 고정
+     receiver_id: null,
+     receiver_role: '',
+     is_important: false,
+     pin_until: '',
+   });
   const [selectedFile, setSelectedFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -77,22 +79,22 @@ const NoticeCreateModal = ({ isOpen, onClose, onSuccess }) => {
     setSelectedFile(file);
   };
 
-  // 폼 초기화
-  const resetForm = () => {
-    setFormData({
-      title: '',
-      content: '',
-      receiver_type: 'all',
-      receiver_id: null,
-      receiver_role: '',
-      is_important: false,
-      pin_until: '',
-    });
-    setSelectedFile(null);
-    setSelectedCenters([]);
-    setSelectedRoles([]);
-    setError(null);
-  };
+     // 폼 초기화
+   const resetForm = () => {
+     setFormData({
+       title: '',
+       content: '',
+       receiver_type: 'all', // 항상 'all'로 고정
+       receiver_id: null,
+       receiver_role: '',
+       is_important: false,
+       pin_until: '',
+     });
+     setSelectedFile(null);
+     setSelectedCenters([]);
+     setSelectedRoles([]);
+     setError(null);
+   };
 
   // 모달 닫기
   const handleClose = () => {
@@ -110,15 +112,14 @@ const NoticeCreateModal = ({ isOpen, onClose, onSuccess }) => {
       // FormData 생성
       const submitData = new FormData();
 
-      // 필수 필드
-      submitData.append('sender_id', 1); // TODO: 실제 사용자 ID로 변경
-      submitData.append('title', formData.title.trim());
-      submitData.append('content', formData.content.trim());
-      submitData.append('receiver_type', formData.receiver_type);
-
-      // 전체 공지 여부 설정 (수신자 선택 주석처리로 인해 항상 전체로 설정)
-      submitData.append('is_for_all', true);
-      submitData.append('receiver_type', 'all');
+             // 필수 필드
+       submitData.append('sender_id', user?.id || 1); // 실제 사용자 ID 사용
+       submitData.append('title', formData.title.trim());
+       submitData.append('content', formData.content.trim());
+       
+       // 수신자 설정 (주석처리로 인해 항상 전체로 설정)
+       submitData.append('receiver_type', 'all');
+       submitData.append('is_for_all', true);
 
       // 선택 필드 - 주석처리됨
       // if (formData.receiver_type === 'center' && selectedCenters.length > 0) {
@@ -157,7 +158,13 @@ const NoticeCreateModal = ({ isOpen, onClose, onSuccess }) => {
       }
     } catch (err) {
       console.error('공지사항 등록 오류:', err);
-      setError('서버와의 연결에 문제가 발생했습니다.');
+      console.error('에러 상세 정보:', {
+        message: err.message,
+        response: err.response?.data,
+        status: err.response?.status,
+        request: err.request
+      });
+      setError(err.message || '서버와의 연결에 문제가 발생했습니다.');
     } finally {
       setLoading(false);
     }

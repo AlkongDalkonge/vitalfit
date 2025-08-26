@@ -65,7 +65,6 @@ function App() {
           <Route path="account" element={<AccountPage />} />
           <Route path="notices" element={<NoticePage />} />
           <Route path="notices/:id" element={<NoticeDetailPage />} />
-          <Route path="notice/:id" element={<NoticeDetailPage />} />
           <Route path="my-work" element={<MyWorkPage />} />
           <Route path="my-history" element={<MyHistoryPage />} />
           <Route path="report" element={<ReportPage />} />

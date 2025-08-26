@@ -2,10 +2,13 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { noticeService } from '../services/noticeService';
 import NoticeEditModal from './NoticeEditModal';
+import { toast } from 'react-toastify';
+import { useAuth } from '../contexts/AuthContext';
 
 const NoticeDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [notice, setNotice] = useState(null);
   const [comments, setComments] = useState([]);
@@ -77,7 +80,7 @@ const NoticeDetailPage = () => {
       setSubmitting(true);
       const response = await noticeService.createComment(id, {
         content: newComment.trim(),
-        user_id: 1, // TODO: 실제 사용자 ID로 변경
+        user_id: user?.id || 1, // 실제 사용자 ID 사용
       });
 
       if (response.success) {
@@ -86,7 +89,7 @@ const NoticeDetailPage = () => {
       }
     } catch (err) {
       console.error('댓글 작성 오류:', err);
-      alert('댓글 작성에 실패했습니다.');
+      toast.error('댓글 작성에 실패했습니다.');
     } finally {
       setSubmitting(false);
     }
@@ -100,7 +103,7 @@ const NoticeDetailPage = () => {
       setSubmitting(true);
       const response = await noticeService.createComment(id, {
         content: replyContent.trim(),
-        user_id: 1, // TODO: 실제 사용자 ID로 변경
+        user_id: user?.id || 1, // 실제 사용자 ID 사용
         parent_id: parentId,
       });
 
@@ -111,7 +114,7 @@ const NoticeDetailPage = () => {
       }
     } catch (err) {
       console.error('대댓글 작성 오류:', err);
-      alert('대댓글 작성에 실패했습니다.');
+      toast.error('대댓글 작성에 실패했습니다.');
     } finally {
       setSubmitting(false);
     }
@@ -130,13 +133,13 @@ const NoticeDetailPage = () => {
       window.URL.revokeObjectURL(url);
     } catch (err) {
       console.error('파일 다운로드 오류:', err);
-      alert('파일 다운로드에 실패했습니다.');
+      toast.error('파일 다운로드에 실패했습니다.');
     }
   };
 
   // 뒤로가기
   const handleGoBack = () => {
-    navigate('/notice');
+    navigate('/notices');
   };
 
   // 공지사항 삭제
@@ -148,14 +151,14 @@ const NoticeDetailPage = () => {
     try {
       const response = await noticeService.deleteNotice(id);
       if (response.success) {
-        alert('공지사항이 삭제되었습니다.');
-        navigate('/notice');
+        toast.success('공지사항이 삭제되었습니다.');
+        navigate('/notices');
       } else {
-        alert(response.message || '삭제에 실패했습니다.');
+        toast.error(response.message || '삭제에 실패했습니다.');
       }
     } catch (err) {
       console.error('공지사항 삭제 오류:', err);
-      alert('삭제 중 오류가 발생했습니다.');
+      toast.error('삭제 중 오류가 발생했습니다.');
     }
   };
 
@@ -178,7 +181,9 @@ const NoticeDetailPage = () => {
           {/* 댓글 헤더 */}
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
-              <span className="font-medium text-gray-800">사용자{comment.user_id}</span>
+              <span className="font-medium text-gray-800">
+                {comment.author?.name || `사용자${comment.user_id}`}
+              </span>
               <span className="text-sm text-gray-500">{formatDate(comment.createdAt)}</span>
               {depth > 0 && (
                 <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">대댓글</span>
@@ -307,7 +312,7 @@ const NoticeDetailPage = () => {
               </div>
 
               <div className="flex items-center gap-4 text-sm text-gray-600">
-                <span>작성자: 사용자{notice?.sender_id}</span>
+                <span>작성자: {notice?.sender_name || `사용자${notice?.sender_id}`}</span>
                 {/* <span>
                   받는사람:{' '}
                   {notice?.is_for_all
