@@ -1,8 +1,45 @@
 import React, { useState } from 'react';
 import { usePTSessionForm } from '../utils/hooks';
 import { getSessionTypeText } from '../utils/ptSessionUtils';
+import { useAuth } from '../contexts/AuthContext';
+import { toast } from 'react-toastify';
 
 const PTSessionCreateModal = ({ isOpen, onClose, memberId, member, onCreate }) => {
+  const { user: currentUser } = useAuth();
+
+  // PT 세션 관리 권한 체크 함수 - 담당 트레이너만 관리 가능
+  const hasPTSessionPermission = () => {
+    if (!currentUser || !member) return false;
+
+    // 관리자(12, 99)는 모든 권한
+    if (
+      currentUser.position_id === 12 ||
+      currentUser.position_id === 13 ||
+      currentUser.position_id === 99
+    ) {
+      return true;
+    }
+
+    // 담당 트레이너인지 확인 (타입 변환하여 비교)
+    const isTrainer = Number(member.trainer_id) === Number(currentUser.id);
+
+    console.log('🔍 PT 세션 생성 권한 체크:', {
+      currentUser: {
+        id: currentUser.id,
+        name: currentUser.name,
+        position_id: currentUser.position_id,
+      },
+      member: {
+        id: member.id,
+        name: member.name,
+        trainer_id: member.trainer_id,
+      },
+      isTrainer: isTrainer,
+    });
+
+    return isTrainer;
+  };
+
   // 커스텀 훅 사용 (생성 모드)
   const { formData, loading, errors, handleInputChange, createPTSession, resetForm } =
     usePTSessionForm(null, isOpen, 'create');
@@ -13,6 +50,12 @@ const PTSessionCreateModal = ({ isOpen, onClose, memberId, member, onCreate }) =
   // 폼 제출 핸들러
   const handleSubmit = async e => {
     e.preventDefault();
+
+    // 권한 체크
+    if (!hasPTSessionPermission()) {
+      toast.warning('PT 세션 등록 권한이 없습니다. 담당 트레이너만 등록할 수 있습니다.');
+      return;
+    }
 
     const result = await createPTSession(memberId, member);
 
@@ -232,10 +275,14 @@ const PTSessionCreateModal = ({ isOpen, onClose, memberId, member, onCreate }) =
           <div className="flex justify-end absolute bottom-6 right-6">
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !hasPTSessionPermission()}
               data-layer="Button"
               data-property-1="Default"
-              className="Button w-40 h-11 p-2.5 bg-gradient-to-br from-blue-400 to-blue-600 rounded-[10px] inline-flex justify-center items-center gap-2.5 hover:from-blue-500 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/15 before:via-transparent before:to-transparent before:pointer-events-none disabled:opacity-50"
+              className={`Button w-40 h-11 p-2.5 rounded-[10px] inline-flex justify-center items-center gap-2.5 transition-all duration-200 shadow-lg hover:shadow-xl relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/15 before:via-transparent before:to-transparent before:pointer-events-none disabled:opacity-50 ${
+                hasPTSessionPermission()
+                  ? 'bg-gradient-to-br from-blue-400 to-blue-600 hover:from-blue-500 hover:to-blue-700'
+                  : 'bg-gray-400 cursor-not-allowed'
+              }`}
             >
               <div
                 data-layer="Primary Button"

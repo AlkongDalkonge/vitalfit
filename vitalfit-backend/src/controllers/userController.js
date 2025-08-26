@@ -279,6 +279,23 @@ const signIn = async (req, res, next) => {
 
     const user = await User.findOne({
       where: { email },
+      include: [
+        {
+          model: Position,
+          as: 'position',
+          attributes: ['id', 'code', 'name', 'level', 'base_salary', 'description'],
+        },
+        {
+          model: Center,
+          as: 'center',
+          attributes: ['id', 'name', 'address'],
+        },
+        {
+          model: Team,
+          as: 'team',
+          attributes: ['id', 'name'],
+        },
+      ],
     });
     if (!user || !(await bcrypt.compare(password, user.password))) {
       if (user) {
@@ -358,8 +375,11 @@ const signIn = async (req, res, next) => {
         profile_image_url: user.profile_image_url,
         nickname: user.nickname,
         position_id: user.position_id,
+        position: user.position,
         center_id: user.center_id,
+        center: user.center,
         team_id: user.team_id,
+        team: user.team,
         status: user.status,
       },
     });
@@ -485,6 +505,23 @@ const getMyAccount = async (req, res, next) => {
         'instagram',
         // refresh_token은 보안상 별도로 관리
       ],
+      include: [
+        {
+          model: Position,
+          as: 'position',
+          attributes: ['id', 'code', 'name', 'level', 'base_salary', 'description'],
+        },
+        {
+          model: Center,
+          as: 'center',
+          attributes: ['id', 'name', 'address'],
+        },
+        {
+          model: Team,
+          as: 'team',
+          attributes: ['id', 'name'],
+        },
+      ],
     });
     if (!user)
       return res.status(404).json({ success: false, message: '사용자를 찾을 수 없습니다.' });
@@ -509,8 +546,11 @@ const getMyAccount = async (req, res, next) => {
         profile_image_url: user.profile_image_url,
         nickname: user.nickname,
         position_id: user.position_id,
+        position: user.position,
         center_id: user.center_id,
+        center: user.center,
         team_id: user.team_id,
+        team: user.team,
         status: user.status,
         account_number: user.account_number,
         account_bank: user.account_bank,
@@ -651,7 +691,7 @@ const updateMyAccount = async (req, res, next) => {
     if (updates.position_id !== undefined) {
       await validateForeignKey(Position, updates.position_id, '직책');
     }
-    if (updates.team_id !== undefined) {
+    if (updates.team_id !== undefined && updates.team_id !== null) {
       await validateForeignKey(Team, updates.team_id, '팀');
     }
 
@@ -1254,7 +1294,7 @@ const getAllUsers = async (req, res, next) => {
     const {
       page = 1,
       limit = 1000,
-      role,
+      positionIds,
       centerId,
       teamId,
       positionId,
@@ -1284,12 +1324,12 @@ const getAllUsers = async (req, res, next) => {
     const currentUserLevel = currentUser.position.level;
 
     // 권한에 따른 필터링 적용
-    // 포지션 1~7: 본인만 조회
-    if (currentUserLevel >= 1 && currentUserLevel <= 7) {
+    // 포지션 1~6: 본인만 조회
+    if (currentUserLevel >= 1 && currentUserLevel <= 6) {
       whereClause.id = req.user.uid;
     }
-    // 포지션 8~10: 소속 팀 유저만 조회
-    else if (currentUserLevel >= 8 && currentUserLevel <= 10) {
+    // 포지션 7~10: 소속 팀 유저만 조회 (팀장 포함)
+    else if (currentUserLevel >= 7 && currentUserLevel <= 10) {
       if (!currentUser.team_id) {
         return res.status(403).json({
           success: false,
@@ -1310,20 +1350,10 @@ const getAllUsers = async (req, res, next) => {
     }
     // 포지션 12, 99: 모든 유저 조회 가능 (필터링 없음)
 
-    // 역할별 필터링 (position 기반)
-    if (role) {
-      // role을 position으로 매핑
-      let positionIds = [];
-      if (role === 'admin') {
-        positionIds = [12]; // 관리자 position_id
-      } else if (role === 'trainer') {
-        positionIds = [3, 4, 5, 7]; // 트레이너 관련 position_id들 (팀장 포함)
-      } else if (role === 'staff') {
-        positionIds = [1, 2, 6, 8, 9, 10, 11]; // 기타 직원 position_id들 (팀장 제외)
-      }
-      if (positionIds.length > 0) {
-        whereClause.position_id = { [require('sequelize').Op.in]: positionIds };
-      }
+    // positionIds 배열로 필터링
+    if (positionIds) {
+      const positionIdArray = positionIds.split(',').map(id => parseInt(id.trim()));
+      whereClause.position_id = { [require('sequelize').Op.in]: positionIdArray };
     }
 
     // 센터별 필터링 (권한이 있는 경우에만)
@@ -1432,7 +1462,7 @@ const getAllUsers = async (req, res, next) => {
           team_stats: teamStats,
         },
         filters: {
-          role: role || null,
+          position_ids: positionIds || null,
           center_id: centerId || null,
           team_id: teamId || null,
           position_id: positionId || null,

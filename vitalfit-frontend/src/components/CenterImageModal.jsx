@@ -56,12 +56,12 @@ const CenterImageModal = ({ isOpen, onClose, center, onImagesUpdated }) => {
     try {
       // 현재 이미지가 없으면 첫 번째 이미지만 메인으로 설정
       const currentImageCount = images.length;
-      
+
       const uploadPromises = newImages.map(async (imageData, index) => {
         const formData = new FormData();
         formData.append('image', imageData.file);
         formData.append('center_id', center.id);
-        
+
         // 현재 이미지가 없고 첫 번째 이미지인 경우에만 메인으로 설정
         const isMain = currentImageCount === 0 && index === 0;
         formData.append('is_main', isMain ? 'true' : 'false');
@@ -154,13 +154,7 @@ const CenterImageModal = ({ isOpen, onClose, center, onImagesUpdated }) => {
           onClick={onClose}
           className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-full transition-colors duration-200 z-10"
         >
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 16 16"
-            fill="none"
-            className="text-neutral-600"
-          >
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-neutral-600">
             <path
               d="M12 4L4 12M4 4L12 12"
               stroke="currentColor"

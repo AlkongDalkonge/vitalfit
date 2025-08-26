@@ -438,34 +438,42 @@ async function publishMonthlySettlements(inputYm) {
   const prevYm = dayjs(`${periodYm}-01`).subtract(1, 'month').format('YYYY-MM');
   const { start, end } = monthRange(periodYm);
 
-  // 중복 실행 체크 (running 또는 completed 상태)
-  const existingJob = await JobRun.findOne({
-    where: {
+  // JobRun 레코드 생성 (중복 실행 방지를 위해 upsert 사용)
+  let jobRun;
+  try {
+    jobRun = await JobRun.create({
       job_name: 'monthly_settlement_publish',
       target_period: periodYm,
-      status: ['running', 'completed'],
-    },
-  });
-
-  if (existingJob) {
-    console.log(`[settlementPublisher] 이미 실행 중인 배치: ${periodYm}`);
-
-    // 기존 running 상태를 skipped로 업데이트
-    await existingJob.update({
-      status: 'skipped',
-      completed_at: new Date(),
-      notes: '중복 실행으로 인한 스킵',
+      status: 'running',
     });
+  } catch (error) {
+    // 중복 실행인 경우 기존 JobRun 조회
+    if (error.name === 'SequelizeUniqueConstraintError') {
+      const existingJob = await JobRun.findOne({
+        where: {
+          job_name: 'monthly_settlement_publish',
+          target_period: periodYm,
+        },
+      });
 
-    return { periodYm, upserted: 0, jobRunId: existingJob.id, status: 'skipped' };
+      if (existingJob && ['running', 'completed'].includes(existingJob.status)) {
+        console.log(`[settlementPublisher] 이미 실행 중인 배치: ${periodYm}`);
+        return { periodYm, upserted: 0, jobRunId: existingJob.id, status: 'skipped' };
+      }
+      
+      // 기존 JobRun이 failed 상태인 경우 재사용
+      jobRun = existingJob;
+      await jobRun.update({
+        status: 'running',
+        started_at: new Date(),
+        completed_at: null,
+        error_message: null,
+        notes: null,
+      });
+    } else {
+      throw error;
+    }
   }
-
-  // JobRun 레코드 생성
-  const jobRun = await JobRun.create({
-    job_name: 'monthly_settlement_publish',
-    target_period: periodYm,
-    status: 'running',
-  });
 
   const startTime = Date.now();
 

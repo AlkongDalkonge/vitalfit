@@ -96,117 +96,143 @@ export const useMember = () => {
   };
 
   // 필터링 함수 (즉시 적용)
-  const handleFilter = useCallback((newCenter = null, newTrainer = null, newStatus = null) => {
-    // 새로운 값이 있으면 사용, 없으면 현재 상태 사용
-    const centerToUse = newCenter || selectedCenter;
-    const trainerToUse = newTrainer || selectedTrainer;
-    const statusToUse = newStatus || selectedStatus;
+  const handleFilter = useCallback(
+    (newCenter = null, newTrainer = null, newStatus = null) => {
+      // 새로운 값이 있으면 사용, 없으면 현재 상태 사용
+      const centerToUse = newCenter || selectedCenter;
+      const trainerToUse = newTrainer || selectedTrainer;
+      const statusToUse = newStatus || selectedStatus;
 
-    // 서버에서 필터링할 조건들
-    const serverFilters = {};
+      // 서버에서 필터링할 조건들
+      const serverFilters = {};
 
-    if (centerToUse && centerToUse !== 'Select option') {
-      const center = centers.find(c => c.name === centerToUse);
-      if (center) {
-        serverFilters.centerId = center.id;
+      if (centerToUse && centerToUse !== 'Select option') {
+        const center = centers.find(c => c.name === centerToUse);
+        if (center) {
+          serverFilters.centerId = center.id;
+        }
       }
-    }
 
-    if (trainerToUse && trainerToUse !== 'Select option') {
-      const trainer = trainers.find(t => t.name === trainerToUse);
-      if (trainer) {
-        serverFilters.trainerId = trainer.id;
+      if (trainerToUse && trainerToUse !== 'Select option') {
+        const trainer = trainers.find(t => t.name === trainerToUse);
+        if (trainer) {
+          serverFilters.trainerId = trainer.id;
+        }
       }
-    }
 
-    if (statusToUse && statusToUse !== 'Select option') {
-      serverFilters.status = statusToUse;
-    }
-
-    // 서버에서 필터링된 결과를 받아서 클라이언트에서 검색어 필터링 적용
-    fetchMembers(serverFilters).then(() => {
-      // 서버 응답 후 검색어가 있으면 클라이언트에서 추가 필터링
-      if (searchTerm) {
-        const searchFiltered = members.filter(
-          member =>
-            member.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            member.phone?.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-        setFilteredMembers(searchFiltered);
+      if (statusToUse && statusToUse !== 'Select option') {
+        serverFilters.status = statusToUse;
       }
-    });
-  }, [selectedCenter, selectedTrainer, selectedStatus, centers, trainers, searchTerm, members, fetchMembers]);
+
+      // 서버에서 필터링된 결과를 받아서 클라이언트에서 검색어 필터링 적용
+      fetchMembers(serverFilters).then(() => {
+        // 서버 응답 후 검색어가 있으면 클라이언트에서 추가 필터링
+        if (searchTerm) {
+          const searchFiltered = members.filter(
+            member =>
+              member.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              member.phone?.toLowerCase().includes(searchTerm.toLowerCase())
+          );
+          setFilteredMembers(searchFiltered);
+        }
+      });
+    },
+    [
+      selectedCenter,
+      selectedTrainer,
+      selectedStatus,
+      centers,
+      trainers,
+      searchTerm,
+      members,
+      fetchMembers,
+    ]
+  );
 
   // 센터 필터 변경
-  const handleCenterChange = useCallback(centerName => {
-    setSelectedCenter(centerName);
-    setShowCenterDropdown(false);
-    handleFilter(centerName, null, null);
-  }, [handleFilter]);
+  const handleCenterChange = useCallback(
+    centerName => {
+      setSelectedCenter(centerName);
+      setShowCenterDropdown(false);
+      handleFilter(centerName, null, null);
+    },
+    [handleFilter]
+  );
 
   // 트레이너 필터 변경
-  const handleTrainerChange = useCallback(trainerName => {
-    setSelectedTrainer(trainerName);
-    setShowTrainerDropdown(false);
-    handleFilter(null, trainerName, null);
-  }, [handleFilter]);
+  const handleTrainerChange = useCallback(
+    trainerName => {
+      setSelectedTrainer(trainerName);
+      setShowTrainerDropdown(false);
+      handleFilter(null, trainerName, null);
+    },
+    [handleFilter]
+  );
 
   // 상태 필터 변경
-  const handleStatusChange = useCallback(status => {
-    setSelectedStatus(status);
-    setShowStatusDropdown(false);
-    handleFilter(null, null, status);
-  }, [handleFilter]);
+  const handleStatusChange = useCallback(
+    status => {
+      setSelectedStatus(status);
+      setShowStatusDropdown(false);
+      handleFilter(null, null, status);
+    },
+    [handleFilter]
+  );
 
   // 검색어 변경
-  const handleSearchChange = useCallback(value => {
-    setSearchTerm(value);
-    // 즉시 필터링 (클라이언트 사이드)
-    if (!value) {
-      // 검색어가 없으면 현재 필터 조건에 맞는 멤버들만 표시
-      handleFilter();
-    } else {
-      // 검색어가 있으면 현재 필터 조건 + 검색어로 필터링
-      const currentFilters = {};
-      
-      if (selectedCenter && selectedCenter !== 'Select option') {
-        const center = centers.find(c => c.name === selectedCenter);
-        if (center) {
-          currentFilters.centerId = center.id;
+  const handleSearchChange = useCallback(
+    value => {
+      setSearchTerm(value);
+      // 즉시 필터링 (클라이언트 사이드)
+      if (!value) {
+        // 검색어가 없으면 현재 필터 조건에 맞는 멤버들만 표시
+        handleFilter();
+      } else {
+        // 검색어가 있으면 현재 필터 조건 + 검색어로 필터링
+        const currentFilters = {};
+
+        if (selectedCenter && selectedCenter !== 'Select option') {
+          const center = centers.find(c => c.name === selectedCenter);
+          if (center) {
+            currentFilters.centerId = center.id;
+          }
         }
-      }
-      
-      if (selectedTrainer && selectedTrainer !== 'Select option') {
-        const trainer = trainers.find(t => t.name === selectedTrainer);
-        if (trainer) {
-          currentFilters.trainerId = trainer.id;
+
+        if (selectedTrainer && selectedTrainer !== 'Select option') {
+          const trainer = trainers.find(t => t.name === selectedTrainer);
+          if (trainer) {
+            currentFilters.trainerId = trainer.id;
+          }
         }
+
+        if (selectedStatus && selectedStatus !== 'Select option') {
+          currentFilters.status = selectedStatus;
+        }
+
+        // 현재 필터 조건에 맞는 멤버들 먼저 필터링
+        let filteredByOtherFilters = members;
+        if (Object.keys(currentFilters).length > 0) {
+          filteredByOtherFilters = members.filter(member => {
+            if (currentFilters.centerId && member.center_id !== currentFilters.centerId)
+              return false;
+            if (currentFilters.trainerId && member.trainer_id !== currentFilters.trainerId)
+              return false;
+            if (currentFilters.status && member.status !== currentFilters.status) return false;
+            return true;
+          });
+        }
+
+        // 검색어로 추가 필터링
+        const filtered = filteredByOtherFilters.filter(
+          member =>
+            member.name?.toLowerCase().includes(value.toLowerCase()) ||
+            member.phone?.toLowerCase().includes(value.toLowerCase())
+        );
+        setFilteredMembers(filtered);
       }
-      
-      if (selectedStatus && selectedStatus !== 'Select option') {
-        currentFilters.status = selectedStatus;
-      }
-      
-      // 현재 필터 조건에 맞는 멤버들 먼저 필터링
-      let filteredByOtherFilters = members;
-      if (Object.keys(currentFilters).length > 0) {
-        filteredByOtherFilters = members.filter(member => {
-          if (currentFilters.centerId && member.center_id !== currentFilters.centerId) return false;
-          if (currentFilters.trainerId && member.trainer_id !== currentFilters.trainerId) return false;
-          if (currentFilters.status && member.status !== currentFilters.status) return false;
-          return true;
-        });
-      }
-      
-      // 검색어로 추가 필터링
-      const filtered = filteredByOtherFilters.filter(
-        member =>
-          member.name?.toLowerCase().includes(value.toLowerCase()) ||
-          member.phone?.toLowerCase().includes(value.toLowerCase())
-      );
-      setFilteredMembers(filtered);
-    }
-  }, [members, selectedCenter, selectedTrainer, selectedStatus, centers, trainers]);
+    },
+    [members, selectedCenter, selectedTrainer, selectedStatus, centers, trainers]
+  );
 
   // 드롭다운 토글 함수들
   const toggleCenterDropdown = useCallback(() => {

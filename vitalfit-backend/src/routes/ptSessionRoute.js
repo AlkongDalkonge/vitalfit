@@ -1,6 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const auth = require('../middlewares/authMiddleware');
+const {
+  requirePTSessionPermission,
+  requirePTSessionManagementPermission,
+} = require('../middlewares/permissionMiddleware');
 
 const {
   createPTSession,
@@ -19,23 +23,23 @@ const {
 
 // ✅ PT 세션 생성
 // POST /api/pt-sessions
-router.post('/', auth, createPTSession);
+router.post('/', auth, requirePTSessionManagementPermission, createPTSession);
 
 // ✅ PT 세션 수정
 // PUT /api/pt-sessions/:id
-router.put('/:id', auth, updatePTSession);
+router.put('/:id', auth, requirePTSessionManagementPermission, updatePTSession);
 
 // ✅ PT 세션 삭제
 // DELETE /api/pt-sessions/:id
-router.delete('/:id', auth, deletePTSession);
+router.delete('/:id', auth, requirePTSessionManagementPermission, deletePTSession);
 
 // ✅ 월별 PT 세션 조회 (새로 추가)
 // GET /api/pt-sessions/month/:year/:month
-router.get('/month/:year/:month', auth, getPTSessionsByMonth);
+router.get('/month/:year/:month', auth, requirePTSessionPermission, getPTSessionsByMonth);
 
 // ✅ 멤버별 PT 세션 조회
 // GET /api/pt-sessions/member/:memberId
-router.get('/member/:memberId', auth, getPTSessionsByMember);
+router.get('/member/:memberId', auth, requirePTSessionPermission, getPTSessionsByMember);
 
 // ✅ 트레이너별 월별 PT 세션 통계 조회 (새로 추가)
 // GET /api/pt-sessions/trainer-stats/:trainerId/:year/:month
@@ -51,6 +55,6 @@ router.get('/trainer-salary', getTrainerSalary);
 
 // ✅ 유저별 PT 세션 조회 (새로 추가)
 // GET /api/pt-sessions/user/:userId
-router.get('/user/:userId', auth, getPTSessionsByUser);
+router.get('/user/:userId', auth, requirePTSessionPermission, getPTSessionsByUser);
 
 module.exports = router;

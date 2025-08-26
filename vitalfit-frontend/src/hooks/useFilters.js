@@ -36,7 +36,7 @@ export const useFilters = () => {
       const response = await userAPI.getAllUsers({ limit: 1000 });
       if (response.success) {
         console.log('전체 사용자 데이터:', response.data.users);
-        
+
         // 각 사용자의 position 정보를 확인
         response.data.users.forEach(user => {
           console.log(`사용자: ${user.name}, position:`, user.position);
@@ -46,12 +46,15 @@ export const useFilters = () => {
             console.log(`  - position.level: ${user.position.level}`);
           }
         });
-        
+
         // 첫 번째 사용자의 전체 position 객체를 확인
         if (response.data.users.length > 0) {
-          console.log('첫 번째 사용자 전체 position 객체:', JSON.stringify(response.data.users[0].position, null, 2));
+          console.log(
+            '첫 번째 사용자 전체 position 객체:',
+            JSON.stringify(response.data.users[0].position, null, 2)
+          );
         }
-        
+
         // 포지션 id가 1~7인 사용자만 트레이너로 필터링
         const allTrainers = response.data.users.filter(user => {
           // position이 있고 id가 1~7인 사용자 (트레이너 역할)
@@ -61,12 +64,12 @@ export const useFilters = () => {
           }
           return isTrainer;
         });
-        
+
         console.log('필터링된 트레이너들:', allTrainers);
-        
+
         // 트레이너들을 이름 순으로 정렬
         const sortedTrainers = allTrainers.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
-        
+
         setTrainers(sortedTrainers);
         setFilteredTrainers(sortedTrainers);
       }

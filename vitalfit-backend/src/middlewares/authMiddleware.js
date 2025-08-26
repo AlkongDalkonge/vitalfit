@@ -50,7 +50,10 @@ const auth = async (req, res, next) => {
     }
 
     console.log('  - ✅ User status check passed:', user.status);
-    req.user = decoded;
+    req.user = {
+      ...decoded,
+      id: decoded.uid, // 권한 미들웨어에서 사용하는 id 필드 추가
+    };
     next();
   } catch (error) {
     if (error.name === 'JsonWebTokenError') {

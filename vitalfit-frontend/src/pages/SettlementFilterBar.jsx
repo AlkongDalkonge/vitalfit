@@ -39,7 +39,6 @@ const SettlementFilterBar = ({
               </option>
             ))}
           </select>
-          
         </div>
 
         {/* 팀 선택 */}

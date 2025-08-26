@@ -330,14 +330,6 @@ const seedUsers = async (centers, teams, positions) => {
               issuingOrganization: '한국체육진흥원',
               issueDate: '2020-03-15',
             },
-            {
-              image_name: 'license2.png',
-              image_url: '/img/license2.png',
-              uploaded_at: '2024-01-01T09:00:00Z',
-              licenseName: '생활스포츠지도사 2급',
-              issuingOrganization: '한국체육진흥원',
-              issueDate: '2019-06-20',
-            },
           ],
         }),
         experience: JSON.stringify({
@@ -420,14 +412,6 @@ const seedUsers = async (centers, teams, positions) => {
               issuingOrganization: '한국체육진흥원',
               issueDate: '2022-05-20',
             },
-            {
-              image_name: 'kim_license_2.jpg',
-              image_url: '/img/kim_license_2.jpg',
-              uploaded_at: '2024-01-15T10:00:00Z',
-              licenseName: '요가지도사 자격증',
-              issuingOrganization: '한국요가협회',
-              issueDate: '2021-12-10',
-            },
           ],
         }),
         experience: JSON.stringify({
@@ -504,14 +488,6 @@ const seedUsers = async (centers, teams, positions) => {
               licenseName: '개인트레이너 자격증',
               issuingOrganization: '한국체육진흥원',
               issueDate: '2023-03-15',
-            },
-            {
-              image_name: 'license2.png',
-              image_url: '/img/license2.png',
-              uploaded_at: '2024-02-01T11:00:00Z',
-              licenseName: '필라테스 지도사 자격증',
-              issuingOrganization: '한국필라테스협회',
-              issueDate: '2022-11-20',
             },
           ],
         }),
@@ -1709,9 +1685,6 @@ const seedPTSessions = async (centers, users, members) => {
             start_time: startTime,
             end_time: endTime,
             session_type: Math.random() < 0.9 ? 'regular' : 'free', // 90% regular, 10% free
-            signature_data:
-              'data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCI+CiAgPHRleHQgeD0iNTAiIHk9IjUwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiPuuUjOyWtOygkTwvdGV4dD4KPC9zdmc+Cg==',
-            signature_time: `${sessionDate}T${endTime.substring(0, 5)}:00Z`,
             notes: `PT 세션 ${i + 1}회차`,
             idempotency_key: `pt_session_${member.id}_${month}_${i + 1}`,
           });

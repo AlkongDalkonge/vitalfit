@@ -325,14 +325,16 @@ const DashboardPage = () => {
         <div className="mb-12 pt-8">
           <div className="flex justify-between items-start">
             <div>
-              <h1 className="text-4xl font-bold mb-3 text-black">안녕하세요, 관리자님!</h1>
-              <p className="text-black text-sm">오늘의 비탈핏 센터 현황을 확인해보세요.</p>
+              <h1 className="text-4xl font-bold mb-3 text-black">
+                안녕하세요, {user?.name || '사용자'}님!
+              </h1>
+              <p className="text-black text-sm">오늘의 VitalFit 센터 현황을 확인해보세요.</p>
             </div>
           </div>
         </div>
 
         {/* 통계 카드 - 헤더 아래에 배치 */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
           {stats.map((stat, index) => {
             const IconComponent = stat.icon;
             return (
@@ -391,7 +393,7 @@ const DashboardPage = () => {
         </div>
 
         {/* 최근 활동과 지점별 정산현황 */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-0">
           {/* 최근 활동 */}
           <div
             className="bg-white rounded-xl p-6 border border-gray-100"
@@ -448,7 +450,7 @@ const DashboardPage = () => {
                     className="w-3 h-3 rounded-full"
                     style={{ backgroundColor: '#7dd3fc' }}
                   ></div>
-                  <h3 className="font-semibold text-gray-800">새로운 직원</h3>
+                  <h3 className="font-semibold text-gray-800">최근 직원</h3>
                 </div>
                 <div className="space-y-2">
                   {recentActivities.recentUsers?.slice(0, 3).map((user, index) => (
@@ -500,8 +502,8 @@ const DashboardPage = () => {
                   ))}
                   {(!recentActivities.recentUsers || recentActivities.recentUsers.length === 0) && (
                     <div className="p-4 rounded-lg bg-gray-50 border border-gray-200 text-center">
-                      <p className="text-sm text-gray-500 mb-1">새로운 직원이 없습니다</p>
-                      <p className="text-xs text-gray-400">오늘 생성된 직원이 없습니다</p>
+                      <p className="text-sm text-gray-500 mb-1">최근 직원이 없습니다</p>
+                      <p className="text-xs text-gray-400">등록된 직원이 없습니다</p>
                     </div>
                   )}
                 </div>
@@ -518,7 +520,7 @@ const DashboardPage = () => {
               <h2 className="text-xl font-semibold text-gray-800 m-0">지점별 정산현황</h2>
               <div className="flex items-center gap-2">
                 <FaBuilding className="text-gray-400" />
-                <span className="text-sm text-gray-500">이번 달 기준</span>
+                <span className="text-sm text-gray-500">지난 달 기준</span>
               </div>
             </div>
 
@@ -544,7 +546,7 @@ const DashboardPage = () => {
                     <div className="grid grid-cols-2 gap-4">
                       <div className="text-center p-3 bg-white rounded-lg border border-indigo-200">
                         <p className="text-xs text-gray-500 mb-1">총 직원</p>
-                        <p className="text-lg font-bold" style={{ color: '#81dee5' }}>
+                        <p className="text-lg font-bold text-gray-500">
                           {center.total_users || 0}명
                         </p>
                       </div>
@@ -553,34 +555,6 @@ const DashboardPage = () => {
                         <p className="text-lg font-bold" style={{ color: '#0891b2' }}>
                           {center.settled_users || 0}명
                         </p>
-                      </div>
-                    </div>
-                    <div className="mt-3">
-                      <div className="flex justify-between items-center text-sm">
-                        <span className="text-gray-600">진행률</span>
-                        <span className="font-semibold text-gray-800">
-                          {center.total_users > 0
-                            ? Math.round(((center.settled_users || 0) / center.total_users) * 100)
-                            : 0}
-                          %
-                        </span>
-                      </div>
-                      <div className="w-full bg-white rounded-full h-2 mt-1">
-                        <div
-                          className="bg-gradient-to-r from-[#81dee5] to-[#0891b2] h-2 rounded-full transition-all duration-300"
-                          style={{
-                            width: `${
-                              center.total_users > 0
-                                ? Math.round(
-                                    ((center.settled_users ||
-                                      Math.floor(center.total_users * 0.3)) /
-                                      center.total_users) *
-                                      100
-                                  )
-                                : 0
-                            }%`,
-                          }}
-                        ></div>
                       </div>
                     </div>
                   </div>
@@ -595,44 +569,6 @@ const DashboardPage = () => {
             </div>
           </div>
         </div>
-
-        {/* 직급별 통계 */}
-        {dashboardData?.position_stats && dashboardData.position_stats.length > 0 && (
-          <div className="bg-white rounded-xl p-6 mb-6 shadow-lg border border-gray-100">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-semibold text-gray-800 m-0">직급별 현황</h2>
-              <div className="flex items-center gap-2">
-                <FaUsers className="text-gray-400" />
-                <span className="text-sm text-gray-500">전체 직원</span>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {dashboardData.position_stats
-                .filter(position => position.total_users > 0)
-                .map((position, index) => (
-                  <div
-                    key={position.id}
-                    className="p-6 rounded-xl bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-200 hover:shadow-lg transition-all duration-300"
-                  >
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
-                      <h3 className="font-bold text-gray-800 text-lg">{position.name}</h3>
-                    </div>
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center p-3 bg-white rounded-lg border border-purple-100">
-                        <span className="text-gray-600 font-medium">활성</span>
-                        <span className="font-bold text-purple-600">{position.active_users}명</span>
-                      </div>
-                      <div className="flex justify-between items-center p-3 bg-white rounded-lg border border-pink-100">
-                        <span className="text-gray-600 font-medium">전체</span>
-                        <span className="font-bold text-pink-600">{position.total_users}명</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-            </div>
-          </div>
-        )}
       </div>
 
       {/* 직급별 정산 알림 모달 */}

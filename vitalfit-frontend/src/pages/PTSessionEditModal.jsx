@@ -1,8 +1,44 @@
 import React, { useState } from 'react';
 import { usePTSessionForm } from '../utils/hooks';
 import { getSessionTypeText } from '../utils/ptSessionUtils';
+import { useAuth } from '../contexts/AuthContext';
+import { toast } from 'react-toastify';
 
 const PTSessionEditModal = ({ isOpen, onClose, session, onUpdate }) => {
+  const { user: currentUser } = useAuth();
+
+  // PT 세션 관리 권한 체크 함수 - 담당 트레이너만 관리 가능
+  const hasPTSessionPermission = () => {
+    if (!currentUser || !session) return false;
+
+    // 관리자(12, 99)는 모든 권한
+    if (
+      currentUser.position_id === 12 ||
+      currentUser.position_id === 13 ||
+      currentUser.position_id === 99
+    ) {
+      return true;
+    }
+
+    // 담당 트레이너인지 확인 (타입 변환하여 비교)
+    const isTrainer = Number(session.trainer_id) === Number(currentUser.id);
+
+    console.log('🔍 PT 세션 수정 권한 체크:', {
+      currentUser: {
+        id: currentUser.id,
+        name: currentUser.name,
+        position_id: currentUser.position_id,
+      },
+      session: {
+        id: session.id,
+        trainer_id: session.trainer_id,
+      },
+      isTrainer: isTrainer,
+    });
+
+    return isTrainer;
+  };
+
   // 커스텀 훅 사용 (편집 모드)
   const { formData, loading, errors, handleInputChange, updatePTSession, deletePTSession } =
     usePTSessionForm(session, isOpen, 'edit');
@@ -13,6 +49,12 @@ const PTSessionEditModal = ({ isOpen, onClose, session, onUpdate }) => {
   // 폼 제출 핸들러
   const handleSubmit = async e => {
     e.preventDefault();
+
+    // 권한 체크
+    if (!hasPTSessionPermission()) {
+      toast.warning('PT 세션 수정 권한이 없습니다. 담당 트레이너만 수정할 수 있습니다.');
+      return;
+    }
 
     const result = await updatePTSession(session?.id);
 
@@ -26,6 +68,12 @@ const PTSessionEditModal = ({ isOpen, onClose, session, onUpdate }) => {
 
   // 삭제 핸들러
   const handleDelete = async () => {
+    // 권한 체크
+    if (!hasPTSessionPermission()) {
+      toast.warning('PT 세션 삭제 권한이 없습니다. 담당 트레이너만 삭제할 수 있습니다.');
+      return;
+    }
+
     const result = await deletePTSession(session?.id);
 
     if (result.success) {
@@ -225,8 +273,12 @@ const PTSessionEditModal = ({ isOpen, onClose, session, onUpdate }) => {
             <button
               type="button"
               onClick={handleDelete}
-              disabled={loading}
-              className="px-4 py-2 text-red-600 border border-red-500 rounded-lg hover:bg-red-50 transition-colors duration-200 disabled:opacity-50 text-xs drop-shadow-sm"
+              disabled={loading || !hasPTSessionPermission()}
+              className={`px-4 py-2 border rounded-lg transition-colors duration-200 disabled:opacity-50 text-xs drop-shadow-sm ${
+                hasPTSessionPermission()
+                  ? 'text-red-600 border-red-500 hover:bg-red-50'
+                  : 'text-gray-400 border-gray-300 cursor-not-allowed'
+              }`}
             >
               삭제
             </button>
@@ -234,8 +286,12 @@ const PTSessionEditModal = ({ isOpen, onClose, session, onUpdate }) => {
             {/* 수정 버튼 */}
             <button
               type="submit"
-              disabled={loading}
-              className="px-12 py-3 bg-gradient-to-br from-blue-400 to-blue-600 text-white text-sm rounded-lg hover:from-blue-500 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50"
+              disabled={loading || !hasPTSessionPermission()}
+              className={`px-12 py-3 text-white text-sm rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 ${
+                hasPTSessionPermission()
+                  ? 'bg-gradient-to-br from-blue-400 to-blue-600 hover:from-blue-500 hover:to-blue-700'
+                  : 'bg-gray-400 cursor-not-allowed'
+              }`}
             >
               {loading ? '수정 중...' : '수정'}
             </button>

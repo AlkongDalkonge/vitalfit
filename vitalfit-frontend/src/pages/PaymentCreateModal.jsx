@@ -1,7 +1,44 @@
 import React, { useState, useEffect } from 'react';
 import { paymentAPI, memberAPI, centerAPI, userAPI } from '../utils/api';
+import { useAuth } from '../contexts/AuthContext';
+import { toast } from 'react-toastify';
 
 const PaymentCreateModal = ({ isOpen, onClose, onCreate, memberId }) => {
+  const { user: currentUser } = useAuth();
+
+  // PT 결제 관리 권한 체크 함수 - 담당 트레이너만 관리 가능
+  const hasPaymentPermission = () => {
+    if (!currentUser || !member) return false;
+
+    // 관리자(12, 99)는 모든 권한
+    if (
+      currentUser.position_id === 12 ||
+      currentUser.position_id === 13 ||
+      currentUser.position_id === 99
+    ) {
+      return true;
+    }
+
+    // 담당 트레이너인지 확인 (타입 변환하여 비교)
+    const isTrainer = Number(member.trainer_id) === Number(currentUser.id);
+
+    console.log('🔍 PT 결제 생성 권한 체크:', {
+      currentUser: {
+        id: currentUser.id,
+        name: currentUser.name,
+        position_id: currentUser.position_id,
+      },
+      member: {
+        id: member.id,
+        name: member.name,
+        trainer_id: member.trainer_id,
+      },
+      isTrainer: isTrainer,
+    });
+
+    return isTrainer;
+  };
+
   // 폼 데이터 상태
   const [formData, setFormData] = useState({
     member_id: memberId || '',
@@ -116,6 +153,12 @@ const PaymentCreateModal = ({ isOpen, onClose, onCreate, memberId }) => {
   // 폼 제출 핸들러
   const handleSubmit = async e => {
     e.preventDefault();
+
+    // 권한 체크
+    if (!hasPaymentPermission()) {
+      toast.warning('PT 결제 등록 권한이 없습니다.');
+      return;
+    }
 
     if (!validateForm()) {
       return;
@@ -424,8 +467,12 @@ const PaymentCreateModal = ({ isOpen, onClose, onCreate, memberId }) => {
           <div className="flex justify-end absolute bottom-6 right-6">
             <button
               type="submit"
-              disabled={loading}
-              className="px-12 py-3 bg-gradient-to-br from-blue-400 to-blue-600 text-white text-sm rounded-lg hover:from-blue-500 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50"
+              disabled={loading || !hasPaymentPermission()}
+              className={`px-12 py-3 text-white text-sm rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 ${
+                hasPaymentPermission()
+                  ? 'bg-gradient-to-br from-blue-400 to-blue-600 hover:from-blue-500 hover:to-blue-700'
+                  : 'bg-gray-400 cursor-not-allowed'
+              }`}
             >
               {loading ? '등록 중...' : '등록'}
             </button>

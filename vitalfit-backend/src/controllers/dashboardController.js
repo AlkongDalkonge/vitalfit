@@ -83,14 +83,8 @@ const getDashboardStats = async (req, res) => {
           },
         ],
       }),
-      // 최근 유저 조회
+      // 최근 유저 조회 (전체에서 최신 3개)
       User.findAll({
-        where: {
-          createdAt: {
-            [Op.gte]: today,
-            [Op.lt]: tomorrow,
-          },
-        },
         include: [
           {
             model: Position,
@@ -100,16 +94,10 @@ const getDashboardStats = async (req, res) => {
           },
         ],
         order: [['createdAt', 'DESC']],
-        limit: 5,
+        limit: 3,
       }),
-      // 최근 멤버 조회
+      // 최근 멤버 조회 (전체에서 최신 3개)
       Member.findAll({
-        where: {
-          createdAt: {
-            [Op.gte]: today,
-            [Op.lt]: tomorrow,
-          },
-        },
         include: [
           {
             model: Center,
@@ -119,16 +107,10 @@ const getDashboardStats = async (req, res) => {
           },
         ],
         order: [['createdAt', 'DESC']],
-        limit: 5,
+        limit: 3,
       }),
-      // 최근 공지 조회
+      // 최근 공지 조회 (전체에서 최신 3개)
       Notice.findAll({
-        where: {
-          createdAt: {
-            [Op.gte]: today,
-            [Op.lt]: tomorrow,
-          },
-        },
         include: [
           {
             model: User,
@@ -138,7 +120,7 @@ const getDashboardStats = async (req, res) => {
           },
         ],
         order: [['createdAt', 'DESC']],
-        limit: 5,
+        limit: 3,
       }),
     ]);
 

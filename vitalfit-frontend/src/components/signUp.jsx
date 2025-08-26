@@ -52,15 +52,11 @@ export default function SignUp() {
 
   // 드롭다운 토글 함수들
   const togglePositionDropdown = () => {
-    console.log('직책 드롭다운 토글:', !showPositionDropdown);
-    // 센터 드롭다운을 먼저 닫고 직책 드롭다운 토글
     setShowCenterDropdown(false);
     setShowPositionDropdown(!showPositionDropdown);
   };
 
   const toggleCenterDropdown = () => {
-    console.log('센터 드롭다운 토글:', !showCenterDropdown);
-    // 직책 드롭다운을 먼저 닫고 센터 드롭다운 토글
     setShowPositionDropdown(false);
     setShowCenterDropdown(!showCenterDropdown);
   };
@@ -96,12 +92,9 @@ export default function SignUp() {
 
   const loadPositions = async () => {
     try {
-      console.log('포지션 데이터 로드 시작...');
       const response = await fetch('/api/users/positions');
-      console.log('포지션 응답 상태:', response.status);
       if (response.ok) {
         const data = await response.json();
-        console.log('포지션 데이터:', data);
         setPositions(data.data);
       } else {
         console.error('포지션 응답 오류:', response.status, response.statusText);
@@ -113,12 +106,9 @@ export default function SignUp() {
 
   const loadCenters = async () => {
     try {
-      console.log('센터 데이터 로드 시작...');
       const response = await fetch('/api/users/centers');
-      console.log('센터 응답 상태:', response.status);
       if (response.ok) {
         const data = await response.json();
-        console.log('센터 데이터:', data);
         setCenters(data.data);
       } else {
         console.error('센터 응답 오류:', response.status, response.statusText);
@@ -143,6 +133,7 @@ export default function SignUp() {
     }
 
     setCheckingEmail(true);
+
     try {
       const response = await fetch('/api/users/check-email', {
         method: 'POST',
@@ -156,19 +147,15 @@ export default function SignUp() {
 
       if (response.ok) {
         if (data.available) {
-          // toast.success('사용 가능한 이메일입니다.'); // 주석처리됨
           setEmailChecked(true);
         } else {
-          // toast.error('이미 사용 중인 이메일입니다.'); // 주석처리됨
           setEmailChecked(false);
         }
       } else {
-        // toast.error(data.message || '이메일 중복확인 중 오류가 발생했습니다.'); // 주석처리됨
         setEmailChecked(false);
       }
     } catch (error) {
       console.error('이메일 중복확인 오류:', error);
-      // toast.error('이메일 중복확인 중 오류가 발생했습니다.'); // 주석처리됨
       setEmailChecked(false);
     } finally {
       setCheckingEmail(false);
@@ -177,8 +164,18 @@ export default function SignUp() {
 
   // 이메일 변경 시 중복확인 상태 초기화
   const handleEmailChange = e => {
-    setFormData({ ...formData, email: e.target.value });
-    setEmailChecked(false);
+    const newEmail = e.target.value;
+    setFormData({ ...formData, email: newEmail });
+
+    // 이메일이 변경되면 중복확인 상태 초기화
+    if (emailChecked !== null) {
+      setEmailChecked(null);
+    }
+  };
+
+  // 이메일 중복확인 상태 수동 초기화
+  const resetEmailCheck = () => {
+    setEmailChecked(null);
   };
 
   // 비밀번호 강도 검증 함수
@@ -395,7 +392,7 @@ export default function SignUp() {
     }
 
     // 이메일 중복확인 확인
-    if (!emailChecked) {
+    if (emailChecked !== true) {
       setError('이메일 중복확인을 완료해주세요.');
       setLoading(false);
       return;
@@ -429,21 +426,10 @@ export default function SignUp() {
         formDataToSend.append('profile_image_url', profileImage);
       }
 
-      console.log('전송할 데이터:', {
-        email: formData.email,
-        name: formData.name,
-        phone: formData.phone,
-        position_id: formData.position_id,
-        center_id: formData.center_id,
-        hasImage: !!profileImage,
-      });
-
       const response = await fetch('/api/users/signup', {
         method: 'POST',
         body: formDataToSend,
       });
-
-      console.log('응답 상태:', response.status);
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -458,7 +444,6 @@ export default function SignUp() {
       }
 
       const data = await response.json();
-      console.log('응답 데이터:', data);
 
       if (response.ok) {
         // 계정 재활성화인지 새 회원가입인지 확인
@@ -614,13 +599,7 @@ export default function SignUp() {
                     value={formData.email}
                     onChange={handleEmailChange}
                     placeholder="이메일을 입력하세요"
-                    className={`flex-1 px-4 py-3 border rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-colors ${
-                      emailChecked === true
-                        ? 'border-green-500 bg-green-50'
-                        : emailChecked === false
-                          ? 'border-red-500 bg-red-50'
-                          : 'border-gray-300'
-                    }`}
+                    className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-colors"
                     required
                   />
                   <button
@@ -645,11 +624,18 @@ export default function SignUp() {
                   </button>
                 </div>
                 {emailChecked !== null && (
-                  <p className={`mt-1 text-sm ${emailChecked ? 'text-green-600' : 'text-red-600'}`}>
-                    {emailChecked
-                      ? '✓ 사용 가능한 이메일입니다.'
-                      : '✗ 이미 사용 중인 이메일입니다.'}
-                  </p>
+                  <div className="mt-1">
+                    <p className={`text-sm ${emailChecked ? 'text-green-600' : 'text-red-600'}`}>
+                      {emailChecked
+                        ? '✓ 사용 가능한 이메일입니다.'
+                        : '✗ 이미 사용 중인 이메일입니다.'}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {emailChecked
+                        ? '이제 회원가입을 진행할 수 있습니다.'
+                        : '다른 이메일을 사용하거나 중복확인을 다시 시도해주세요.'}
+                    </p>
+                  </div>
                 )}
               </div>
 
@@ -1066,3 +1052,4 @@ export default function SignUp() {
     </div>
   );
 }
+//

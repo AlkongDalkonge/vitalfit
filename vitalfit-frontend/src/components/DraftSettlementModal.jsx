@@ -14,7 +14,7 @@ const DraftSettlementModal = ({ isOpen, onClose, draftSettlements, userPositionI
         subtitle: '확인 대기 중인 정산이 있습니다',
         description: '다음 정산들을 확인해주세요.',
         statusText: '확인 대기',
-        statusColor: 'bg-gray-100 text-gray-800'
+        statusColor: 'bg-gray-100 text-gray-800',
       };
     } else if (userPositionId === 11) {
       return {
@@ -22,7 +22,7 @@ const DraftSettlementModal = ({ isOpen, onClose, draftSettlements, userPositionI
         subtitle: '승인 대기 중인 팀원 정산이 있습니다',
         description: '다음 팀원들의 정산을 승인해주세요.',
         statusText: '승인 대기',
-        statusColor: 'bg-blue-100 text-blue-800'
+        statusColor: 'bg-blue-100 text-blue-800',
       };
     } else if (userPositionId >= 12) {
       return {
@@ -30,7 +30,7 @@ const DraftSettlementModal = ({ isOpen, onClose, draftSettlements, userPositionI
         subtitle: '최종 승인 대기 중인 정산이 있습니다',
         description: '다음 정산들을 최종 승인해주세요.',
         statusText: '최종 승인 대기',
-        statusColor: 'bg-green-100 text-green-800'
+        statusColor: 'bg-green-100 text-green-800',
       };
     }
   };
@@ -100,9 +100,7 @@ const DraftSettlementModal = ({ isOpen, onClose, draftSettlements, userPositionI
         {/* 내용 */}
         <div className="p-6">
           <div className="mb-4">
-            <p className="text-gray-700 mb-4">
-              {modalContent.description}
-            </p>
+            <p className="text-gray-700 mb-4">{modalContent.description}</p>
           </div>
 
           {/* 정산 목록 */}
@@ -122,11 +120,13 @@ const DraftSettlementModal = ({ isOpen, onClose, draftSettlements, userPositionI
                       {settlement.center?.name || '센터 정보 없음'}
                     </p>
                   </div>
-                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                    settlement.status === 'rejected' 
-                      ? 'bg-red-100 text-red-800' 
-                      : modalContent.statusColor
-                  }`}>
+                  <span
+                    className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                      settlement.status === 'rejected'
+                        ? 'bg-red-100 text-red-800'
+                        : modalContent.statusColor
+                    }`}
+                  >
                     {settlement.status === 'rejected' ? '반려됨' : modalContent.statusText}
                   </span>
                 </div>
