@@ -119,6 +119,22 @@ exports.getNotices = async (req, res) => {
         ['is_important', 'DESC'],
         ['createdAt', 'DESC'],
       ],
+      include: [
+        {
+          model: User,
+          as: 'sender',
+          attributes: ['id', 'name'],
+        },
+      ],
+    });
+
+    // sender_name 필드를 각 notice 객체에 추가
+    const noticesWithSenderName = notices.map(notice => {
+      const noticeData = notice.toJSON();
+      return {
+        ...noticeData,
+        sender_name: noticeData.sender?.name || null
+      };
     });
 
     const pagination = {
@@ -128,10 +144,12 @@ exports.getNotices = async (req, res) => {
       itemsPerPage: limit,
     };
 
+
+    
     res.json({
       success: true,
       data: {
-        notices,
+        notices: noticesWithSenderName,
         pagination,
       },
     });
@@ -240,8 +258,25 @@ exports.getNoticeById = async (req, res) => {
 
   try {
     const notice = await Notice.findByPk(req.params.id, {
-      attributes: { exclude: ['updatedAt'] }, //해당컬럼은 제외
+      attributes: { exclude: ['updatedAt'] },
+      include: [
+        {
+          model: User,
+          as: 'sender',
+          attributes: ['id', 'name'],
+        },
+      ],
     });
+
+    // sender_name 필드를 notice 객체에 추가
+    let noticeWithSenderName = null;
+    if (notice) {
+      const noticeData = notice.toJSON();
+      noticeWithSenderName = {
+        ...noticeData,
+        sender_name: noticeData.sender?.name || null
+      };
+    }
 
     // console.log('notice:::', notice);
 
@@ -265,9 +300,26 @@ exports.getNoticeById = async (req, res) => {
     // 3. 다시 조회해서 응답 (updatedAt 제외)
     const updatedNotice = await Notice.findByPk(id, {
       attributes: { exclude: ['updatedAt'] },
+      include: [
+        {
+          model: User,
+          as: 'sender',
+          attributes: ['id', 'name'],
+        },
+      ],
     });
 
-    res.json({ success: true, data: updatedNotice });
+    // sender_name 필드를 updatedNotice 객체에 추가
+    let updatedNoticeWithSenderName = null;
+    if (updatedNotice) {
+      const noticeData = updatedNotice.toJSON();
+      updatedNoticeWithSenderName = {
+        ...noticeData,
+        sender_name: noticeData.sender?.name || null
+      };
+    }
+
+    res.json({ success: true, data: updatedNoticeWithSenderName });
   } catch (err) {
     console.error('공지사항 상세 조회 실패:', err);
     res.status(500).json({

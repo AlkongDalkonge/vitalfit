@@ -1678,8 +1678,18 @@ const seedPTSessions = async (centers, users, members) => {
 
     months.forEach(({ month, days }) => {
       members.forEach(member => {
-        // 회원별 PT 세션 수 (0~12개 랜덤)
-        const sessionCount = Math.floor(Math.random() * 13); // 0~12
+        // 오상우 트레이너가 담당하는 회원인지 확인
+        const isOhSangWooMember = member.trainer_id === users.find(u => u.name === '오상우')?.id;
+        
+        // 회원별 PT 세션 수 (오상우 트레이너 회원은 더 많은 세션)
+        let sessionCount;
+        if (isOhSangWooMember) {
+          // 오상우 트레이너 회원: 15~25개 세션 (더 많은 세션으로 매출 증가)
+          sessionCount = 15 + Math.floor(Math.random() * 11); // 15~25
+        } else {
+          // 일반 회원: 0~12개 랜덤
+          sessionCount = Math.floor(Math.random() * 13); // 0~12
+        }
 
         for (let i = 0; i < sessionCount; i++) {
           // 해당 월 내 랜덤 날짜
@@ -1710,6 +1720,54 @@ const seedPTSessions = async (centers, users, members) => {
     });
 
     const ptSessions = await PTSession.bulkCreate(ptSessionData);
+
+    // 오상우 트레이너의 매출을 더 높이기 위해 추가 PT 세션 생성
+    const ohSangWoo = users.find(u => u.name === '오상우');
+    if (ohSangWoo) {
+      const additionalSessions = [];
+      
+      // 오상우 트레이너가 담당하는 회원들 찾기
+      const ohSangWooMembers = members.filter(member => member.trainer_id === ohSangWoo.id);
+      
+      // 각 회원당 추가 세션 생성 (매출 증가를 위해)
+      ohSangWooMembers.forEach(member => {
+        // 6월, 7월, 8월에 추가 세션 생성
+        months.forEach(({ month, days }) => {
+          // 각 월당 5~10개 추가 세션
+          const additionalCount = 5 + Math.floor(Math.random() * 6); // 5~10
+          
+          for (let i = 0; i < additionalCount; i++) {
+            const day = Math.floor(Math.random() * days) + 1;
+            const sessionDate = `2025-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            
+            const startHour = 9 + Math.floor(Math.random() * 12);
+            const startTime = `${String(startHour).padStart(2, '0')}:00:00`;
+            const endTime = `${String(startHour + 1).padStart(2, '0')}:00:00`;
+            
+            additionalSessions.push({
+              member_id: member.id,
+              trainer_id: ohSangWoo.id,
+              center_id: member.center_id,
+              session_date: sessionDate,
+              start_time: startTime,
+              end_time: endTime,
+              session_type: 'regular', // 모두 정규 세션으로 설정
+              signature_data:
+                'data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCI+CiAgPHRleHQgeD0iNTAiIHk9IjUwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiPuuUjOyWtOygkTwvdGV4dD4KPC9zdmc+Cg==',
+              signature_time: `${sessionDate}T${endTime.substring(0, 5)}:00Z`,
+              notes: `오상우 트레이너 추가 PT 세션 ${i + 1}회차`,
+              idempotency_key: `pt_session_ohsangwoo_${member.id}_${month}_${i + 1}`,
+            });
+          }
+        });
+      });
+      
+      // 추가 세션 생성
+      if (additionalSessions.length > 0) {
+        const additionalPTSessions = await PTSession.bulkCreate(additionalSessions);
+        console.log(`✅ 오상우 트레이너 추가 PT 세션 생성 완료 (${additionalPTSessions.length}건 세션)`);
+      }
+    }
 
     console.log(`✅ PT 세션 시드 데이터 생성 완료 (${ptSessions.length}건 세션)`);
     return ptSessions;
