@@ -105,6 +105,7 @@ function createUpload(folder, fieldName, maxSizeMB = 5, allowedTypes = ['.jpg', 
         req.body.attachment_url = fileUrl;
         console.log('📋 공지사항 필드 설정');
       } else if (folder === 'profiles') {
+        req.body.profile_image_name = originalName;
         req.body.profile_image_url = fileUrl;
         console.log('📋 프로필 이미지 필드 설정');
       } else if (folder === 'accounts') {

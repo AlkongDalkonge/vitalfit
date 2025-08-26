@@ -4,25 +4,25 @@ const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
 
-const noticeRouter = require('./src/routes/noticeRouter');
-const memberRouter = require('./src/routes/memberRoute');
-const ptSessionRouter = require('./src/routes/ptSessionRoute');
-const centerRouter = require('./src/routes/centerRoute');
-const userRouter = require('./src/routes/userRoute');
-const teamRouter = require('./src/routes/teamRoute');
-const dashboardRouter = require('./src/routes/dashboardRoute');
-const positionRouter = require('./src/routes/positionRoute');
-const paymentRouter = require('./src/routes/paymentRoute');
-const bonusRouter = require('./src/routes/bonusRoute');
-const commissionRateRouter = require('./src/routes/commissionRateRoute');
-const jobRunRouter = require('./src/routes/jobRunRoute');
-const settlementRouter = require('./src/routes/settlementRoute');
-const emailRouter = require('./src/routes/emailRoute');
-const notificationRouter = require('./src/routes/notificationRoute');
-//라우터 등록
-const { sequelize } = require('./src/models');
-const errorHandler = require('./src/middlewares/errorHandler');
-const { seedAllData } = require('./src/utils/seedData');
+const noticeRouter = require('./routes/noticeRouter');
+const memberRouter = require('./routes/memberRoute');
+const ptSessionRouter = require('./routes/ptSessionRoute');
+const centerRouter = require('./routes/centerRoute');
+const userRouter = require('./routes/userRoute');
+const teamRouter = require('./routes/teamRoute');
+const dashboardRouter = require('./routes/dashboardRoute');
+const positionRouter = require('./routes/positionRoute');
+const paymentRouter = require('./routes/paymentRoute');
+const bonusRouter = require('./routes/bonusRoute');
+const commissionRateRouter = require('./routes/commissionRateRoute');
+const jobRunRouter = require('./routes/jobRunRoute');
+const settlementRouter = require('./routes/settlementRoute');
+const emailRouter = require('./routes/emailRoute');
+const notificationRouter = require('./routes/notificationRoute');
+
+const { sequelize } = require('./models');
+const errorHandler = require('./middlewares/errorHandler');
+const { seedAllData } = require('./utils/seedData');
 
 const app = express();
 
@@ -62,8 +62,8 @@ app.use('/api/notifications', notificationRouter);
 
 // 404 처리
 app.use((req, res) => {
-  res.status(200).json({
-    status: 200,
+  res.status(404).json({
+    status: 404,
     message: '요청한 리소스를 찾을 수 없습니다.',
   });
 });
@@ -74,14 +74,13 @@ app.use(errorHandler);
 // DB 연결 및 서버 실행
 const PORT = process.env.PORT || 3001;
 
-sequelize
-  // .sync({ force: false, alter: true })
-  .sync({ force: true })
+  sequelize.sync({ force: true, logging: console.log })
+  // sequelize.sync({ force: false, logging: console.log })
   .then(async () => {
     console.log('1️⃣ DB 테이블 생성 완료!');
 
     // 시드 데이터 실행 조건 확인
-    const shouldSeedData = process.env.SEED_DATA === 'false';
+    const shouldSeedData = process.env.SEED_DATA !== 'false';
 
     if (shouldSeedData) {
       try {
@@ -95,11 +94,11 @@ sequelize
         // 시드 데이터 실패해도 서버는 계속 실행
       }
     } else {
-      console.log('시드 데이터를 건너뜁니다. (SEED_DATA=false 또는 production 환경)');
+      console.log('시드 데이터를 건너뜁니다. (SEED_DATA=false로 설정됨)');
     }
 
     // ✅ 크론 로드 (모든 환경에서 실행)
-    require('./src/cron/publish.cron');
+    require('./cron/publish.cron');
     console.log('[cron] 배치 스케줄러 로드 완료');
 
     console.log('4️⃣ 서버 실행 준비 완료');
